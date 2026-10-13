@@ -10,9 +10,15 @@
 - Windows x64 release cross-compilation from WSL using cargo-xwin, plus NSIS installer generation.
 - An earlier Windows executable passed a native backend smoke test: FFmpeg-generated MKV, FFprobe inspection, project save/reload, Japanese subtitle preservation and independent TTS text.
 
+## Windows CI checks for v0.1.1
+
+The [clean Windows run](https://github.com/jontechlabs/ai-dubbing-studio/actions/runs/38362204358) passed the frontend build, 8 TypeScript tests, 2 browser scenarios, ESLint/Prettier, and the Rust test/Clippy/formatting step. It uses the same 9-test Rust suite on Windows MSVC.
+
+The initial v0.1.0 workflow encountered an upstream Tauri test-manifest issue before Rust tests could start. v0.1.1 explicitly embeds Common Controls v6 in MSVC artifacts, including tests; the corrected test step passed. This is independent of native GUI and installer qualification.
+
 ## Native Windows limit
 
-Smart App Control blocked the final unsigned executable on the development machine. The final Tauri Windows GUI, installation/uninstallation and WebView2 playback workflow are therefore not fully validated. The earlier backend smoke test and browser scenarios do not establish complete native validation of the final build.
+Smart App Control blocked an earlier unsigned Phase 1 executable on the development machine. The current Tauri Windows GUI, installation/uninstallation and WebView2 playback workflow remain unqualified. The earlier backend smoke test and browser scenarios do not establish complete native validation of the current build.
 
 The setup and portable ZIP are unsigned development packages and the GitHub release is a prerelease. Windows execution policies may block them. Native Windows qualification and signing remain outstanding.
 

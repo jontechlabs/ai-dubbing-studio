@@ -22,7 +22,7 @@ Built with **Tauri 2, React, TypeScript and Rust**. English and French interface
 
 Target: **Windows 10/11 x64**, with **Microsoft Edge WebView2 Runtime**. FFmpeg and FFprobe are included. Python, CUDA and AI model downloads are not required for Phase 1. Installation may need Internet access if WebView2 is missing; local project editing does not require a cloud account.
 
-These are **unsigned development builds**. Smart App Control blocked the final native executable on the development machine, so the final Windows GUI and installation workflow are **not fully qualified**. This release is a prerelease. See [validation evidence and limits](VALIDATION.md).
+These are **unsigned development builds**. Smart App Control blocked an earlier Phase 1 executable on the development machine. The current Windows GUI and installation workflow are **not fully qualified**. This release is a prerelease. See [validation evidence and limits](VALIDATION.md).
 
 ## Available in Phase 1
 
@@ -116,7 +116,9 @@ Provider type definitions are contracts, not functioning inference integrations.
 
 Phase 1 passed **8 TypeScript tests, 9 Rust tests and 2 Playwright browser scenarios**, plus the frontend build, ESLint, Prettier, Rust formatting and Clippy. Rust tests cover real media probing/import, recovery and job cancellation/retry. An earlier Windows binary passed a native backend smoke test.
 
-Final Windows GUI validation remains pending because the unsigned executable was blocked locally. Linux/macOS GUI builds are not qualified. See [VALIDATION.md](VALIDATION.md) for the exact scope.
+The same frontend/browser and Rust checks also passed on the [clean Windows runner for v0.1.1](https://github.com/jontechlabs/ai-dubbing-studio/actions/runs/38362204358).
+
+Final Windows GUI validation remains pending following the local execution block on an earlier unsigned build. Linux/macOS GUI builds are not qualified. See [VALIDATION.md](VALIDATION.md) for the exact scope.
 
 ## Dependencies and licensing
 

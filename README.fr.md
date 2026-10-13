@@ -43,10 +43,11 @@ Prérequis : Node compatible avec Vite, pnpm, Rust stable, dépendances Tauri de
 
 ```sh
 pnpm install --frozen-lockfile
+powershell -NoProfile -File scripts/prepare-ffmpeg.ps1
 pnpm desktop
 ```
 
-Les exécutables FFmpeg/FFprobe sont recherchés dans les ressources de l'application, `src-tauri/binaries`, puis le PATH. Pour Linux/macOS, fournir les exécutables natifs de la cible. Les bins Windows fournis ne conviennent pas à ces systèmes.
+Les exécutables FFmpeg/FFprobe sont recherchés dans les ressources de l'application, `src-tauri/binaries`, puis le PATH. Les exécutables ne sont pas conservés dans Git : le script de préparation télécharge l’archive Windows verrouillée et vérifie son SHA-256. Pour Linux/macOS, fournir les exécutables natifs de la cible. Les binaires Windows distribués ne conviennent pas à ces systèmes.
 
 ```sh
 pnpm build
@@ -57,9 +58,10 @@ cargo test --manifest-path src-tauri/Cargo.toml
 cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings
 cargo fmt --manifest-path src-tauri/Cargo.toml --check
 pnpm desktop:build
+powershell -NoProfile -File scripts/package-windows.ps1
 ```
 
-Les tests de parcours utilisent Chrome et un serveur Vite lancé séparément : `pnpm exec playwright test`. L'aperçu navigateur stocke ses projets et médias dans IndexedDB. Il permet de vérifier l'interface ; l'analyse FFprobe et les dossiers portables restent des fonctions desktop. L'export JSON du navigateur ne contient pas la vidéo.
+Les tests de parcours utilisent Chrome et gèrent automatiquement leur serveur Vite : `pnpm test:e2e`. L'aperçu navigateur stocke ses projets et médias dans IndexedDB. Il permet de vérifier l'interface ; l'analyse FFprobe et les dossiers portables restent des fonctions desktop. L'export JSON du navigateur ne contient pas la vidéo.
 
 ## Architecture et données
 
