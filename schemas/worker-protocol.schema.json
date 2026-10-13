@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "Reserved worker envelope for future provider phases. stdout is NDJSON, stderr is logs, assets are local paths resolved by Rust.",
+  "type": "object",
+  "required": ["protocolVersion", "requestId", "type"],
+  "properties": {
+    "protocolVersion": { "const": 1 },
+    "requestId": { "type": "string" },
+    "type": { "enum": ["handshake", "request", "progress", "result", "error", "cancel"] },
+    "payload": { "type": "object" }
+  }
+}

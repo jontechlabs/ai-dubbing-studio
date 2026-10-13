@@ -1,0 +1,29 @@
+[package]
+name = "ai-dubbing-studio"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "dubbing_studio_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = ["protocol-asset"] }
+tauri-plugin-dialog = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tokio = { version = "1", features = ["process", "io-util", "fs", "time", "sync", "macros"] }
+uuid = { version = "1", features = ["v4", "serde"] }
+chrono = { version = "0.4", features = ["serde"] }
+tempfile = "3"
+
+[dev-dependencies]
+tauri = { version = "2", features = ["test"] }
+
+[profile.release]
+strip = true
+lto = "thin"
+codegen-units = 8

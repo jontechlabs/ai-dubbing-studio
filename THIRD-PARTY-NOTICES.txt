@@ -1,0 +1,17 @@
+AI Dubbing Studio phase 1
+
+FFmpeg and FFprobe are independent local command-line programs.
+Windows build: Gyan.dev FFmpeg essentials release 9.0.2.
+Build distribution: https://www.gyan.dev/ffmpeg/builds/
+Upstream source and license: https://ffmpeg.org/
+Corresponding upstream release source: https://ffmpeg.org/releases/ffmpeg-9.0.2.tar.xz
+Build configuration and additional source references: https://www.gyan.dev/ffmpeg/builds/
+The bundled essentials binaries are licensed under GPL version 3.
+Their license text is included as binaries/FFMPEG-LICENSE.txt.
+
+React, Tauri, Vite, Lucide, i18next, TanStack Virtual and other dependencies
+retain their respective licenses. Exact resolved packages are listed in
+pnpm-lock.yaml and src-tauri/Cargo.lock. This notice does not replace their licenses.
+
+The example video and sine-wave audio are synthetic assets generated for this project.
+No third-party movie, voice reference or model weights are bundled.
