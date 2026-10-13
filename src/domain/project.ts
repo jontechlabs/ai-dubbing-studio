@@ -1,6 +1,6 @@
 import type { Project } from './types';
 import { alignCues } from './subtitles';
-export const APP_VERSION = '0.3.0';
+export const APP_VERSION = '0.3.1';
 
 export function blankProject(name = 'Untitled', source = 'ja', target = 'fr'): Project {
   const now = new Date().toISOString();

@@ -30,6 +30,8 @@ export async function separationStatus() {
     installed: boolean;
     installing: boolean;
     devices: { id: string; name: string }[];
+    unavailableDevices?: { id: string; name: string; reason: string }[];
+    cudaVersion?: string | null;
   }>('separation_status');
 }
 export async function installSeparationRuntime(cuda: boolean) {

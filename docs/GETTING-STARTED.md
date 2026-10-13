@@ -2,7 +2,7 @@
 
 ## Install or extract
 
-Get the Windows x64 setup or portable ZIP from [v0.3.0 releases](https://github.com/jontechlabs/ai-dubbing-studio/releases/tag/v0.3.0). These are unsigned development builds; the final native GUI is not fully qualified. See [validation](../VALIDATION.md).
+Get the Windows x64 setup or portable ZIP from [v0.3.1 releases](https://github.com/jontechlabs/ai-dubbing-studio/releases/tag/v0.3.1). These are unsigned development builds; the final native GUI is not fully qualified. See [validation](../VALIDATION.md).
 
 - **Setup:** run the NSIS installer. It installs for the current user and provides French/English language selection.
 - **Portable:** extract the entire ZIP, then run `AI Dubbing Studio.exe` inside the extracted folder. Keep `binaries/` and `demo/` beside the executable. The app uses local application data for job records; “portable” describes the executable package, not a zero-footprint mode.
@@ -12,7 +12,7 @@ WebView2 Runtime must be available. FFmpeg/FFprobe are bundled. No AI runtime or
 To verify a download in PowerShell, compare its value with the release's `SHA256SUMS.txt`:
 
 ```powershell
-Get-FileHash .\AI-Dubbing-Studio-0.3.0-Setup.exe -Algorithm SHA256
+Get-FileHash .\AI-Dubbing-Studio-0.3.1-Setup.exe -Algorithm SHA256
 Get-FileHash .\AI-Dubbing-Studio-Windows-Portable.zip -Algorithm SHA256
 ```
 

@@ -13,6 +13,8 @@ async function nativeMock(page: Page, large = false) {
     const host=window as unknown as Record<string,any>,callbacks=new Map<number,(data:any)=>void>(),listeners=new Map<string,number>();let counter=0,project=structuredClone(initial),job:any;
     const emit=(name:string,payload:any)=>{const id=listeners.get(name);if(id)callbacks.get(id)?.({event:name,id,payload});};
     host.__calls=[];host.__downloadError=false;host.__installed=false;
+    host.__runtimeStatus={installed:true,installing:false,devices:[{id:'cpu',name:'CPU'},{id:'cuda:0',name:'NVIDIA GPU'}],cudaVersion:'12.8',unavailableDevices:[]};
+    host.__completeRuntime=()=>{host.__runtimeStatus={installed:true,installing:false,devices:[{id:'cpu',name:'CPU'},{id:'cuda:0',name:'NVIDIA GeForce RTX 5060 Ti'}],cudaVersion:'12.8',unavailableDevices:[]};job={...job,status:'succeeded',stage:'done',progress:1};emit('job-changed',job);};
     host.__completeSeparation=()=>{project.formatVersion=2;project.tracks.find((track:any)=>track.kind==='original').mute=true;for(const role of ['speech','music','sfx'])project.tracks.push({id:role,kind:'audio',role,path:`stems/run/${role}.wav`,durationMs:16000,sourcePath:project.media.path,language:'en',gain:1,mute:false,solo:false});project.revision++;emit('project-changed',structuredClone(project));job={...job,status:'succeeded',stage:'done',progress:1};emit('job-changed',job);};
     host.isTauri=true;host.__TAURI_EVENT_PLUGIN_INTERNALS__={unregisterListener:()=>{}};
     host.__TAURI_INTERNALS__={metadata:{currentWindow:{label:'main'}},convertFileSrc:(path:string)=>path.endsWith('.wav')?`/audio/${path.split('/').at(-1)}`:'/preview.mp4',transformCallback:(fn:(data:any)=>void)=>{const id=++counter;callbacks.set(id,fn);return id;},unregisterCallback:(id:number)=>callbacks.delete(id),invoke:async(command:string,args:any={})=>{
@@ -25,14 +27,15 @@ async function nativeMock(page: Page, large = false) {
       if(command==='environment')return {platform:'windows',ffmpeg:true,ffprobe:true};
       if(command==='graphics_info')return {preference:'auto',executable:'C:/Studio/ai-dubbing-studio.exe',adapters:[{Name:'Intel iGPU'},{Name:'NVIDIA GPU'}]};
       if(command==='set_graphics_preference'||command==='open_graphics_settings')return null;
-      if(command==='separation_status')return {installed:true,installing:false,devices:[{id:'cpu',name:'CPU'},{id:'cuda:0',name:'NVIDIA GPU'}]};
+      if(command==='separation_status')return structuredClone(host.__runtimeStatus);
+      if(command==='install_separation_runtime'){job={id:'runtime',projectId:null,kind:'runtime',status:'running',stage:'dependencies',progress:null,logs:[],error:null};emit('job-changed',job);return job.id;}
       if(command==='separate_audio'){job={id:'separation',projectId:project.id,kind:'separation',status:'running',stage:'separate',progress:0.3,logs:[],error:null};emit('job-changed',job);return job.id;}
       if(command==='pause_job'){job={...job,status:args.paused?'paused':'running'};emit('job-changed',job);return null;}
       if(command==='cancel_job'){job={...job,status:'cancelled'};emit('job-changed',job);return null;}
       if(command==='replace_project'){if(args.expectedRevision!==project.revision)throw Error('STALE_REVISION');project={...structuredClone(args.project),revision:project.revision+1};return structuredClone(project);}
       if(command==='plugin:event|listen'){listeners.set(args.event,args.handler);return args.handler;}
       if(command==='plugin:event|unlisten'||command==='plugin:resources|close')return null;
-      if(command==='plugin:updater|check')return {rid:45,currentVersion:'0.3.0',version:'0.3.1',body:'Performance et audio',rawJson:{}};
+      if(command==='plugin:updater|check')return {rid:45,currentVersion:'0.3.1',version:'0.3.2',body:'Performance et audio',rawJson:{}};
       if(command==='plugin:updater|download'){
         if(host.__downloadError)throw Error('Invalid signature');
         const channel=args.onEvent.id;callbacks.get(channel)?.({index:0,message:{event:'Started',data:{contentLength:100}}});callbacks.get(channel)?.({index:1,message:{event:'Progress',data:{chunkLength:100}}});callbacks.get(channel)?.({index:2,message:{event:'Finished'}});return 46;
@@ -70,10 +73,30 @@ test('separation preserves unsaved editing; tracks, mixer and pause are persiste
 test('GPU preference and signed update flow reject failure and save before install',async({page})=>{
   await nativeMock(page);await page.goto('/');await page.getByRole('button',{name:'Paramètres',exact:true}).click();
   await page.getByRole('combobox',{name:'Préférence GPU du lecteur'}).selectOption('performance');await expect(page.getByText('Redémarre l’application pour appliquer cette préférence.')).toBeVisible();
-  await page.getByRole('button',{name:'Rechercher une mise à jour'}).click();await expect(page.getByText('La version 0.3.1 est disponible.')).toBeVisible();
+  await page.getByRole('button',{name:'Rechercher une mise à jour'}).click();await expect(page.getByText('La version 0.3.2 est disponible.')).toBeVisible();
   await page.evaluate(()=>(window as any).__downloadError=true);await page.getByRole('button',{name:'Télécharger la mise à jour'}).click();await expect(page.getByRole('alert')).toBeVisible();
   await expect(page.getByRole('button',{name:'Installer et redémarrer'})).toHaveCount(0);await page.evaluate(()=>(window as any).__downloadError=false);
   await page.getByRole('button',{name:'Télécharger la mise à jour'}).click();await expect(page.getByText(/Téléchargement terminé, signature vérifiée/)).toBeVisible();
   await page.screenshot({path:'test-results/screenshots/studio-updates.png'});await page.getByRole('button',{name:'Installer et redémarrer'}).click();await expect.poll(()=>page.evaluate(()=>(window as any).__installed)).toBe(true);
   expect(await page.evaluate(()=>(window as any).__calls.some((call:any)=>call.command==='set_graphics_preference'&&call.args.choice==='performance'))).toBe(true);
+});
+
+test('an existing CUDA installation can be repaired for an incompatible RTX GPU', async ({page}) => {
+  await nativeMock(page); await page.goto('/');
+  await page.evaluate(() => { (window as any).__runtimeStatus = {installed:true,installing:false,cudaVersion:'12.6',devices:[{id:'cpu',name:'CPU'}],unavailableDevices:[{id:'cuda:0',name:'NVIDIA GeForce RTX 5060 Ti',reason:'no kernel image'}]}; });
+  await page.getByRole('button',{name:'Audio',exact:true}).click();
+  await expect(page.getByRole('alert')).toContainText('RTX 5060 Ti');
+  const processor = page.getByRole('combobox',{name:'Processeur de séparation audio'});
+  await expect(processor.locator('option')).toHaveCount(2);
+  await page.getByRole('button',{name:'Modifier ou réparer l’installation Bandit'}).click();
+  await expect(page.getByRole('checkbox',{name:/NVIDIA CUDA 12.8/})).toBeChecked();
+  await page.getByRole('button',{name:'Réinstaller Bandit',exact:true}).click();
+  await expect(page.getByRole('dialog',{name:'Traitements'})).toBeVisible();
+  expect(await page.evaluate(() => (window as any).__calls.some((call:any) => call.command==='install_separation_runtime' && call.args.cuda===true))).toBe(true);
+  await page.evaluate(() => (window as any).__completeRuntime());
+  await page.getByRole('button',{name:'Fermer',exact:true}).click();
+  await page.getByRole('button',{name:'Audio',exact:true}).click();
+  await expect(processor.locator('option')).toHaveCount(3);
+  await expect(page.getByRole('alert')).toHaveCount(0);
+  await processor.selectOption('cuda:0');
 });

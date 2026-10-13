@@ -26,6 +26,8 @@ pub struct Status {
     pub installed: bool,
     pub installing: bool,
     pub devices: serde_json::Value,
+    pub unavailable_devices: serde_json::Value,
+    pub cuda_version: Option<String>,
 }
 fn resources<R: tauri::Runtime>(app: &tauri::AppHandle<R>) -> PathBuf {
     let packaged = app
@@ -65,7 +67,7 @@ pub async fn status<R: tauri::Runtime>(
             && ["running", "queued"].contains(&job.saved.record.status.as_str())
     });
     let ready = installed(&core);
-    let devices = if ready {
+    let inventory = if ready {
         let result = tokio::time::timeout(
             std::time::Duration::from_secs(30),
             media::command(&python(&runtime(&core)))
@@ -79,11 +81,14 @@ pub async fn status<R: tauri::Runtime>(
             .and_then(Result::ok)
             .filter(|result| result.status.success())
             .and_then(|result| serde_json::from_slice::<serde_json::Value>(&result.stdout).ok())
-            .and_then(|value| value.get("devices").cloned())
-            .unwrap_or(serde_json::json!([]))
+            .unwrap_or(serde_json::json!({}))
     } else {
-        serde_json::json!([])
+        serde_json::json!({})
     };
+    let devices = inventory
+        .get("devices")
+        .cloned()
+        .unwrap_or(serde_json::json!([]));
     Ok(Status {
         installed: ready
             && devices
@@ -91,6 +96,14 @@ pub async fn status<R: tauri::Runtime>(
                 .is_some_and(|devices| !devices.is_empty()),
         installing,
         devices,
+        unavailable_devices: inventory
+            .get("unavailableDevices")
+            .cloned()
+            .unwrap_or(serde_json::json!([])),
+        cuda_version: inventory
+            .get("cudaVersion")
+            .and_then(serde_json::Value::as_str)
+            .map(str::to_owned),
     })
 }
 
@@ -230,7 +243,7 @@ pub fn install<R: tauri::Runtime>(
     }
     if core.jobs.lock().map_err(io_error)?.values().any(|job| {
         ["runtime", "separation"].contains(&job.saved.record.kind.as_str())
-            && ["queued", "running"].contains(&job.saved.record.status.as_str())
+            && ["queued", "running", "paused"].contains(&job.saved.record.status.as_str())
     }) {
         return Err("BUSY".into());
     }
@@ -263,7 +276,7 @@ pub fn install<R: tauri::Runtime>(
             fetch(&core,&app,&key,"https://files.pythonhosted.org/packages/b7/3f/945ef7ab14dc4f9d7f40288d2df998d1837ee0888ec3659c813487572faa/pip-25.2-py3-none-any.whl",&pip,("6d67a2b4e7f14d8b31b8b52648866fa717f45a1eb70e83002f4331d07e953717",1752557),&flag).await?;
             let interpreter=python(&root); let target=root.join("python/Lib/site-packages").to_string_lossy().into_owned();
             let bootstrap="import sys,runpy;sys.path.insert(0,sys.argv.pop(1));runpy.run_module('pip',run_name='__main__')";
-            let mut args=vec!["-c".into(),bootstrap.into(),pip.to_string_lossy().into_owned(),"install".into(),"--no-user".into(),"--upgrade".into(),"--target".into(),target.clone(),"torch==2.8.0".into(),"torchaudio==2.8.0".into(),"--index-url".into(),if cuda{"https://download.pytorch.org/whl/cu126"}else{"https://download.pytorch.org/whl/cpu"}.into()];
+            let mut args=vec!["-c".into(),bootstrap.into(),pip.to_string_lossy().into_owned(),"install".into(),"--no-user".into(),"--upgrade".into(),"--target".into(),target.clone(),"torch==2.8.0".into(),"torchaudio==2.8.0".into(),"--index-url".into(),if cuda{"https://download.pytorch.org/whl/cu128"}else{"https://download.pytorch.org/whl/cpu"}.into()];
             jobs::update(&core,&app,&key,|job|{job.stage="dependencies".into();job.progress=None;});
             process(&core,&app,&key,&interpreter,&args,&flag).await?;
             args=vec!["-c".into(),bootstrap.into(),pip.to_string_lossy().into_owned(),"install".into(),"--no-user".into(),"--target".into(),target,"--index-url".into(),"https://pypi.org/simple".into(),"--no-deps".into(),"--upgrade".into(),"-r".into(),resources(&app).join("runtime-requirements.txt").to_string_lossy().into_owned()];

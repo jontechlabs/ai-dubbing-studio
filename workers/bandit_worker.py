@@ -22,11 +22,27 @@ def report(**values):
 def device_info():
     import torch
     devices = [{"id": "cpu", "name": "CPU"}]
+    unavailable = []
     if torch.cuda.is_available():
         for index in range(torch.cuda.device_count()):
-            try: devices.append({"id": f"cuda:{index}", "name": torch.cuda.get_device_name(index)})
-            except RuntimeError: pass
-    return devices
+            identifier, name = f"cuda:{index}", f"GPU {index}"
+            try:
+                name = torch.cuda.get_device_name(index)
+                # Detection alone can succeed with an unsupported GPU architecture.
+                # Execute a kernel before offering this device (including Blackwell).
+                torch.ones(1, device=identifier).add_(1)
+                torch.cuda.synchronize(index)
+                devices.append({"id": identifier, "name": name})
+            except (RuntimeError, OSError) as error:
+                unavailable.append({"id": identifier, "name": name, "reason": str(error)})
+    return {"devices": devices, "unavailableDevices": unavailable, "cudaVersion": torch.version.cuda}
+
+def select_device(requested, devices):
+    if requested == "auto":
+        return next((entry["id"] for entry in devices if entry["id"].startswith("cuda:")), "cpu")
+    if requested not in {entry["id"] for entry in devices}:
+        raise ValueError("DEVICE_UNAVAILABLE")
+    return requested
 
 def separate(args):
     import numpy as np
@@ -38,11 +54,7 @@ def separate(args):
     with open(args.model, "rb") as file:
         if hashlib.file_digest(file, "sha256").hexdigest() != manifest["sha256"]:
             raise ValueError("MODEL_CHECKSUM_FAILED")
-    device = args.device
-    if device == "auto":
-        device = "cuda:0" if torch.cuda.is_available() else "cpu"
-    if device not in {entry["id"] for entry in device_info()}:
-        raise ValueError("DEVICE_UNAVAILABLE")
+    device = select_device(args.device, device_info()["devices"])
     torch.set_num_threads(min(4, max(1, (os.cpu_count() or 2) // 2)))
     model = Bandit(in_channels=1, stems=["speech", "music", "sfx"], fs=48000, n_sqm_modules=8, rnn_type="GRU", pad_mode="reflect")
     checkpoint = torch.load(args.model, map_location="cpu", weights_only=True)
@@ -97,7 +109,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     threading.Thread(target=control,daemon=True).start()
     try:
-        if args.info: report(devices=device_info())
+        if args.info: report(**device_info())
         else: separate(args)
     except Exception as error:
         report(error=str(error)); sys.exit(1)

@@ -26,6 +26,7 @@ export function AudioPanel({
   const [device, setDevice] = useState(localStorage.getItem('studio.separationDevice') ?? 'auto');
   const [cuda, setCuda] = useState(false),
     [working, setWorking] = useState(false);
+  const [repairRuntime, setRepairRuntime] = useState(false);
   const active = jobs.some(
     (job) =>
       ['runtime', 'separation', 'import', 'subtitles'].includes(job.kind) &&
@@ -37,7 +38,10 @@ export function AudioPanel({
       void bridge
         .separationStatus()
         .then((result) => {
-          if (!disposed) setRuntime(result);
+          if (!disposed) {
+            setRuntime(result);
+            setCuda(!!result.cudaVersion);
+          }
         })
         .catch((error) => {
           if (!disposed) onError(String(error));
@@ -53,7 +57,12 @@ export function AudioPanel({
     <div className="panel-body audio-panel">
       <h3>{t('separationTitle')}</h3>
       <p className="panel-description">{t('separationHint')}</p>
-      {!runtime?.installed ? (
+      {runtime?.unavailableDevices?.map((entry) => (
+        <p className="warning" role="alert" key={entry.id}>
+          {t('runtimeDeviceUnavailable', { name: entry.name })}
+        </p>
+      ))}
+      {(!runtime?.installed || repairRuntime) && (
         <div className="runtime-card">
           <strong>Bandit v2 Multilingual</strong>
           <p>{t('runtimeHint')}</p>
@@ -79,7 +88,7 @@ export function AudioPanel({
             }}
           >
             <Download size={15} />
-            {t('runtimeInstall')}
+            {t(runtime?.installed ? 'runtimeReinstall' : 'runtimeInstall')}
           </button>
           <button
             className="text-button"
@@ -97,7 +106,8 @@ export function AudioPanel({
             {t('runtimeRefresh')}
           </button>
         </div>
-      ) : (
+      )}
+      {runtime?.installed && (
         <>
           <label className="field">
             <span>{t('separationDevice')}</span>
@@ -130,6 +140,13 @@ export function AudioPanel({
           >
             {working ? <LoaderCircle className="spin" size={15} /> : <Scissors size={15} />}{' '}
             {t('separateAudio')}
+          </button>
+          <button
+            className="text-button"
+            disabled={active || working}
+            onClick={() => setRepairRuntime(!repairRuntime)}
+          >
+            {t('runtimeModify')}
           </button>
         </>
       )}

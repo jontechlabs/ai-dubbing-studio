@@ -46,6 +46,8 @@ jobs:
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
           cargo fmt --manifest-path src-tauri/Cargo.toml --check
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
+      - name: Worker device checks
+        run: python -m unittest discover -s workers -p "test_*.py"
       - name: Build unsigned Windows installer
         env:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
