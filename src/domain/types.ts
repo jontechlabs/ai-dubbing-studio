@@ -40,7 +40,12 @@ export interface Dialogue {
 }
 export interface Track {
   id: string;
-  kind: 'video' | 'original' | 'subtitle';
+  kind: 'video' | 'original' | 'subtitle' | 'audio';
+  role?: 'speech' | 'music' | 'sfx';
+  path?: string;
+  durationMs?: number;
+  sourcePath?: string;
+  generationId?: string;
   language: string;
   mute: boolean;
   solo: boolean;
@@ -68,7 +73,7 @@ export interface Job {
   id: string;
   projectId: string;
   kind: string;
-  status: 'queued' | 'running' | 'succeeded' | 'failed' | 'cancelled' | 'interrupted';
+  status: 'queued' | 'running' | 'paused' | 'succeeded' | 'failed' | 'cancelled' | 'interrupted';
   progress: number | null;
   stage: string;
   error: string | null;

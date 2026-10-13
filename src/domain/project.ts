@@ -1,6 +1,6 @@
 import type { Project } from './types';
 import { alignCues } from './subtitles';
-export const APP_VERSION = '0.2.0';
+export const APP_VERSION = '0.3.0';
 
 export function blankProject(name = 'Untitled', source = 'ja', target = 'fr'): Project {
   const now = new Date().toISOString();
@@ -87,7 +87,7 @@ export function demoProject(): Project {
 export function validateProject(value: unknown): Project {
   if (!value || typeof value !== 'object') throw new Error('INVALID_PROJECT');
   const project = value as Project;
-  if (project.formatVersion !== 1) throw new Error('UNSUPPORTED_PROJECT_VERSION');
+  if (![1, 2].includes(project.formatVersion)) throw new Error('UNSUPPORTED_PROJECT_VERSION');
   if (!project.id || typeof project.name !== 'string' || !Number.isInteger(project.revision))
     throw new Error('INVALID_PROJECT');
   if (

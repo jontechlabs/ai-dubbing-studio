@@ -47,6 +47,9 @@ jobs:
           cargo fmt --manifest-path src-tauri/Cargo.toml --check
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
       - name: Build unsigned Windows installer
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ''
         run: pnpm desktop:build
       - name: Package portable build and checksums
         run: ./scripts/package-windows.ps1

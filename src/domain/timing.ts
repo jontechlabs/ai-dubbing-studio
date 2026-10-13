@@ -107,6 +107,8 @@ function splitText(text: string, fraction: number): [string, string] {
   return [parts.slice(0, index).join('').trim(), parts.slice(index).join('').trim()];
 }
 export function splitDialogue(project: Project, id: string, atMs: number): Project {
+  atMs = Math.round(atMs);
+  if (!Number.isSafeInteger(atMs)) throw new Error('INVALID_SPLIT');
   const next = structuredClone(project);
   const index = next.dialogues.findIndex((d) => d.id === id);
   const line = next.dialogues[index];

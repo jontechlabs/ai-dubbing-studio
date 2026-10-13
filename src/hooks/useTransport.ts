@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Dialogue, Project } from '../domain/types';
 import { loopRange } from '../domain/time';
 import { mediaUrl } from '../services/bridge';
+import { useAudioMix } from './useAudioMix';
 
 export function useTransport(
   project: Project | null,
@@ -15,6 +16,7 @@ export function useTransport(
   const [failedId, setFailedId] = useState<string | null>(null);
   const [buffering, setBuffering] = useState(false);
   const [time, setTime] = useState(0);
+  const timeRef = useRef(0);
   const [playing, setPlaying] = useState(false);
   const [loop, setLoop] = useState(false);
   const [volume, setVolume] = useState(0.8);
@@ -29,6 +31,7 @@ export function useTransport(
   useEffect(() => {
     let disposed = false;
     pendingSeek.current = 0;
+    timeRef.current = 0;
     stopAt.current = null;
     setResource(null);
     setReadyId(null);
@@ -61,6 +64,7 @@ export function useTransport(
     pendingSeek.current = Math.max(0, Math.min(ms, projectRef.current?.media?.durationMs || ms));
     const video = videoRef.current;
     if (video?.readyState) video.currentTime = pendingSeek.current / 1000;
+    timeRef.current = pendingSeek.current;
     setTime(pendingSeek.current);
   }, []);
   const toggle = useCallback(() => {
@@ -107,7 +111,8 @@ export function useTransport(
             stopAt.current = null;
           }
         }
-        if (stamp - lastUpdate > 60) {
+        timeRef.current = video.currentTime * 1000;
+        if (stamp - lastUpdate > 100) {
           setTime(video.currentTime * 1000);
           lastUpdate = stamp;
         }
@@ -117,9 +122,7 @@ export function useTransport(
     frame = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(frame);
   }, [loop, selected, project?.media?.durationMs, padding]);
-  useEffect(() => {
-    if (videoRef.current) videoRef.current.volume = volume;
-  }, [volume, url]);
+  useAudioMix(videoRef, project, url, volume, onError);
   return {
     videoRef,
     url,
@@ -127,6 +130,7 @@ export function useTransport(
     failed,
     buffering,
     time,
+    timeRef,
     playing,
     loop,
     volume,
@@ -154,7 +158,10 @@ export function useTransport(
     },
     onPause: () => setPlaying(false),
     onTime: () => {
-      if (videoRef.current) setTime(videoRef.current.currentTime * 1000);
+      if (videoRef.current) {
+        timeRef.current = videoRef.current.currentTime * 1000;
+        setTime(timeRef.current);
+      }
     },
   };
 }

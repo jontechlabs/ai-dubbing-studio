@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { Project } from '../domain/types';
+import type { Project, Track } from '../domain/types';
 import type { Waveform as WaveformData } from '../domain/waveform';
 import { waveform } from '../services/bridge';
 
@@ -10,12 +10,14 @@ export function Waveform({
   viewport,
   scrollLeft,
   height,
+  track,
 }: {
   project: Project;
   scale: number;
   viewport: number;
   scrollLeft: number;
   height: number;
+  track?: Track;
 }) {
   const { t } = useTranslation();
   const [data, setData] = useState<WaveformData | null>(null),
@@ -24,7 +26,7 @@ export function Waveform({
   const [attempt, setAttempt] = useState(0);
   useEffect(() => {
     let disposed = false;
-    void waveform(project)
+    void waveform(project, track)
       .then((result) => {
         if (!disposed) {
           setData(result);

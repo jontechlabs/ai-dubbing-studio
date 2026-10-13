@@ -1,6 +1,6 @@
 [package]
 name = "ai-dubbing-studio"
-version = "0.2.0"
+version = "0.3.0"
 edition = "2021"
 
 [lib]
@@ -19,6 +19,14 @@ tokio = { version = "1", features = ["process", "io-util", "fs", "time", "sync",
 uuid = { version = "1", features = ["v4", "serde"] }
 chrono = { version = "0.4", features = ["serde"] }
 tempfile = "3"
+tauri-plugin-updater = { version = "2", features = ["rustls-tls"] }
+semver = "1"
+sha2 = "0.10"
+zip = { version = "2", default-features = false, features = ["deflate"] }
+reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "json", "stream"] }
+
+[target.'cfg(windows)'.dependencies]
+winreg = "0.55"
 
 [dev-dependencies]
 tauri = { version = "2", features = ["test"] }

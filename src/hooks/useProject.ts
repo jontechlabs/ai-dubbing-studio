@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Job, Project } from '../domain/types';
 import * as bridge from '../services/bridge';
 import { getCurrentWindow } from '@tauri-apps/api/window';
+import { rebaseProject } from '../domain/rebase';
 
 export function useProject() {
   const [project, setProject] = useState<Project | null>(null);
@@ -10,6 +11,7 @@ export function useProject() {
   const [error, setError] = useState<string | null>(null);
   const [applying, setApplying] = useState(false);
   const latest = useRef<Project | null>(null);
+  const base = useRef<Project | null>(null);
   const revision = useRef(0);
   const version = useRef(0);
   const savedVersion = useRef(0);
@@ -17,7 +19,20 @@ export function useProject() {
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const load = useCallback((value: Project) => {
     if (latest.current?.id === value.id && latest.current.revision > value.revision) return;
+    if (
+      latest.current?.id === value.id &&
+      base.current &&
+      savedVersion.current !== version.current
+    ) {
+      latest.current = rebaseProject(base.current, latest.current, value);
+      base.current = value;
+      revision.current = value.revision;
+      setProject(latest.current);
+      setSaveState('unsaved');
+      return;
+    }
     latest.current = value;
+    base.current = value;
     revision.current = value.revision;
     version.current = 0;
     savedVersion.current = 0;
@@ -34,13 +49,15 @@ export function useProject() {
     const operation = (async () => {
       try {
         const result = await bridge.replaceProject(snapshot, revision.current);
-        revision.current = result.revision;
+        const newer = result.revision >= revision.current;
+        revision.current = Math.max(revision.current, result.revision);
+        if (newer) base.current = result;
         savedVersion.current = captured;
-        if (version.current === captured) {
+        if (version.current === captured && newer) {
           latest.current = result;
           setProject(result);
         } else if (latest.current) {
-          latest.current = { ...latest.current, revision: result.revision };
+          latest.current = { ...latest.current, revision: revision.current };
           setProject(latest.current);
         }
         setSaveState(version.current === captured ? 'saved' : 'unsaved');
@@ -152,6 +169,10 @@ export function useProject() {
     if (!latest.current || savedVersion.current !== version.current) throw new Error('SAVE_FAILED');
     return structuredClone(latest.current);
   }, [save]);
+  const flush = useCallback(async () => {
+    await save();
+    if (savedVersion.current !== version.current) throw new Error('SAVE_FAILED');
+  }, [save]);
   const applySnapshot = useCallback(
     async (before: Project, after: Project) => {
       setApplying(true);
@@ -185,5 +206,6 @@ export function useProject() {
     snapshot,
     applySnapshot,
     applying,
+    flush,
   };
 }

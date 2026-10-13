@@ -1,29 +1,33 @@
-# Validation — Phase 2, 13 October 2026
+# Validation - Phase 3, 13 October 2026
 
-## v0.2.0 checks
+## v0.3.0 automated checks
 
-The frontend production build, strict TypeScript, ESLint, Prettier, Rust Clippy with `-D warnings` and rustfmt pass locally. The test suites contain **16 TypeScript tests, 13 Rust tests and 7 Playwright scenarios** (36 tests total).
+The local frontend build, strict TypeScript, ESLint, Prettier, Rust Clippy with -D warnings and rustfmt pass. Suites contain 22 TypeScript tests, 15 Rust tests and 10 Playwright scenarios (47 total).
 
-- Timing tests cover positive/negative offsets, affine drift, either reference role, missing cues, one-to-many grouping, refusal of insufficient/periodic ambiguity, unchanged text/reference timings, preserved TTS overrides and generation assets, actual SRT export timings, independent cue edits, grapheme-safe splits, merge and range rejection.
-- Rust integration tests run real FFmpeg on generated media: bilingual SRT/ASS MKV extraction and import/proxy/recovery scenarios, selected-track waveform decoding with initial audio delay, silent-track selection, waveform cache reuse, invalid stream failure, and cancellation of a queued waveform while project edits remain available.
-- Browser scenarios verify first-frame loading/failure, Processing visibility, embedded-track selection, automatic-calage preview/apply/export/undo/redo/reload, waveform canvas output, timecode editing, drag/resize, split/merge and persistence. They also retain the existing text/TTS/playback/import checks. Native IPC in the embedded-track interface scenario is mocked; backend integration tests run actual FFmpeg.
+Domain tests retain Phase 2 synchronization/editing coverage and add overlapping/large cue lookup, mixer mute/solo/master gain, legacy original-track creation, unsaved-edit rebase over audio jobs and integer split timestamps. Rust integration checks run actual FFmpeg media, validate real stem WAV structure/sample counts, preserve mixer asset metadata across reload, reject traversal and refuse separation without a runtime without modifying the project. Existing import/subtitle/waveform/cancellation/recovery checks remain.
 
-The [Windows workflow](https://github.com/jontechlabs/ai-dubbing-studio/actions/workflows/windows.yml) repeats frontend/browser and Rust checks on Windows MSVC, builds an unsigned NSIS installer and uploads packaged artifacts. See Actions for the current commit’s result. A passing workflow does not establish complete native GUI or installation qualification.
+Browser scenarios exercise 6,000 dialogues without subtitle-block mutations during playback, separation completion while text is unsaved, persistent mixer controls, pause/resume, GPU preference, update download failure/verified download/install state, and earlier editing/import/player flows. Native commands and updater responses are mocked. Video, WAV elements and Web Audio run in Chrome.
 
-## Distribution and native Windows limit
+## Real Bandit and isolated runtime
 
-Windows x64 executable and NSIS setup are cross-compiled from WSL using cargo-xwin. The portable ZIP contains the same executable, FFmpeg/FFprobe, their license, synthetic demo, documentation and screenshots. SHA256SUMS.txt records the distributed package hashes.
+The official multilingual checkpoint was downloaded from Zenodo, verified against its published MD5 and locked SHA-256 abcfccf65446752a057f4a302c941479a54b7560ebf8d7bca039d2ea98e64cfc. Upstream model code is vendored unchanged at d5563d9031e95fdaa3e5a73d5020b9a0df61adb6.
 
-Smart App Control blocked an earlier unsigned Phase 1 executable on the development machine. The final Tauri Windows GUI, installation/uninstallation and WebView2 playback workflow remain unqualified on this machine. Earlier backend smoke checks and browser scenarios do not establish full native validation of this build. Packages are unsigned development builds and the GitHub release remains a prerelease. Signing and native qualification remain outstanding.
+Real CPU inference succeeded on Windows using a one-second, 48 kHz stereo synthetic excerpt, producing three WAVs. Another run succeeded with the exact Python 3.12.10 embedded runtime, pip bootstrap and pinned libraries used by application installation, independent of system Python. These validate integration/output structure, not quality on a full film or every language.
 
-## Screenshots and feature limits
+CUDA inference remains unqualified on this development host. AMD/Intel/Metal/DirectML inference is unsupported by this Bandit integration. Linux/macOS runtime installation and ARM packages are not shipped.
 
-The screenshots show the actual French React app in Chrome browser preview, with a synthetic example and generated timing-test subtitles. They are not captured native Tauri windows. The bundled example has synthetic audio and no generated dubbing.
+## Update signatures and Windows
 
-Phase 2 automatic synchronization compares SRT timing patterns. It does not perform speech recognition, audio forced alignment or semantic translation matching. Ambiguous proposals are refused; unmatched cues retain their original timings. Split text distribution is approximate and requires review. Different video edits can require manual adjustment.
+Windows x64 application and NSIS packages are built with cargo-xwin and an updater signature. Separate Minisign verification with the configured public key accepts the installer signature and rejects a modified installer. The private key stays outside Git; Windows Actions reads it from a repository secret. This is separate from Authenticode.
 
-Linux/macOS GUI builds, ARM packages, model installation and AI inference are not qualified or shipped in this release. Project format 1 remains compatible with existing project folders.
+The [Windows workflow](https://github.com/jontechlabs/ai-dubbing-studio/actions/workflows/windows.yml) repeats frontend/browser/Rust checks and builds/signs packages. See Actions for the current commit result. It does not install the large Bandit runtime/model or qualify CUDA.
 
-## Earlier releases
+An earlier unsigned executable was blocked by Smart App Control. Final native Tauri GUI, installer/uninstaller, effective WebView2 GPU adapter and complete native update/restart remain unqualified. Mocked IPC does not establish those outcomes. Windows rendering preference is an OS request for this executable; it does not guarantee a specific WebView2/decoder adapter.
 
-The [v0.1.2 Windows run](https://github.com/jontechlabs/ai-dubbing-studio/actions/runs/38370316226) passed 8 TypeScript, 11 Rust and 5 browser tests and packaging. The [v0.1.1 run](https://github.com/jontechlabs/ai-dubbing-studio/actions/runs/38362204358) corrected the original Tauri test-manifest issue by embedding Common Controls v6 in MSVC artifacts, including tests.
+Screenshots show actual French React UI in browser testing, with simulated native devices/stems/update metadata. The displayed 0.3.1 update is a test scenario, not a released version. Screenshots are not native Tauri captures. The demo has synthetic audio and no generated dubbing.
+
+Format 1 projects open normally. Adding separated tracks uses format 2, rejected by old app versions. Split text allocation is approximate; SRT synchronization uses timings and does not align speech. Final mix/MKV export and voice generation remain future phases.
+
+## Earlier validation
+
+The [v0.2.0 Windows run](https://github.com/jontechlabs/ai-dubbing-studio/actions/runs/38379413340) passed its checks and packaging. Earlier suites include bilingual MKV extraction and the corrected Common Controls v6 MSVC test manifest.

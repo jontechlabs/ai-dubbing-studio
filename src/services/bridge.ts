@@ -3,11 +3,59 @@ import { listen } from '@tauri-apps/api/event';
 import { open, save } from '@tauri-apps/plugin-dialog';
 import { blankProject, demoProject, validateProject } from '../domain/project';
 import { alignCues, exportSrt, parseSrt, reconcileDialogues } from '../domain/subtitles';
-import type { EnvironmentInfo, Job, MediaInfo, Project } from '../domain/types';
+import type { EnvironmentInfo, Job, MediaInfo, Project, Track } from '../domain/types';
 import { browserStore, downloadText, pickBrowserFile } from './browserStore';
 import { audioPeaks, type Waveform } from '../domain/waveform';
 
 export const native = isTauri();
+export async function graphicsInfo() {
+  const data = await invoke<{
+    preference: string;
+    executable: string;
+    adapters: { Name: string }[] | { Name: string };
+  }>('graphics_info');
+  return {
+    ...data,
+    adapters: Array.isArray(data.adapters) ? data.adapters : data.adapters ? [data.adapters] : [],
+  };
+}
+export async function setGraphicsPreference(choice: string) {
+  await invoke('set_graphics_preference', { choice });
+}
+export async function openGraphicsSettings() {
+  await invoke('open_graphics_settings');
+}
+export async function separationStatus() {
+  return invoke<{
+    installed: boolean;
+    installing: boolean;
+    devices: { id: string; name: string }[];
+  }>('separation_status');
+}
+export async function installSeparationRuntime(cuda: boolean) {
+  return invoke<string>('install_separation_runtime', { cuda });
+}
+export async function separateAudio(device: string) {
+  return invoke<string>('separate_audio', { device });
+}
+export async function pauseJob(id: string, paused: boolean) {
+  await invoke('pause_job', { id, paused });
+}
+export async function audioUrls(project: Project) {
+  if (!native || !project.tracks.some((track) => track.kind === 'audio'))
+    return {} as Record<string, string>;
+  const paths = await invoke<Record<string, string>>('audio_paths');
+  return Object.fromEntries(Object.entries(paths).map(([id, path]) => [id, convertFileSrc(path)]));
+}
+export async function exportAudioTrack(project: Project, id: string) {
+  const track = project.tracks.find((track) => track.id === id);
+  if (!track || !native) return;
+  const path = await save({
+    defaultPath: `${track.role ?? 'audio'}.wav`,
+    filters: [{ name: 'WAV', extensions: ['wav'] }],
+  });
+  if (path) await invoke('export_audio_track', { id, path });
+}
 const commandErrors: string[] = [];
 export function diagnosticErrors() {
   return [...commandErrors];
@@ -170,8 +218,8 @@ export async function importMedia(
     },
   });
 }
-export async function prepareProxy(): Promise<void> {
-  if (native) await invoke('prepare_proxy');
+export async function prepareProxy(lightweight = true): Promise<void> {
+  if (native) await invoke('prepare_proxy', { lightweight });
 }
 export async function importSubtitles(role: 'source' | 'target'): Promise<Project | null> {
   if (native) {
@@ -199,8 +247,8 @@ export async function mediaUrl(project: Project): Promise<string | null> {
   }
   return project.media.path === 'demo.mp4' ? '/demo.mp4' : null;
 }
-export async function waveform(project: Project): Promise<Waveform | null> {
-  if (native) return invoke('get_waveform');
+export async function waveform(project: Project, track?: Track): Promise<Waveform | null> {
+  if (native) return invoke('get_waveform', { trackId: track?.id ?? null });
   const blob = mediaBlob;
   const bytes = blob
     ? await blob.arrayBuffer()

@@ -12,10 +12,12 @@ import { useProject } from './hooks/useProject';
 import { useShortcuts } from './hooks/useShortcuts';
 import { useTransport } from './hooks/useTransport';
 import * as bridge from './services/bridge';
+import { useUpdater } from './hooks/useUpdater';
 
 export default function App() {
   const { t, i18n } = useTranslation();
   const studio = useProject();
+  const updater = useUpdater(studio.flush);
   const [panel, setPanel] = useState<Panel>(null);
   const [subtitleRole, setSubtitleRole] = useState<'source' | 'target'>('source');
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -120,7 +122,7 @@ export default function App() {
   useEffect(() => {
     setSelectedId(null);
   }, [studio.project?.id]);
-  const running = studio.jobs.find((job) => ['running', 'queued'].includes(job.status));
+  const running = studio.jobs.find((job) => ['running', 'queued', 'paused'].includes(job.status));
   const code =
     studio.error
       ?.replace(/^Error:\s*/, '')
@@ -144,6 +146,7 @@ export default function App() {
           void studio.run(() => bridge.history(direction));
         }}
         busy={busy}
+        updateAvailable={!!updater.available}
       />
       {!bridge.native && (
         <div className="browser-banner">
@@ -243,7 +246,7 @@ export default function App() {
           <Timeline
             project={studio.project}
             selected={selected}
-            time={transport.time}
+            timeRef={transport.timeRef}
             onSeek={transport.seek}
             onSelect={select}
             onEdit={studio.edit}
@@ -285,6 +288,9 @@ export default function App() {
         setTheme={setTheme}
         snapshot={studio.snapshot}
         applySnapshot={studio.applySnapshot}
+        updater={updater}
+        onEdit={studio.edit}
+        videoRef={transport.videoRef}
         busy={busy}
       />
       {studio.error && (

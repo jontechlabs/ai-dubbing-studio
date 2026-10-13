@@ -27,6 +27,8 @@ pub struct Job {
 }
 #[derive(Clone, Serialize, Deserialize)]
 pub struct ImportRequest {
+    #[serde(default)]
+    pub lightweight: bool,
     pub path: PathBuf,
     pub root: PathBuf,
     pub project_id: String,
@@ -38,10 +40,23 @@ pub struct ImportRequest {
 pub struct PersistedJob {
     pub record: Job,
     pub request: Option<ImportRequest>,
+    #[serde(default)]
+    pub separation: Option<SeparationRequest>,
+    #[serde(default)]
+    pub runtime_cuda: Option<bool>,
+}
+#[derive(Clone, Serialize, Deserialize)]
+pub struct SeparationRequest {
+    pub root: PathBuf,
+    pub project_id: String,
+    pub source_path: String,
+    pub audio_index: u32,
+    pub device: String,
 }
 pub struct Control {
     pub saved: PersistedJob,
     pub cancel: Arc<AtomicBool>,
+    pub paused: Arc<AtomicBool>,
 }
 
 pub fn create<R: tauri::Runtime>(
@@ -69,8 +84,11 @@ pub fn create<R: tauri::Runtime>(
                 saved: PersistedJob {
                     record: record.clone(),
                     request,
+                    separation: None,
+                    runtime_cuda: None,
                 },
                 cancel: Arc::new(AtomicBool::new(false)),
+                paused: Arc::new(AtomicBool::new(false)),
             },
         );
     }
@@ -224,6 +242,7 @@ async fn copy_media<R: tauri::Runtime>(
     Ok(())
 }
 struct ProxyInput<'a> {
+    lightweight: bool,
     source: &'a std::path::Path,
     output: &'a std::path::Path,
     audio: Option<u32>,
@@ -237,6 +256,7 @@ async fn proxy<R: tauri::Runtime>(
     flag: &AtomicBool,
 ) -> Result<(), String> {
     let ProxyInput {
+        lightweight,
         source,
         output,
         audio,
@@ -285,6 +305,30 @@ async fn proxy<R: tauri::Runtime>(
         .into_iter()
         .map(str::to_owned),
     );
+    args.extend(
+        [
+            "-g",
+            "30",
+            "-keyint_min",
+            "30",
+            "-sc_threshold",
+            "0",
+            "-threads",
+            "2",
+        ]
+        .into_iter()
+        .map(str::to_owned),
+    );
+    if lightweight {
+        args.extend(
+            [
+                "-vf",
+                "scale='min(1280,iw)':'min(720,ih)':force_original_aspect_ratio=decrease:force_divisible_by=2,fps=30",
+            ]
+            .into_iter()
+            .map(str::to_owned),
+        );
+    }
     args.push(output.to_string_lossy().into_owned());
     update(core, app, key, |j| {
         j.stage = "proxy".into();
@@ -381,13 +425,18 @@ async fn execute<R: tauri::Runtime>(
             .iter()
             .any(|s| s.kind == "video" && s.codec == "h264")
         && first_audio.is_none_or(|s| s.codec == "aac" && Some(s.index) == request.audio_index);
-    let preview = if request.force_proxy || !compatible {
+    let large = info
+        .streams
+        .iter()
+        .any(|s| s.kind == "video" && (s.width.unwrap_or(0) > 1280 || s.height.unwrap_or(0) > 720));
+    let preview = if request.force_proxy || !compatible || large {
         let output = format!("cache/{key}.mp4");
         proxy(
             core,
             app,
             key,
             ProxyInput {
+                lightweight: request.lightweight,
                 source: &request.root.join(&relative),
                 output: &request.root.join(&output),
                 audio: request.audio_index,

@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { Check, Download, FileText, LoaderCircle, RefreshCw, Terminal, X } from 'lucide-react';
+import { useEffect, useState, type RefObject } from 'react';
+import { Check, Download, FileText, LoaderCircle, Terminal, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { EnvironmentInfo, Job, Project } from '../domain/types';
 import { APP_VERSION } from '../domain/project';
@@ -8,6 +8,11 @@ import { ImportPanel } from './ImportPanel';
 import { IconButton } from './IconButton';
 import { SubtitleImportPanel } from './SubtitleImportPanel';
 import { AlignmentPanel } from './AlignmentPanel';
+import { GraphicsSettings } from './GraphicsSettings';
+import { UpdateSettings } from './UpdateSettings';
+import type { Updater } from '../hooks/useUpdater';
+import { AudioPanel } from './AudioPanel';
+import { PlaybackMetrics } from './PlaybackMetrics';
 import * as bridge from '../services/bridge';
 import { downloadText } from '../services/browserStore';
 
@@ -28,6 +33,9 @@ export function Panels({
   snapshot,
   applySnapshot,
   busy,
+  updater,
+  onEdit,
+  videoRef,
 }: {
   panel: Panel;
   project: Project | null;
@@ -45,6 +53,9 @@ export function Panels({
   snapshot: () => Promise<Project>;
   applySnapshot: (before: Project, after: Project) => Promise<void>;
   busy: boolean;
+  updater: Updater;
+  onEdit: (update: (project: Project) => Project) => void;
+  videoRef: RefObject<HTMLVideoElement | null>;
 }) {
   const { t } = useTranslation();
   const title =
@@ -109,49 +120,20 @@ export function Panels({
             setPadding={setPadding}
             theme={theme}
             setTheme={setTheme}
+            updater={updater}
+            videoRef={videoRef}
           />
         )}
         {panel === 'jobs' && <JobsPanel jobs={jobs} onError={onError} />}
         {panel === 'audio' && (
-          <div className="panel-body">
-            <p className="panel-description">{t('audioHint')}</p>
-            <h3>{t('mediaInfo')}</h3>
-            <strong>{project?.media?.originalName}</strong>
-            <div className="stream-list">
-              {project?.media?.streams.map((s) => (
-                <div key={s.index}>
-                  <span className="stream-kind">{s.kind}</span>
-                  <strong>{s.codec.toUpperCase()}</strong>
-                  <small>
-                    {s.language} {s.width ? `${s.width} × ${s.height}` : ''}{' '}
-                    {s.channels ? `${s.channels} ch` : ''}
-                  </small>
-                  {s.bitmap && <small className="warning">{t('bitmap')}</small>}
-                </div>
-              ))}
-            </div>
-            <button
-              className="button accent wide"
-              disabled={
-                !bridge.native ||
-                jobs.some(
-                  (j) =>
-                    ['import', 'subtitles'].includes(j.kind) &&
-                    ['running', 'queued'].includes(j.status),
-                )
-              }
-              onClick={() => {
-                void run(async () => {
-                  await bridge.prepareProxy();
-                  showJobs();
-                  return null;
-                });
-              }}
-            >
-              <RefreshCw size={15} />
-              {t('prepareProxy')}
-            </button>
-          </div>
+          <AudioPanel
+            project={project}
+            jobs={jobs}
+            run={run}
+            onEdit={onEdit}
+            showJobs={showJobs}
+            onError={onError}
+          />
         )}
         {panel === 'export' && project && (
           <div className="panel-body">
@@ -195,12 +177,16 @@ function SettingsPanel({
   setPadding,
   theme,
   setTheme,
+  updater,
+  videoRef,
 }: {
   jobs: Job[];
   padding: number;
   setPadding: (n: number) => void;
   theme: string;
   setTheme: (s: string) => void;
+  updater: Updater;
+  videoRef: RefObject<HTMLVideoElement | null>;
 }) {
   const { t, i18n } = useTranslation();
   const [env, setEnv] = useState<EnvironmentInfo | null>(null);
@@ -215,6 +201,12 @@ function SettingsPanel({
   );
   return (
     <div className="panel-body">
+      <UpdateSettings
+        updater={updater}
+        busy={jobs.some((job) => ['queued', 'running', 'paused'].includes(job.status))}
+      />
+      <GraphicsSettings />
+      <PlaybackMetrics videoRef={videoRef} />
       <label className="field">
         <span>{t('language')}</span>
         <select
@@ -287,12 +279,20 @@ function JobsPanel({ jobs, onError }: { jobs: Job[]; onError: (s: string) => voi
           <div className="job-card-title">
             {job.status === 'succeeded' ? (
               <Check size={16} />
-            ) : ['running', 'queued'].includes(job.status) ? (
+            ) : ['running', 'queued', 'paused'].includes(job.status) ? (
               <LoaderCircle size={16} className="spin" />
             ) : (
               <Terminal size={16} />
             )}
-            <strong>{t(job.status === 'queued' ? 'jobQueued' : `jobStages.${job.stage}`)}</strong>
+            <strong>
+              {t(
+                job.status === 'paused'
+                  ? 'jobStages.separationPaused'
+                  : job.status === 'queued'
+                    ? 'jobQueued'
+                    : `jobStages.${job.stage}`,
+              )}
+            </strong>
             <span>{job.progress === null ? '' : `${Math.round(job.progress * 100)}%`}</span>
           </div>
           <progress value={job.progress ?? undefined} max="1" />
@@ -300,14 +300,16 @@ function JobsPanel({ jobs, onError }: { jobs: Job[]; onError: (s: string) => voi
             {t(
               job.status === 'succeeded'
                 ? 'jobDone'
-                : job.status === 'failed'
-                  ? 'jobFailed'
-                  : job.status === 'cancelled' || job.status === 'interrupted'
-                    ? 'jobCancelled'
-                    : 'jobRunning',
+                : job.status === 'paused'
+                  ? 'jobStages.separationPaused'
+                  : job.status === 'failed'
+                    ? 'jobFailed'
+                    : job.status === 'cancelled' || job.status === 'interrupted'
+                      ? 'jobCancelled'
+                      : 'jobRunning',
             )}
           </span>
-          {['running', 'queued'].includes(job.status) && (
+          {['running', 'queued', 'paused'].includes(job.status) && (
             <button
               className="text-button"
               onClick={() => {
@@ -317,14 +319,27 @@ function JobsPanel({ jobs, onError }: { jobs: Job[]; onError: (s: string) => voi
               {t('cancel')}
             </button>
           )}
-          {job.kind === 'import' && ['failed', 'cancelled', 'interrupted'].includes(job.status) && (
+          {['import', 'separation', 'runtime'].includes(job.kind) &&
+            ['failed', 'cancelled', 'interrupted'].includes(job.status) && (
+              <button
+                className="text-button"
+                onClick={() => {
+                  void bridge.retryJob(job.id).catch((e) => onError(String(e)));
+                }}
+              >
+                {t('retry')}
+              </button>
+            )}
+          {job.kind === 'separation' && ['running', 'paused'].includes(job.status) && (
             <button
               className="text-button"
-              onClick={() => {
-                void bridge.retryJob(job.id).catch((e) => onError(String(e)));
-              }}
+              onClick={() =>
+                void bridge
+                  .pauseJob(job.id, job.status !== 'paused')
+                  .catch((error) => onError(String(error)))
+              }
             >
-              {t('retry')}
+              {t(job.status === 'paused' ? 'resumeJob' : 'pauseJob')}
             </button>
           )}
           <details>

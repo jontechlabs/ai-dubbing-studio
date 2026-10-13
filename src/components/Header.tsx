@@ -12,6 +12,7 @@ import {
   Play,
   Undo2,
   Redo2,
+  DownloadCloud,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { Project } from '../domain/types';
@@ -29,6 +30,7 @@ export function Header({
   onSave,
   onHistory,
   busy,
+  updateAvailable,
 }: {
   project: Project | null;
   saveState: string;
@@ -39,6 +41,7 @@ export function Header({
   onSave: () => void;
   onHistory: (direction: 'undo' | 'redo') => void;
   busy: boolean;
+  updateAvailable: boolean;
 }) {
   const { t } = useTranslation();
   return (
@@ -56,6 +59,11 @@ export function Header({
           {project?.name ?? '—'}
         </div>
         <div className="title-actions">
+          {updateAvailable && (
+            <IconButton label={t('updatesAvailableShort')} onClick={() => onPanel('settings')}>
+              <DownloadCloud size={17} />
+            </IconButton>
+          )}
           <button
             className={`save-indicator ${saveState === 'saveError' ? 'warning' : ''}`}
             onClick={onSave}

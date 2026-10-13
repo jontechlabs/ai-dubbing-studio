@@ -130,29 +130,46 @@ pub async fn decode(
 pub async fn get<R: tauri::Runtime>(
     core: Arc<Core>,
     app: tauri::AppHandle<R>,
+    track_id: Option<&str>,
 ) -> Result<Option<Waveform>, String> {
     let (root, project_id, input, index, duration) = {
         let session = core.session.lock().map_err(io_error)?;
         let s = session.as_ref().ok_or("NO_PROJECT")?;
-        let asset = s.project.media.as_ref().ok_or("MEDIA_MISSING")?;
-        let Some(index) = asset.audio_stream_index else {
-            return Ok(None);
-        };
-        if !asset
-            .info
-            .streams
-            .iter()
-            .any(|s| s.kind == "audio" && s.index == index)
-        {
-            return Ok(None);
+        if let Some(track_id) = track_id {
+            let track = s
+                .project
+                .tracks
+                .iter()
+                .find(|track| track.id == track_id && track.kind == "audio")
+                .ok_or("INVALID_PROJECT")?;
+            (
+                s.root.clone(),
+                s.project.id.clone(),
+                project::asset(&s.root, track.path.as_deref().ok_or("INVALID_PATH")?)?,
+                0,
+                track.duration_ms.ok_or("INVALID_PROJECT")?,
+            )
+        } else {
+            let asset = s.project.media.as_ref().ok_or("MEDIA_MISSING")?;
+            let Some(index) = asset.audio_stream_index else {
+                return Ok(None);
+            };
+            if !asset
+                .info
+                .streams
+                .iter()
+                .any(|s| s.kind == "audio" && s.index == index)
+            {
+                return Ok(None);
+            }
+            (
+                s.root.clone(),
+                s.project.id.clone(),
+                project::asset(&s.root, &asset.path)?,
+                index,
+                asset.info.duration_ms,
+            )
         }
-        (
-            s.root.clone(),
-            s.project.id.clone(),
-            project::asset(&s.root, &asset.path)?,
-            index,
-            asset.info.duration_ms,
-        )
     };
     let metadata = std::fs::metadata(&input).map_err(io_error)?;
     let mut hash = std::collections::hash_map::DefaultHasher::new();

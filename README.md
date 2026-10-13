@@ -4,9 +4,9 @@ A local desktop workspace for preparing video dubbing: review bilingual subtitle
 
 Built with **Tauri 2, React, TypeScript and Rust**. English and French interface. Dark and light themes.
 
-**v0.2.0 — Phase 2 development preview.** This release provides the editing foundation. AI voice generation, transcription, translation and separation are planned; no models or AI engines run in this version.
+**v0.3.0 — Phase 3 development preview.** This release provides the editing foundation. Local Bandit v2 Multilingual separation is available after installing its optional runtime/model from Audio. AI voice generation, transcription and translation remain planned.
 
-[Windows downloads](https://github.com/jontechlabs/ai-dubbing-studio/releases/tag/v0.2.0) · [User guide](docs/GETTING-STARTED.md) · [Build instructions](docs/BUILDING.md) · [Français](README.fr.md)
+[Windows downloads](https://github.com/jontechlabs/ai-dubbing-studio/releases/tag/v0.3.0) · [User guide](docs/GETTING-STARTED.md) · [Build instructions](docs/BUILDING.md) · [Français](README.fr.md)
 
 ![Studio with bilingual dialogue, video preview, text editor and timeline](docs/screenshots/studio.png)
 
@@ -16,15 +16,15 @@ Built with **Tauri 2, React, TypeScript and Rust**. English and French interface
 
 | Package | Purpose |
 | --- | --- |
-| [Windows x64 setup](https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.2.0/AI-Dubbing-Studio-0.2.0-Setup.exe) | NSIS installer for the current user, with English/French installer interface |
-| [Portable ZIP](https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.2.0/AI-Dubbing-Studio-Windows-Portable.zip) | Extract the whole folder and launch `AI Dubbing Studio.exe` |
-| [SHA-256 checksums](https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.2.0/SHA256SUMS.txt) | Verify the setup and ZIP downloads |
+| [Windows x64 setup](https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.3.0/AI-Dubbing-Studio-0.3.0-Setup.exe) | NSIS installer for the current user, with English/French installer interface |
+| [Portable ZIP](https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.3.0/AI-Dubbing-Studio-Windows-Portable.zip) | Extract the whole folder and launch `AI Dubbing Studio.exe` |
+| [SHA-256 checksums](https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.3.0/SHA256SUMS.txt) | Verify the setup and ZIP downloads |
 
-Target: **Windows 10/11 x64**, with **Microsoft Edge WebView2 Runtime**. FFmpeg and FFprobe are included. Python, CUDA and AI model downloads are not required for Phase 2. Installation may need Internet access if WebView2 is missing; local project editing does not require a cloud account.
+Target: **Windows 10/11 x64**, with **Microsoft Edge WebView2 Runtime**. FFmpeg and FFprobe are included. Python, CUDA and AI model downloads are not required for editing and playback. Installation may need Internet access if WebView2 is missing; local project editing does not require a cloud account.
 
 These are **unsigned development builds**. Smart App Control blocked an earlier Phase 1 executable on the development machine. The current Windows GUI and installation workflow are **not fully qualified**. This release is a prerelease. See [validation evidence and limits](VALIDATION.md).
 
-## Available in Phases 1–2
+## Available in Phases 1–3
 
 - Import MKV, MP4, MOV, AVI and WebM; inspect streams with FFprobe and choose an audio track.
 - Copy the original into a portable project folder; create an H.264/AAC preview proxy when required.
@@ -33,7 +33,12 @@ These are **unsigned development builds**. Smart App Control blocked an earlier 
 - Browse a virtualized dialogue list; select a line to seek the video and highlight its timeline entries.
 - Edit source subtitles, translated subtitles and independent TTS pronunciation overrides.
 - Play or loop a line with configurable padding; use volume, fullscreen, zoom and transport shortcuts.
-- Inspect an audio waveform computed from the chosen track, with local cache, progress and cancellation.
+- Inspect audio waveforms computed from the chosen original track and separated stems, with local cache, progress and cancellation.
+- Separate speech/music/effects locally using Bandit v2 Multilingual; install an isolated Python runtime and verified model from Audio. Choose CPU or a detected NVIDIA CUDA device.
+- Mix original/stem tracks with persistent mute, solo and gain, synchronized video playback and individual WAV export. Pause/resume/cancel and retry separation jobs.
+- Prepare a 720p/30 fps preview with frequent keyframes, without upscaling low-resolution media. Subtitle timeline blocks stay stable during playback, including the 6,000-dialogue test.
+- Set a Windows GPU rendering preference and inspect playback resolution/dropped-frame counters.
+- Check for updates automatically or manually, download a signature-verified package, then install/restart from Settings.
 - Edit start/end timecodes for either SRT or both; drag cue blocks, resize their edges, snap with Shift, and adjust track height.
 - Split at the playhead or merge with the next line. Changes are included in SRT exports and can be undone.
 - Preview automatic SRT-to-SRT synchronization with offset/drift estimation and one-to-many matches; choose either reference and apply explicitly. Ambiguous proposals are refused.
@@ -46,6 +51,16 @@ Automatic synchronization compares timing patterns; it does not perform speech r
 ![Automatic bilingual subtitle synchronization preview](docs/screenshots/alignment.png)
 
 *Actual French browser preview using generated test SRTs with a 2.3-second offset; timings are inspected before application.*
+
+## Phase 3, GPU and updates
+
+Read the [Phase 3 guide](docs/PHASE-3.md) for runtime/model installation, GPU preferences, smooth preview, mixer and in-app updates. Version 0.3.0 must first be installed manually when coming from 0.2.x; subsequent signed releases can update through the interface. A portable package uses the same update installer, which installs a current-user application.
+
+![Audio separation and track mixer](docs/screenshots/audio.png)
+
+![GPU preference and verified update installation](docs/screenshots/updates.png)
+
+*Actual React interface in browser tests with simulated native IPC, GPU names and a future 0.3.1 update. These screenshots do not show a real available 0.3.1 release or a native Tauri window. The model itself was separately tested with real CPU inference on Windows.*
 
 ## First project
 
@@ -66,7 +81,7 @@ Use **Explore the example** to try the bundled synthetic video. See the [user gu
 
 Media processing uses local FFmpeg/FFprobe processes. This version has no cloud provider, account system or telemetry implementation. Original input files are preserved; imported copies and proxies stay inside the project directory.
 
-Projects use JSON, stable IDs, relative asset paths and integer millisecond timings. Format version 1 is supported; unknown formats are rejected without rewriting the file. Autosave uses atomic writes and recovery snapshots. Editing one project simultaneously in multiple app instances is not supported.
+Projects use JSON, stable IDs, relative asset paths and integer millisecond timings. Existing format 1 projects open normally. Adding separated audio tracks upgrades that project to format 2; older app versions refuse format 2. Unknown formats are rejected without rewriting the file. Autosave uses atomic writes and recovery snapshots. Editing one project simultaneously in multiple app instances is not supported.
 
 The browser preview uses IndexedDB to store projects and video blobs on the current device. It does not run FFprobe or create native portable project folders. Browser JSON export does not include the video blob. Diagnostics may contain local paths and FFmpeg arguments; review an exported report before sharing it.
 
@@ -102,7 +117,7 @@ The packaging script produces setup, portable ZIP and checksums in `artifacts/`.
 | `src-tauri/src` | Project storage/recovery, FFprobe, FFmpeg import/proxies, subtitles and jobs |
 | `resources` / `schemas` | Toolchain pins and reserved model/worker contracts |
 
-Processing commands use structured arguments rather than a shell. Project-relative paths are validated, and desktop media access is scoped to the opened project. Future provider contracts keep model runtimes outside the UI. `resources/models.json` is intentionally empty.
+Processing commands use structured arguments rather than a shell. Project-relative paths are validated, and desktop media access is scoped to the opened project. Future provider contracts keep model runtimes outside the UI. `resources/models.json` contains the pinned Bandit model; no TTS model is integrated yet.
 
 See [architecture and persistence](docs/ARCHITECTURE.md).
 
@@ -112,17 +127,17 @@ See [architecture and persistence](docs/ARCHITECTURE.md).
 | --- | --- | --- |
 | 1 | Desktop foundation, media import, persistence, subtitle review, simple timeline | Implemented; development preview |
 | 2 | Waveforms, timecode editing, subtitle movement, split/merge, automatic SRT synchronization | Implemented; development preview |
-| 3 | Speech/music/SFX separation and audio track management | Planned |
+| 3 | Bandit speech/music/SFX separation and audio track management | Implemented; CPU validated, CUDA unqualified |
 | 4 | Characters, voice references and dialogue assignment | Planned |
 | 5 | First TTS provider, per-line generation, multiple takes and review | Planned |
 | 6 | Additional TTS providers and model manager | Planned |
 | 7 | Final mix export, MKV packaging and multiple languages | Planned |
 
-Provider type definitions are contracts, not functioning inference integrations. This release does not include model installation, voice cloning or generated speech.
+Provider type definitions are contracts, not functioning inference integrations. This release installs the Bandit runtime/model only. General model management, voice cloning and generated speech remain future work.
 
 ## Validation
 
-The current local checks passed **16 TypeScript tests, 13 Rust tests and 7 Playwright scenarios**, plus the frontend build, ESLint, Prettier, Rust formatting and Clippy. Rust tests include real bilingual SRT/ASS MKV extraction, selected-track waveform decoding with an audio delay, caching, cancellation and project editing while a waveform job is queued. Timing tests cover shift/drift estimation, missing cues, grouping, refusal of ambiguous matches, Unicode splits, merge/export persistence and preservation of TTS overrides. The interface scenario for native commands uses mocked IPC; it does not replace native GUI testing.
+The current local checks passed **22 TypeScript tests, 15 Rust tests and 10 Playwright scenarios**, plus the frontend build, ESLint, Prettier, Rust formatting and Clippy. Rust tests include real bilingual SRT/ASS MKV extraction, selected-track waveform decoding with an audio delay, caching, cancellation and project editing while a waveform job is queued. Timing tests cover shift/drift estimation, missing cues, grouping, refusal of ambiguous matches, Unicode splits, merge/export persistence and preservation of TTS overrides. The interface scenario for native commands uses mocked IPC; it does not replace native GUI testing.
 
 The earlier [v0.1.1 clean Windows run](https://github.com/jontechlabs/ai-dubbing-studio/actions/runs/38362204358) passed its checks and packaging. Current runs are available under [Actions](https://github.com/jontechlabs/ai-dubbing-studio/actions).
 
@@ -131,5 +146,7 @@ Final Windows GUI validation remains pending following the local execution block
 ## Dependencies and licensing
 
 Windows packages bundle the independent Gyan.dev FFmpeg/FFprobe 9.0.2 essentials programs under GPLv3. Their license is included as `binaries/FFMPEG-LICENSE.txt`. See [third-party notices](THIRD-PARTY-NOTICES.txt), the [upstream build description](docs/third-party/FFMPEG-BUILD.txt) and [Gyan build/source references](https://www.gyan.dev/ffmpeg/builds/). Dependencies retain their own licenses; resolved versions are in `pnpm-lock.yaml` and `Cargo.lock`.
+
+Bandit model code is vendored unmodified from the official Apache-2.0 repository at a pinned revision; weights are downloaded from Zenodo under CC BY-SA 4.0 and are not bundled. The inference dependency lock is included.
 
 No project-wide license has been selected. The synthetic example contains no third-party film, voice reference or model weights.

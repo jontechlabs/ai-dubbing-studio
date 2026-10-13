@@ -1,17 +1,17 @@
-import { useEffect, useRef, useState } from 'react';
+import { memo, useEffect, useMemo, useRef, useState, type RefObject } from 'react';
 import { AudioLines, Captions, Film, Maximize, Minus, Plus, ScanLine } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import type { Dialogue, Project } from '../domain/types';
+import type { Dialogue, Project, Track } from '../domain/types';
 import { timeToX, xToTime } from '../domain/time';
 import { IconButton } from './IconButton';
 import { moveCue, type SubtitleRole } from '../domain/timing';
 import { Waveform } from './Waveform';
 import { formatTime } from '../domain/time';
 
-export function Timeline({
+export const Timeline = memo(function Timeline({
   project,
   selected,
-  time,
+  timeRef,
   onSeek,
   onSelect,
   onEdit,
@@ -19,7 +19,7 @@ export function Timeline({
 }: {
   project: Project | null;
   selected: Dialogue | undefined;
-  time: number;
+  timeRef: RefObject<number>;
   onSeek: (time: number) => void;
   onSelect: (line: Dialogue) => void;
   onEdit: (update: (p: Project) => Project) => void;
@@ -27,10 +27,23 @@ export function Timeline({
 }) {
   const { t } = useTranslation();
   const scroll = useRef<HTMLDivElement>(null);
+  const head = useRef<HTMLDivElement>(null);
+  const associations = useMemo(() => {
+    const source = new Map<string, Dialogue>(),
+      target = new Map<string, Dialogue>(),
+      numbers = new Map<string, number>();
+    project?.dialogues.forEach((line, index) => {
+      line.sourceCueIds.forEach((id) => source.set(id, line));
+      line.targetCueIds.forEach((id) => target.set(id, line));
+      numbers.set(line.id, index + 1);
+    });
+    return { source, target, numbers };
+  }, [project]);
   const [viewport, setViewport] = useState(800);
   const [zoom, setZoom] = useState(1);
   const [rowHeight, setRowHeight] = useState(37);
   const [scrollLeft, setScrollLeft] = useState(0);
+  const [scrollTop, setScrollTop] = useState(0);
   const [drag, setDrag] = useState<{
     id: string;
     role: SubtitleRole;
@@ -53,6 +66,20 @@ export function Timeline({
     return () => observer.disconnect();
   }, []);
   const scale = (viewport * zoom) / duration;
+  useEffect(() => {
+    let frame = 0;
+    let previous = -1;
+    const draw = () => {
+      const position = timeRef.current * scale;
+      if (head.current && position !== previous) {
+        head.current.style.transform = `translateX(${position}px)`;
+        previous = position;
+      }
+      frame = requestAnimationFrame(draw);
+    };
+    draw();
+    return () => cancelAnimationFrame(frame);
+  }, [scale, timeRef]);
   const width = Math.max(viewport, duration * scale);
   const interval =
     [1000, 2000, 5000, 10000, 30000, 60000, 120000, 300000].find((n) => n * scale >= 85) ?? 600000;
@@ -89,7 +116,22 @@ export function Timeline({
       style: 'target',
       exists: Boolean(project?.targetCues.length),
     },
-  ].filter((track) => track.exists);
+  ]
+    .map((track) => ({ ...track, track: undefined as Track | undefined }))
+    .concat(
+      (
+        project?.tracks.filter(
+          (track) => track.kind === 'audio' && track.sourcePath === project.media?.path,
+        ) ?? []
+      ).map((track) => ({
+        key: `stem.${track.role}`,
+        icon: AudioLines,
+        style: 'audio',
+        exists: true,
+        track,
+      })),
+    )
+    .filter((track) => track.exists);
   return (
     <section className="timeline-pane">
       <div className="timeline-heading">
@@ -132,20 +174,25 @@ export function Timeline({
       </div>
       <div className="timeline-body">
         <div className="track-labels">
-          <div className="ruler-label" />
-          <div>
-            {tracks.map(({ key, icon: Icon, style }) => (
-              <div className={`track-label ${style}`} key={key} style={{ height: rowHeight }}>
-                <Icon size={13} />
-                <span>{t(key)}</span>
-              </div>
-            ))}
+          <div style={{ transform: `translateY(${-scrollTop}px)` }}>
+            <div className="ruler-label" />
+            <div>
+              {tracks.map(({ key, icon: Icon, style }) => (
+                <div className={`track-label ${style}`} key={key} style={{ height: rowHeight }}>
+                  <Icon size={13} />
+                  <span>{t(key)}</span>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
         <div
           className="timeline-scroll"
           ref={scroll}
-          onScroll={(event) => setScrollLeft(event.currentTarget.scrollLeft)}
+          onScroll={(event) => {
+            setScrollLeft(event.currentTarget.scrollLeft);
+            setScrollTop(event.currentTarget.scrollTop);
+          }}
         >
           <div
             className="timeline-content"
@@ -174,18 +221,21 @@ export function Timeline({
                 </span>
               ))}
             </div>
-            {tracks.map(({ key, style }) => (
+            {tracks.map(({ key, style, track }) => (
               <div key={key} className={`timeline-track ${style}`} style={{ height: rowHeight }}>
                 {style === 'video' || style === 'audio' ? (
                   <div
                     className="media-strip"
-                    style={{ width: (project?.media?.durationMs ?? 0) * scale }}
+                    style={{
+                      width: (track?.durationMs ?? project?.media?.durationMs ?? 0) * scale,
+                    }}
                   >
                     {style === 'video' ? project?.media?.originalName : null}
                     {style === 'audio' && project?.media && (
                       <Waveform
-                        key={project.media.id}
+                        key={track?.id ?? project.media.id}
                         project={project}
+                        track={track}
                         scale={scale}
                         viewport={viewport}
                         scrollLeft={scrollLeft}
@@ -196,15 +246,13 @@ export function Timeline({
                 ) : (
                   (style === 'source' ? project?.sourceCues : project?.targetCues)?.map((cue) => {
                     const role = style as SubtitleRole;
-                    const line = project!.dialogues.find((d) =>
-                      (role === 'source' ? d.sourceCueIds : d.targetCueIds).includes(cue.id),
-                    );
+                    const line = associations[role].get(cue.id);
                     const range = drag?.id === cue.id && drag.role === role ? drag : cue;
                     if (!line) return null;
                     return (
                       <button
                         title={`${cue.text}\n${formatTime(range.startMs)} → ${formatTime(range.endMs)}\n${t('dragHint')}`}
-                        aria-label={`${t(role === 'source' ? 'original' : 'displayedText')} ${project!.dialogues.indexOf(line) + 1}`}
+                        aria-label={`${t(role === 'source' ? 'original' : 'displayedText')} ${associations.numbers.get(line.id)}`}
                         key={cue.id}
                         disabled={busy}
                         className={`subtitle-block ${selected?.id === line.id ? 'selected' : ''}`}
@@ -239,7 +287,7 @@ export function Timeline({
                           const snap = (ms: number) => {
                             if (!event.shiftKey) return ms;
                             const edges = [
-                              time,
+                              timeRef.current,
                               ...[...project!.sourceCues, ...project!.targetCues]
                                 .filter((c) => c.id !== cue.id)
                                 .flatMap((c) => [c.startMs, c.endMs]),
@@ -289,7 +337,7 @@ export function Timeline({
                         }}
                       >
                         <span data-edge="start" className="cue-handle start" />
-                        {project!.dialogues.indexOf(line) + 1}
+                        {associations.numbers.get(line.id)}
                         <span data-edge="end" className="cue-handle end" />
                       </button>
                     );
@@ -298,7 +346,7 @@ export function Timeline({
               </div>
             ))}
             {!tracks.length && <div className="empty-timeline">{t('emptyTimeline')}</div>}
-            <div className="playhead" style={{ left: time * scale }}>
+            <div className="playhead" ref={head} style={{ left: 0 }}>
               <span />
             </div>
           </div>
@@ -306,4 +354,4 @@ export function Timeline({
       </div>
     </section>
   );
-}
+});

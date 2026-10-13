@@ -1078,6 +1078,91 @@ h3 {
   color: var(--sage);
   border: 1px solid #48856733;
 }
+.settings-section {
+  border-bottom: 1px solid var(--line);
+  padding: 0 0 20px;
+  margin-bottom: 20px;
+}
+.settings-section p {
+  font-size: 11px;
+  line-height: 1.7;
+  margin: 10px 0;
+}
+.checkbox-field {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 11px;
+  line-height: 1.6;
+  margin: 14px 0;
+}
+.checkbox-field input {
+  width: auto;
+  accent-color: var(--accent);
+}
+.executable-path {
+  display: block;
+  overflow-wrap: anywhere;
+  font-size: 9px;
+  color: var(--muted);
+  margin-top: 12px;
+}
+.adapter-name {
+  color: var(--accent);
+}
+.release-note {
+  white-space: pre-wrap;
+  max-height: 150px;
+  overflow: auto;
+}
+.runtime-card {
+  background: var(--raised);
+  border-radius: 8px;
+  padding: 15px;
+  margin: 15px 0;
+}
+.runtime-card p {
+  font-size: 11px;
+  line-height: 1.7;
+  margin: 10px 0;
+  color: var(--muted);
+}
+.audio-mixer {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 18px 0 24px;
+}
+.mixer-row {
+  display: grid;
+  grid-template-columns: 66px 26px 26px minmax(50px, 1fr) 36px 24px;
+  align-items: center;
+  gap: 7px;
+  font-size: 10px;
+}
+.mixer-row strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.mixer-row input {
+  min-width: 0;
+  width: 100%;
+  accent-color: var(--accent);
+}
+.mixer-toggle {
+  border: 1px solid var(--line);
+  padding: 5px;
+  border-radius: 4px;
+  color: var(--muted);
+}
+.mixer-toggle.active {
+  background: var(--accent-soft);
+  color: var(--accent);
+  border-color: var(--accent);
+}
+.mixer-export {
+  color: var(--muted);
+}
 .subtitle-block {
   position: absolute;
   top: 7px;
@@ -1231,6 +1316,7 @@ h3 {
   color: var(--accent);
 }
 .playhead {
+  will-change: transform;
   position: absolute;
   top: 19px;
   bottom: 0;

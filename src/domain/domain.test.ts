@@ -53,7 +53,7 @@ describe('project edits and format contracts', () => {
   });
   it('rejects unknown versions and dangling cue references', () => {
     const p = demoProject();
-    expect(() => validateProject({ ...p, formatVersion: 2 })).toThrow();
+    expect(() => validateProject({ ...p, formatVersion: 99 })).toThrow();
     p.dialogues[0].sourceCueIds = ['missing'];
     expect(() => validateProject(p)).toThrow();
   });

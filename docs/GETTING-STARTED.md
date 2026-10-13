@@ -2,17 +2,17 @@
 
 ## Install or extract
 
-Get the Windows x64 setup or portable ZIP from [v0.2.0 releases](https://github.com/jontechlabs/ai-dubbing-studio/releases/tag/v0.2.0). These are unsigned development builds; the final native GUI is not fully qualified. See [validation](../VALIDATION.md).
+Get the Windows x64 setup or portable ZIP from [v0.3.0 releases](https://github.com/jontechlabs/ai-dubbing-studio/releases/tag/v0.3.0). These are unsigned development builds; the final native GUI is not fully qualified. See [validation](../VALIDATION.md).
 
 - **Setup:** run the NSIS installer. It installs for the current user and provides French/English language selection.
 - **Portable:** extract the entire ZIP, then run `AI Dubbing Studio.exe` inside the extracted folder. Keep `binaries/` and `demo/` beside the executable. The app uses local application data for job records; “portable” describes the executable package, not a zero-footprint mode.
 
-WebView2 Runtime must be available. FFmpeg/FFprobe are bundled. No AI runtime or model is needed for this release.
+WebView2 Runtime must be available. FFmpeg/FFprobe are bundled. No AI runtime or model is needed for editing and playback. Optional Bandit separation installs its runtime/model from Audio.
 
 To verify a download in PowerShell, compare its value with the release's `SHA256SUMS.txt`:
 
 ```powershell
-Get-FileHash .\AI-Dubbing-Studio-0.2.0-Setup.exe -Algorithm SHA256
+Get-FileHash .\AI-Dubbing-Studio-0.3.0-Setup.exe -Algorithm SHA256
 Get-FileHash .\AI-Dubbing-Studio-Windows-Portable.zip -Algorithm SHA256
 ```
 
@@ -35,6 +35,10 @@ Use the player and timeline to review the scene. **Play this line** uses configu
 ## Timing and automatic synchronization
 
 See the [Phase 2 guide](PHASE-2.md) for timecode editing, waveform, drag/resize, split/merge and automatic synchronization. Use **Analyze → Calculate synchronization** after importing both SRTs, inspect the proposal, then apply it. The selected reference keeps its timings. This operation can be undone with Ctrl+Z.
+
+## Separation, performance and updates
+
+See the [Phase 3 guide](PHASE-3.md). Audio contains Bandit installation, device selection, separation and mixer. Settings contains GPU preference, playback counters and signed updates. Installing 0.3.0 manually enables future in-app updates.
 
 ## Keyboard shortcuts
 

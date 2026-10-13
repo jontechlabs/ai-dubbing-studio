@@ -15,3 +15,11 @@ pnpm-lock.yaml and src-tauri/Cargo.lock. This notice does not replace their lice
 
 The example video and sine-wave audio are synthetic assets generated for this project.
 No third-party movie, voice reference or model weights are bundled.
+
+Bandit v2
+Official repository: https://github.com/kwatcharasupat/bandit-v2
+Revision: d5563d9031e95fdaa3e5a73d5020b9a0df61adb6
+Model code: Apache-2.0; vendored unmodified under workers/vendor/bandit, with its LICENSE.
+Multilingual weights: https://zenodo.org/records/12701995, CC BY-SA 4.0. Weights are downloaded on request, not bundled.
+Python 3.12.10 embedded distribution: Python Software Foundation license, retained inside the downloaded runtime.
+PyTorch/Torchaudio and inference dependencies retain their licenses; locked versions are in workers/runtime-requirements.txt and the runtime installers.

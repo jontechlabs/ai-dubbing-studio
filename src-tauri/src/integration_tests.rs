@@ -20,6 +20,75 @@ fn tool(name: &str) -> PathBuf {
 }
 
 #[tokio::test]
+async fn validates_real_stem_wav_and_reload_mixer_metadata() {
+    let temporary = tempfile::tempdir().unwrap();
+    let root = project::create_root(temporary.path(), "Stem metadata").unwrap();
+    let output = root.join("stems/speech.wav");
+    assert!(media::command(&tool("ffmpeg"))
+        .args([
+            "-hide_banner",
+            "-loglevel",
+            "error",
+            "-f",
+            "lavfi",
+            "-i",
+            "sine=frequency=440:sample_rate=48000",
+            "-t",
+            "0.3",
+            "-ac",
+            "2",
+            "-c:a",
+            "pcm_s16le"
+        ])
+        .arg(&output)
+        .status()
+        .await
+        .unwrap()
+        .success());
+    assert_eq!(crate::audio_files::wav_frames(&output).unwrap(), 14400);
+    let mut p = Project::new("Stem metadata".into(), "en".into(), "fr".into());
+    p.format_version = 2;
+    p.tracks=serde_json::from_value(serde_json::json!([{"id":"speech","kind":"audio","role":"speech","path":"stems/speech.wav","durationMs":300,"sourcePath":"media/film.mkv","language":"en","mute":false,"solo":true,"gain":0.4}])).unwrap();
+    project::save(&root, &p).unwrap();
+    let saved = project::load(&root).unwrap();
+    assert_eq!(saved.tracks[0].path.as_deref(), Some("stems/speech.wav"));
+    assert_eq!(saved.tracks[0].gain, 0.4);
+    assert!(saved.tracks[0].solo);
+    let mut invalid = saved.clone();
+    invalid.tracks[0].path = Some("../outside.wav".into());
+    assert!(invalid.validate().is_err());
+    std::fs::write(root.join("stems/bad.wav"), b"Not a waveform").unwrap();
+    assert!(crate::audio_files::wav_frames(&root.join("stems/bad.wav")).is_err());
+}
+
+#[tokio::test]
+async fn separation_requires_installed_runtime_and_preserves_project() {
+    let temporary = tempfile::tempdir().unwrap();
+    let root = project::create_root(temporary.path(), "Missing runtime").unwrap();
+    let p = Project::new("Missing runtime".into(), "en".into(), "fr".into());
+    project::save(&root, &p).unwrap();
+    let core = Arc::new(Core {
+        session: Mutex::new(Some(project::Session::new(root.clone(), p))),
+        jobs: Mutex::new(HashMap::new()),
+        gate: Arc::new(tokio::sync::Semaphore::new(1)),
+        data_dir: temporary.path().to_path_buf(),
+    });
+    let app = tauri::test::mock_app();
+    assert!(
+        !crate::separation::status(core.clone(), app.handle().clone())
+            .await
+            .unwrap()
+            .installed
+    );
+    assert_eq!(
+        crate::separation::enqueue(core.clone(), app.handle().clone(), "cpu".into()).unwrap_err(),
+        "RUNTIME_REQUIRED"
+    );
+    assert_eq!(project::load(&root).unwrap().revision, 0);
+    assert!(core.jobs.lock().unwrap().is_empty());
+}
+
+#[tokio::test]
 async fn waveform_uses_selected_track_preserves_delay_and_reuses_cache() {
     let temporary = tempfile::tempdir().unwrap();
     let root = project::create_root(temporary.path(), "Waveform").unwrap();
@@ -80,14 +149,14 @@ async fn waveform_uses_selected_track_preserves_delay_and_reuses_cache() {
         data_dir: temporary.path().to_path_buf(),
     });
     let app = tauri::test::mock_app();
-    let tone = waveform::get(core.clone(), app.handle().clone())
+    let tone = waveform::get(core.clone(), app.handle().clone(), None)
         .await
         .unwrap()
         .unwrap();
     assert_eq!(tone.audio_stream_index, 1);
     assert!(tone.peaks[..8].iter().all(|peak| *peak < 0.001));
     assert!(tone.peaks[12..].iter().any(|peak| *peak > 0.1));
-    let cached = waveform::get(core.clone(), app.handle().clone())
+    let cached = waveform::get(core.clone(), app.handle().clone(), None)
         .await
         .unwrap()
         .unwrap();
@@ -104,7 +173,7 @@ async fn waveform_uses_selected_track_preserves_delay_and_reuses_cache() {
             .unwrap()
             .audio_stream_index = Some(0);
     }
-    let silence = waveform::get(core.clone(), app.handle().clone())
+    let silence = waveform::get(core.clone(), app.handle().clone(), None)
         .await
         .unwrap()
         .unwrap();
@@ -169,7 +238,7 @@ async fn queued_waveform_can_be_cancelled_without_blocking_project_edits() {
     });
     let app = tauri::test::mock_app();
     let permit = core.gate.clone().acquire_owned().await.unwrap();
-    let work = tauri::async_runtime::spawn(waveform::get(core.clone(), app.handle().clone()));
+    let work = tauri::async_runtime::spawn(waveform::get(core.clone(), app.handle().clone(), None));
     tokio::time::timeout(std::time::Duration::from_secs(5), async {
         loop {
             if let Some(job) = core.jobs.lock().unwrap().values().next() {
@@ -476,6 +545,7 @@ async fn job_queue_import_cancel_and_retry_preserve_the_project() {
     });
     let app = tauri::test::mock_app();
     let request = jobs::ImportRequest {
+        lightweight: true,
         path: Path::new(env!("CARGO_MANIFEST_DIR"))
             .join("../public/demo.mp4")
             .canonicalize()

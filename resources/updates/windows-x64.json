@@ -1,0 +1,11 @@
+{
+  "pub_date": "2026-10-13T14:40:57Z",
+  "version": "0.3.0",
+  "notes": "Séparation audio, lecteur optimisé, préférence GPU et mises à jour signées.",
+  "platforms": {
+    "windows-x86_64": {
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSdFFyMUJGTFp3Nkk0N2dJQjBQRDVVOG5oZk14VU1abzJ1MjRaczEzMC9LMXZSbEE0clNTcFpOUkY4S0xQb1dmNTZoNVBMSFBkQXQrSVZwMTVwd2xkMTRCZXR2UzBQYWc4PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkxOTAyMTg5CWZpbGU6QUkgRHViYmluZyBTdHVkaW9fMC4zLjBfeDY0LXNldHVwLmV4ZQl2ZXJzaW9uOjAuMy4wClVRTDFCRDlqL0RpU09DUk05TFprN3NEQUIwbGhkYXA0VEYzZFJ5L2pucCttZ3AvMnZzd1NpVXIzNmlGQ25KeUxtSERFUkVEY1M3bU9hQTFPWE5NbkJ3PT0K",
+      "url": "https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.3.0/AI-Dubbing-Studio-0.3.0-Setup.exe"
+    }
+  }
+}

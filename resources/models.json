@@ -1,1 +1,12 @@
-{"manifestVersion":1,"models":[]}
+[
+  {
+    "id": "bandit-v2-multilingual",
+    "providerId": "bandit",
+    "revision": "zenodo-12701995",
+    "url": "https://zenodo.org/api/records/12701995/files/checkpoint-multi.ckpt/content",
+    "sha256": "abcfccf65446752a057f4a302c941479a54b7560ebf8d7bca039d2ea98e64cfc",
+    "size": 446680129,
+    "license": "CC-BY-SA-4.0",
+    "source": "https://zenodo.org/records/12701995"
+  }
+]

@@ -23,11 +23,20 @@ foreach ($name in @('README.md', 'README.fr.md', 'VALIDATION.md', 'THIRD-PARTY-N
     Copy-Item -LiteralPath (Join-Path $repoRoot $name) -Destination (Join-Path $portable $name)
 }
 Copy-Item -LiteralPath (Join-Path $repoRoot 'docs') -Destination (Join-Path $portable 'docs') -Recurse
+foreach ($resource in $config.bundle.resources.PSObject.Properties) {
+    if (-not $resource.Value.StartsWith('workers/')) { continue }
+    $source = Join-Path (Join-Path $repoRoot 'src-tauri') $resource.Name
+    $destination = Join-Path $portable $resource.Value
+    New-Item -ItemType Directory -Force -Path (Split-Path -Parent $destination) | Out-Null
+    Copy-Item -LiteralPath $source -Destination $destination
+}
 $setupName = "AI-Dubbing-Studio-$version-Setup.exe"
 $portableName = 'AI-Dubbing-Studio-Windows-Portable.zip'
 Copy-Item -LiteralPath $InstallerPath -Destination (Join-Path $OutputDirectory $setupName) -Force
+if (Test-Path -LiteralPath "$InstallerPath.sig") { Copy-Item -LiteralPath "$InstallerPath.sig" -Destination (Join-Path $OutputDirectory "$setupName.sig") -Force }
 Compress-Archive -LiteralPath $portable -DestinationPath (Join-Path $OutputDirectory $portableName) -Force
-$hashLines = foreach ($name in @($setupName, $portableName)) {
+$hashLines = foreach ($name in @($setupName, $portableName, "$setupName.sig")) {
+    if (-not (Test-Path -LiteralPath (Join-Path $OutputDirectory $name))) { continue }
     "$((Get-FileHash -LiteralPath (Join-Path $OutputDirectory $name) -Algorithm SHA256).Hash.ToLowerInvariant())  $name"
 }
 [IO.File]::WriteAllLines((Join-Path ([IO.Path]::GetFullPath($OutputDirectory)) 'SHA256SUMS.txt'), $hashLines, [Text.UTF8Encoding]::new($false))

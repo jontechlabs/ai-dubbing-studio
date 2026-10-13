@@ -71,6 +71,16 @@ pub struct Track {
     pub mute: bool,
     pub solo: bool,
     pub gain: f64,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub role: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub path: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub duration_ms: Option<u64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub source_path: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub generation_id: Option<String>,
 }
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Languages {
@@ -119,7 +129,7 @@ impl Project {
         }
     }
     pub fn validate(&self) -> Result<(), String> {
-        if self.format_version != 1 {
+        if ![1, 2].contains(&self.format_version) {
             return Err("UNSUPPORTED_PROJECT_VERSION".into());
         }
         if self.id.is_empty() || self.name.trim().is_empty() {
@@ -165,6 +175,21 @@ impl Project {
             .any(|t| !t.gain.is_finite() || !(0.0..=2.0).contains(&t.gain))
         {
             return Err("INVALID_PROJECT".into());
+        }
+        for track in &self.tracks {
+            if let Some(path) = &track.path {
+                valid_relative(path)?;
+            }
+            if track.kind == "audio"
+                && (track.path.is_none()
+                    || track
+                        .role
+                        .as_deref()
+                        .is_none_or(|role| !["speech", "music", "sfx"].contains(&role))
+                    || track.duration_ms.is_none_or(|duration| duration == 0))
+            {
+                return Err("INVALID_PROJECT".into());
+            }
         }
         Ok(())
     }

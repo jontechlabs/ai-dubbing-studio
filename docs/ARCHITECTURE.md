@@ -28,7 +28,7 @@ Example.dubproject/
 
 `project.json` contains format/app versions, project ID and revision, timestamps, languages, media metadata, source/target cues and stable dialogue associations. Cue timings are integer milliseconds. Asset paths are relative and validated against traversal. Source/target cue documents and dialogues are separate so subtitle pairing can preserve their identities.
 
-A dialogue has source and target cue references, a nullable independent `ttsText`, warnings, generation-selection IDs and a nullable character ID. Character/generation collections and provider interfaces reserve future functionality. They do not implement AI generation in Phase 2.
+A dialogue has source and target cue references, a nullable independent `ttsText`, warnings, generation-selection IDs and a nullable character ID. Character/generation collections and provider interfaces reserve future functionality. They do not implement voice generation in Phase 3.
 
 ## Saving and recovery
 
@@ -54,7 +54,7 @@ The dialogue list is virtualized. The player uses the browser/WebView media elem
 
 ## Future engines
 
-`src/domain/providers.ts` defines reserved provider capabilities, model metadata and TTS requests/results. `schemas/worker-protocol.schema.json` and `schemas/model-manifest.schema.json` are preliminary contracts. The initial model catalogue is empty. Future workers, installers, hardware backends and model runtimes are not present in this release.
+`src/domain/providers.ts` defines reserved provider capabilities, model metadata and TTS requests/results. `schemas/worker-protocol.schema.json` and `schemas/model-manifest.schema.json` are preliminary contracts. The model catalogue includes the pinned Bandit checkpoint. TTS workers, general model management and additional inference backends remain future work; Bandit has the dedicated runtime described below.
 
 ## Phase 2 timing and waveform
 
@@ -63,3 +63,15 @@ The timeline renders actual source/target cues rather than the shared dialogue b
 `src/domain/alignment.ts` estimates an affine timing transform from sampled start/end differences, tests monotonic associations (one-to-one or one-to-up-to-three), and refines drift using independent matches. Search is limited to offsets within two minutes and candidate drift between −10% and +10%. At least three matched groups and 60% cue coverage are required; similar competing transforms are refused. These criteria measure timing evidence, not semantic certainty. The UI computes proposals in a Web Worker, shows examples and metrics, then applies only confirmed groups to the reference boundaries; unmatched timings remain untouched. Revision checks reject stale previews. Text/cue IDs and project generation assets are preserved; regrouped dialogue metadata is marked for review. TTS overrides are carried once when old groups are combined.
 
 `src-tauri/src/waveform.rs` decodes the chosen original audio stream through FFmpeg into mono 8 kHz PCM. It preserves the common input timebase and inserts initial silence where needed. A streaming peak accumulator limits the cache to roughly 200,000 bins, with a minimum bin width of 20 ms. The key includes path, file size/modification time, stream and cache version. Processing is serialized with other media jobs but does not block project editing. Cancellation drops the subprocess; failed/partial computations do not become cache entries. The canvas draws only the visible viewport and normalizes display amplitude without changing stored peaks. Browser preview uses Web Audio instead of FFmpeg.
+
+## Phase 3
+
+The Bandit model implementation is vendored unchanged, with Apache-2.0 license and upstream revision. A Python adapter checks the model SHA-256, loads weights with `weights_only=True`, processes 8-second stereo windows as independent mono channels, and performs normalized overlap/add with bounded buffers. PCM16 48 kHz stereo outputs preserve channel placement and sample count. CPU and PyTorch CUDA devices are supported; AMD/Intel rendering support does not imply CUDA inference support.
+
+Rust downloads verified Python/pip/model artifacts into application data, installs pinned inference dependencies separately from the system Python, orchestrates extraction and the worker, and commits three validated WAVs only on success. Pause/resume travels through worker stdin and takes effect between inference windows. Cancellation kills the worker and discards that attempt’s outputs; failed attempts preserve existing tracks. Retry records include project/media/stream/device identity. Results retain provenance and prior files. Jobs cannot commit to a replaced media/project. Frontend pending edits are rebased over job results so last unsaved keystrokes and gains survive.
+
+Format 1 remains supported. A project gains format 2 when audio track asset references are added; old applications reject it. Paths remain project-relative and validated. A Web Audio graph controls track/master gain and synchronizes stem elements with the video. Display-only timeline data is memoized and uses cue/dialogue maps; the playhead moves through a compositor transform rather than regenerating all cue blocks. Subtitle overlay lookup uses an interval index.
+
+Windows rendering preference is scoped to the current application executable in UserGpuPreferences, preserving unrelated fields. The effective WebView2/decoder adapter remains controlled by Windows and drivers. The UI links to Windows graphics settings and distinguishes renderer preference from Python CUDA device choice.
+
+Tauri’s updater uses an embedded public key and HTTPS static manifest. It verifies artifact signatures before exposing installation, flushes project edits, and restarts through the NSIS updater. The signing private key is kept outside Git and provided to release builds through an Actions secret. It is separate from Windows Authenticode signing.

@@ -1,7 +1,7 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "AI Dubbing Studio",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "identifier": "studio.local.dubbing",
   "build": {
     "beforeDevCommand": "pnpm dev",
@@ -35,7 +35,21 @@
     ],
     "resources": {
       "../public/demo.mp4": "demo/demo.mp4",
-      "binaries/": "binaries/"
+      "binaries/": "binaries/",
+      "../workers/bandit-model.json": "workers/bandit-model.json",
+      "../workers/bandit_worker.py": "workers/bandit_worker.py",
+      "../workers/runtime-requirements.txt": "workers/runtime-requirements.txt",
+      "../workers/vendor/bandit/LICENSE": "workers/vendor/bandit/LICENSE",
+      "../workers/vendor/bandit/UPSTREAM.json": "workers/vendor/bandit/UPSTREAM.json",
+      "../workers/vendor/bandit/__init__.py": "workers/vendor/bandit/__init__.py",
+      "../workers/vendor/bandit/models/base.py": "workers/vendor/bandit/models/base.py",
+      "../workers/vendor/bandit/models/__init__.py": "workers/vendor/bandit/models/__init__.py",
+      "../workers/vendor/bandit/models/bandit/bandit.py": "workers/vendor/bandit/models/bandit/bandit.py",
+      "../workers/vendor/bandit/models/bandit/bandsplit.py": "workers/vendor/bandit/models/bandit/bandsplit.py",
+      "../workers/vendor/bandit/models/bandit/film.py": "workers/vendor/bandit/models/bandit/film.py",
+      "../workers/vendor/bandit/models/bandit/maskestim.py": "workers/vendor/bandit/models/bandit/maskestim.py",
+      "../workers/vendor/bandit/models/bandit/tfmodel.py": "workers/vendor/bandit/models/bandit/tfmodel.py",
+      "../workers/vendor/bandit/models/bandit/utils.py": "workers/vendor/bandit/models/bandit/utils.py"
     },
     "icon": [
       "icons/icon.ico",
@@ -49,6 +63,18 @@
           "French",
           "English"
         ]
+      }
+    },
+    "createUpdaterArtifacts": true
+  },
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEU4NzBCNjE0NDFCRDQyNkQKUldSdFFyMUJGTFp3Nk5VekxHalhJRWlOYzJUVjRrL3U0VmplZFBtN2FveENwSGYyelNwdWMvV2kK",
+      "endpoints": [
+        "https://raw.githubusercontent.com/jontechlabs/ai-dubbing-studio/main/resources/updates/windows-x64.json"
+      ],
+      "windows": {
+        "installMode": "passive"
       }
     }
   }

@@ -1,12 +1,12 @@
-# AI Dubbing Studio — phases 1–2
+# AI Dubbing Studio — phases 1–3
 
-[Version anglaise et captures de l’interface](README.md) · [Téléchargements Windows](https://github.com/jontechlabs/ai-dubbing-studio/releases/tag/v0.2.0)
+[Version anglaise et captures de l’interface](README.md) · [Téléchargements Windows](https://github.com/jontechlabs/ai-dubbing-studio/releases/tag/v0.3.0)
 
 Studio desktop local de travail texte, voix et vidéo. Tauri 2, React, TypeScript strict et Rust.
 
 ## Utiliser le studio
 
-La version Windows contient FFmpeg et FFprobe. Aucun modèle IA n'est installé ou exécuté dans cette phase.
+La version Windows contient FFmpeg et FFprobe. Bandit v2 Multilingual est disponible après installation optionnelle du runtime et du modèle depuis Audio. Les moteurs de voix et la transcription restent prévus pour les phases suivantes.
 
 1. Importer une vidéo et choisir la langue source, la langue cible et la piste audio.
 2. Choisir le dossier parent du projet. Le studio crée un dossier `Nom.dubproject` et copie le média.
@@ -33,14 +33,20 @@ L'exemple fourni utilise une vidéo et un son synthétiques. Il ne contient pas 
 - Autosave, sauvegarde précédente, récupération d'une écriture interrompue, undo/redo en session.
 - Jobs d'import annulables, logs, relance et détection des jobs interrompus au redémarrage. La zone Traitements s’ouvre automatiquement à la création ; le lecteur affiche un chargement jusqu’à la fin de l’import et la disponibilité de la première image.
 - Interface FR/EN, thème sombre/clair et diagnostic exportable.
+- Bandit v2 Multilingual local : voix, musique et effets, choix CPU/CUDA détecté, pause/reprise/annulation et relance.
+- Mixeur mute/solo/volume, lecture synchrone et export WAV par piste.
+- Aperçu fluide 720p/30 fps, images clés rapprochées et suppression du recalcul des blocs à chaque image.
+- Préférence GPU Windows, compteurs de lecture et mises à jour signées depuis Paramètres.
 
-La phase 2 est disponible. Le calage compare les timings et refuse les propositions ambiguës ; les blocs non associés restent inchangés. Il ne recale pas encore les sous-titres sur les voix. Consultez le [guide détaillé de la phase 2](docs/PHASE-2.md). La séparation, la transcription et les voix IA sont prévues dans les phases suivantes. Le conteneur MKV et les exports audio finaux arriveront en phase 7.
+La phase 2 est disponible. Le calage compare les timings et refuse les propositions ambiguës ; les blocs non associés restent inchangés. Il ne recale pas encore les sous-titres sur les voix. Consultez le [guide détaillé de la phase 2](docs/PHASE-2.md). La séparation est disponible en phase 3 ; la transcription et les voix IA restent prévues dans les phases suivantes. Le conteneur MKV et les exports audio finaux arriveront en phase 7.
 
 ![Studio de la phase 2](docs/screenshots/studio.png)
 
 ![Aperçu du calage automatique](docs/screenshots/alignment.png)
 
 Captures de l’interface réelle en aperçu navigateur, avec média synthétique.
+
+Consultez le [guide de la phase 3](docs/PHASE-3.md). Il reste quatre phases : personnages et références (4), premier moteur de voix (5), autres moteurs/gestion des modèles (6), mix et export MKV final (7).
 
 ## Raccourcis
 
@@ -78,7 +84,7 @@ Les tests de parcours utilisent Chrome et gèrent automatiquement leur serveur V
 
 `project.json` est la source de vérité. Les chemins des assets sont relatifs, les timings en millisecondes entières et les identifiants stables. Les fichiers vidéo d'origine ne sont pas modifiés. Le projet contient les documents source/cible et leurs associations. Un changement de traduction ne modifie pas automatiquement une surcharge TTS.
 
-La version initiale du format est 1. Les formats inconnus sont refusés sans réécriture. Les migrations de futurs formats seront ajoutées explicitement. `recovery/pending.json` permet de reprendre une sauvegarde interrompue ; `recovery/previous.json` conserve la version précédente. Une génération future restera un fichier distinct avec sa provenance et ne sera pas écrasée par un job.
+Les anciens projets au format 1 restent lisibles. L’ajout de stems utilise le format 2, que les anciennes versions de l’application refusent. Les formats inconnus sont refusés sans réécriture. Les migrations de futurs formats seront ajoutées explicitement. `recovery/pending.json` permet de reprendre une sauvegarde interrompue ; `recovery/previous.json` conserve la version précédente. Une génération future restera un fichier distinct avec sa provenance et ne sera pas écrasée par un job.
 
 Les projets déplacés s'ouvrent depuis leur nouveau dossier. Les médias et caches doivent rester dans le dossier projet. La modification concurrente par deux instances n'est pas prise en charge dans cette version.
 

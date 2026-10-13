@@ -17,6 +17,8 @@ import type { Job, Project } from '../domain/types';
 import type { Transport } from '../hooks/useTransport';
 import { formatTime } from '../domain/time';
 import { IconButton } from './IconButton';
+import { useMemo } from 'react';
+import { cueIndex } from '../domain/cueIndex';
 
 export function Player({
   project,
@@ -40,8 +42,8 @@ export function Player({
   onJobs: () => void;
 }) {
   const { t } = useTranslation();
-  const activeText = project?.targetCues
-    .filter((cue) => transport.time >= cue.startMs && transport.time < cue.endMs)
+  const activeCues = useMemo(() => cueIndex(project?.targetCues ?? []), [project?.targetCues]);
+  const activeText = activeCues(transport.time)
     .map((cue) => cue.text.replace(/<[^>]*>/g, ''))
     .join('\n');
   const contentRef = transport.videoRef;
@@ -64,6 +66,7 @@ export function Player({
         {transport.url ? (
           <>
             <video
+              crossOrigin="anonymous"
               key={project?.media?.id}
               ref={contentRef}
               src={transport.url}

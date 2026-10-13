@@ -50,7 +50,7 @@ powershell -NoProfile -File scripts/package-windows.ps1
 
 Tauri outputs its executable in `src-tauri/target/release/` and NSIS installer in `src-tauri/target/release/bundle/nsis/`. The packaging script validates its inputs and creates:
 
-- `artifacts/AI-Dubbing-Studio-0.2.0-Setup.exe`
+- `artifacts/AI-Dubbing-Studio-0.3.0-Setup.exe`
 - `artifacts/AI-Dubbing-Studio-Windows-Portable.zip`
 - `artifacts/SHA256SUMS.txt`
 
@@ -67,3 +67,9 @@ The current release was cross-built from Ubuntu/WSL using `cargo-xwin` for `x86_
 ## Other platforms
 
 The source uses Tauri's platform abstractions, but this release publishes **Windows x64 only**. Linux/macOS GUI builds and installers have not been qualified. Windows FFmpeg binaries cannot be reused there; provide native tools. The current bundle target is NSIS and must be changed for platform-appropriate packaging. No ARM build is provided.
+
+## Updater signing
+
+Release builds require `TAURI_SIGNING_PRIVATE_KEY` (key file path or content) and `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` (empty for the configured key). The public key is embedded in Tauri configuration; never commit the private key. The Windows workflow reads the repository Actions secret. Packages include `.exe.sig`. `scripts/create-update-manifest.ps1` produces a manifest using the distributed installer signature; publish its versioned installer/signature assets before updating the endpoint in `resources/updates/windows-x64.json`.
+
+The portable package copies only declared worker resources, excluding Python development caches. Models and inference libraries are installed later from the interface and are not bundled in the setup. The Bandit code license and provenance are packaged beside the adapter.

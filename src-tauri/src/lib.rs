@@ -1,10 +1,13 @@
+mod audio_files;
 mod domain;
 mod embedded;
+mod graphics;
 #[cfg(test)]
 mod integration_tests;
 mod jobs;
 mod media;
 mod project;
+mod separation;
 mod smoke;
 mod subtitles;
 mod waveform;
@@ -196,6 +199,7 @@ fn import_media(
     let session = core.session.lock().map_err(io_error)?;
     let s = session.as_ref().ok_or("NO_PROJECT")?;
     let request = ImportRequest {
+        lightweight: true,
         path: source,
         root: s.root.clone(),
         project_id: s.project.id.clone(),
@@ -206,12 +210,17 @@ fn import_media(
     Ok(jobs::enqueue(core.inner().clone(), app, request))
 }
 #[tauri::command]
-fn prepare_proxy(app: tauri::AppHandle, core: State<'_, Shared>) -> Result<String, String> {
+fn prepare_proxy(
+    app: tauri::AppHandle,
+    core: State<'_, Shared>,
+    lightweight: Option<bool>,
+) -> Result<String, String> {
     ensure_idle(&core)?;
     let session = core.session.lock().map_err(io_error)?;
     let s = session.as_ref().ok_or("NO_PROJECT")?;
     let media = s.project.media.clone().ok_or("MEDIA_MISSING")?;
     let request = ImportRequest {
+        lightweight: lightweight.unwrap_or(true),
         path: project::asset(&s.root, &media.path)?,
         root: s.root.clone(),
         project_id: s.project.id.clone(),
@@ -266,8 +275,9 @@ fn media_path(core: State<'_, Shared>) -> Result<String, String> {
 async fn get_waveform(
     app: tauri::AppHandle,
     core: State<'_, Shared>,
+    track_id: Option<String>,
 ) -> Result<Option<waveform::Waveform>, String> {
-    waveform::get(core.inner().clone(), app).await
+    waveform::get(core.inner().clone(), app, track_id.as_deref()).await
 }
 #[tauri::command]
 async fn export_subtitles(
@@ -304,6 +314,108 @@ async fn export_subtitles(
 #[tauri::command]
 fn environment(app: tauri::AppHandle) -> serde_json::Value {
     serde_json::json!({ "platform": std::env::consts::OS, "ffmpeg": media::binary(&app, "ffmpeg").is_ok(), "ffprobe": media::binary(&app, "ffprobe").is_ok() })
+}
+#[tauri::command]
+async fn graphics_info() -> Result<graphics::GraphicsInfo, String> {
+    graphics::info().await
+}
+#[tauri::command]
+fn set_graphics_preference(choice: String) -> Result<(), String> {
+    graphics::set(&choice)
+}
+#[tauri::command]
+fn open_graphics_settings() -> Result<(), String> {
+    graphics::open_settings()
+}
+#[tauri::command]
+async fn separation_status(
+    app: tauri::AppHandle,
+    core: State<'_, Shared>,
+) -> Result<separation::Status, String> {
+    separation::status(core.inner().clone(), app).await
+}
+#[tauri::command]
+fn install_separation_runtime(
+    app: tauri::AppHandle,
+    core: State<'_, Shared>,
+    cuda: bool,
+) -> Result<String, String> {
+    separation::install(core.inner().clone(), app, cuda)
+}
+#[tauri::command]
+fn separate_audio(
+    app: tauri::AppHandle,
+    core: State<'_, Shared>,
+    device: String,
+) -> Result<String, String> {
+    ensure_idle(&core)?;
+    if core.jobs.lock().map_err(io_error)?.values().any(|job| {
+        job.saved.record.kind == "separation"
+            && ["running", "queued"].contains(&job.saved.record.status.as_str())
+    }) {
+        return Err("BUSY".into());
+    }
+    separation::enqueue(core.inner().clone(), app, device)
+}
+#[tauri::command]
+fn audio_paths(
+    core: State<'_, Shared>,
+) -> Result<std::collections::HashMap<String, String>, String> {
+    let session = core.session.lock().map_err(io_error)?;
+    let s = session.as_ref().ok_or("NO_PROJECT")?;
+    s.project
+        .tracks
+        .iter()
+        .filter(|track| track.kind == "audio")
+        .map(|track| {
+            Ok((
+                track.id.clone(),
+                project::asset(&s.root, track.path.as_deref().ok_or("INVALID_PATH")?)?
+                    .to_string_lossy()
+                    .into_owned(),
+            ))
+        })
+        .collect()
+}
+#[tauri::command]
+async fn export_audio_track(
+    core: State<'_, Shared>,
+    id: String,
+    path: String,
+) -> Result<(), String> {
+    let (input, root) = {
+        let session = core.session.lock().map_err(io_error)?;
+        let s = session.as_ref().ok_or("NO_PROJECT")?;
+        let track = s
+            .project
+            .tracks
+            .iter()
+            .find(|track| track.id == id && track.kind == "audio")
+            .ok_or("INVALID_PROJECT")?;
+        (
+            project::asset(&s.root, track.path.as_deref().ok_or("INVALID_PATH")?)?,
+            s.root.clone(),
+        )
+    };
+    let output = PathBuf::from(path);
+    let parent = output
+        .parent()
+        .ok_or("INVALID_PATH")?
+        .canonicalize()
+        .map_err(io_error)?;
+    if parent.starts_with(&root) && !parent.starts_with(root.join("exports")) {
+        return Err("INVALID_PATH".into());
+    }
+    tauri::async_runtime::spawn_blocking(move || {
+        let mut input = std::fs::File::open(input).map_err(io_error)?;
+        let mut temporary = tempfile::NamedTempFile::new_in(parent).map_err(io_error)?;
+        std::io::copy(&mut input, &mut temporary).map_err(io_error)?;
+        temporary.as_file().sync_all().map_err(io_error)?;
+        temporary.persist(output).map_err(io_error)?;
+        Ok(())
+    })
+    .await
+    .map_err(io_error)?
 }
 #[tauri::command]
 async fn export_report(
@@ -352,8 +464,57 @@ fn cancel_job(core: State<'_, Shared>, id: String) -> Result<(), String> {
     Ok(())
 }
 #[tauri::command]
+fn pause_job(
+    app: tauri::AppHandle,
+    core: State<'_, Shared>,
+    id: String,
+    paused: bool,
+) -> Result<(), String> {
+    {
+        let jobs = core.jobs.lock().map_err(io_error)?;
+        let job = jobs.get(&id).ok_or("INVALID_PROJECT")?;
+        if job.saved.record.kind != "separation"
+            || !["running", "paused"].contains(&job.saved.record.status.as_str())
+        {
+            return Err("INVALID_PROJECT".into());
+        }
+        job.paused.store(paused, Ordering::Relaxed);
+    }
+    jobs::update(&core, &app, &id, |job| {
+        job.status = if paused { "paused" } else { "running" }.into()
+    });
+    Ok(())
+}
+#[tauri::command]
 fn retry_job(app: tauri::AppHandle, core: State<'_, Shared>, id: String) -> Result<String, String> {
     ensure_idle(&core)?;
+    let record = core
+        .jobs
+        .lock()
+        .map_err(io_error)?
+        .get(&id)
+        .ok_or("INVALID_PROJECT")?
+        .saved
+        .clone();
+    if let Some(cuda) = record.runtime_cuda {
+        return separation::install(core.inner().clone(), app, cuda);
+    }
+    if let Some(request) = record.separation {
+        {
+            let session = core.session.lock().map_err(io_error)?;
+            let s = session.as_ref().ok_or("NO_PROJECT")?;
+            if s.project.id != request.project_id
+                || s.root != request.root
+                || s.project.media.as_ref().is_none_or(|media| {
+                    media.path != request.source_path
+                        || media.audio_stream_index != Some(request.audio_index)
+                })
+            {
+                return Err("STALE_REVISION".into());
+            }
+        }
+        return separation::enqueue(core.inner().clone(), app, request.device);
+    }
     let request = core
         .jobs
         .lock()
@@ -421,6 +582,7 @@ pub fn run() {
     }
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_updater::Builder::new().build())
         .setup(move |app| {
             let data_dir = match &test_data {
                 Some(path) => path.clone(),
@@ -431,7 +593,7 @@ pub fn run() {
             if let Ok(bytes) = std::fs::read(data_dir.join("jobs.json")) {
                 if let Ok(records) = serde_json::from_slice::<Vec<PersistedJob>>(&bytes) {
                     for mut saved in records {
-                        if ["queued", "running"].contains(&saved.record.status.as_str()) {
+                        if ["queued", "running", "paused"].contains(&saved.record.status.as_str()) {
                             saved.record.status = "interrupted".into();
                         }
                         restored.insert(
@@ -439,6 +601,7 @@ pub fn run() {
                             Control {
                                 saved,
                                 cancel: Arc::new(AtomicBool::new(false)),
+                                paused: Arc::new(AtomicBool::new(false)),
                             },
                         );
                     }
@@ -468,8 +631,17 @@ pub fn run() {
             export_subtitles,
             export_report,
             environment,
+            graphics_info,
+            set_graphics_preference,
+            open_graphics_settings,
+            separation_status,
+            install_separation_runtime,
+            separate_audio,
+            audio_paths,
+            export_audio_track,
             list_jobs,
             cancel_job,
+            pause_job,
             retry_job,
             load_demo
         ])
