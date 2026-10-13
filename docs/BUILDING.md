@@ -37,6 +37,8 @@ cargo fmt --manifest-path src-tauri/Cargo.toml --check
 
 The browser scenarios use installed Google Chrome and manage their Vite server automatically. Windows Rust integration tests use the prepared FFmpeg tools; Linux Rust tests use `ffmpeg` and `ffprobe` on PATH. Test reports/screenshots stay in ignored directories.
 
+Windows MSVC artifacts explicitly embed the Common Controls v6 manifest, including the Rust test executable. This addresses the upstream [Tauri test-manifest issue](https://github.com/tauri-apps/tauri/issues/13419) that can cause `STATUS_ENTRYPOINT_NOT_FOUND` before tests start. The initial v0.1.0 Windows workflow encountered that issue; v0.1.1 includes the build correction.
+
 The GitHub workflow runs the checks on Windows, builds an NSIS installer and uploads unsigned packages as workflow artifacts. It does not automatically publish a release or sign binaries. CI success does not qualify installation or native GUI playback.
 
 ## Windows packages
@@ -48,7 +50,7 @@ powershell -NoProfile -File scripts/package-windows.ps1
 
 Tauri outputs its executable in `src-tauri/target/release/` and NSIS installer in `src-tauri/target/release/bundle/nsis/`. The packaging script validates its inputs and creates:
 
-- `artifacts/AI-Dubbing-Studio-0.1.0-Setup.exe`
+- `artifacts/AI-Dubbing-Studio-0.1.1-Setup.exe`
 - `artifacts/AI-Dubbing-Studio-Windows-Portable.zip`
 - `artifacts/SHA256SUMS.txt`
 

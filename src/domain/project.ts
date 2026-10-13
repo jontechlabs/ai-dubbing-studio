@@ -5,7 +5,7 @@ export function blankProject(name = 'Untitled', source = 'ja', target = 'fr'): P
   const now = new Date().toISOString();
   return {
     formatVersion: 1,
-    appVersion: '0.1.0',
+    appVersion: '0.1.1',
     id: crypto.randomUUID(),
     name,
     revision: 0,

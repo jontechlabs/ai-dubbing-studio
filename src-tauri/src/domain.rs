@@ -101,7 +101,7 @@ impl Project {
     pub fn new(name: String, source: String, target: String) -> Self {
         Self {
             format_version: 1,
-            app_version: "0.1.0".into(),
+            app_version: env!("CARGO_PKG_VERSION").into(),
             id: id(),
             name,
             revision: 0,
