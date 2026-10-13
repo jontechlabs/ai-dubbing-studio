@@ -8,6 +8,7 @@ export function useProject() {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [saveState, setSaveState] = useState('saved');
   const [error, setError] = useState<string | null>(null);
+  const [applying, setApplying] = useState(false);
   const latest = useRef<Project | null>(null);
   const revision = useRef(0);
   const version = useRef(0);
@@ -55,7 +56,12 @@ export function useProject() {
   const edit = useCallback(
     (update: (value: Project) => Project) => {
       if (!latest.current) return;
-      latest.current = update(latest.current);
+      try {
+        latest.current = update(latest.current);
+      } catch (error) {
+        setError(String(error));
+        return;
+      }
       version.current += 1;
       setProject(latest.current);
       setSaveState('unsaved');
@@ -141,5 +147,43 @@ export function useProject() {
     window.addEventListener('beforeunload', guard);
     return () => window.removeEventListener('beforeunload', guard);
   }, []);
-  return { project, jobs, saveState, error, setError, load, edit, run, save };
+  const snapshot = useCallback(async () => {
+    await save();
+    if (!latest.current || savedVersion.current !== version.current) throw new Error('SAVE_FAILED');
+    return structuredClone(latest.current);
+  }, [save]);
+  const applySnapshot = useCallback(
+    async (before: Project, after: Project) => {
+      setApplying(true);
+      try {
+        await save();
+        if (
+          !latest.current ||
+          latest.current.id !== before.id ||
+          revision.current !== before.revision ||
+          savedVersion.current !== version.current
+        )
+          throw new Error('STALE_REVISION');
+        const result = await bridge.replaceProject(after, before.revision);
+        load(result);
+      } finally {
+        setApplying(false);
+      }
+    },
+    [load, save],
+  );
+  return {
+    project,
+    jobs,
+    saveState,
+    error,
+    setError,
+    load,
+    edit,
+    run,
+    save,
+    snapshot,
+    applySnapshot,
+    applying,
+  };
 }

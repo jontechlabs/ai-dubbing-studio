@@ -7,6 +7,7 @@ mod media;
 mod project;
 mod smoke;
 mod subtitles;
+mod waveform;
 pub fn smoke_test(path: &std::path::Path) -> Result<(), String> {
     smoke::run(path)
 }
@@ -262,6 +263,13 @@ fn media_path(core: State<'_, Shared>) -> Result<String, String> {
     .map(|p| p.to_string_lossy().into_owned())
 }
 #[tauri::command]
+async fn get_waveform(
+    app: tauri::AppHandle,
+    core: State<'_, Shared>,
+) -> Result<Option<waveform::Waveform>, String> {
+    waveform::get(core.inner().clone(), app).await
+}
+#[tauri::command]
 async fn export_subtitles(
     core: State<'_, Shared>,
     path: String,
@@ -456,6 +464,7 @@ pub fn run() {
             import_subtitles,
             import_embedded_subtitles,
             media_path,
+            get_waveform,
             export_subtitles,
             export_report,
             environment,

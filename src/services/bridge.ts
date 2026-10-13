@@ -5,6 +5,7 @@ import { blankProject, demoProject, validateProject } from '../domain/project';
 import { alignCues, exportSrt, parseSrt, reconcileDialogues } from '../domain/subtitles';
 import type { EnvironmentInfo, Job, MediaInfo, Project } from '../domain/types';
 import { browserStore, downloadText, pickBrowserFile } from './browserStore';
+import { audioPeaks, type Waveform } from '../domain/waveform';
 
 export const native = isTauri();
 const commandErrors: string[] = [];
@@ -197,6 +198,24 @@ export async function mediaUrl(project: Project): Promise<string | null> {
     return playbackUrl;
   }
   return project.media.path === 'demo.mp4' ? '/demo.mp4' : null;
+}
+export async function waveform(project: Project): Promise<Waveform | null> {
+  if (native) return invoke('get_waveform');
+  const blob = mediaBlob;
+  const bytes = blob
+    ? await blob.arrayBuffer()
+    : project.media?.path === 'demo.mp4'
+      ? await (await fetch('/demo.mp4')).arrayBuffer()
+      : null;
+  if (!bytes) return null;
+  const context = new OfflineAudioContext(1, 1, 8000);
+  const audio = await context.decodeAudioData(bytes);
+  const mono = new Float32Array(audio.length);
+  for (let channel = 0; channel < audio.numberOfChannels; channel++) {
+    const samples = audio.getChannelData(channel);
+    for (let i = 0; i < mono.length; i++) mono[i] += samples[i] / audio.numberOfChannels;
+  }
+  return audioPeaks(mono, audio.sampleRate);
 }
 export async function importEmbeddedSubtitles(role: 'source' | 'target', streamIndex: number) {
   if (!native) throw new Error('DESKTOP_REQUIRED');

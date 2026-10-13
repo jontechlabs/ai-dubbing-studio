@@ -20,7 +20,7 @@ flowchart LR
 Example.dubproject/
   project.json
   media/                 imported original copy
-  cache/                 playback proxies
+  cache/                 playback proxies and waveform peak caches
   recovery/
     previous.json        previous valid save
     pending.json         transient interrupted-save snapshot
@@ -28,7 +28,7 @@ Example.dubproject/
 
 `project.json` contains format/app versions, project ID and revision, timestamps, languages, media metadata, source/target cues and stable dialogue associations. Cue timings are integer milliseconds. Asset paths are relative and validated against traversal. Source/target cue documents and dialogues are separate so subtitle pairing can preserve their identities.
 
-A dialogue has source and target cue references, a nullable independent `ttsText`, warnings, generation-selection IDs and a nullable character ID. Character/generation collections and provider interfaces reserve future functionality. They do not implement AI generation in Phase 1.
+A dialogue has source and target cue references, a nullable independent `ttsText`, warnings, generation-selection IDs and a nullable character ID. Character/generation collections and provider interfaces reserve future functionality. They do not implement AI generation in Phase 2.
 
 ## Saving and recovery
 
@@ -55,3 +55,11 @@ The dialogue list is virtualized. The player uses the browser/WebView media elem
 ## Future engines
 
 `src/domain/providers.ts` defines reserved provider capabilities, model metadata and TTS requests/results. `schemas/worker-protocol.schema.json` and `schemas/model-manifest.schema.json` are preliminary contracts. The initial model catalogue is empty. Future workers, installers, hardware backends and model runtimes are not present in this release.
+
+## Phase 2 timing and waveform
+
+The timeline renders actual source/target cues rather than the shared dialogue bounds. Pointer edits are previewed in UI state and committed once on release. Timecode edits transform each selected role’s cue group proportionally; split divides text near a grapheme/whitespace boundary and marks review, while merge creates one cue per role with joined multiline text. Existing audio-generation assets remain in the project; their per-line selection is cleared when restructuring invalidates it.
+
+`src/domain/alignment.ts` estimates an affine timing transform from sampled start/end differences, tests monotonic associations (one-to-one or one-to-up-to-three), and refines drift using independent matches. Search is limited to offsets within two minutes and candidate drift between −10% and +10%. At least three matched groups and 60% cue coverage are required; similar competing transforms are refused. These criteria measure timing evidence, not semantic certainty. The UI computes proposals in a Web Worker, shows examples and metrics, then applies only confirmed groups to the reference boundaries; unmatched timings remain untouched. Revision checks reject stale previews. Text/cue IDs and project generation assets are preserved; regrouped dialogue metadata is marked for review. TTS overrides are carried once when old groups are combined.
+
+`src-tauri/src/waveform.rs` decodes the chosen original audio stream through FFmpeg into mono 8 kHz PCM. It preserves the common input timebase and inserts initial silence where needed. A streaming peak accumulator limits the cache to roughly 200,000 bins, with a minimum bin width of 20 ms. The key includes path, file size/modification time, stream and cache version. Processing is serialized with other media jobs but does not block project editing. Cancellation drops the subprocess; failed/partial computations do not become cache entries. The canvas draws only the visible viewport and normalizes display amplitude without changing stored peaks. Browser preview uses Web Audio instead of FFmpeg.

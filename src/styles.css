@@ -830,6 +830,8 @@ h3 {
   background: var(--panel);
   border-radius: 8px;
   padding: 0 15px 13px;
+  max-height: 45%;
+  overflow-y: auto;
 }
 .empty-editor {
   height: 49px;
@@ -1089,6 +1091,134 @@ h3 {
   border: 1px solid #77748166;
   padding: 0 7px;
   text-align: left;
+  cursor: grab;
+  touch-action: none;
+}
+.cue-handle {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 6px;
+  cursor: ew-resize;
+  background: #ffffff12;
+}
+.cue-handle.start {
+  left: 0;
+}
+.cue-handle.end {
+  right: 0;
+}
+.timing-editor {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0 12px;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 10px;
+}
+.timing-editor select {
+  font-size: 10px;
+  padding: 5px;
+  max-width: 140px;
+}
+.timing-editor .text-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.timing-fields {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 7px;
+  font-size: 10px;
+}
+.timing-fields input {
+  width: 105px;
+  font-family: Consolas, monospace;
+  font-size: 10px;
+  padding: 6px;
+}
+.timing-fields input[aria-invalid='true'] {
+  border-color: var(--warning);
+}
+.cue-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+.waveform {
+  position: absolute;
+  top: 0;
+  pointer-events: none;
+  color: var(--sage);
+  display: flex;
+  align-items: center;
+  font-size: 9px;
+}
+.waveform-retry {
+  pointer-events: auto;
+  color: var(--sage);
+  font-size: 9px;
+}
+.audio .media-strip {
+  top: 2px;
+  bottom: 2px;
+  padding: 0;
+  overflow: visible;
+  border: 0;
+}
+.context-panel.wide-panel {
+  width: min(680px, 95vw);
+}
+.alignment-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin: 22px 0;
+}
+.alignment-metrics > div {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: var(--raised);
+  padding: 15px 10px;
+  border-radius: 6px;
+}
+.alignment-metrics strong {
+  font-size: 19px;
+  color: var(--accent);
+}
+.alignment-metrics span {
+  font-size: 10px;
+  color: var(--muted);
+}
+.alignment-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 15px 0;
+}
+.alignment-preview article {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  font-size: 11px;
+}
+.alignment-preview span {
+  font-family: Consolas, monospace;
+  color: var(--muted);
+}
+.alignment-preview .alignment-after {
+  color: var(--accent);
+}
+.alignment-preview small {
+  color: var(--muted);
 }
 .target .subtitle-block {
   background: #7952a855;

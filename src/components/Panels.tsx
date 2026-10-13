@@ -7,6 +7,7 @@ import type { Panel } from './Header';
 import { ImportPanel } from './ImportPanel';
 import { IconButton } from './IconButton';
 import { SubtitleImportPanel } from './SubtitleImportPanel';
+import { AlignmentPanel } from './AlignmentPanel';
 import * as bridge from '../services/bridge';
 import { downloadText } from '../services/browserStore';
 
@@ -24,6 +25,9 @@ export function Panels({
   setPadding,
   theme,
   setTheme,
+  snapshot,
+  applySnapshot,
+  busy,
 }: {
   panel: Panel;
   project: Project | null;
@@ -38,6 +42,9 @@ export function Panels({
   setPadding: (n: number) => void;
   theme: string;
   setTheme: (s: string) => void;
+  snapshot: () => Promise<Project>;
+  applySnapshot: (before: Project, after: Project) => Promise<void>;
+  busy: boolean;
 }) {
   const { t } = useTranslation();
   const title =
@@ -64,7 +71,12 @@ export function Panels({
         if (e.target === e.currentTarget) close();
       }}
     >
-      <aside className="context-panel" role="dialog" aria-modal="true" aria-label={t(title)}>
+      <aside
+        className={`context-panel ${panel === 'alignment' ? 'wide-panel' : ''}`}
+        role="dialog"
+        aria-modal="true"
+        aria-label={t(title)}
+      >
         <div className="panel-title">
           <h2>{t(title)}</h2>
           <IconButton label={t('close')} onClick={close}>
@@ -73,6 +85,14 @@ export function Panels({
         </div>
         {panel === 'import' && (
           <ImportPanel run={run} onClose={close} onStarted={showJobs} onError={onError} />
+        )}
+        {panel === 'alignment' && project && (
+          <AlignmentPanel
+            project={project}
+            snapshot={snapshot}
+            applySnapshot={applySnapshot}
+            busy={busy}
+          />
         )}
         {panel === 'subtitles' && project && (
           <SubtitleImportPanel

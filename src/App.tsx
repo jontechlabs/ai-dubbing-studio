@@ -35,10 +35,12 @@ export default function App() {
     return () => window.removeEventListener('resize', clamp);
   }, []);
   const selected = studio.project?.dialogues.find((d) => d.id === selectedId);
-  const busy = studio.jobs.some(
-    (job) =>
-      ['import', 'subtitles'].includes(job.kind) && ['queued', 'running'].includes(job.status),
-  );
+  const busy =
+    studio.applying ||
+    studio.jobs.some(
+      (job) =>
+        ['import', 'subtitles'].includes(job.kind) && ['queued', 'running'].includes(job.status),
+    );
   const transport = useTransport(studio.project, selected, padding, studio.setError);
   const { seek: seekVideo } = transport;
   const { run: runProject } = studio;
@@ -208,6 +210,7 @@ export default function App() {
               onEdit={studio.edit}
               onPlay={transport.playLine}
               busy={busy}
+              time={transport.time}
             />
           </div>
         </div>
@@ -243,6 +246,8 @@ export default function App() {
             time={transport.time}
             onSeek={transport.seek}
             onSelect={select}
+            onEdit={studio.edit}
+            busy={busy}
           />
         </div>
       </main>
@@ -278,6 +283,9 @@ export default function App() {
         setPadding={setPadding}
         theme={theme}
         setTheme={setTheme}
+        snapshot={studio.snapshot}
+        applySnapshot={studio.applySnapshot}
+        busy={busy}
       />
       {studio.error && (
         <div className="error-toast" role="alert">

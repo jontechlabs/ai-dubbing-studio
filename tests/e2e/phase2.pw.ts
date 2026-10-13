@@ -1,0 +1,73 @@
+import { test, expect } from '@playwright/test';
+import { formatTime } from '../../src/domain/time';
+
+test('automatic synchronization previews, applies, exports, persists and undoes', async ({ page }) => {
+  const errors: string[] = []; page.on('pageerror', (error) => errors.push(error.message));
+  await page.goto('/'); await page.getByRole('button', { name: 'Explorer l’exemple' }).click();
+  const starts = [1000, 5800, 13300, 21000, 29100, 41800, 55400, 73000], lengths = [1700, 2200, 3600, 1900, 2900, 1800, 4100, 2100];
+  const srt = (shift: number, text: string) => starts.map((start, i) => `${i + 1}\n${formatTime(start + shift, ',')} --> ${formatTime(start + lengths[i] + shift, ',')}\n${text} ${i}`).join('\n\n');
+  for (const [name, text] of [['SRT original', srt(0, '日本語')], ['SRT traduit', srt(2300, 'Français')]]) {
+    const chooser = page.waitForEvent('filechooser'); await page.getByRole('button', { name, exact: true }).click();
+    await (await chooser).setFiles({ name: 'timing.srt', mimeType: 'text/plain', buffer: Buffer.from(text) });
+  }
+  await page.getByRole('button', { name: 'Analyser', exact: true }).click();
+  await page.getByRole('button', { name: 'Calculer le calage' }).click();
+  await expect(page.locator('.alignment-metrics')).toContainText('100%');
+  await expect(page.locator('.alignment-metrics')).toContainText('-2.300 s');
+  await expect(page.locator('.alignment-preview').first()).toContainText('00:00:03.300');
+  await page.screenshot({ path: 'test-results/screenshots/studio-alignment.png' });
+  await page.getByRole('button', { name: 'Appliquer le calage', exact: true }).click();
+  await expect(page.getByRole('button', { name: /Calage appliqué/ })).toBeVisible();
+  await page.getByRole('button', { name: 'Fermer', exact: true }).click();
+  await expect(page.locator('.count-badge')).toHaveText('8');
+  await page.getByRole('button', { name: /Réplique 1 ·/ }).click();
+  await expect(page.getByRole('textbox', { name: 'Début', exact: true })).toHaveValue('00:00:01.000');
+  await page.getByRole('button', { name: 'Exporter', exact: true }).click();
+  const downloaded = page.waitForEvent('download'); await page.getByRole('button', { name: 'Exporter le SRT traduit' }).click();
+  const stream = await (await downloaded).createReadStream(); let output = ''; for await (const bytes of stream!) output += bytes.toString();
+  expect(output).toContain('00:00:01,000 --> 00:00:02,700'); expect(output).toContain('Français 0');
+  await page.getByRole('button', { name: 'Fermer', exact: true }).click();
+  await page.getByRole('button', { name: 'Ctrl+Z', exact: true }).click();
+  await expect(page.locator('.count-badge')).toHaveText('16');
+  await page.getByRole('button', { name: 'Ctrl+Y', exact: true }).click();
+  await expect(page.locator('.count-badge')).toHaveText('8');
+  await page.reload(); await expect(page.locator('.count-badge')).toHaveText('8');
+  await page.getByRole('button', { name: /Réplique 1 ·/ }).click();
+  await expect(page.getByRole('textbox', { name: 'Sous-titre affiché', exact: true })).toHaveValue('Français 0');
+  expect(errors).toEqual([]);
+});
+
+test('timeline edits actual cue timings, splits and merges without losing text, and renders audio', async ({ page }) => {
+  await page.goto('/'); await page.getByRole('button', { name: 'Explorer l’exemple' }).click();
+  await expect(page.locator('canvas[aria-label="Forme d’onde de la piste audio choisie"]')).toBeVisible();
+  const canvas = page.locator('.waveform canvas');
+  expect(await canvas.evaluate((element: HTMLCanvasElement) => { const data = element.getContext('2d')!.getImageData(0, 0, element.width, element.height).data; let colored = 0; for (let i = 3; i < data.length; i += 4) if (data[i]) colored++; return colored; })).toBeGreaterThan(1000);
+  await page.getByRole('button', { name: /Réplique 1 ·/ }).click();
+  await page.getByRole('textbox', { name: 'Début', exact: true }).fill('00:00:01.000');
+  await page.getByRole('textbox', { name: 'Fin', exact: true }).fill('00:00:04.000');
+  await page.getByRole('button', { name: 'Recaler', exact: true }).click();
+  await expect(page.locator('.save-indicator')).toHaveText('Sauvegardé');
+  const block = page.locator('.target .subtitle-block').first();
+  await block.focus(); await page.keyboard.press('ArrowRight');
+  await page.getByRole('combobox', { name: 'Pistes à modifier' }).selectOption('target');
+  await expect(page.getByRole('textbox', { name: 'Début', exact: true })).toHaveValue('00:00:01.100');
+  const bounds = (await block.boundingBox())!;
+  await page.mouse.move(bounds.x + bounds.width / 2, bounds.y + 8); await page.mouse.down(); await page.mouse.move(bounds.x + bounds.width / 2 + 30, bounds.y + 8, { steps: 5 }); await page.mouse.up();
+  await expect(page.getByRole('textbox', { name: 'Début', exact: true })).not.toHaveValue('00:00:01.100');
+  const handle = await block.locator('[data-edge="end"]').boundingBox();
+  const priorEnd = await page.getByRole('textbox', { name: 'Fin', exact: true }).inputValue();
+  await page.mouse.move(handle!.x + 2, handle!.y + 5); await page.mouse.down(); await page.mouse.move(handle!.x + 22, handle!.y + 5, { steps: 5 }); await page.mouse.up();
+  await expect(page.getByRole('textbox', { name: 'Fin', exact: true })).not.toHaveValue(priorEnd);
+  await page.getByRole('combobox', { name: 'Pistes à modifier' }).selectOption('both');
+  await page.locator('video').evaluate((video: HTMLVideoElement) => { video.currentTime = 2.5; video.dispatchEvent(new Event('timeupdate')); });
+  await page.getByRole('button', { name: 'Diviser', exact: true }).click();
+  await expect(page.locator('.count-badge')).toHaveText('5');
+  await page.getByRole('button', { name: 'Fusionner', exact: true }).click();
+  await expect(page.locator('.count-badge')).toHaveText('4');
+  expect(await page.locator('.editor-fields .cue-fields').last().locator('textarea').allTextContents()).toHaveLength(1);
+  await expect(page.locator('.save-indicator')).toHaveText('Sauvegardé');
+  await page.screenshot({ path: 'test-results/screenshots/studio-timeline.png' });
+  await page.reload(); await page.getByRole('button', { name: /Réplique 1 ·/ }).click();
+  const texts = await page.locator('.editor-fields .cue-fields').last().locator('textarea').evaluateAll((elements: HTMLTextAreaElement[]) => elements.map((element) => element.value).join(' '));
+  expect(texts.replace(/\s/g, '')).toBe('Chaquehistoirecommenceparunevoix.');
+});

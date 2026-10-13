@@ -1,6 +1,6 @@
-# AI Dubbing Studio — phase 1
+# AI Dubbing Studio — phases 1–2
 
-[Version anglaise et captures de l’interface](README.md) · [Téléchargements Windows](https://github.com/jontechlabs/ai-dubbing-studio/releases/tag/v0.1.2)
+[Version anglaise et captures de l’interface](README.md) · [Téléchargements Windows](https://github.com/jontechlabs/ai-dubbing-studio/releases/tag/v0.2.0)
 
 Studio desktop local de travail texte, voix et vidéo. Tauri 2, React, TypeScript strict et Rust.
 
@@ -26,12 +26,21 @@ L'exemple fourni utilise une vidéo et un son synthétiques. Il ne contient pas 
 - Associations bilingues conservatrices par timings. Les correspondances ambiguës restent distinctes et signalées.
 - Texte original, traduction et surcharge TTS séparés.
 - Lecture de réplique, boucle avec marges configurables, volume, plein écran et navigation.
-- Timeline simple, déplacement du playhead, zoom et zoom sur réplique.
+- Forme d’onde réelle de la piste audio choisie, calcul local, cache, progression et annulation.
+- Édition des timecodes pour un SRT ou les deux, déplacement et redimensionnement des blocs, aimantation avec Maj, zoom et hauteur des pistes.
+- Division à la tête de lecture et fusion avec la réplique suivante ; les SRT exportés reflètent les changements.
+- Calage automatique des deux SRT avec choix de référence, estimation de décalage/dérive, associations multiples et aperçu avant application.
 - Autosave, sauvegarde précédente, récupération d'une écriture interrompue, undo/redo en session.
 - Jobs d'import annulables, logs, relance et détection des jobs interrompus au redémarrage. La zone Traitements s’ouvre automatiquement à la création ; le lecteur affiche un chargement jusqu’à la fin de l’import et la disponibilité de la première image.
 - Interface FR/EN, thème sombre/clair et diagnostic exportable.
 
-Les waveforms, l'édition temporelle, split/merge et l'alignement manuel arriveront en phase 2. La séparation, la transcription et les voix IA sont prévues dans les phases suivantes. Le conteneur MKV et les exports audio finaux arriveront en phase 7.
+La phase 2 est disponible. Le calage compare les timings et refuse les propositions ambiguës ; les blocs non associés restent inchangés. Il ne recale pas encore les sous-titres sur les voix. Consultez le [guide détaillé de la phase 2](docs/PHASE-2.md). La séparation, la transcription et les voix IA sont prévues dans les phases suivantes. Le conteneur MKV et les exports audio finaux arriveront en phase 7.
+
+![Studio de la phase 2](docs/screenshots/studio.png)
+
+![Aperçu du calage automatique](docs/screenshots/alignment.png)
+
+Captures de l’interface réelle en aperçu navigateur, avec média synthétique.
 
 ## Raccourcis
 

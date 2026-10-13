@@ -17,7 +17,8 @@ import { useTranslation } from 'react-i18next';
 import type { Project } from '../domain/types';
 import { IconButton } from './IconButton';
 
-export type Panel = 'import' | 'audio' | 'export' | 'settings' | 'jobs' | 'subtitles' | null;
+export type Panel =
+  'import' | 'audio' | 'export' | 'settings' | 'jobs' | 'subtitles' | 'alignment' | null;
 export function Header({
   project,
   saveState,
@@ -77,7 +78,11 @@ export function Header({
           <FolderOpen size={17} />
           {t('import')}
         </button>
-        <button className="tool-button" onClick={() => onPanel('audio')} disabled={!project?.media}>
+        <button
+          className="tool-button"
+          onClick={() => onPanel('alignment')}
+          disabled={!project || busy}
+        >
           <ScanLine size={17} />
           {t('analyse')}
         </button>

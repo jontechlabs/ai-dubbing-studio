@@ -4,27 +4,27 @@ A local desktop workspace for preparing video dubbing: review bilingual subtitle
 
 Built with **Tauri 2, React, TypeScript and Rust**. English and French interface. Dark and light themes.
 
-**v0.1.2 — Phase 1 development preview.** This release provides the editing foundation. AI voice generation, transcription, translation and separation are planned; no models or AI engines run in this version.
+**v0.2.0 — Phase 2 development preview.** This release provides the editing foundation. AI voice generation, transcription, translation and separation are planned; no models or AI engines run in this version.
 
-[Windows downloads](https://github.com/jontechlabs/ai-dubbing-studio/releases/tag/v0.1.2) · [User guide](docs/GETTING-STARTED.md) · [Build instructions](docs/BUILDING.md) · [Français](README.fr.md)
+[Windows downloads](https://github.com/jontechlabs/ai-dubbing-studio/releases/tag/v0.2.0) · [User guide](docs/GETTING-STARTED.md) · [Build instructions](docs/BUILDING.md) · [Français](README.fr.md)
 
 ![Studio with bilingual dialogue, video preview, text editor and timeline](docs/screenshots/studio.png)
 
-*Actual React interface running in the browser preview with the bundled synthetic example. This is not a captured Windows Tauri window. The example has synthetic sound and does not contain generated dubbing.*
+*Actual French React interface running in the browser preview with the bundled synthetic example. This is not a captured Windows Tauri window. The example has synthetic sound and does not contain generated dubbing.*
 
 ## Windows downloads
 
 | Package | Purpose |
 | --- | --- |
-| [Windows x64 setup](https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.1.2/AI-Dubbing-Studio-0.1.2-Setup.exe) | NSIS installer for the current user, with English/French installer interface |
-| [Portable ZIP](https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.1.2/AI-Dubbing-Studio-Windows-Portable.zip) | Extract the whole folder and launch `AI Dubbing Studio.exe` |
-| [SHA-256 checksums](https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.1.2/SHA256SUMS.txt) | Verify the setup and ZIP downloads |
+| [Windows x64 setup](https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.2.0/AI-Dubbing-Studio-0.2.0-Setup.exe) | NSIS installer for the current user, with English/French installer interface |
+| [Portable ZIP](https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.2.0/AI-Dubbing-Studio-Windows-Portable.zip) | Extract the whole folder and launch `AI Dubbing Studio.exe` |
+| [SHA-256 checksums](https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.2.0/SHA256SUMS.txt) | Verify the setup and ZIP downloads |
 
-Target: **Windows 10/11 x64**, with **Microsoft Edge WebView2 Runtime**. FFmpeg and FFprobe are included. Python, CUDA and AI model downloads are not required for Phase 1. Installation may need Internet access if WebView2 is missing; local project editing does not require a cloud account.
+Target: **Windows 10/11 x64**, with **Microsoft Edge WebView2 Runtime**. FFmpeg and FFprobe are included. Python, CUDA and AI model downloads are not required for Phase 2. Installation may need Internet access if WebView2 is missing; local project editing does not require a cloud account.
 
 These are **unsigned development builds**. Smart App Control blocked an earlier Phase 1 executable on the development machine. The current Windows GUI and installation workflow are **not fully qualified**. This release is a prerelease. See [validation evidence and limits](VALIDATION.md).
 
-## Available in Phase 1
+## Available in Phases 1–2
 
 - Import MKV, MP4, MOV, AVI and WebM; inspect streams with FFprobe and choose an audio track.
 - Copy the original into a portable project folder; create an H.264/AAC preview proxy when required.
@@ -33,11 +33,19 @@ These are **unsigned development builds**. Smart App Control blocked an earlier 
 - Browse a virtualized dialogue list; select a line to seek the video and highlight its timeline entries.
 - Edit source subtitles, translated subtitles and independent TTS pronunciation overrides.
 - Play or loop a line with configurable padding; use volume, fullscreen, zoom and transport shortcuts.
+- Inspect an audio waveform computed from the chosen track, with local cache, progress and cancellation.
+- Edit start/end timecodes for either SRT or both; drag cue blocks, resize their edges, snap with Shift, and adjust track height.
+- Split at the playhead or merge with the next line. Changes are included in SRT exports and can be undone.
+- Preview automatic SRT-to-SRT synchronization with offset/drift estimation and one-to-many matches; choose either reference and apply explicitly. Ambiguous proposals are refused.
 - Autosave, previous-version backup and interrupted-save recovery; undo/redo during the current session.
 - Track real import jobs, progress and logs; cancel, retry and identify interrupted jobs after a restart. Creation opens Processing automatically, and the player keeps a loading animation until the import and first-frame preparation finish.
 - Switch French/English and dark/light themes; export local diagnostic information.
 
-The timeline currently shows simple track and cue bars. Waveforms, timing edits, split/merge and manual alignment are later work. Subtitle export and diagnostics are available; final dubbed audio and MKV/video export are planned.
+Automatic synchronization compares timing patterns; it does not perform speech recognition or semantic translation matching. Unmatched cues keep their original timings. Different video edits may need manual correction. See the [Phase 2 guide](docs/PHASE-2.md). Final dubbed audio and MKV/video export are planned.
+
+![Automatic bilingual subtitle synchronization preview](docs/screenshots/alignment.png)
+
+*Actual French browser preview using generated test SRTs with a 2.3-second offset; timings are inspected before application.*
 
 ## First project
 
@@ -52,7 +60,7 @@ Use **Explore the example** to try the bundled synthetic video. See the [user gu
 
 ![Welcome screen with import and example actions](docs/screenshots/welcome.png)
 
-*Welcome screen captured in the English browser preview. Both screenshots use the dark theme.*
+*Welcome screen captured in the French browser preview. Screenshots use the dark theme.*
 
 ## Local data
 
@@ -103,7 +111,7 @@ See [architecture and persistence](docs/ARCHITECTURE.md).
 | Phase | Scope | Status |
 | --- | --- | --- |
 | 1 | Desktop foundation, media import, persistence, subtitle review, simple timeline | Implemented; development preview |
-| 2 | Waveforms, timecode editing, subtitle movement, split/merge, manual alignment | Planned |
+| 2 | Waveforms, timecode editing, subtitle movement, split/merge, automatic SRT synchronization | Implemented; development preview |
 | 3 | Speech/music/SFX separation and audio track management | Planned |
 | 4 | Characters, voice references and dialogue assignment | Planned |
 | 5 | First TTS provider, per-line generation, multiple takes and review | Planned |
@@ -114,7 +122,7 @@ Provider type definitions are contracts, not functioning inference integrations.
 
 ## Validation
 
-The current local checks passed **8 TypeScript tests, 11 Rust tests and 5 Playwright scenarios**, plus the frontend build, ESLint, Prettier, Rust formatting and Clippy. Rust tests include extraction from a real bilingual SRT/ASS MKV, Unicode/timing preservation, cancellation, and protection of existing subtitles on failure. The interface scenario for native commands uses mocked IPC; it does not replace native GUI testing.
+The current local checks passed **16 TypeScript tests, 13 Rust tests and 7 Playwright scenarios**, plus the frontend build, ESLint, Prettier, Rust formatting and Clippy. Rust tests include real bilingual SRT/ASS MKV extraction, selected-track waveform decoding with an audio delay, caching, cancellation and project editing while a waveform job is queued. Timing tests cover shift/drift estimation, missing cues, grouping, refusal of ambiguous matches, Unicode splits, merge/export persistence and preservation of TTS overrides. The interface scenario for native commands uses mocked IPC; it does not replace native GUI testing.
 
 The earlier [v0.1.1 clean Windows run](https://github.com/jontechlabs/ai-dubbing-studio/actions/runs/38362204358) passed its checks and packaging. Current runs are available under [Actions](https://github.com/jontechlabs/ai-dubbing-studio/actions).
 

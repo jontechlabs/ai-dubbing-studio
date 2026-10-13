@@ -1,6 +1,6 @@
 use crate::{
     domain::{MediaAsset, MediaStream, Project},
-    embedded, jobs, media, project, subtitles, Core,
+    embedded, jobs, media, project, subtitles, waveform, Core,
 };
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
@@ -17,6 +17,182 @@ fn tool(name: &str) -> PathBuf {
     } else {
         PathBuf::from(name)
     }
+}
+
+#[tokio::test]
+async fn waveform_uses_selected_track_preserves_delay_and_reuses_cache() {
+    let temporary = tempfile::tempdir().unwrap();
+    let root = project::create_root(temporary.path(), "Waveform").unwrap();
+    let input = root.join("media/audio.mkv");
+    let status = media::command(&tool("ffmpeg"))
+        .args([
+            "-hide_banner",
+            "-loglevel",
+            "error",
+            "-f",
+            "lavfi",
+            "-i",
+            "anullsrc=r=8000:cl=mono",
+            "-itsoffset",
+            "0.2",
+            "-f",
+            "lavfi",
+            "-i",
+            "sine=frequency=880:sample_rate=8000",
+            "-f",
+            "lavfi",
+            "-i",
+            "color=size=64x64:rate=10",
+            "-map",
+            "0:a:0",
+            "-map",
+            "1:a:0",
+            "-map",
+            "2:v:0",
+            "-c:v",
+            "libx264",
+            "-c:a",
+            "pcm_s16le",
+            "-t",
+            "2",
+        ])
+        .arg(&input)
+        .status()
+        .await
+        .unwrap();
+    assert!(status.success());
+    let info = media::probe_executable(&tool("ffprobe"), &input)
+        .await
+        .unwrap();
+    let mut p = Project::new("Waveform".into(), "en".into(), "fr".into());
+    p.media = Some(MediaAsset {
+        id: crate::domain::id(),
+        path: "media/audio.mkv".into(),
+        preview_path: None,
+        audio_stream_index: Some(1),
+        info,
+    });
+    project::save(&root, &p).unwrap();
+    let core = Arc::new(Core {
+        session: Mutex::new(Some(project::Session::new(root.clone(), p))),
+        jobs: Mutex::new(HashMap::new()),
+        gate: Arc::new(tokio::sync::Semaphore::new(1)),
+        data_dir: temporary.path().to_path_buf(),
+    });
+    let app = tauri::test::mock_app();
+    let tone = waveform::get(core.clone(), app.handle().clone())
+        .await
+        .unwrap()
+        .unwrap();
+    assert_eq!(tone.audio_stream_index, 1);
+    assert!(tone.peaks[..8].iter().all(|peak| *peak < 0.001));
+    assert!(tone.peaks[12..].iter().any(|peak| *peak > 0.1));
+    let cached = waveform::get(core.clone(), app.handle().clone())
+        .await
+        .unwrap()
+        .unwrap();
+    assert_eq!(tone.peaks, cached.peaks);
+    assert_eq!(core.jobs.lock().unwrap().len(), 1);
+    {
+        let mut session = core.session.lock().unwrap();
+        session
+            .as_mut()
+            .unwrap()
+            .project
+            .media
+            .as_mut()
+            .unwrap()
+            .audio_stream_index = Some(0);
+    }
+    let silence = waveform::get(core.clone(), app.handle().clone())
+        .await
+        .unwrap()
+        .unwrap();
+    assert!(silence.peaks.iter().all(|peak| *peak == 0.0));
+    assert_eq!(std::fs::read_dir(root.join("cache")).unwrap().count(), 2);
+    assert_eq!(project::load(&root).unwrap().revision, 0);
+    assert!(waveform::decode(&tool("ffmpeg"), &input, 99, 2000, |_| {})
+        .await
+        .unwrap_err()
+        .starts_with("WAVEFORM_FAILED"));
+}
+
+#[tokio::test]
+async fn queued_waveform_can_be_cancelled_without_blocking_project_edits() {
+    let temporary = tempfile::tempdir().unwrap();
+    let root = project::create_root(temporary.path(), "Cancel waveform").unwrap();
+    let input = root.join("media/audio.mkv");
+    assert!(media::command(&tool("ffmpeg"))
+        .args([
+            "-hide_banner",
+            "-loglevel",
+            "error",
+            "-f",
+            "lavfi",
+            "-i",
+            "sine=frequency=440",
+            "-f",
+            "lavfi",
+            "-i",
+            "color=size=64x64:rate=10",
+            "-map",
+            "0:a:0",
+            "-map",
+            "1:v:0",
+            "-c:v",
+            "libx264",
+            "-t",
+            "0.4"
+        ])
+        .arg(&input)
+        .status()
+        .await
+        .unwrap()
+        .success());
+    let info = media::probe_executable(&tool("ffprobe"), &input)
+        .await
+        .unwrap();
+    let mut p = Project::new("Cancel waveform".into(), "en".into(), "fr".into());
+    p.media = Some(MediaAsset {
+        id: crate::domain::id(),
+        path: "media/audio.mkv".into(),
+        preview_path: None,
+        audio_stream_index: Some(0),
+        info,
+    });
+    project::save(&root, &p).unwrap();
+    let core = Arc::new(Core {
+        session: Mutex::new(Some(project::Session::new(root.clone(), p))),
+        jobs: Mutex::new(HashMap::new()),
+        gate: Arc::new(tokio::sync::Semaphore::new(1)),
+        data_dir: temporary.path().to_path_buf(),
+    });
+    let app = tauri::test::mock_app();
+    let permit = core.gate.clone().acquire_owned().await.unwrap();
+    let work = tauri::async_runtime::spawn(waveform::get(core.clone(), app.handle().clone()));
+    tokio::time::timeout(std::time::Duration::from_secs(5), async {
+        loop {
+            if let Some(job) = core.jobs.lock().unwrap().values().next() {
+                job.cancel.store(true, Ordering::Relaxed);
+                break;
+            }
+            tokio::time::sleep(std::time::Duration::from_millis(10)).await;
+        }
+    })
+    .await
+    .unwrap();
+    assert!(!jobs::active_processing(&core));
+    {
+        let mut session = core.session.lock().unwrap();
+        let session = session.as_mut().unwrap();
+        let mut edited = session.project.clone();
+        edited.name = "Edited while decoding".into();
+        session.replace(edited, 0).unwrap();
+    }
+    assert_eq!(work.await.unwrap().unwrap_err(), "CANCELLED");
+    drop(permit);
+    assert_eq!(project::load(&root).unwrap().name, "Edited while decoding");
+    assert_eq!(std::fs::read_dir(root.join("cache")).unwrap().count(), 0);
 }
 
 #[tokio::test]

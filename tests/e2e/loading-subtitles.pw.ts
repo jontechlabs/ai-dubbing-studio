@@ -80,6 +80,7 @@ test('native import opens processing; embedded source and target tracks are sele
           return job.id;
         }
         if (command === 'media_path') return 'C:/Projects/media/preview.mp4';
+        if (command === 'get_waveform') return null;
         if (command === 'import_embedded_subtitles') {
           runtime.__subtitleCalls.push({ role: args.role, streamIndex: args.streamIndex });
           job = { id: `subtitles-${args.role}`, projectId: project.id, kind: 'subtitles', status: 'running', stage: 'extract', progress: null, error: null, logs: [] };
