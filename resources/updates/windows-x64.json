@@ -1,11 +1,11 @@
 {
-  "notes": "Séparation audio, lecteur optimisé, préférence GPU et mises à jour signées.",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSdFFyMUJGTFp3NkhHMS81S1NNQnoyNTA3bTE4N3lSQ1JIUXAxYlYyeXJzTFFJTW5xUTNVWXRSdlpwV0w1TU9MR29UN28yMkN4QVpzT0xLUFloNEduM0hOM1RzTG5iZWdZPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkxOTAyNDY1CWZpbGU6QUkgRHViYmluZyBTdHVkaW9fMC4zLjBfeDY0LXNldHVwLmV4ZQl2ZXJzaW9uOjAuMy4wCmZneXdZdDBvVU9VZGh4QmphUXN4TEZCZVBUU0JCdWVkbVdabzV4UHVQSXRzdVI1ZkJTL1BQNHhacWVOTG1IN2YzR3FTZ1B0RWRXOTVVUlpxa0xSNER3PT0K",
-      "url": "https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.3.0/AI-Dubbing-Studio-0.3.0-Setup.exe"
+      "url": "https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.3.1/AI-Dubbing-Studio-0.3.1-Setup.exe",
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSdFFyMUJGTFp3NkNPaVNqRFc5OXp0S0lWTWdGZ1cvSFlkaTA2enlLV1p0ZnJhZFAzcmY3TkxQM2J5bXVKNldxWnpBSzF1RW5RaER1ejc4SVJpRTlKV2V3MW9KYmpWdHdZPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkxOTA0NDkxCWZpbGU6QUkgRHViYmluZyBTdHVkaW9fMC4zLjFfeDY0LXNldHVwLmV4ZQl2ZXJzaW9uOjAuMy4xCjZFU2ljcmpyeTZLcEZUN1Z5MnFON3Z4YTZNR3BOeEtvWmZiaXkzaHAySzFDanBpMXcvYjFBK3BDMGZKQ1ZDazY0Rk5aRzRRU3lIRU1rRXVoa1pySURnPT0K"
     }
   },
-  "version": "0.3.0",
-  "pub_date": "2026-10-13T14:44:33Z"
+  "version": "0.3.1",
+  "pub_date": "2026-10-13T15:17:02Z",
+  "notes": "Support RTX 50 via CUDA 12.8, réparation Bandit et vérification des GPU utilisables."
 }
