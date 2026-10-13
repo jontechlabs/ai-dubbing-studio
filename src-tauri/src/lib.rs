@@ -1,4 +1,5 @@
 mod domain;
+mod embedded;
 #[cfg(test)]
 mod integration_tests;
 mod jobs;
@@ -31,7 +32,7 @@ pub struct Core {
 }
 type Shared = Arc<Core>;
 fn ensure_idle(core: &Core) -> Result<(), String> {
-    if jobs::active_import(core) {
+    if jobs::active_processing(core) {
         Err("BUSY".into())
     } else {
         Ok(())
@@ -232,26 +233,22 @@ async fn import_subtitles(
     tauri::async_runtime::spawn_blocking(move || {
         ensure_idle(&core)?;
         let text = std::fs::read_to_string(&path).map_err(io_error)?;
-        let cues = subtitles::parse_srt(&text)?;
         let mut session = core.session.lock().map_err(io_error)?;
         let s = session.as_mut().ok_or("NO_PROJECT")?;
-        let mut next = s.project.clone();
-        if role == "source" {
-            next.source_cues = cues;
-        } else {
-            next.target_cues = cues;
-        }
-        next.dialogues = subtitles::reconcile(
-            &next.dialogues,
-            subtitles::align(&next.source_cues, &next.target_cues),
-        );
-        let name = format!("subtitles/{}_{}.srt", role, domain::id());
-        project::atomic_write(&s.root.join(name), text.as_bytes())?;
-        let revision = s.project.revision;
-        s.replace(next, revision)
+        s.import_subtitles(&text, &role)
     })
     .await
     .map_err(io_error)?
+}
+#[tauri::command]
+async fn import_embedded_subtitles(
+    app: tauri::AppHandle,
+    core: State<'_, Shared>,
+    stream_index: u32,
+    role: String,
+) -> Result<Project, String> {
+    ensure_idle(&core)?;
+    embedded::import(core.inner().clone(), app, stream_index, &role).await
 }
 #[tauri::command]
 fn media_path(core: State<'_, Shared>) -> Result<String, String> {
@@ -457,6 +454,7 @@ pub fn run() {
             import_media,
             prepare_proxy,
             import_subtitles,
+            import_embedded_subtitles,
             media_path,
             export_subtitles,
             export_report,

@@ -198,6 +198,10 @@ export async function mediaUrl(project: Project): Promise<string | null> {
   }
   return project.media.path === 'demo.mp4' ? '/demo.mp4' : null;
 }
+export async function importEmbeddedSubtitles(role: 'source' | 'target', streamIndex: number) {
+  if (!native) throw new Error('DESKTOP_REQUIRED');
+  return invoke<Project>('import_embedded_subtitles', { role, streamIndex });
+}
 export async function exportSubtitles(project: Project, role: 'source' | 'target') {
   const content = exportSrt(role === 'source' ? project.sourceCues : project.targetCues);
   if (!native) {

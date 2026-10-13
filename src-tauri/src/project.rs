@@ -133,6 +133,26 @@ impl Session {
             redo: vec![],
         }
     }
+    pub fn import_subtitles(&mut self, text: &str, role: &str) -> Result<Project, String> {
+        if !["source", "target"].contains(&role) {
+            return Err("INVALID_PROJECT".into());
+        }
+        let cues = crate::subtitles::parse_srt(text)?;
+        let mut next = self.project.clone();
+        if role == "source" {
+            next.source_cues = cues;
+        } else {
+            next.target_cues = cues;
+        }
+        next.dialogues = crate::subtitles::reconcile(
+            &next.dialogues,
+            crate::subtitles::align(&next.source_cues, &next.target_cues),
+        );
+        ensure_directory(&self.root, "subtitles")?;
+        let name = format!("subtitles/{role}_{}.srt", crate::domain::id());
+        atomic_write(&self.root.join(name), text.as_bytes())?;
+        self.replace(next, self.project.revision)
+    }
     pub fn replace(&mut self, mut next: Project, revision: u64) -> Result<Project, String> {
         if self.project.revision != revision || self.project.id != next.id {
             return Err("STALE_REVISION".into());

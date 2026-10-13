@@ -17,6 +17,7 @@ export default function App() {
   const { t, i18n } = useTranslation();
   const studio = useProject();
   const [panel, setPanel] = useState<Panel>(null);
+  const [subtitleRole, setSubtitleRole] = useState<'source' | 'target'>('source');
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [left, setLeft] = useState(Number(localStorage.getItem('studio.left') ?? 36));
   const [timelineHeight, setTimelineHeight] = useState(
@@ -35,12 +36,18 @@ export default function App() {
   }, []);
   const selected = studio.project?.dialogues.find((d) => d.id === selectedId);
   const busy = studio.jobs.some(
-    (job) => job.kind === 'import' && ['queued', 'running'].includes(job.status),
+    (job) =>
+      ['import', 'subtitles'].includes(job.kind) && ['queued', 'running'].includes(job.status),
   );
   const transport = useTransport(studio.project, selected, padding, studio.setError);
   const { seek: seekVideo } = transport;
   const { run: runProject } = studio;
   const close = useCallback(() => setPanel(null), []);
+  const closeSubtitles = useCallback(
+    () => setPanel((current) => (current === 'subtitles' ? null : current)),
+    [],
+  );
+  const showJobs = useCallback(() => setPanel('jobs'), []);
   const select = useCallback(
     (line: Dialogue) => {
       setSelectedId(line.id);
@@ -50,9 +57,15 @@ export default function App() {
   );
   const importSubtitles = useCallback(
     (role: 'source' | 'target') => {
-      void runProject(() => bridge.importSubtitles(role));
+      if (
+        bridge.native &&
+        studio.project?.media?.streams.some((stream) => stream.kind === 'subtitle')
+      ) {
+        setSubtitleRole(role);
+        setPanel('subtitles');
+      } else void runProject(() => bridge.importSubtitles(role));
     },
-    [runProject],
+    [runProject, studio.project],
   );
   const step = (offset: number) => {
     const lines = studio.project?.dialogues ?? [];
@@ -181,6 +194,13 @@ export default function App() {
               }}
               onStep={step}
               onAudio={() => setPanel('audio')}
+              importJob={studio.jobs.find(
+                (job) =>
+                  job.kind === 'import' &&
+                  job.projectId === studio.project?.id &&
+                  ['queued', 'running'].includes(job.status),
+              )}
+              onJobs={showJobs}
             />
             <Editor
               project={studio.project}
@@ -250,6 +270,9 @@ export default function App() {
         jobs={studio.jobs}
         run={studio.run}
         close={close}
+        closeSubtitles={closeSubtitles}
+        showJobs={showJobs}
+        subtitleRole={subtitleRole}
         onError={studio.setError}
         padding={padding}
         setPadding={setPadding}

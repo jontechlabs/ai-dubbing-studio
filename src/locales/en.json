@@ -101,7 +101,7 @@
   "noAudio": "No audio track",
   "subtitles": "Embedded subtitles",
   "bitmap": "Bitmap · OCR coming later",
-  "embeddedHint": "Embedded tracks are detected. Import an external SRT to edit subtitles in phase 1.",
+  "embeddedHint": "After video import, choose a text track from Original SRT or Translated SRT. Bitmap tracks need OCR.",
   "create": "Create project",
   "probing": "Analyzing media…",
   "browseProject": "Choose project folder",
@@ -124,7 +124,8 @@
     "copy": "Copying media",
     "proxy": "Preparing video",
     "commit": "Saving project",
-    "done": "Media ready"
+    "done": "Processing complete",
+    "extract": "Extracting subtitles"
   },
   "shortcuts": "Space: play · J/K/L: transport · O: original · Ctrl+S: save · Ctrl+Z/Y: undo/redo",
   "errors": {
@@ -145,6 +146,28 @@
     "PROCESS_FAILED": "Media processing failed. Check the logs.",
     "CANCELLED": "The job was cancelled.",
     "MEDIA_MISSING": "Project media is missing. Import it again.",
-    "UNKNOWN": "Something went wrong. Check diagnostics."
-  }
+    "UNKNOWN": "Something went wrong. Check diagnostics.",
+    "MEDIA_PLAYBACK_FAILED": "The player could not load the video. Try preparing a new proxy from Audio.",
+    "INVALID_SUBTITLE_TRACK": "This subtitle track is missing from the media.",
+    "BITMAP_SUBTITLES": "This track contains images. OCR conversion is required to produce SRT.",
+    "EMPTY_SUBTITLE_TRACK": "This track has no subtitles to import.",
+    "SUBTITLE_EXTRACTION_FAILED": "Subtitle extraction failed. Check the processing logs.",
+    "DESKTOP_REQUIRED": "This feature is available in the desktop app."
+  },
+  "preparingVideo": "Preparing video…",
+  "loadingVideo": "Loading video…",
+  "loadingVideoHint": "The player is preparing the first frame.",
+  "videoImportProgress": "Video import progress",
+  "showProcessing": "Show processing",
+  "videoLoadError": "The video could not be loaded.",
+  "jobQueued": "Queued",
+  "chooseSrtFile": "Choose an SRT file",
+  "embeddedTracks": "Tracks in the video file",
+  "embeddedInstructions": "Choose the track to import into this SRT.",
+  "subtitleTrack": "Track {{index}}",
+  "bitmapHint": "Bitmap subtitles: OCR conversion is required.",
+  "embeddedConversionHint": "Text tracks are converted to SRT. Advanced ASS/SSA formatting is not preserved.",
+  "extractingSubtitles": "Extracting subtitles…",
+  "useSubtitleTrack": "Use this track",
+  "extractingSubtitlesHint": "Extracting and saving. Track or cancel the job from the bottom status bar."
 }

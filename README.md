@@ -4,9 +4,9 @@ A local desktop workspace for preparing video dubbing: review bilingual subtitle
 
 Built with **Tauri 2, React, TypeScript and Rust**. English and French interface. Dark and light themes.
 
-**v0.1.1 — Phase 1 development preview.** This release provides the editing foundation. AI voice generation, transcription, translation and separation are planned; no models or AI engines run in this version.
+**v0.1.2 — Phase 1 development preview.** This release provides the editing foundation. AI voice generation, transcription, translation and separation are planned; no models or AI engines run in this version.
 
-[Windows downloads](https://github.com/jontechlabs/ai-dubbing-studio/releases/tag/v0.1.1) · [User guide](docs/GETTING-STARTED.md) · [Build instructions](docs/BUILDING.md) · [Français](README.fr.md)
+[Windows downloads](https://github.com/jontechlabs/ai-dubbing-studio/releases/tag/v0.1.2) · [User guide](docs/GETTING-STARTED.md) · [Build instructions](docs/BUILDING.md) · [Français](README.fr.md)
 
 ![Studio with bilingual dialogue, video preview, text editor and timeline](docs/screenshots/studio.png)
 
@@ -16,9 +16,9 @@ Built with **Tauri 2, React, TypeScript and Rust**. English and French interface
 
 | Package | Purpose |
 | --- | --- |
-| [Windows x64 setup](https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.1.1/AI-Dubbing-Studio-0.1.1-Setup.exe) | NSIS installer for the current user, with English/French installer interface |
-| [Portable ZIP](https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.1.1/AI-Dubbing-Studio-Windows-Portable.zip) | Extract the whole folder and launch `AI Dubbing Studio.exe` |
-| [SHA-256 checksums](https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.1.1/SHA256SUMS.txt) | Verify the setup and ZIP downloads |
+| [Windows x64 setup](https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.1.2/AI-Dubbing-Studio-0.1.2-Setup.exe) | NSIS installer for the current user, with English/French installer interface |
+| [Portable ZIP](https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.1.2/AI-Dubbing-Studio-Windows-Portable.zip) | Extract the whole folder and launch `AI Dubbing Studio.exe` |
+| [SHA-256 checksums](https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.1.2/SHA256SUMS.txt) | Verify the setup and ZIP downloads |
 
 Target: **Windows 10/11 x64**, with **Microsoft Edge WebView2 Runtime**. FFmpeg and FFprobe are included. Python, CUDA and AI model downloads are not required for Phase 1. Installation may need Internet access if WebView2 is missing; local project editing does not require a cloud account.
 
@@ -28,13 +28,13 @@ These are **unsigned development builds**. Smart App Control blocked an earlier 
 
 - Import MKV, MP4, MOV, AVI and WebM; inspect streams with FFprobe and choose an audio track.
 - Copy the original into a portable project folder; create an H.264/AAC preview proxy when required.
-- Import/export UTF-8 SRT, including multiline subtitles. Detect embedded bitmap subtitle streams.
+- Import/export UTF-8 SRT, including multiline subtitles. Choose embedded text subtitle tracks (SRT/ASS/SSA and compatible formats) from the video as original or translated subtitles; bitmap tracks require OCR.
 - Match source and translated cues conservatively using timings; flag ambiguous matches for review.
 - Browse a virtualized dialogue list; select a line to seek the video and highlight its timeline entries.
 - Edit source subtitles, translated subtitles and independent TTS pronunciation overrides.
 - Play or loop a line with configurable padding; use volume, fullscreen, zoom and transport shortcuts.
 - Autosave, previous-version backup and interrupted-save recovery; undo/redo during the current session.
-- Track real import jobs, progress and logs; cancel, retry and identify interrupted jobs after a restart.
+- Track real import jobs, progress and logs; cancel, retry and identify interrupted jobs after a restart. Creation opens Processing automatically, and the player keeps a loading animation until the import and first-frame preparation finish.
 - Switch French/English and dark/light themes; export local diagnostic information.
 
 The timeline currently shows simple track and cue bars. Waveforms, timing edits, split/merge and manual alignment are later work. Subtitle export and diagnostics are available; final dubbed audio and MKV/video export are planned.
@@ -44,7 +44,7 @@ The timeline currently shows simple track and cue bars. Waveforms, timing edits,
 1. Launch the app, choose **Import**, and select a video.
 2. Set the project name, source/target languages and audio stream.
 3. Choose a parent folder. The desktop app creates `Name.dubproject` and copies the video.
-4. Import an **Original SRT** and/or **Translated SRT** from the dialogue column.
+4. Use **Original SRT** and/or **Translated SRT** in the dialogue column. Choose an external file or a text subtitle track detected in the video.
 5. Select a dialogue, review the scene, and edit its subtitle or pronunciation text.
 6. Reopen the `.dubproject` folder using **Open project**. Move or back up the entire folder to preserve its media.
 
@@ -114,9 +114,9 @@ Provider type definitions are contracts, not functioning inference integrations.
 
 ## Validation
 
-Phase 1 passed **8 TypeScript tests, 9 Rust tests and 2 Playwright browser scenarios**, plus the frontend build, ESLint, Prettier, Rust formatting and Clippy. Rust tests cover real media probing/import, recovery and job cancellation/retry. An earlier Windows binary passed a native backend smoke test.
+The current local checks passed **8 TypeScript tests, 11 Rust tests and 5 Playwright scenarios**, plus the frontend build, ESLint, Prettier, Rust formatting and Clippy. Rust tests include extraction from a real bilingual SRT/ASS MKV, Unicode/timing preservation, cancellation, and protection of existing subtitles on failure. The interface scenario for native commands uses mocked IPC; it does not replace native GUI testing.
 
-The same frontend/browser and Rust checks also passed on the [clean Windows runner for v0.1.1](https://github.com/jontechlabs/ai-dubbing-studio/actions/runs/38362204358).
+The earlier [v0.1.1 clean Windows run](https://github.com/jontechlabs/ai-dubbing-studio/actions/runs/38362204358) passed its checks and packaging. Current runs are available under [Actions](https://github.com/jontechlabs/ai-dubbing-studio/actions).
 
 Final Windows GUI validation remains pending following the local execution block on an earlier unsigned build. Linux/macOS GUI builds are not qualified. See [VALIDATION.md](VALIDATION.md) for the exact scope.
 

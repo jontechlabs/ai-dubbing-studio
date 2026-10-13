@@ -1,5 +1,13 @@
 # Validation — Phase 1, 13 October 2026
 
+## v0.1.2 local checks
+
+The current frontend build, 8 TypeScript tests, 11 Rust tests, 5 Playwright scenarios, ESLint, Prettier, Clippy and rustfmt pass locally. New Rust scenarios extract SRT/ASS tracks from a generated bilingual MKV, preserve Unicode/timings/independent TTS edits, reject bitmap/invalid tracks, preserve data on conversion failure, and cancel queued extraction.
+
+New browser scenarios verify loading until the first frame is available, a visible failure state instead of an endless spinner, automatic Processing display after creation, and original/translated embedded-track selection. The native IPC path in the interface scenario is mocked; the extraction integration test runs real FFmpeg. These are not a complete native GUI qualification.
+
+The sections below record the initial release and v0.1.1 validation history.
+
 ## Passed locally
 
 - Frontend production build and strict TypeScript, ESLint and Prettier checks.

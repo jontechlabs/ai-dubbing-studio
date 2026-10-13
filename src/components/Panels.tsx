@@ -2,9 +2,11 @@ import { useEffect, useState } from 'react';
 import { Check, Download, FileText, LoaderCircle, RefreshCw, Terminal, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { EnvironmentInfo, Job, Project } from '../domain/types';
+import { APP_VERSION } from '../domain/project';
 import type { Panel } from './Header';
 import { ImportPanel } from './ImportPanel';
 import { IconButton } from './IconButton';
+import { SubtitleImportPanel } from './SubtitleImportPanel';
 import * as bridge from '../services/bridge';
 import { downloadText } from '../services/browserStore';
 
@@ -14,6 +16,9 @@ export function Panels({
   jobs,
   run,
   close,
+  closeSubtitles,
+  showJobs,
+  subtitleRole,
   onError,
   padding,
   setPadding,
@@ -25,6 +30,9 @@ export function Panels({
   jobs: Job[];
   run: (op: () => Promise<Project | null>) => Promise<void>;
   close: () => void;
+  closeSubtitles: () => void;
+  showJobs: () => void;
+  subtitleRole: 'source' | 'target';
   onError: (message: string) => void;
   padding: number;
   setPadding: (n: number) => void;
@@ -32,6 +40,14 @@ export function Panels({
   setTheme: (s: string) => void;
 }) {
   const { t } = useTranslation();
+  const title =
+    panel === 'import'
+      ? 'importTitle'
+      : panel === 'subtitles'
+        ? subtitleRole === 'source'
+          ? 'importSource'
+          : 'importTarget'
+        : (panel ?? '');
   useEffect(() => {
     if (!panel) return;
     const key = (event: KeyboardEvent) => {
@@ -48,19 +64,24 @@ export function Panels({
         if (e.target === e.currentTarget) close();
       }}
     >
-      <aside
-        className="context-panel"
-        role="dialog"
-        aria-modal="true"
-        aria-label={t(panel === 'import' ? 'importTitle' : panel)}
-      >
+      <aside className="context-panel" role="dialog" aria-modal="true" aria-label={t(title)}>
         <div className="panel-title">
-          <h2>{t(panel === 'import' ? 'importTitle' : panel)}</h2>
+          <h2>{t(title)}</h2>
           <IconButton label={t('close')} onClick={close}>
             <X size={19} />
           </IconButton>
         </div>
-        {panel === 'import' && <ImportPanel run={run} onClose={close} onError={onError} />}
+        {panel === 'import' && (
+          <ImportPanel run={run} onClose={close} onStarted={showJobs} onError={onError} />
+        )}
+        {panel === 'subtitles' && project && (
+          <SubtitleImportPanel
+            project={project}
+            role={subtitleRole}
+            run={run}
+            close={closeSubtitles}
+          />
+        )}
         {panel === 'settings' && (
           <SettingsPanel
             jobs={jobs}
@@ -93,13 +114,18 @@ export function Panels({
               className="button accent wide"
               disabled={
                 !bridge.native ||
-                jobs.some((j) => j.kind === 'import' && ['running', 'queued'].includes(j.status))
+                jobs.some(
+                  (j) =>
+                    ['import', 'subtitles'].includes(j.kind) &&
+                    ['running', 'queued'].includes(j.status),
+                )
               }
               onClick={() => {
-                void bridge
-                  .prepareProxy()
-                  .then(close)
-                  .catch((e) => onError(String(e)));
+                void run(async () => {
+                  await bridge.prepareProxy();
+                  showJobs();
+                  return null;
+                });
               }}
             >
               <RefreshCw size={15} />
@@ -163,7 +189,7 @@ function SettingsPanel({
     void bridge.environment().then(setEnv);
   }, []);
   const diagnostic = JSON.stringify(
-    { version: '0.1.0', environment: env, commandErrors: bridge.diagnosticErrors(), jobs },
+    { version: APP_VERSION, environment: env, commandErrors: bridge.diagnosticErrors(), jobs },
     null,
     2,
   );
@@ -246,7 +272,7 @@ function JobsPanel({ jobs, onError }: { jobs: Job[]; onError: (s: string) => voi
             ) : (
               <Terminal size={16} />
             )}
-            <strong>{t(`jobStages.${job.stage}`)}</strong>
+            <strong>{t(job.status === 'queued' ? 'jobQueued' : `jobStages.${job.stage}`)}</strong>
             <span>{job.progress === null ? '' : `${Math.round(job.progress * 100)}%`}</span>
           </div>
           <progress value={job.progress ?? undefined} max="1" />

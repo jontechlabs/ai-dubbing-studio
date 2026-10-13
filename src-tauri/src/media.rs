@@ -99,7 +99,7 @@ pub fn parse_probe(bytes: &[u8], original_name: String) -> Result<MediaInfo, Str
             MediaStream {
                 index: v["index"].as_u64().unwrap_or(0) as u32,
                 kind: v["codec_type"].as_str().unwrap_or("unknown").into(),
-                bitmap: ["hdmv_pgs_subtitle", "dvd_subtitle", "dvb_subtitle"]
+                bitmap: ["hdmv_pgs_subtitle", "dvd_subtitle", "dvb_subtitle", "xsub"]
                     .contains(&codec.as_str()),
                 codec,
                 language: v["tags"]["language"].as_str().unwrap_or("und").into(),

@@ -107,10 +107,10 @@ pub fn update<R: tauri::Runtime>(
     }
     persist(core);
 }
-pub fn active_import(core: &Core) -> bool {
+pub fn active_processing(core: &Core) -> bool {
     core.jobs.lock().is_ok_and(|jobs| {
         jobs.values().any(|j| {
-            j.saved.record.kind == "import"
+            ["import", "subtitles"].contains(&j.saved.record.kind.as_str())
                 && ["queued", "running"].contains(&j.saved.record.status.as_str())
         })
     })

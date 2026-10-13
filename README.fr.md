@@ -1,6 +1,6 @@
 # AI Dubbing Studio — phase 1
 
-[Version anglaise et captures de l’interface](README.md) · [Téléchargements Windows](https://github.com/jontechlabs/ai-dubbing-studio/releases/tag/v0.1.1)
+[Version anglaise et captures de l’interface](README.md) · [Téléchargements Windows](https://github.com/jontechlabs/ai-dubbing-studio/releases/tag/v0.1.2)
 
 Studio desktop local de travail texte, voix et vidéo. Tauri 2, React, TypeScript strict et Rust.
 
@@ -22,13 +22,13 @@ L'exemple fourni utilise une vidéo et un son synthétiques. Il ne contient pas 
 - Trois zones redimensionnables : dialogues, lecteur et timeline.
 - Import MKV, MP4, MOV, AVI et WEBM, analyse FFprobe et sélection audio.
 - Copie du média original ; proxy H.264/AAC pour les fichiers incompatibles ou les pistes multiples.
-- Import/export SRT UTF-8, textes multilignes et détection des pistes bitmap intégrées.
+- Import/export SRT UTF-8, textes multilignes et sélection des pistes texte du MKV pour le SRT original ou traduit. Les pistes bitmap nécessitent un OCR.
 - Associations bilingues conservatrices par timings. Les correspondances ambiguës restent distinctes et signalées.
 - Texte original, traduction et surcharge TTS séparés.
 - Lecture de réplique, boucle avec marges configurables, volume, plein écran et navigation.
 - Timeline simple, déplacement du playhead, zoom et zoom sur réplique.
 - Autosave, sauvegarde précédente, récupération d'une écriture interrompue, undo/redo en session.
-- Jobs d'import annulables, logs, relance et détection des jobs interrompus au redémarrage.
+- Jobs d'import annulables, logs, relance et détection des jobs interrompus au redémarrage. La zone Traitements s’ouvre automatiquement à la création ; le lecteur affiche un chargement jusqu’à la fin de l’import et la disponibilité de la première image.
 - Interface FR/EN, thème sombre/clair et diagnostic exportable.
 
 Les waveforms, l'édition temporelle, split/merge et l'alignement manuel arriveront en phase 2. La séparation, la transcription et les voix IA sont prévues dans les phases suivantes. Le conteneur MKV et les exports audio finaux arriveront en phase 7.

@@ -17,7 +17,7 @@ import { useTranslation } from 'react-i18next';
 import type { Project } from '../domain/types';
 import { IconButton } from './IconButton';
 
-export type Panel = 'import' | 'audio' | 'export' | 'settings' | 'jobs' | null;
+export type Panel = 'import' | 'audio' | 'export' | 'settings' | 'jobs' | 'subtitles' | null;
 export function Header({
   project,
   saveState,

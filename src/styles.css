@@ -603,6 +603,60 @@ h3 {
 .video-stage.has-video {
   background: #08080c;
 }
+.video-loading {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  padding: 24px;
+  background: var(--panel);
+  text-align: center;
+}
+.video-loading > .spin {
+  color: var(--accent);
+}
+.video-loading > span {
+  color: var(--muted);
+  font-size: 12px;
+}
+.video-loading > progress {
+  width: min(280px, 90%);
+  accent-color: var(--accent);
+}
+.subtitle-picker h3 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.subtitle-track-list {
+  display: grid;
+  gap: 8px;
+}
+.subtitle-track {
+  display: flex;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  cursor: pointer;
+}
+.subtitle-track:has(input:checked) {
+  border-color: var(--accent);
+}
+.subtitle-track.unavailable {
+  cursor: default;
+}
+.subtitle-track > span {
+  display: grid;
+  gap: 6px;
+}
+.subtitle-track small {
+  color: var(--muted);
+}
 .video-stage video {
   display: block;
   width: 100%;

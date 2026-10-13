@@ -1,11 +1,12 @@
 import type { Project } from './types';
 import { alignCues } from './subtitles';
+export const APP_VERSION = '0.1.2';
 
 export function blankProject(name = 'Untitled', source = 'ja', target = 'fr'): Project {
   const now = new Date().toISOString();
   return {
     formatVersion: 1,
-    appVersion: '0.1.1',
+    appVersion: APP_VERSION,
     id: crypto.randomUUID(),
     name,
     revision: 0,

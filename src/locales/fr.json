@@ -101,7 +101,7 @@
   "noAudio": "Aucune piste audio",
   "subtitles": "Sous-titres intégrés",
   "bitmap": "Bitmap · OCR à venir",
-  "embeddedHint": "Les pistes intégrées sont détectées. Importez un SRT externe pour les éditer en phase 1.",
+  "embeddedHint": "Après l’import vidéo, choisissez une piste texte depuis SRT original ou SRT traduit. Les pistes bitmap nécessitent un OCR.",
   "create": "Créer le projet",
   "probing": "Analyse du média…",
   "browseProject": "Choisir le dossier du projet",
@@ -124,7 +124,8 @@
     "copy": "Copie du média",
     "proxy": "Préparation vidéo",
     "commit": "Sauvegarde du projet",
-    "done": "Média prêt"
+    "done": "Traitement terminé",
+    "extract": "Extraction des sous-titres"
   },
   "shortcuts": "Espace : lecture · J/K/L : transport · O : original · Ctrl+S : sauvegarde · Ctrl+Z/Y : annuler/rétablir",
   "errors": {
@@ -145,6 +146,28 @@
     "PROCESS_FAILED": "Le traitement du média a échoué. Consultez les logs.",
     "CANCELLED": "Le traitement a été annulé.",
     "MEDIA_MISSING": "Le média du projet est absent. Réimportez-le.",
-    "UNKNOWN": "Une erreur est survenue. Consultez le diagnostic."
-  }
+    "UNKNOWN": "Une erreur est survenue. Consultez le diagnostic.",
+    "MEDIA_PLAYBACK_FAILED": "Le lecteur n’a pas pu charger la vidéo. Essayez de préparer un nouveau proxy depuis Audio.",
+    "INVALID_SUBTITLE_TRACK": "Cette piste de sous-titres est absente du média.",
+    "BITMAP_SUBTITLES": "Cette piste contient des images. Une conversion OCR est nécessaire pour obtenir un SRT.",
+    "EMPTY_SUBTITLE_TRACK": "Cette piste ne contient aucun sous-titre à importer.",
+    "SUBTITLE_EXTRACTION_FAILED": "L’extraction des sous-titres a échoué. Consultez les logs du traitement.",
+    "DESKTOP_REQUIRED": "Cette fonction est disponible dans l’application desktop."
+  },
+  "preparingVideo": "Préparation de la vidéo…",
+  "loadingVideo": "Chargement de la vidéo…",
+  "loadingVideoHint": "Le lecteur prépare la première image.",
+  "videoImportProgress": "Avancement de l’import vidéo",
+  "showProcessing": "Voir les traitements",
+  "videoLoadError": "La vidéo n’a pas pu être chargée.",
+  "jobQueued": "En attente",
+  "chooseSrtFile": "Choisir un fichier SRT",
+  "embeddedTracks": "Pistes du fichier vidéo",
+  "embeddedInstructions": "Choisissez la piste à importer dans ce SRT.",
+  "subtitleTrack": "Piste {{index}}",
+  "bitmapHint": "Sous-titres bitmap : une conversion OCR est nécessaire.",
+  "embeddedConversionHint": "Les pistes texte sont converties en SRT. La mise en forme avancée ASS/SSA n’est pas conservée.",
+  "extractingSubtitles": "Extraction des sous-titres…",
+  "useSubtitleTrack": "Utiliser cette piste",
+  "extractingSubtitlesHint": "Extraction et sauvegarde en cours. Vous pouvez suivre ou annuler le traitement depuis la barre inférieure."
 }

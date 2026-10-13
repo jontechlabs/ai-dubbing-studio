@@ -7,10 +7,12 @@ import * as bridge from '../services/bridge';
 export function ImportPanel({
   run,
   onClose,
+  onStarted,
   onError,
 }: {
   run: (operation: () => Promise<Project | null>) => Promise<void>;
   onClose: () => void;
+  onStarted: () => void;
   onError: (message: string) => void;
 }) {
   const { t } = useTranslation();
@@ -44,7 +46,8 @@ export function ImportPanel({
       if (!project) return null;
       try {
         const imported = await bridge.importMedia(choice.path, audio);
-        onClose();
+        if (bridge.native) onStarted();
+        else onClose();
         return imported ?? project;
       } catch (e) {
         onError(String(e));

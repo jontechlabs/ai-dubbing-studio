@@ -10,7 +10,10 @@ export function useTransport(
   onError: (message: string) => void,
 ) {
   const videoRef = useRef<HTMLVideoElement>(null);
-  const [url, setUrl] = useState<string | null>(null);
+  const [resource, setResource] = useState<{ id: string; url: string } | null>(null);
+  const [readyId, setReadyId] = useState<string | null>(null);
+  const [failedId, setFailedId] = useState<string | null>(null);
+  const [buffering, setBuffering] = useState(false);
   const [time, setTime] = useState(0);
   const [playing, setPlaying] = useState(false);
   const [loop, setLoop] = useState(false);
@@ -18,27 +21,38 @@ export function useTransport(
   const stopAt = useRef<{ start: number; end: number } | null>(null);
   const pendingSeek = useRef(0);
   const mediaId = project?.media?.id;
+  const url = resource?.id === mediaId ? (resource?.url ?? null) : null;
+  const ready = !!url && readyId === mediaId;
+  const failed = !!mediaId && failedId === mediaId;
   const projectRef = useRef(project);
   projectRef.current = project;
   useEffect(() => {
     let disposed = false;
     pendingSeek.current = 0;
     stopAt.current = null;
-    setUrl(null);
+    setResource(null);
+    setReadyId(null);
+    setFailedId(null);
+    setBuffering(false);
+    setPlaying(false);
+    setTime(0);
     const p = projectRef.current;
     if (!p?.media) {
-      setUrl(null);
       return;
     }
     void mediaUrl(p)
       .then((value) => {
         if (!disposed) {
-          setUrl(value);
-          setTime(0);
-          setPlaying(false);
+          if (!value) throw new Error('MEDIA_MISSING');
+          setResource({ id: p.media!.id, url: value });
         }
       })
-      .catch((e) => onError(String(e)));
+      .catch((e) => {
+        if (!disposed) {
+          setFailedId(p.media!.id);
+          onError(String(e));
+        }
+      });
     return () => {
       disposed = true;
     };
@@ -51,10 +65,10 @@ export function useTransport(
   }, []);
   const toggle = useCallback(() => {
     const video = videoRef.current;
-    if (!video || !url) return;
+    if (!video || !url || !ready) return;
     if (video.paused) void video.play().catch((e) => onError(String(e)));
     else video.pause();
-  }, [url, onError]);
+  }, [url, ready, onError]);
   const playLine = useCallback(
     (dialogue: Dialogue) => {
       const range = loopRange(
@@ -109,6 +123,9 @@ export function useTransport(
   return {
     videoRef,
     url,
+    ready,
+    failed,
+    buffering,
     time,
     playing,
     loop,
@@ -119,7 +136,22 @@ export function useTransport(
     setLoop,
     setVolume,
     loaded: () => seek(pendingSeek.current),
-    onPlay: () => setPlaying(true),
+    onReady: () => {
+      if (mediaId) setReadyId(mediaId);
+      setBuffering(false);
+    },
+    onWaiting: () => setBuffering(true),
+    onError: () => {
+      if (mediaId) setFailedId(mediaId);
+      setReadyId(null);
+      setBuffering(false);
+      setPlaying(false);
+      onError('MEDIA_PLAYBACK_FAILED');
+    },
+    onPlay: () => {
+      setPlaying(true);
+      setBuffering(false);
+    },
     onPause: () => setPlaying(false),
     onTime: () => {
       if (videoRef.current) setTime(videoRef.current.currentTime * 1000);

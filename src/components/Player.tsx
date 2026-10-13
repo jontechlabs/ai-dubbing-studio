@@ -2,6 +2,7 @@ import {
   AudioLines,
   ArrowUpRight,
   Film,
+  LoaderCircle,
   FolderOpen,
   Maximize2,
   Pause,
@@ -12,7 +13,7 @@ import {
   Volume2,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import type { Project } from '../domain/types';
+import type { Job, Project } from '../domain/types';
 import type { Transport } from '../hooks/useTransport';
 import { formatTime } from '../domain/time';
 import { IconButton } from './IconButton';
@@ -25,6 +26,8 @@ export function Player({
   onDemo,
   onStep,
   onAudio,
+  importJob,
+  onJobs,
 }: {
   project: Project | null;
   transport: Transport;
@@ -33,6 +36,8 @@ export function Player({
   onDemo: () => void;
   onStep: (offset: number) => void;
   onAudio: () => void;
+  importJob?: Job;
+  onJobs: () => void;
 }) {
   const { t } = useTranslation();
   const activeText = project?.targetCues
@@ -40,6 +45,9 @@ export function Player({
     .map((cue) => cue.text.replace(/<[^>]*>/g, ''))
     .join('\n');
   const contentRef = transport.videoRef;
+  const loading =
+    !!importJob ||
+    (!!project?.media && !transport.failed && (!transport.ready || transport.buffering));
   return (
     <div className="player-pane">
       <div className="pane-heading player-heading">
@@ -52,24 +60,28 @@ export function Player({
           {t('original')}
         </span>
       </div>
-      <div className={`video-stage ${transport.url ? 'has-video' : ''}`}>
+      <div className={`video-stage ${transport.url ? 'has-video' : ''}`} aria-busy={loading}>
         {transport.url ? (
           <>
             <video
+              key={project?.media?.id}
               ref={contentRef}
               src={transport.url}
               playsInline
               preload="auto"
               onLoadedMetadata={transport.loaded}
+              onLoadedData={transport.onReady}
+              onCanPlay={transport.onReady}
+              onWaiting={transport.onWaiting}
               onPlay={transport.onPlay}
               onPause={transport.onPause}
               onTimeUpdate={transport.onTime}
-              onError={onAudio}
+              onError={transport.onError}
               onClick={transport.toggle}
             />
             <div className="subtitle-overlay">{activeText}</div>
           </>
-        ) : (
+        ) : !loading && !transport.failed ? (
           <div className="welcome">
             <div className="welcome-art">
               <div className="orbit orbit-one" />
@@ -96,6 +108,41 @@ export function Player({
               <ArrowUpRight size={14} />
             </button>
           </div>
+        ) : null}
+        {loading && (
+          <div className="video-loading" role="status" aria-live="polite">
+            <LoaderCircle size={36} className="spin" />
+            <strong>{t(importJob ? 'preparingVideo' : 'loadingVideo')}</strong>
+            <span>
+              {importJob
+                ? t(importJob.status === 'queued' ? 'jobQueued' : `jobStages.${importJob.stage}`)
+                : t('loadingVideoHint')}
+            </span>
+            {importJob && (
+              <>
+                <progress
+                  aria-label={t('videoImportProgress')}
+                  value={importJob.progress ?? undefined}
+                  max="1"
+                />
+                {importJob.progress !== null && (
+                  <span>{Math.round(importJob.progress * 100)}%</span>
+                )}
+                <button className="button subtle" onClick={onJobs}>
+                  {t('showProcessing')}
+                </button>
+              </>
+            )}
+          </div>
+        )}
+        {transport.failed && !importJob && (
+          <div className="video-loading video-load-error" role="status">
+            <Film size={32} />
+            <strong>{t('videoLoadError')}</strong>
+            <button className="button subtle" onClick={onAudio}>
+              {t('prepareProxy')}
+            </button>
+          </div>
         )}
       </div>
       <div className="player-controls">
@@ -110,7 +157,7 @@ export function Player({
           <IconButton
             label={t(transport.playing ? 'pause' : 'play')}
             onClick={transport.toggle}
-            disabled={!transport.url}
+            disabled={!transport.ready || !!importJob}
           >
             <span className="play-icon">
               {transport.playing ? (
