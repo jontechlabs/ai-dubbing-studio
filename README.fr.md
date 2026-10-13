@@ -1,10 +1,10 @@
 # AI Dubbing Studio — phases 1–3
 
-[Version anglaise et captures de l’interface](README.md) · [Téléchargements Windows](https://github.com/jontechlabs/ai-dubbing-studio/releases/tag/v0.3.1)
+[Version anglaise et captures de l’interface](README.md) · [Téléchargements Windows](https://github.com/jontechlabs/ai-dubbing-studio/releases/tag/v0.3.2)
 
 Studio desktop local de travail texte, voix et vidéo. Tauri 2, React, TypeScript strict et Rust.
 
-**v0.3.1** corrige l’installation NVIDIA pour les RTX 50 avec CUDA 12.8, permet de réparer un environnement Bandit existant et vérifie qu’un GPU peut exécuter un calcul avant de le proposer. [Guide audio et GPU](docs/PHASE-3.md).
+**v0.3.2** corrige le téléchargement de Bandit : miroir GitHub vérifié, source de repli et relances limitées. Une nouvelle tentative réutilise les dépendances et fichiers déjà valides. Le support NVIDIA CUDA 12.8 pour les RTX 50 reste disponible. [Guide audio et GPU](docs/PHASE-3.md).
 
 ## Utiliser le studio
 

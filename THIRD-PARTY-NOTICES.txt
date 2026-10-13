@@ -1,4 +1,4 @@
-AI Dubbing Studio phase 1
+AI Dubbing Studio
 
 FFmpeg and FFprobe are independent local command-line programs.
 Windows build: Gyan.dev FFmpeg essentials release 9.0.2.
@@ -21,5 +21,10 @@ Official repository: https://github.com/kwatcharasupat/bandit-v2
 Revision: d5563d9031e95fdaa3e5a73d5020b9a0df61adb6
 Model code: Apache-2.0; vendored unmodified under workers/vendor/bandit, with its LICENSE.
 Multilingual weights: https://zenodo.org/records/12701995, CC BY-SA 4.0. Weights are downloaded on request, not bundled.
+Authors: Karn N. Watcharasupat, Chih-Wei Wu, Iroro Orife.
+The unchanged checkpoint is also mirrored at:
+https://github.com/jontechlabs/ai-dubbing-studio/releases/tag/bandit-v2-multilingual-12701995
+The mirrored weights retain CC BY-SA 4.0 and their original attribution.
+See workers/BANDIT-MODEL-LICENSE.txt for provenance, license links and hashes.
 Python 3.12.10 embedded distribution: Python Software Foundation license, retained inside the downloaded runtime.
 PyTorch/Torchaudio and inference dependencies retain their licenses; locked versions are in workers/runtime-requirements.txt and the runtime installers.

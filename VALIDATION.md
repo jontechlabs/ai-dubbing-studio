@@ -1,8 +1,8 @@
 # Validation - Phase 3, 13 October 2026
 
-## v0.3.1 automated checks
+## v0.3.2 automated checks
 
-The local frontend build, strict TypeScript, ESLint, Prettier, Rust Clippy with -D warnings and rustfmt pass. Suites contain 22 TypeScript tests, 15 Rust tests, 11 Playwright scenarios and 4 Python device tests (52 total).
+The local frontend build, strict TypeScript, ESLint, Prettier, Rust Clippy with -D warnings and rustfmt pass. Suites contain 22 TypeScript tests, 22 Rust tests, 11 Playwright scenarios and 4 Python device tests (59 total).
 
 Domain tests retain Phase 2 synchronization/editing coverage and add overlapping/large cue lookup, mixer mute/solo/master gain, legacy original-track creation, unsaved-edit rebase over audio jobs and integer split timestamps. Rust integration checks run actual FFmpeg media, validate real stem WAV structure/sample counts, preserve mixer asset metadata across reload, reject traversal and refuse separation without a runtime without modifying the project. Existing import/subtitle/waveform/cancellation/recovery checks remain.
 
@@ -26,9 +26,15 @@ The [Windows workflow](https://github.com/jontechlabs/ai-dubbing-studio/actions/
 
 An earlier unsigned executable was blocked by Smart App Control. Final native Tauri GUI, installer/uninstaller, effective WebView2 GPU adapter and complete native update/restart remain unqualified. Mocked IPC does not establish those outcomes. Windows rendering preference is an OS request for this executable; it does not guarantee a specific WebView2/decoder adapter.
 
-Screenshots show actual French React UI in browser testing, with simulated native devices/stems/update metadata. The displayed 0.3.2 update is a test scenario, not a released version. Screenshots are not native Tauri captures. The demo has synthetic audio and no generated dubbing.
+Screenshots show actual French React UI in browser testing, with simulated native devices/stems/update metadata. The displayed 0.3.3 update is a test scenario, not a released version. Screenshots are not native Tauri captures. The demo has synthetic audio and no generated dubbing.
 
 Format 1 projects open normally. Adding separated tracks uses format 2, rejected by old app versions. Split text allocation is approximate; SRT synchronization uses timings and does not align speech. Final mix/MKV export and voice generation remain future phases.
+
+## Bandit download regression
+
+The user reported HTTP 403 from Zenodo after successful Python/PyTorch dependency installation. Version 0.3.2 uses an attributed, unchanged GitHub mirror with public Zenodo fallback. Six Rust HTTP tests cover 403 fallback with User-Agent, hash mismatch without overwriting the previous file, short/oversized data, verified offline cache, retry after HTTP 503, and cancellation while awaiting headers. A seventh test refuses dependency reuse for the wrong CPU/CUDA variant, CUDA 12.6, incomplete checks or the wrong Torch version.
+
+The full 446,680,129-byte mirror was downloaded by the production Rust downloader with its real HTTPS client. Exact size and SHA-256 matched the official checkpoint; a second call reused the verified file without a network request. The embedded Python runtime passed the new full import/version probe used for dependency reuse. A CPU inference regression is recorded separately. These tests do not yet establish successful CUDA separation on the user's RTX 5060 Ti or the complete native installer flow on that machine.
 
 ## Earlier validation
 

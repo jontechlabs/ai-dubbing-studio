@@ -1,5 +1,6 @@
 mod audio_files;
 mod domain;
+mod downloads;
 mod embedded;
 mod graphics;
 #[cfg(test)]

@@ -4,9 +4,9 @@ A local desktop workspace for preparing video dubbing: review bilingual subtitle
 
 Built with **Tauri 2, React, TypeScript and Rust**. English and French interface. Dark and light themes.
 
-**v0.3.1 — Phase 3 development preview.** This patch adds CUDA 12.8 support for Blackwell/RTX 50, repairs existing Bandit installations and verifies usable CUDA devices. The release provides the editing foundation. Local Bandit v2 Multilingual separation is available after installing its optional runtime/model from Audio. AI voice generation, transcription and translation remain planned.
+**v0.3.2 — Phase 3 development preview.** This patch fixes Bandit model downloads using a verified GitHub mirror, source fallback and bounded retries. Retrying an installation reuses verified dependencies and model files. CUDA 12.8 supports Blackwell/RTX 50. Local Bandit v2 Multilingual separation is available after installing its optional runtime/model from Audio. AI voice generation, transcription and translation remain planned.
 
-[Windows downloads](https://github.com/jontechlabs/ai-dubbing-studio/releases/tag/v0.3.1) · [User guide](docs/GETTING-STARTED.md) · [Build instructions](docs/BUILDING.md) · [Français](README.fr.md)
+[Windows downloads](https://github.com/jontechlabs/ai-dubbing-studio/releases/tag/v0.3.2) · [User guide](docs/GETTING-STARTED.md) · [Build instructions](docs/BUILDING.md) · [Français](README.fr.md)
 
 ![Studio with bilingual dialogue, video preview, text editor and timeline](docs/screenshots/studio.png)
 
@@ -16,9 +16,9 @@ Built with **Tauri 2, React, TypeScript and Rust**. English and French interface
 
 | Package | Purpose |
 | --- | --- |
-| [Windows x64 setup](https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.3.1/AI-Dubbing-Studio-0.3.1-Setup.exe) | NSIS installer for the current user, with English/French installer interface |
-| [Portable ZIP](https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.3.1/AI-Dubbing-Studio-Windows-Portable.zip) | Extract the whole folder and launch `AI Dubbing Studio.exe` |
-| [SHA-256 checksums](https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.3.1/SHA256SUMS.txt) | Verify the setup and ZIP downloads |
+| [Windows x64 setup](https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.3.2/AI-Dubbing-Studio-0.3.2-Setup.exe) | NSIS installer for the current user, with English/French installer interface |
+| [Portable ZIP](https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.3.2/AI-Dubbing-Studio-Windows-Portable.zip) | Extract the whole folder and launch `AI Dubbing Studio.exe` |
+| [SHA-256 checksums](https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.3.2/SHA256SUMS.txt) | Verify the setup and ZIP downloads |
 
 Target: **Windows 10/11 x64**, with **Microsoft Edge WebView2 Runtime**. FFmpeg and FFprobe are included. Python, CUDA and AI model downloads are not required for editing and playback. Installation may need Internet access if WebView2 is missing; local project editing does not require a cloud account.
 
@@ -60,7 +60,7 @@ Read the [Phase 3 guide](docs/PHASE-3.md) for runtime/model installation, GPU pr
 
 ![GPU preference and verified update installation](docs/screenshots/updates.png)
 
-*Actual React interface in browser tests with simulated native IPC, GPU names and a future 0.3.1 update. These screenshots do not show a real available 0.3.1 release or a native Tauri window. The model itself was separately tested with real CPU inference on Windows.*
+*Actual React interface in browser tests with simulated native IPC, GPU names and a future 0.3.2 update. These screenshots do not show a real available 0.3.2 release or a native Tauri window. The model itself was separately tested with real CPU inference on Windows.*
 
 ## First project
 
@@ -137,7 +137,7 @@ Provider type definitions are contracts, not functioning inference integrations.
 
 ## Validation
 
-The current local checks passed **22 TypeScript tests, 15 Rust tests, 11 Playwright scenarios and 4 Python worker tests**, plus the frontend build, ESLint, Prettier, Rust formatting and Clippy. Rust tests include real bilingual SRT/ASS MKV extraction, selected-track waveform decoding with an audio delay, caching, cancellation and project editing while a waveform job is queued. Timing tests cover shift/drift estimation, missing cues, grouping, refusal of ambiguous matches, Unicode splits, merge/export persistence and preservation of TTS overrides. The interface scenario for native commands uses mocked IPC; it does not replace native GUI testing.
+The current local checks passed **22 TypeScript tests, 22 Rust tests, 11 Playwright scenarios and 4 Python worker tests**, plus the frontend build, ESLint, Prettier, Rust formatting and Clippy. Rust tests include real bilingual SRT/ASS MKV extraction, selected-track waveform decoding with an audio delay, caching, cancellation and project editing while a waveform job is queued. Timing tests cover shift/drift estimation, missing cues, grouping, refusal of ambiguous matches, Unicode splits, merge/export persistence and preservation of TTS overrides. The interface scenario for native commands uses mocked IPC; it does not replace native GUI testing.
 
 The earlier [v0.1.1 clean Windows run](https://github.com/jontechlabs/ai-dubbing-studio/actions/runs/38362204358) passed its checks and packaging. Current runs are available under [Actions](https://github.com/jontechlabs/ai-dubbing-studio/actions).
 

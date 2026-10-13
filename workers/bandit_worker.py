@@ -44,6 +44,17 @@ def select_device(requested, devices):
         raise ValueError("DEVICE_UNAVAILABLE")
     return requested
 
+def runtime_info():
+    import torch
+    import torchaudio
+    import numpy
+    import soundfile
+    from bandit.models.bandit.bandit import Bandit
+    torch_version = torch.__version__.split("+")[0]
+    if torch_version != "2.8.0" or torchaudio.__version__.split("+")[0] != torch_version:
+        raise ValueError("RUNTIME_INSTALL_FAILED")
+    return {"runtimeReady": True, "torchVersion": torch_version, "cudaVersion": torch.version.cuda}
+
 def separate(args):
     import numpy as np
     import soundfile as sf
@@ -104,12 +115,14 @@ def separate(args):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--info", action="store_true")
+    parser.add_argument("--runtime-info", action="store_true")
     parser.add_argument("--input"); parser.add_argument("--output"); parser.add_argument("--model")
     parser.add_argument("--device", default="auto")
     args = parser.parse_args()
     threading.Thread(target=control,daemon=True).start()
     try:
-        if args.info: report(**device_info())
+        if args.runtime_info: report(**runtime_info())
+        elif args.info: report(**device_info())
         else: separate(args)
     except Exception as error:
         report(error=str(error)); sys.exit(1)

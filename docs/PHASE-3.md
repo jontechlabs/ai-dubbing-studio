@@ -4,9 +4,13 @@
 
 Ouvrez **Audio** après l’import vidéo. Cliquez sur **Installer Bandit** : le studio installe Python et ses bibliothèques dans son espace de données, puis télécharge les poids multilingues de 447 Mo. Le téléchargement et son empreinte SHA-256 sont vérifiés. Prévoir environ 2 Go en mode CPU et davantage avec CUDA. Cette installation utilise Internet ; la séparation des médias reste locale.
 
+Depuis **v0.3.2**, les poids sont téléchargés depuis un miroir GitHub du checkpoint officiel inchangé, avec le lien public Zenodo comme source de repli. La licence CC-BY-SA 4.0, les auteurs, le DOI et les empreintes sont inclus dans la notice du modèle. Le fichier doit avoir exactement la taille et l’empreinte attendues avant d’être installé. Les erreurs temporaires reçoivent au maximum deux tentatives par source ; un refus 403 passe directement à la suivante.
+
+Si une ancienne tentative a échoué avec **403 Forbidden** au téléchargement du modèle, mettez le studio à jour vers v0.3.2, puis ouvrez **Traitements → Réessayer** sur cette tentative. La vérification réutilise Python et les dépendances lorsqu’ils sont complets et correspondent au choix CPU/CUDA enregistré. Les archives et modèles déjà présents ne sont réutilisés qu’après validation de leur taille et de leur SHA-256. Les logs indiquent la source utilisée et la réutilisation des fichiers. Un téléchargement partiel est supprimé, puis recommencé ; la reprise à partir d’un offset n’est pas implémentée.
+
 Pour un GPU NVIDIA compatible, cochez la variante CUDA lors de l’installation. Depuis **v0.3.1**, le studio utilise PyTorch 2.8 avec **CUDA 12.8**, qui prend en charge Blackwell, dont la RTX 5060 Ti. [Versions officielles PyTorch](https://pytorch.org/get-started/previous-versions/) · [Support Blackwell](https://pytorch.org/blog/pytorch-2-7/).
 
-Pour remplacer une installation CPU ou l’ancienne variante CUDA 12.6, ouvrez **Audio → Modifier ou réparer l’installation Bandit**, cochez **Installer la variante NVIDIA CUDA 12.8**, puis cliquez sur **Réinstaller Bandit**. L’environnement et le modèle sont téléchargés de nouveau ; les projets et pistes déjà séparées restent conservés. Après réussite, fermez les traitements et rouvrez Audio pour actualiser les processeurs disponibles.
+Pour remplacer une installation CPU ou l’ancienne variante CUDA 12.6, ouvrez **Audio → Modifier ou réparer l’installation Bandit**, cochez **Installer la variante NVIDIA CUDA 12.8**, puis cliquez sur **Réinstaller Bandit**. Les composants requis sont installés ou réutilisés après vérification ; les projets et pistes déjà séparées restent conservés. Après réussite, fermez les traitements et rouvrez Audio pour actualiser les processeurs disponibles.
 
 Le studio teste une opération CUDA avant de proposer un GPU. Une carte détectée dont les kernels ne fonctionnent pas affiche un avertissement et n’est pas sélectionnée automatiquement. Ce petit test ne remplace pas un essai de séparation complet. Choisissez **CPU**, **Automatique**, ou un device CUDA précis. Bandit ne prend pas en charge DirectML/AMD/Intel/Metal dans cette intégration : leur présence dans les réglages graphiques du lecteur ne leur donne pas un backend d’inférence CUDA.
 
@@ -36,7 +40,7 @@ Sur une machine avec Ryzen 7 5700G et RTX 5060 Ti, dont l’écran est connecté
 
 ## Mises à jour dans l’application
 
-Depuis v0.2.x, il faut installer **v0.3.1 manuellement une première fois** depuis GitHub. Depuis v0.3.0, **Paramètres → Rechercher une mise à jour** propose ce correctif et les versions suivantes. La vérification au démarrage peut être désactivée.
+Depuis v0.2.x, il faut installer **v0.3.2 manuellement une première fois** depuis GitHub. Depuis v0.3.0, **Paramètres → Rechercher une mise à jour** propose ce correctif et les versions suivantes. La vérification au démarrage peut être désactivée.
 
 Lorsqu’une version est proposée, cliquez sur **Télécharger la mise à jour**. La signature Tauri est vérifiée avant l’installation. Puis cliquez sur **Installer et redémarrer** ; le studio sauvegarde le projet et attend la fin ou l’annulation des traitements. Aucun média n’est envoyé pour vérifier les versions.
 
@@ -56,5 +60,7 @@ La phase 3 est implémentée. Il reste **4 phases** :
 Audio installs the optional Bandit runtime/model, selects a detected CPU/CUDA device, starts local speech/music/effects separation, and provides persistent mute/solo/gain with individual WAV exports. Pause is applied between windows; failed/cancelled attempts preserve existing tracks. Adding stems uses project format 2, while older format 1 projects remain readable.
 
 Version 0.3.1 installs the CUDA 12.8 PyTorch wheels for NVIDIA GPUs, including Blackwell/RTX 50. Modify or repair the Bandit installation to replace a CPU or older CUDA environment. Device discovery executes a small CUDA kernel; unusable devices are reported and excluded from automatic selection. Full CUDA Bandit inference remains unqualified on the development host.
+
+Version 0.3.2 downloads the unchanged checkpoint from the attributed GitHub mirror, with Zenodo fallback, bounded transient retries, exact-size and SHA-256 verification. Retry a failed model installation from Processing after updating; a complete matching dependency environment and verified cached files are reused. Partial downloads restart from zero.
 
 Prepare a smooth preview for slow playback and compare resolution/dropped-frame counters in Settings. Windows renderer GPU preference requires restart and remains subject to Windows/driver selection; it is separate from inference device selection. Install 0.3.0 manually once, then use Settings to check, download a signature-verified update, and install/restart. A portable package’s in-app update uses the current-user installer.

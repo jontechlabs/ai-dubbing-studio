@@ -132,7 +132,8 @@
     "model": "Téléchargement du modèle",
     "audioExtract": "Extraction audio",
     "separate": "Séparation audio",
-    "separationPaused": "Séparation en pause"
+    "separationPaused": "Séparation en pause",
+    "dependenciesCheck": "Vérification des dépendances"
   },
   "shortcuts": "Espace : lecture · J/K/L : transport · O : original · Ctrl+S : sauvegarde · Ctrl+Z/Y : annuler/rétablir",
   "errors": {
@@ -174,7 +175,8 @@
     "DEVICE_UNAVAILABLE": "Ce processeur de calcul est indisponible. Choisis un device détecté ou CPU.",
     "NO_AUDIO": "La vidéo ne possède pas de piste audio sélectionnée.",
     "SEPARATION_FAILED": "Le traitement audio a échoué. Consulte les logs dans Traitements.",
-    "AUDIO_PLAYBACK_FAILED": "Une piste audio n’a pas pu être chargée ou lue. Vérifie les fichiers du projet."
+    "AUDIO_PLAYBACK_FAILED": "Une piste audio n’a pas pu être chargée ou lue. Vérifie les fichiers du projet.",
+    "RUNTIME_INSTALL_FAILED": "L’environnement Bandit n’est pas complet. Relancez sa réparation depuis Audio."
   },
   "preparingVideo": "Préparation de la vidéo…",
   "loadingVideo": "Chargement de la vidéo…",

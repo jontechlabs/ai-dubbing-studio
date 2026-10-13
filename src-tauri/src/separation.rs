@@ -1,9 +1,8 @@
 use crate::{
     domain::{id, io_error, Track},
-    jobs, media, project, Core,
+    downloads, jobs, media, project, Core,
 };
 use serde::{Deserialize, Serialize};
-use sha2::{Digest, Sha256};
 use std::{
     path::{Path, PathBuf},
     sync::{
@@ -17,6 +16,8 @@ use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 #[derive(Deserialize)]
 struct Model {
     url: String,
+    #[serde(default, rename = "fallbackUrls")]
+    fallback_urls: Vec<String>,
     sha256: String,
     size: u64,
 }
@@ -111,38 +112,56 @@ async fn fetch<R: tauri::Runtime>(
     core: &Arc<Core>,
     app: &tauri::AppHandle<R>,
     key: &str,
-    url: &str,
+    urls: &[String],
     output: &Path,
     verification: (&str, u64),
     flag: &AtomicBool,
 ) -> Result<(), String> {
     let (expected, max) = verification;
-    let request = reqwest::Client::builder()
-        .timeout(std::time::Duration::from_secs(3600))
-        .build()
-        .map_err(io_error)?
-        .get(url)
-        .send();
-    let mut response = tokio::select! { _ = jobs::cancelled(flag) => return Err("CANCELLED".into()), result=request => result.map_err(io_error)?.error_for_status().map_err(io_error)?, };
-    let temporary = output.with_extension("download");
-    let result = async {
-        let mut file = tokio::fs::File::create(&temporary).await.map_err(io_error)?;
-        let mut hash = Sha256::new(); let mut count=0_u64; let mut last=0_u64;
-        while let Some(bytes) = tokio::select! { _ = jobs::cancelled(flag) => return Err("CANCELLED".into()), bytes = response.chunk() => bytes.map_err(io_error)? } {
-            count += bytes.len() as u64;
-            if count > max { return Err("DOWNLOAD_FAILED".into()); }
-            hash.update(&bytes); file.write_all(&bytes).await.map_err(io_error)?;
-            if count-last > (max/100).max(65536) { last=count; jobs::update(core, app, key, |job| job.progress=Some(count as f64 / max.max(1) as f64)); }
-        }
-        file.sync_all().await.map_err(io_error)?; drop(file);
-        if format!("{:x}",hash.finalize()) != expected { return Err("MODEL_CHECKSUM_FAILED".into()); }
-        tokio::fs::rename(&temporary,output).await.map_err(io_error)?;
-        Ok(())
-    }.await;
-    if result.is_err() {
-        let _ = tokio::fs::remove_file(&temporary).await;
+    downloads::fetch(
+        &downloads::client()?,
+        &downloads::Spec {
+            urls,
+            sha256: expected,
+            size: max,
+        },
+        output,
+        flag,
+        |event| match event {
+            downloads::Event::Log(line) => jobs::update(core, app, key, |job| job.logs.push(line)),
+            downloads::Event::Progress(bytes) => jobs::update(core, app, key, |job| {
+                job.progress = Some(bytes as f64 / max.max(1) as f64)
+            }),
+        },
+    )
+    .await
+}
+
+async fn runtime_usable<R: tauri::Runtime>(
+    app: &tauri::AppHandle<R>,
+    root: &Path,
+    cuda: bool,
+    flag: &AtomicBool,
+) -> Result<bool, String> {
+    if !python(root).is_file() {
+        return Ok(false);
     }
-    result
+    let result = tokio::select! {
+        _ = jobs::cancelled(flag) => return Err("CANCELLED".into()),
+        result = tokio::time::timeout(std::time::Duration::from_secs(60), media::command(&python(root)).arg(resources(app).join("bandit_worker.py")).arg("--runtime-info").output()) => result,
+    };
+    let info = result
+        .ok()
+        .and_then(Result::ok)
+        .filter(|result| result.status.success())
+        .and_then(|result| serde_json::from_slice::<serde_json::Value>(&result.stdout).ok());
+    Ok(info.is_some_and(|info| runtime_matches(&info, cuda)))
+}
+
+fn runtime_matches(info: &serde_json::Value, cuda: bool) -> bool {
+    info["runtimeReady"] == true
+        && info["torchVersion"] == "2.8.0"
+        && info["cudaVersion"].as_str() == if cuda { Some("12.8") } else { None }
 }
 
 async fn process<R: tauri::Runtime>(
@@ -264,8 +283,13 @@ pub fn install<R: tauri::Runtime>(
             jobs::update(&core,&app,&key,|job|{job.status="running".into();job.stage="runtime".into();});
             let root=runtime(&core); std::fs::create_dir_all(root.join("python/Lib/site-packages")).map_err(io_error)?;
             let _=std::fs::remove_file(root.join("ready.json"));
+            jobs::update(&core,&app,&key,|job|{job.stage="dependenciesCheck".into();job.progress=None;});
+            if runtime_usable(&app,&root,cuda,&flag).await? {
+                jobs::update(&core,&app,&key,|job|job.logs.push("Existing Python/Bandit dependencies verified; installation reused.".into()));
+            } else {
+            jobs::update(&core,&app,&key,|job|job.stage="runtime".into());
             let archive=root.join("python.zip");
-            fetch(&core,&app,&key,"https://www.python.org/ftp/python/3.12.10/python-3.12.10-embed-amd64.zip",&archive,("4acbed6dd1c744b0376e3b1cf57ce906f9dc9e95e68824584c8099a63025a3c3",11133606),&flag).await?;
+            fetch(&core,&app,&key,&["https://www.python.org/ftp/python/3.12.10/python-3.12.10-embed-amd64.zip".into()],&archive,("4acbed6dd1c744b0376e3b1cf57ce906f9dc9e95e68824584c8099a63025a3c3",11133606),&flag).await?;
             let extract_root=root.clone();
             tauri::async_runtime::spawn_blocking(move || {
                 let mut archive=zip::ZipArchive::new(std::fs::File::open(extract_root.join("python.zip")).map_err(io_error)?).map_err(io_error)?;
@@ -273,7 +297,7 @@ pub fn install<R: tauri::Runtime>(
                 project::atomic_write(&extract_root.join("python/python312._pth"),b"python312.zip\n.\nLib/site-packages\nimport site\n")
             }).await.map_err(io_error)??;
             let pip=root.join("pip.whl");
-            fetch(&core,&app,&key,"https://files.pythonhosted.org/packages/b7/3f/945ef7ab14dc4f9d7f40288d2df998d1837ee0888ec3659c813487572faa/pip-25.2-py3-none-any.whl",&pip,("6d67a2b4e7f14d8b31b8b52648866fa717f45a1eb70e83002f4331d07e953717",1752557),&flag).await?;
+            fetch(&core,&app,&key,&["https://files.pythonhosted.org/packages/b7/3f/945ef7ab14dc4f9d7f40288d2df998d1837ee0888ec3659c813487572faa/pip-25.2-py3-none-any.whl".into()],&pip,("6d67a2b4e7f14d8b31b8b52648866fa717f45a1eb70e83002f4331d07e953717",1752557),&flag).await?;
             let interpreter=python(&root); let target=root.join("python/Lib/site-packages").to_string_lossy().into_owned();
             let bootstrap="import sys,runpy;sys.path.insert(0,sys.argv.pop(1));runpy.run_module('pip',run_name='__main__')";
             let mut args=vec!["-c".into(),bootstrap.into(),pip.to_string_lossy().into_owned(),"install".into(),"--no-user".into(),"--upgrade".into(),"--target".into(),target.clone(),"torch==2.8.0".into(),"torchaudio==2.8.0".into(),"--index-url".into(),if cuda{"https://download.pytorch.org/whl/cu128"}else{"https://download.pytorch.org/whl/cpu"}.into()];
@@ -281,10 +305,13 @@ pub fn install<R: tauri::Runtime>(
             process(&core,&app,&key,&interpreter,&args,&flag).await?;
             args=vec!["-c".into(),bootstrap.into(),pip.to_string_lossy().into_owned(),"install".into(),"--no-user".into(),"--target".into(),target,"--index-url".into(),"https://pypi.org/simple".into(),"--no-deps".into(),"--upgrade".into(),"-r".into(),resources(&app).join("runtime-requirements.txt").to_string_lossy().into_owned()];
             process(&core,&app,&key,&interpreter,&args,&flag).await?;
+            if !runtime_usable(&app,&root,cuda,&flag).await? { return Err("RUNTIME_INSTALL_FAILED".into()); }
+            }
             let model:Model=serde_json::from_slice(&std::fs::read(resources(&app).join("bandit-model.json")).map_err(io_error)?).map_err(io_error)?;
             jobs::update(&core,&app,&key,|job|{job.stage="model".into();job.progress=Some(0.0);});
-            fetch(&core,&app,&key,&model.url,&root.join("checkpoint-multi.ckpt"),(&model.sha256,model.size),&flag).await?;
-            process(&core,&app,&key,&interpreter,&[resources(&app).join("bandit_worker.py").to_string_lossy().into_owned(),"--info".into()],&flag).await?;
+            let mut urls=vec![model.url]; urls.extend(model.fallback_urls);
+            fetch(&core,&app,&key,&urls,&root.join("checkpoint-multi.ckpt"),(&model.sha256,model.size),&flag).await?;
+            process(&core,&app,&key,&python(&root),&[resources(&app).join("bandit_worker.py").to_string_lossy().into_owned(),"--info".into()],&flag).await?;
             project::atomic_write(&root.join("ready.json"),br#"{"version":1}"#)
         }.await;
         finish(&core, &app, &key, &result);
@@ -379,4 +406,31 @@ pub fn enqueue<R: tauri::Runtime>(
         finish(&core, &app, &key, &result);
     });
     Ok(output)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::runtime_matches;
+    #[test]
+    fn retry_reuses_only_a_complete_environment_for_the_requested_variant() {
+        let cpu =
+            serde_json::json!({"runtimeReady":true,"torchVersion":"2.8.0","cudaVersion":null});
+        let old_cuda =
+            serde_json::json!({"runtimeReady":true,"torchVersion":"2.8.0","cudaVersion":"12.6"});
+        let cuda =
+            serde_json::json!({"runtimeReady":true,"torchVersion":"2.8.0","cudaVersion":"12.8"});
+        assert!(runtime_matches(&cpu, false));
+        assert!(!runtime_matches(&cpu, true));
+        assert!(!runtime_matches(&old_cuda, true));
+        assert!(runtime_matches(&cuda, true));
+        assert!(!runtime_matches(&cuda, false));
+        assert!(!runtime_matches(
+            &serde_json::json!({"runtimeReady":false,"torchVersion":"2.8.0","cudaVersion":"12.8"}),
+            true
+        ));
+        assert!(!runtime_matches(
+            &serde_json::json!({"runtimeReady":true,"torchVersion":"2.7.0","cudaVersion":"12.8"}),
+            true
+        ));
+    }
 }

@@ -132,7 +132,8 @@
     "model": "Downloading model",
     "audioExtract": "Extracting audio",
     "separate": "Audio separation",
-    "separationPaused": "Separation paused"
+    "separationPaused": "Separation paused",
+    "dependenciesCheck": "Checking dependencies"
   },
   "shortcuts": "Space: play · J/K/L: transport · O: original · Ctrl+S: save · Ctrl+Z/Y: undo/redo",
   "errors": {
@@ -174,7 +175,8 @@
     "DEVICE_UNAVAILABLE": "This compute device is unavailable. Choose a detected device or CPU.",
     "NO_AUDIO": "The video has no selected audio track.",
     "SEPARATION_FAILED": "Audio processing failed. Check logs in Processing.",
-    "AUDIO_PLAYBACK_FAILED": "An audio track could not load or play. Check the project files."
+    "AUDIO_PLAYBACK_FAILED": "An audio track could not load or play. Check the project files.",
+    "RUNTIME_INSTALL_FAILED": "The Bandit environment is incomplete. Repair its installation from Audio."
   },
   "preparingVideo": "Preparing video…",
   "loadingVideo": "Loading video…",
