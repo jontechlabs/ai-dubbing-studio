@@ -146,7 +146,7 @@ export function AudioPanel({
             disabled={!project?.media || active || working}
             onClick={() => {
               void run(async () => {
-                await bridge.separateAudio(selectedDevice);
+                await bridge.separateAudio(runtime?.deviceProbeWarning ? 'cpu' : selectedDevice);
                 showJobs();
                 return null;
               });

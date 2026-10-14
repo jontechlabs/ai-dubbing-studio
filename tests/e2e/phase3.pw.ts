@@ -118,6 +118,11 @@ test('device check has its own indeterminate stage and a recoverable CPU fallbac
   await expect(page.getByRole('alert')).toContainText('Bandit reste utilisable sur CPU');
   await expect(page.getByRole('button',{name:'Séparer voix / musique / effets'})).toBeEnabled();
   await expect(page.getByRole('combobox',{name:'Processeur de séparation audio'}).locator('option')).toHaveCount(2);
+  await page.getByRole('button',{name:'Séparer voix / musique / effets'}).click();
+  expect(await page.evaluate(() => (window as any).__calls.filter((call:any) => call.command==='separate_audio').at(-1).args.device)).toBe('cpu');
+  await page.getByRole('button',{name:'Annuler',exact:true}).click();
+  await page.getByRole('button',{name:'Fermer',exact:true}).click();
+  await page.getByRole('button',{name:'Audio',exact:true}).click();
   await page.evaluate(() => { (window as any).__probeFailed = false; (window as any).__completeRuntime(); });
   await page.getByRole('button',{name:'Actualiser les processeurs',exact:true}).click();
   await expect(page.getByRole('alert')).toHaveCount(0);
