@@ -29,6 +29,7 @@ pub struct Status {
     pub devices: serde_json::Value,
     pub unavailable_devices: serde_json::Value,
     pub cuda_version: Option<String>,
+    pub device_probe_warning: Option<String>,
 }
 fn resources<R: tauri::Runtime>(app: &tauri::AppHandle<R>) -> PathBuf {
     let packaged = app
@@ -69,32 +70,34 @@ pub async fn status<R: tauri::Runtime>(
     });
     let ready = installed(&core);
     let inventory = if ready {
-        let result = tokio::time::timeout(
+        probe(
+            &python(&runtime(&core)),
+            &[
+                resources(&app)
+                    .join("bandit_worker.py")
+                    .to_string_lossy()
+                    .into_owned(),
+                "--info".into(),
+            ],
+            &AtomicBool::new(false),
             std::time::Duration::from_secs(30),
-            media::command(&python(&runtime(&core)))
-                .arg(resources(&app).join("bandit_worker.py"))
-                .arg("--info")
-                .output(),
         )
-        .await;
-        result
-            .ok()
-            .and_then(Result::ok)
-            .filter(|result| result.status.success())
-            .and_then(|result| serde_json::from_slice::<serde_json::Value>(&result.stdout).ok())
-            .unwrap_or(serde_json::json!({}))
+        .await?
     } else {
-        serde_json::json!({})
+        None
     };
+    let warning = (ready && inventory.is_none()).then(|| "DEVICE_PROBE_FAILED".to_owned());
+    let metadata: serde_json::Value = std::fs::read(runtime(&core).join("ready.json"))
+        .ok()
+        .and_then(|bytes| serde_json::from_slice(&bytes).ok())
+        .unwrap_or_default();
+    let inventory = inventory.unwrap_or_else(|| serde_json::json!({"devices":[{"id":"cpu","name":"CPU"}],"cudaVersion":metadata["cudaVersion"]}));
     let devices = inventory
         .get("devices")
         .cloned()
         .unwrap_or(serde_json::json!([]));
     Ok(Status {
-        installed: ready
-            && devices
-                .as_array()
-                .is_some_and(|devices| !devices.is_empty()),
+        installed: ready,
         installing,
         devices,
         unavailable_devices: inventory
@@ -105,6 +108,7 @@ pub async fn status<R: tauri::Runtime>(
             .get("cudaVersion")
             .and_then(serde_json::Value::as_str)
             .map(str::to_owned),
+        device_probe_warning: warning,
     })
 }
 
@@ -146,16 +150,39 @@ async fn runtime_usable<R: tauri::Runtime>(
     if !python(root).is_file() {
         return Ok(false);
     }
+    let info = probe(
+        &python(root),
+        &[
+            resources(app)
+                .join("bandit_worker.py")
+                .to_string_lossy()
+                .into_owned(),
+            "--runtime-info".into(),
+        ],
+        flag,
+        std::time::Duration::from_secs(60),
+    )
+    .await?;
+    Ok(info.is_some_and(|info| runtime_matches(&info, cuda)))
+}
+
+// Probes have no pause/resume protocol. Close stdin from the start and bound
+// their entire lifetime, including driver initialization and process exit.
+async fn probe(
+    executable: &Path,
+    args: &[String],
+    flag: &AtomicBool,
+    limit: std::time::Duration,
+) -> Result<Option<serde_json::Value>, String> {
     let result = tokio::select! {
         _ = jobs::cancelled(flag) => return Err("CANCELLED".into()),
-        result = tokio::time::timeout(std::time::Duration::from_secs(60), media::command(&python(root)).arg(resources(app).join("bandit_worker.py")).arg("--runtime-info").output()) => result,
+        result = tokio::time::timeout(limit, media::command(executable).args(args).env("PYTHONUNBUFFERED", "1").stdin(std::process::Stdio::null()).output()) => result,
     };
-    let info = result
+    Ok(result
         .ok()
         .and_then(Result::ok)
-        .filter(|result| result.status.success())
-        .and_then(|result| serde_json::from_slice::<serde_json::Value>(&result.stdout).ok());
-    Ok(info.is_some_and(|info| runtime_matches(&info, cuda)))
+        .filter(|output| output.status.success())
+        .and_then(|output| serde_json::from_slice(&output.stdout).ok()))
 }
 
 fn runtime_matches(info: &serde_json::Value, cuda: bool) -> bool {
@@ -311,8 +338,11 @@ pub fn install<R: tauri::Runtime>(
             jobs::update(&core,&app,&key,|job|{job.stage="model".into();job.progress=Some(0.0);});
             let mut urls=vec![model.url]; urls.extend(model.fallback_urls);
             fetch(&core,&app,&key,&urls,&root.join("checkpoint-multi.ckpt"),(&model.sha256,model.size),&flag).await?;
-            process(&core,&app,&key,&python(&root),&[resources(&app).join("bandit_worker.py").to_string_lossy().into_owned(),"--info".into()],&flag).await?;
-            project::atomic_write(&root.join("ready.json"),br#"{"version":1}"#)
+            jobs::update(&core,&app,&key,|job|{job.stage="devicesCheck".into();job.progress=None;job.logs.push("Model verified. Checking compute devices (maximum 30 seconds).".into());});
+            let inventory=probe(&python(&root),&[resources(&app).join("bandit_worker.py").to_string_lossy().into_owned(),"--info".into()],&flag,std::time::Duration::from_secs(30)).await?;
+            jobs::update(&core,&app,&key,|job|job.logs.push(match inventory { Some(ref info)=>format!("Compute devices checked: {info}"),None=>"Device detection did not complete successfully within 30 seconds. Installation is ready for CPU; refresh devices from Audio to retry GPU detection.".into() }));
+            if flag.load(Ordering::Relaxed){return Err("CANCELLED".into());}
+            project::atomic_write(&root.join("ready.json"),&serde_json::to_vec(&serde_json::json!({"version":1,"cudaVersion":if cuda {Some("12.8")} else {None}})).map_err(io_error)?)
         }.await;
         finish(&core, &app, &key, &result);
     });
@@ -411,6 +441,73 @@ pub fn enqueue<R: tauri::Runtime>(
 #[cfg(test)]
 mod tests {
     use super::runtime_matches;
+    use std::{path::PathBuf, sync::atomic::AtomicBool, time::Duration};
+
+    fn shell(script: &str) -> (PathBuf, Vec<String>) {
+        if cfg!(windows) {
+            (
+                "powershell.exe".into(),
+                vec![
+                    "-NoProfile".into(),
+                    "-NonInteractive".into(),
+                    "-Command".into(),
+                    script.into(),
+                ],
+            )
+        } else {
+            ("sh".into(), vec!["-c".into(), script.into()])
+        }
+    }
+
+    #[tokio::test]
+    async fn probe_closes_stdin_and_collects_json_after_exit() {
+        let (executable, args) = shell(if cfg!(windows) {
+            "[Console]::In.ReadToEnd() | Out-Null; [Console]::Out.Write('{\"runtimeReady\":true}')"
+        } else {
+            "cat >/dev/null; printf '%s' '{\"runtimeReady\":true}'"
+        });
+        let info = super::probe(
+            &executable,
+            &args,
+            &AtomicBool::new(false),
+            Duration::from_secs(10),
+        )
+        .await
+        .unwrap()
+        .unwrap();
+        assert_eq!(info["runtimeReady"], true);
+    }
+
+    #[tokio::test]
+    async fn stalled_probe_has_a_deadline_and_can_be_cancelled() {
+        let (executable, args) = shell(if cfg!(windows) {
+            "Start-Sleep -Seconds 30"
+        } else {
+            "exec sleep 30"
+        });
+        let started = std::time::Instant::now();
+        assert!(super::probe(
+            &executable,
+            &args,
+            &AtomicBool::new(false),
+            Duration::from_millis(100)
+        )
+        .await
+        .unwrap()
+        .is_none());
+        assert!(started.elapsed() < Duration::from_secs(5));
+        assert_eq!(
+            super::probe(
+                &executable,
+                &args,
+                &AtomicBool::new(true),
+                Duration::from_secs(30)
+            )
+            .await
+            .unwrap_err(),
+            "CANCELLED"
+        );
+    }
     #[test]
     fn retry_reuses_only_a_complete_environment_for_the_requested_variant() {
         let cpu =

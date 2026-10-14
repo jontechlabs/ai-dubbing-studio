@@ -133,7 +133,8 @@
     "audioExtract": "Extraction audio",
     "separate": "Séparation audio",
     "separationPaused": "Séparation en pause",
-    "dependenciesCheck": "Vérification des dépendances"
+    "dependenciesCheck": "Vérification des dépendances",
+    "devicesCheck": "Vérification des processeurs de calcul (30 s maximum)"
   },
   "shortcuts": "Espace : lecture · J/K/L : transport · O : original · Ctrl+S : sauvegarde · Ctrl+Z/Y : annuler/rétablir",
   "errors": {
@@ -176,7 +177,8 @@
     "NO_AUDIO": "La vidéo ne possède pas de piste audio sélectionnée.",
     "SEPARATION_FAILED": "Le traitement audio a échoué. Consulte les logs dans Traitements.",
     "AUDIO_PLAYBACK_FAILED": "Une piste audio n’a pas pu être chargée ou lue. Vérifie les fichiers du projet.",
-    "RUNTIME_INSTALL_FAILED": "L’environnement Bandit n’est pas complet. Relancez sa réparation depuis Audio."
+    "RUNTIME_INSTALL_FAILED": "L’environnement Bandit n’est pas complet. Relancez sa réparation depuis Audio.",
+    "DEVICE_PROBE_FAILED": "La détection GPU n’a pas abouti dans le délai de 30 secondes. Bandit reste utilisable sur CPU. Cliquez sur Actualiser les processeurs pour réessayer."
   },
   "preparingVideo": "Préparation de la vidéo…",
   "loadingVideo": "Chargement de la vidéo…",
@@ -254,7 +256,7 @@
   "runtimeReinstall": "Réinstaller Bandit",
   "runtimeDeviceUnavailable": "{{name}} est détecté mais ne peut pas exécuter les calculs CUDA. Réinstalle la variante NVIDIA et vérifie le pilote.",
   "runtimeInstall": "Installer Bandit",
-  "runtimeRefresh": "Vérifier l’installation",
+  "runtimeRefresh": "Actualiser les processeurs",
   "separationDevice": "Processeur de séparation audio",
   "separateAudio": "Séparer voix / musique / effets",
   "separationQuality": "La séparation est une estimation et peut contenir des fuites ou artefacts. Sur CPU, un film peut prendre longtemps. Les résultats apparaissent dans la timeline après réussite ; les anciennes sorties restent conservées.",

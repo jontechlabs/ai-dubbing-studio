@@ -12,9 +12,30 @@ sys.dont_write_bytecode = True
 sys.path.insert(0, str(Path(__file__).parent / "vendor"))
 paused = threading.Event()
 def control():
-    for line in sys.stdin:
-        if line.strip() == 'pause': paused.set()
-        elif line.strip() == 'resume': paused.clear()
+    # Never wait inside a Windows CRT stdin read: Torch imports and Python
+    # shutdown may need the same descriptor lock. Python 3.12 supports
+    # nonblocking Windows pipes (the application's control transport).
+    descriptor = sys.stdin.fileno()
+    try:
+        os.set_blocking(descriptor, False)
+    except OSError:
+        return  # Standalone console use has no application control pipe.
+    pending = b''
+    while True:
+        try:
+            chunk = os.read(descriptor, 4096)
+        except BlockingIOError:
+            time.sleep(0.05)
+            continue
+        except OSError:
+            return
+        if not chunk:
+            return
+        pending += chunk
+        while b'\n' in pending:
+            line, pending = pending.split(b'\n', 1)
+            if line.strip() == b'pause': paused.set()
+            elif line.strip() == b'resume': paused.clear()
 
 def report(**values):
     print(json.dumps(values), flush=True)
@@ -65,7 +86,7 @@ def separate(args):
     with open(args.model, "rb") as file:
         if hashlib.file_digest(file, "sha256").hexdigest() != manifest["sha256"]:
             raise ValueError("MODEL_CHECKSUM_FAILED")
-    device = select_device(args.device, device_info()["devices"])
+    device = 'cpu' if args.device == 'cpu' else select_device(args.device, device_info()["devices"])
     torch.set_num_threads(min(4, max(1, (os.cpu_count() or 2) // 2)))
     model = Bandit(in_channels=1, stems=["speech", "music", "sfx"], fs=48000, n_sqm_modules=8, rnn_type="GRU", pad_mode="reflect")
     checkpoint = torch.load(args.model, map_location="cpu", weights_only=True)
@@ -119,10 +140,11 @@ if __name__ == "__main__":
     parser.add_argument("--input"); parser.add_argument("--output"); parser.add_argument("--model")
     parser.add_argument("--device", default="auto")
     args = parser.parse_args()
-    threading.Thread(target=control,daemon=True).start()
     try:
         if args.runtime_info: report(**runtime_info())
         elif args.info: report(**device_info())
-        else: separate(args)
+        else:
+            threading.Thread(target=control,daemon=True).start()
+            separate(args)
     except Exception as error:
         report(error=str(error)); sys.exit(1)

@@ -4,9 +4,9 @@ A local desktop workspace for preparing video dubbing: review bilingual subtitle
 
 Built with **Tauri 2, React, TypeScript and Rust**. English and French interface. Dark and light themes.
 
-**v0.3.2 — Phase 3 development preview.** This patch fixes Bandit model downloads using a verified GitHub mirror, source fallback and bounded retries. Retrying an installation reuses verified dependencies and model files. CUDA 12.8 supports Blackwell/RTX 50. Local Bandit v2 Multilingual separation is available after installing its optional runtime/model from Audio. AI voice generation, transcription and translation remain planned.
+**v0.3.3 — Phase 3 development preview.** Fixes the Windows Bandit installation stuck at 100% after a verified download. Device checking is a separate stage, bounded to 30 seconds, with CPU fallback and refreshable GPU discovery. Verified dependencies and checkpoints are reused. Local Bandit v2 Multilingual separation supports CPU and NVIDIA CUDA 12.8 after optional runtime/model installation. AI voice generation, transcription and translation remain planned.
 
-[Windows downloads](https://github.com/jontechlabs/ai-dubbing-studio/releases/tag/v0.3.2) · [User guide](docs/GETTING-STARTED.md) · [Build instructions](docs/BUILDING.md) · [Français](README.fr.md)
+[Windows downloads](https://github.com/jontechlabs/ai-dubbing-studio/releases/tag/v0.3.3) · [User guide](docs/GETTING-STARTED.md) · [Build instructions](docs/BUILDING.md) · [Français](README.fr.md)
 
 ![Studio with bilingual dialogue, video preview, text editor and timeline](docs/screenshots/studio.png)
 
@@ -16,9 +16,9 @@ Built with **Tauri 2, React, TypeScript and Rust**. English and French interface
 
 | Package | Purpose |
 | --- | --- |
-| [Windows x64 setup](https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.3.2/AI-Dubbing-Studio-0.3.2-Setup.exe) | NSIS installer for the current user, with English/French installer interface |
-| [Portable ZIP](https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.3.2/AI-Dubbing-Studio-Windows-Portable.zip) | Extract the whole folder and launch `AI Dubbing Studio.exe` |
-| [SHA-256 checksums](https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.3.2/SHA256SUMS.txt) | Verify the setup and ZIP downloads |
+| [Windows x64 setup](https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.3.3/AI-Dubbing-Studio-0.3.3-Setup.exe) | NSIS installer for the current user, with English/French installer interface |
+| [Portable ZIP](https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.3.3/AI-Dubbing-Studio-Windows-Portable.zip) | Extract the whole folder and launch `AI Dubbing Studio.exe` |
+| [SHA-256 checksums](https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.3.3/SHA256SUMS.txt) | Verify the setup and ZIP downloads |
 
 Target: **Windows 10/11 x64**, with **Microsoft Edge WebView2 Runtime**. FFmpeg and FFprobe are included. Python, CUDA and AI model downloads are not required for editing and playback. Installation may need Internet access if WebView2 is missing; local project editing does not require a cloud account.
 
@@ -60,7 +60,11 @@ Read the [Phase 3 guide](docs/PHASE-3.md) for runtime/model installation, GPU pr
 
 ![GPU preference and verified update installation](docs/screenshots/updates.png)
 
-*Actual React interface in browser tests with simulated native IPC, GPU names and a future 0.3.2 update. These screenshots do not show a real available 0.3.2 release or a native Tauri window. The model itself was separately tested with real CPU inference on Windows.*
+*Actual React interface in browser tests with simulated native IPC, GPU names and a future 0.3.4 update. These screenshots do not show a real available 0.3.4 release or a native Tauri window. The model itself was separately tested with real CPU inference on Windows.*
+
+![Final Bandit device check with a bounded wait](docs/screenshots/bandit-check.png)
+
+*Browser test of the actual processing interface with simulated native job events. The model download is complete; device checking has its own indeterminate progress.*
 
 ## First project
 

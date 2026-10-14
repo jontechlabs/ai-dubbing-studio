@@ -1,8 +1,8 @@
-# Validation - Phase 3, 13 October 2026
+# Validation - Phase 3, 14 October 2026
 
-## v0.3.2 automated checks
+## v0.3.3 automated checks
 
-The local frontend build, strict TypeScript, ESLint, Prettier, Rust Clippy with -D warnings and rustfmt pass. Suites contain 22 TypeScript tests, 22 Rust tests, 11 Playwright scenarios and 4 Python device tests (59 total).
+The local frontend build, strict TypeScript, ESLint, Prettier, Rust Clippy with -D warnings and rustfmt pass. Suites contain 22 TypeScript tests, 24 Rust tests, 12 Playwright scenarios and 7 Python device/process tests (65 total).
 
 Domain tests retain Phase 2 synchronization/editing coverage and add overlapping/large cue lookup, mixer mute/solo/master gain, legacy original-track creation, unsaved-edit rebase over audio jobs and integer split timestamps. Rust integration checks run actual FFmpeg media, validate real stem WAV structure/sample counts, preserve mixer asset metadata across reload, reject traversal and refuse separation without a runtime without modifying the project. Existing import/subtitle/waveform/cancellation/recovery checks remain.
 
@@ -26,7 +26,7 @@ The [Windows workflow](https://github.com/jontechlabs/ai-dubbing-studio/actions/
 
 An earlier unsigned executable was blocked by Smart App Control. Final native Tauri GUI, installer/uninstaller, effective WebView2 GPU adapter and complete native update/restart remain unqualified. Mocked IPC does not establish those outcomes. Windows rendering preference is an OS request for this executable; it does not guarantee a specific WebView2/decoder adapter.
 
-Screenshots show actual French React UI in browser testing, with simulated native devices/stems/update metadata. The displayed 0.3.3 update is a test scenario, not a released version. Screenshots are not native Tauri captures. The demo has synthetic audio and no generated dubbing.
+Screenshots show actual French React UI in browser testing, with simulated native devices/stems/update metadata. The displayed 0.3.4 update is a test scenario, not a released version. Screenshots are not native Tauri captures. The demo has synthetic audio and no generated dubbing.
 
 Format 1 projects open normally. Adding separated tracks uses format 2, rejected by old app versions. Split text allocation is approximate; SRT synchronization uses timings and does not align speech. Final mix/MKV export and voice generation remain future phases.
 
@@ -39,3 +39,9 @@ The full 446,680,129-byte mirror was downloaded by the production Rust downloade
 ## Earlier validation
 
 The [v0.2.0 Windows run](https://github.com/jontechlabs/ai-dubbing-studio/actions/runs/38379413340) passed its checks and packaging. Earlier suites include bilingual MKV extraction and the corrected Common Controls v6 MSVC test manifest.
+
+## Windows installation finalization regression
+
+With the exact embedded Python 3.12.10 runtime, the previous `--info` worker stayed running for 20 seconds while its stdin pipe remained open and exited after that pipe was closed. The fixed real `--info` and full `--runtime-info` probes exit with stdin still open in about 2 and 6 seconds. Real CPU inference using the verified checkpoint and the same open-pipe transport produced all three one-second WAVs and exited successfully in 26 seconds. Blocking raw stdin was also tested and rejected because it stalled Torch initialization on Windows; the final control reader uses nonblocking pipe reads supported by Python 3.12.
+
+Three Python process tests cover actual CLI exit with open stdin, control-reader shutdown, and pause/resume delivery. They replace heavy imports for CI and complement the real embedded-runtime run. Two Rust process tests exercise closed-stdin JSON collection, a stalled probe deadline, and cancellation. The additional browser scenario checks the visible device-check stage, indeterminate progress, CPU availability after failed GPU discovery and successful refresh. Native IPC is mocked in that browser test. GPU discovery failure does not reclassify a verified installation as missing. The GPU probe checks basic kernels; full RTX 5060 Ti inference remains unqualified on this host.

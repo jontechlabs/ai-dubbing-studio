@@ -133,7 +133,8 @@
     "audioExtract": "Extracting audio",
     "separate": "Audio separation",
     "separationPaused": "Separation paused",
-    "dependenciesCheck": "Checking dependencies"
+    "dependenciesCheck": "Checking dependencies",
+    "devicesCheck": "Checking compute devices (30 s maximum)"
   },
   "shortcuts": "Space: play · J/K/L: transport · O: original · Ctrl+S: save · Ctrl+Z/Y: undo/redo",
   "errors": {
@@ -176,7 +177,8 @@
     "NO_AUDIO": "The video has no selected audio track.",
     "SEPARATION_FAILED": "Audio processing failed. Check logs in Processing.",
     "AUDIO_PLAYBACK_FAILED": "An audio track could not load or play. Check the project files.",
-    "RUNTIME_INSTALL_FAILED": "The Bandit environment is incomplete. Repair its installation from Audio."
+    "RUNTIME_INSTALL_FAILED": "The Bandit environment is incomplete. Repair its installation from Audio.",
+    "DEVICE_PROBE_FAILED": "GPU detection did not complete within 30 seconds. Bandit remains available on CPU. Refresh compute devices to try again."
   },
   "preparingVideo": "Preparing video…",
   "loadingVideo": "Loading video…",
@@ -254,7 +256,7 @@
   "runtimeReinstall": "Reinstall Bandit",
   "runtimeDeviceUnavailable": "{{name}} is detected but cannot run CUDA operations. Reinstall NVIDIA support and check the driver.",
   "runtimeInstall": "Install Bandit",
-  "runtimeRefresh": "Check installation",
+  "runtimeRefresh": "Refresh compute devices",
   "separationDevice": "Audio separation device",
   "separateAudio": "Separate speech / music / effects",
   "separationQuality": "Separation is an estimate and may contain leakage or artifacts. A film may take a long time on CPU. Results appear in the timeline on success; previous outputs are retained.",

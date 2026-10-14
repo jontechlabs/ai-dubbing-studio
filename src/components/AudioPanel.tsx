@@ -27,6 +27,15 @@ export function AudioPanel({
   const [cuda, setCuda] = useState(false),
     [working, setWorking] = useState(false);
   const [repairRuntime, setRepairRuntime] = useState(false);
+  const runtimeCompletion = jobs
+    .filter(
+      (job) =>
+        job.kind === 'runtime' &&
+        ['succeeded', 'failed', 'cancelled', 'interrupted'].includes(job.status),
+    )
+    .map((job) => `${job.id}:${job.status}`)
+    .sort()
+    .join(',');
   const active = jobs.some(
     (job) =>
       ['runtime', 'separation', 'import', 'subtitles'].includes(job.kind) &&
@@ -49,7 +58,7 @@ export function AudioPanel({
     return () => {
       disposed = true;
     };
-  }, [onError]);
+  }, [onError, runtimeCompletion]);
   const tracks = project ? audioTracks(project) : [];
   const selectedDevice =
     device === 'auto' || runtime?.devices.some((entry) => entry.id === device) ? device : 'auto';
@@ -57,6 +66,11 @@ export function AudioPanel({
     <div className="panel-body audio-panel">
       <h3>{t('separationTitle')}</h3>
       <p className="panel-description">{t('separationHint')}</p>
+      {runtime?.deviceProbeWarning && (
+        <p className="warning" role="alert">
+          {t(`errors.${runtime.deviceProbeWarning}`)}
+        </p>
+      )}
       {runtime?.unavailableDevices?.map((entry) => (
         <p className="warning" role="alert" key={entry.id}>
           {t('runtimeDeviceUnavailable', { name: entry.name })}
@@ -90,23 +104,23 @@ export function AudioPanel({
             <Download size={15} />
             {t(runtime?.installed ? 'runtimeReinstall' : 'runtimeInstall')}
           </button>
-          <button
-            className="text-button"
-            disabled={!bridge.native || active || working}
-            onClick={() => {
-              setWorking(true);
-              void bridge
-                .separationStatus()
-                .then(setRuntime)
-                .catch((error) => onError(String(error)))
-                .finally(() => setWorking(false));
-            }}
-          >
-            <RefreshCw size={13} />
-            {t('runtimeRefresh')}
-          </button>
         </div>
       )}
+      <button
+        className="text-button"
+        disabled={!bridge.native || active || working}
+        onClick={() => {
+          setWorking(true);
+          void bridge
+            .separationStatus()
+            .then(setRuntime)
+            .catch((error) => onError(String(error)))
+            .finally(() => setWorking(false));
+        }}
+      >
+        <RefreshCw size={13} />
+        {t('runtimeRefresh')}
+      </button>
       {runtime?.installed && (
         <>
           <label className="field">

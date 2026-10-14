@@ -50,7 +50,7 @@ powershell -NoProfile -File scripts/package-windows.ps1
 
 Tauri outputs its executable in `src-tauri/target/release/` and NSIS installer in `src-tauri/target/release/bundle/nsis/`. The packaging script validates its inputs and creates:
 
-- `artifacts/AI-Dubbing-Studio-0.3.2-Setup.exe`
+- `artifacts/AI-Dubbing-Studio-0.3.3-Setup.exe`
 - `artifacts/AI-Dubbing-Studio-Windows-Portable.zip`
 - `artifacts/SHA256SUMS.txt`
 
