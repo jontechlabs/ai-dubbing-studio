@@ -1,11 +1,11 @@
 {
-  "version": "0.3.3",
+  "version": "0.4.0",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSdFFyMUJGTFp3NklYeFUxMnV5VVF4dU9xNGZqUCsrdkpFOUZlTFBNTC8rVEpSSWRsQUc0Tm9vQ01PWnAzL0xGSnJsMGowWnYvN3ZRa2syWmJGbnBWVFJVZ0hlbjJPN2dNPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkxOTU5Mjg4CWZpbGU6QUkgRHViYmluZyBTdHVkaW9fMC4zLjNfeDY0LXNldHVwLmV4ZQl2ZXJzaW9uOjAuMy4zCm12ei9yQ2RUWVdXNHFsSjJiN1VWMzRDUFFIMHBKSjcvUEZheDR1TTREc2FrVFRuKzJjSTVzVDkyZGhMNVJNTzBkV2V4SkJ6aTFIWWVxU3pPOGpLcUNBPT0K",
-      "url": "https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.3.3/AI-Dubbing-Studio-0.3.3-Setup.exe"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSdFFyMUJGTFp3NkprSWlGOHUwZGR5c2M2V3lTNExkQXVwbEtMUXJuR05Xc3FsajYyOG9NNHF5NWRiT2lZbjFLK1VFUnRHajZLMm1BRDUrTGFDT2E5eGZZMEdLQm50aGdjPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkxOTg5ODA4CWZpbGU6QUkgRHViYmluZyBTdHVkaW9fMC40LjBfeDY0LXNldHVwLmV4ZQl2ZXJzaW9uOjAuNC4wCmErWW1LNnRSdmxwNHc4QkZuY3QremdCWVBYUUFzM0pmZkdLa3FaTkU1N3YxekNmcENLVUc3MEJXNEdndEQ5blNkY1N4VkdoanlLR1plT1YwN3lNWEJ3PT0K",
+      "url": "https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.4.0/AI-Dubbing-Studio-0.4.0-Setup.exe"
     }
   },
-  "notes": "Corrige Bandit bloqué à 100 % : vérification finale Windows, détection GPU limitée à 30 secondes et repli CPU. Les fichiers vérifiés sont réutilisés.",
-  "pub_date": "2026-10-14T06:29:30Z"
+  "notes": "Phase 4 : identification locale des locuteurs par IA, personnages et références vocales, modèles, calage SRT à l’import et commandes de pistes audio/sous-titres.",
+  "pub_date": "2026-10-14T15:06:10Z"
 }
