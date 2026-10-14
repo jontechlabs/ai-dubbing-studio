@@ -28,7 +28,7 @@ Text tracks are extracted from the imported original video copy, converted to UT
 
 External files must be UTF-8 SRT; CRLF, BOM and multiline cues are accepted. Extraction can be cancelled through Processing; cancellation or conversion failure preserves existing subtitles. No automatic transcription or translation is performed.
 
-Select a dialogue to seek its scene. The **Text** tab edits the displayed source/translation. The **Pronunciation** tab stores a separate voice text override for future TTS. Changing a translated subtitle does not silently change an existing override. Voice-generation controls remain unavailable in Phase 2.
+Select a dialogue to seek its scene. The **Text** tab edits the displayed source/translation. The **Pronunciation** tab stores a separate voice text override for future TTS. Changing a translated subtitle does not silently change an existing override. Voice generation remains Phase 5 work.
 
 Use the player and timeline to review the scene. **Play this line** uses configurable padding before/after the cue. Enable looping for repeated review. Settings also contain interface language and theme.
 
@@ -39,6 +39,8 @@ See the [Phase 2 guide](PHASE-2.md) for timecode editing, waveform, drag/resize,
 ## Separation, performance and updates
 
 See the [Phase 3 guide](PHASE-3.md). Audio contains Bandit installation, device selection, separation and mixer. Settings contains GPU preference, playback counters and signed updates. Installing 0.3.0 manually enables future in-app updates.
+
+See the [Phase 4 guide](PHASE-4.md) to install the local speaker model, apply/correct anonymous voice proposals, create characters and voice references. The translated SRT picker offers optional automatic synchronization. Timeline M/S buttons control audio and eye buttons control subtitle preview. Profiles and saved preview preferences use project format 3, refused by older app versions.
 
 ## Keyboard shortcuts
 

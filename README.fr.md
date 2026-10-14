@@ -54,7 +54,7 @@ La phase 2 est disponible. Le calage compare les timings et refuse les propositi
 
 Captures de l’interface réelle en aperçu navigateur, avec média synthétique.
 
-Consultez le [guide de la phase 3](docs/PHASE-3.md). Il reste quatre phases : personnages et références (4), premier moteur de voix (5), autres moteurs/gestion des modèles (6), mix et export MKV final (7).
+Consultez les guides de [phase 3](docs/PHASE-3.md) et [phase 4](docs/PHASE-4.md). Il reste trois phases : premier moteur de voix (5), autres moteurs/gestion des modèles (6), mix et export MKV final (7).
 
 ## Raccourcis
 
@@ -92,7 +92,7 @@ Les tests de parcours utilisent Chrome et gèrent automatiquement leur serveur V
 
 `project.json` est la source de vérité. Les chemins des assets sont relatifs, les timings en millisecondes entières et les identifiants stables. Les fichiers vidéo d'origine ne sont pas modifiés. Le projet contient les documents source/cible et leurs associations. Un changement de traduction ne modifie pas automatiquement une surcharge TTS.
 
-Les anciens projets au format 1 restent lisibles. L’ajout de stems utilise le format 2, que les anciennes versions de l’application refusent. Les formats inconnus sont refusés sans réécriture. Les migrations de futurs formats seront ajoutées explicitement. `recovery/pending.json` permet de reprendre une sauvegarde interrompue ; `recovery/previous.json` conserve la version précédente. Une génération future restera un fichier distinct avec sa provenance et ne sera pas écrasée par un job.
+Les projets aux formats 1 et 2 restent lisibles. L’ajout de stems utilise au moins le format 2 ; personnages, références et préférences utilisent le format 3, refusé par les versions antérieures à 0.4.0. Les formats inconnus sont refusés sans réécriture. `recovery/pending.json` permet de reprendre une sauvegarde interrompue ; `recovery/previous.json` conserve la version précédente. Une génération future restera un fichier distinct avec sa provenance et ne sera pas écrasée par un job.
 
 Les projets déplacés s'ouvrent depuis leur nouveau dossier. Les médias et caches doivent rester dans le dossier projet. La modification concurrente par deux instances n'est pas prise en charge dans cette version.
 

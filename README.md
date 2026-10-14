@@ -151,16 +151,16 @@ See [architecture and persistence](docs/ARCHITECTURE.md).
 | 1 | Desktop foundation, media import, persistence, subtitle review, simple timeline | Implemented; development preview |
 | 2 | Waveforms, timecode editing, subtitle movement, split/merge, automatic SRT synchronization | Implemented; development preview |
 | 3 | Bandit speech/music/SFX separation and audio track management | Implemented; CPU validated, CUDA unqualified |
-| 4 | Characters, voice references and dialogue assignment | Planned |
+| 4 | Characters, voice references, local AI speaker grouping and dialogue assignment | Implemented; proposals require review |
 | 5 | First TTS provider, per-line generation, multiple takes and review | Planned |
 | 6 | Additional TTS providers and model manager | Planned |
 | 7 | Final mix export, MKV packaging and multiple languages | Planned |
 
-Provider type definitions are contracts, not functioning inference integrations. This release installs the Bandit runtime/model only. General model management, voice cloning and generated speech remain future work.
+Provider type definitions remain contracts for future integrations. Bandit and local speaker identification are implemented with upstream workers and verified model installation. General model management, voice cloning and generated speech remain future work.
 
 ## Validation
 
-The current local checks passed **22 TypeScript tests, 22 Rust tests, 11 Playwright scenarios and 4 Python worker tests**, plus the frontend build, ESLint, Prettier, Rust formatting and Clippy. Rust tests include real bilingual SRT/ASS MKV extraction, selected-track waveform decoding with an audio delay, caching, cancellation and project editing while a waveform job is queued. Timing tests cover shift/drift estimation, missing cues, grouping, refusal of ambiguous matches, Unicode splits, merge/export persistence and preservation of TTS overrides. The interface scenario for native commands uses mocked IPC; it does not replace native GUI testing.
+The current local checks passed **26 TypeScript tests, 26 Rust tests, 16 Playwright scenarios and 10 Python worker tests (78)**, plus the frontend build, ESLint, Prettier, Rust formatting and Clippy. Tests cover prior media/SRT/mixer flows and new characters, references, safe voice proposals, automatic import synchronization and saved preview controls. Real Windows ONNX/VAD inference grouped two synthetic test voices and their repetitions. Browser scenarios simulate native IPC; they do not replace native GUI or full-film accuracy testing. See [VALIDATION.md](VALIDATION.md) for evidence and limits.
 
 The earlier [v0.1.1 clean Windows run](https://github.com/jontechlabs/ai-dubbing-studio/actions/runs/38362204358) passed its checks and packaging. Current runs are available under [Actions](https://github.com/jontechlabs/ai-dubbing-studio/actions).
 
