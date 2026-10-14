@@ -1,11 +1,11 @@
 {
-  "version": "0.3.2",
+  "version": "0.3.3",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSdFFyMUJGTFp3Nkg2RlVHT09XaGsxbS9TWVZYUGlxdE9VS2Rka1ZSVkZxSkxZVnI2ZklweFp4MUVCY1BRQy9YNlVSQ1J1VTVqRDdiS0VML2MzakxWam1LcWRCbUNoSWdBPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkxOTEwMzg5CWZpbGU6QUkgRHViYmluZyBTdHVkaW9fMC4zLjJfeDY0LXNldHVwLmV4ZQl2ZXJzaW9uOjAuMy4yCmNENHp5WGcwcGdzZ0FDOVlMdnVzQ1FQV21IWkEzUHVDcE1KNE43cWthQkFCeDhZU3ljRzF2aVpmTTREb0t5U3FxbUNHV0hGbDFXWThtUndVamgvSkNnPT0K",
-      "url": "https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.3.2/AI-Dubbing-Studio-0.3.2-Setup.exe"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSdFFyMUJGTFp3NklYeFUxMnV5VVF4dU9xNGZqUCsrdkpFOUZlTFBNTC8rVEpSSWRsQUc0Tm9vQ01PWnAzL0xGSnJsMGowWnYvN3ZRa2syWmJGbnBWVFJVZ0hlbjJPN2dNPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkxOTU5Mjg4CWZpbGU6QUkgRHViYmluZyBTdHVkaW9fMC4zLjNfeDY0LXNldHVwLmV4ZQl2ZXJzaW9uOjAuMy4zCm12ei9yQ2RUWVdXNHFsSjJiN1VWMzRDUFFIMHBKSjcvUEZheDR1TTREc2FrVFRuKzJjSTVzVDkyZGhMNVJNTzBkV2V4SkJ6aTFIWWVxU3pPOGpLcUNBPT0K",
+      "url": "https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.3.3/AI-Dubbing-Studio-0.3.3-Setup.exe"
     }
   },
-  "notes": "Correction du téléchargement Bandit : miroir vérifié, sources de repli et réutilisation des dépendances installées.",
-  "pub_date": "2026-10-13T16:56:20Z"
+  "notes": "Corrige Bandit bloqué à 100 % : vérification finale Windows, détection GPU limitée à 30 secondes et repli CPU. Les fichiers vérifiés sont réutilisés.",
+  "pub_date": "2026-10-14T06:29:30Z"
 }
