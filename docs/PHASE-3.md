@@ -52,12 +52,11 @@ Les mises à jour utilisent l’installeur NSIS pour l’utilisateur courant. De
 
 ## Étapes restantes
 
-La phase 3 est implémentée. Il reste **4 phases** :
+La phase 4 est désormais implémentée : [personnages et références](PHASE-4.md). Il reste **3 phases** :
 
-1. Phase 4 : personnages, références vocales et assignation des répliques.
-2. Phase 5 : premier moteur TTS, génération par ligne, variantes et validation.
-3. Phase 6 : autres moteurs et gestionnaire général des modèles.
-4. Phase 7 : mix final, export MKV et langues multiples.
+1. Phase 5 : premier moteur TTS, génération par ligne, variantes et validation.
+2. Phase 6 : autres moteurs et gestionnaire général des modèles.
+3. Phase 7 : mix final, export MKV et langues multiples.
 
 ## English quick guide
 

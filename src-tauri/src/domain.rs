@@ -89,6 +89,57 @@ pub struct Languages {
 }
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
+pub struct VoiceReference {
+    pub id: String,
+    pub label: String,
+    pub path: String,
+    pub duration_ms: u64,
+    pub transcript: String,
+    pub source_dialogue_id: Option<String>,
+}
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Character {
+    pub id: String,
+    pub name: String,
+    pub color: String,
+    pub references: Vec<VoiceReference>,
+    pub default_reference_id: Option<String>,
+}
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SpeakerLine {
+    pub id: String,
+    pub start_ms: u64,
+    pub end_ms: u64,
+}
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SpeakerAssignment {
+    pub dialogue_id: String,
+    pub speaker: Option<u32>,
+    pub similarity: Option<f64>,
+    pub reason: String,
+}
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SpeakerCluster {
+    pub speaker: u32,
+    pub reference_path: String,
+    pub duration_ms: u64,
+    pub reference_dialogue_id: String,
+}
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SpeakerAnalysis {
+    pub id: String,
+    pub source_path: String,
+    pub lines: Vec<SpeakerLine>,
+    pub assignments: Vec<SpeakerAssignment>,
+    pub clusters: Vec<SpeakerCluster>,
+}
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct Project {
     pub format_version: u32,
     pub app_version: String,
@@ -103,7 +154,13 @@ pub struct Project {
     pub target_cues: Vec<Cue>,
     pub dialogues: Vec<Dialogue>,
     pub tracks: Vec<Track>,
-    pub characters: Vec<serde_json::Value>,
+    pub characters: Vec<Character>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub speaker_analysis: Option<SpeakerAnalysis>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub model_preferences: Option<serde_json::Value>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub subtitle_display: Option<String>,
     pub generations: Vec<serde_json::Value>,
     pub pronunciation: HashMap<String, String>,
 }
@@ -124,16 +181,35 @@ impl Project {
             dialogues: vec![],
             tracks: vec![],
             characters: vec![],
+            speaker_analysis: None,
+            model_preferences: None,
+            subtitle_display: None,
             generations: vec![],
             pronunciation: HashMap::new(),
         }
     }
     pub fn validate(&self) -> Result<(), String> {
-        if ![1, 2].contains(&self.format_version) {
+        if ![1, 2, 3].contains(&self.format_version) {
             return Err("UNSUPPORTED_PROJECT_VERSION".into());
         }
         if self.id.is_empty() || self.name.trim().is_empty() {
             return Err("INVALID_PROJECT".into());
+        }
+        if self
+            .subtitle_display
+            .as_deref()
+            .is_some_and(|mode| !["off", "source", "target", "both"].contains(&mode))
+        {
+            return Err("INVALID_PROJECT".into());
+        }
+        if let Some(preferences) = &self.model_preferences {
+            if !preferences["ttsProviderId"].is_null()
+                && !preferences["ttsProviderId"]
+                    .as_str()
+                    .is_some_and(|id| ["cosyvoice3", "fish-s2", "qwen3-tts"].contains(&id))
+            {
+                return Err("INVALID_PROJECT".into());
+            }
         }
         let valid_cues = |cues: &[Cue]| {
             let mut ids = std::collections::HashSet::new();
@@ -189,6 +265,54 @@ impl Project {
                     || track.duration_ms.is_none_or(|duration| duration == 0))
             {
                 return Err("INVALID_PROJECT".into());
+            }
+        }
+        let mut characters = std::collections::HashSet::new();
+        for character in &self.characters {
+            if character.id.is_empty()
+                || character.name.trim().is_empty()
+                || !characters.insert(&character.id)
+                || character.color.len() != 7
+                || !character.color.starts_with('#')
+                || !character.color[1..].chars().all(|c| c.is_ascii_hexdigit())
+            {
+                return Err("INVALID_CHARACTER".into());
+            }
+            let mut references = std::collections::HashSet::new();
+            for reference in &character.references {
+                valid_relative(&reference.path)?;
+                if !reference.path.starts_with("characters/")
+                    || reference.id.is_empty()
+                    || !references.insert(&reference.id)
+                    || !(500..=20000).contains(&reference.duration_ms)
+                {
+                    return Err("INVALID_REFERENCE_AUDIO".into());
+                }
+            }
+            if character
+                .default_reference_id
+                .as_ref()
+                .is_some_and(|id| !references.contains(id))
+            {
+                return Err("INVALID_REFERENCE_AUDIO".into());
+            }
+        }
+        if self.dialogues.iter().any(|line| {
+            line.character_id
+                .as_ref()
+                .is_some_and(|id| !characters.contains(id))
+        }) {
+            return Err("INVALID_CHARACTER".into());
+        }
+        if let Some(analysis) = &self.speaker_analysis {
+            valid_relative(&analysis.source_path)?;
+            for cluster in &analysis.clusters {
+                valid_relative(&cluster.reference_path)?;
+                if !cluster.reference_path.starts_with("characters/")
+                    || !(1000..=20000).contains(&cluster.duration_ms)
+                {
+                    return Err("INVALID_REFERENCE_AUDIO".into());
+                }
             }
         }
         Ok(())

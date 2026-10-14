@@ -1,5 +1,15 @@
 import { memo, useEffect, useMemo, useRef, useState, type RefObject } from 'react';
-import { AudioLines, Captions, Film, Maximize, Minus, Plus, ScanLine } from 'lucide-react';
+import {
+  AudioLines,
+  Captions,
+  Film,
+  Maximize,
+  Minus,
+  Plus,
+  ScanLine,
+  Eye,
+  EyeOff,
+} from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { Dialogue, Project, Track } from '../domain/types';
 import { timeToX, xToTime } from '../domain/time';
@@ -7,6 +17,8 @@ import { IconButton } from './IconButton';
 import { moveCue, type SubtitleRole } from '../domain/timing';
 import { Waveform } from './Waveform';
 import { formatTime } from '../domain/time';
+import { audioTracks, editTrack } from '../domain/audio';
+import { subtitleDisplay, toggleSubtitles } from '../domain/subtitleDisplay';
 
 export const Timeline = memo(function Timeline({
   project,
@@ -117,7 +129,11 @@ export const Timeline = memo(function Timeline({
       exists: Boolean(project?.targetCues.length),
     },
   ]
-    .map((track) => ({ ...track, track: undefined as Track | undefined }))
+    .map((track) => ({
+      ...track,
+      track: (track.key === 'originalTrack' && project ? audioTracks(project)[0] : undefined) as
+        Track | undefined,
+    }))
     .concat(
       (
         project?.tracks.filter(
@@ -177,10 +193,60 @@ export const Timeline = memo(function Timeline({
           <div style={{ transform: `translateY(${-scrollTop}px)` }}>
             <div className="ruler-label" />
             <div>
-              {tracks.map(({ key, icon: Icon, style }) => (
+              {tracks.map(({ key, icon: Icon, style, track }) => (
                 <div className={`track-label ${style}`} key={key} style={{ height: rowHeight }}>
                   <Icon size={13} />
                   <span>{t(key)}</span>
+                  {style === 'audio' && track && (
+                    <div className="timeline-track-controls">
+                      <button
+                        title={t(track.mute ? 'enableTrack' : 'muteTrack', { name: t(key) })}
+                        aria-label={t(track.mute ? 'enableTrack' : 'muteTrack', { name: t(key) })}
+                        aria-pressed={track.mute}
+                        disabled={busy}
+                        onClick={() => onEdit((p) => editTrack(p, track.id, { mute: !track.mute }))}
+                      >
+                        M
+                      </button>
+                      <button
+                        title={t('soloTrack', { name: t(key) })}
+                        aria-label={t('soloTrack', { name: t(key) })}
+                        aria-pressed={track.solo}
+                        disabled={busy}
+                        onClick={() => onEdit((p) => editTrack(p, track.id, { solo: !track.solo }))}
+                      >
+                        S
+                      </button>
+                    </div>
+                  )}
+                  {(style === 'source' || style === 'target') && project && (
+                    <button
+                      className="subtitle-eye"
+                      title={t(
+                        subtitleDisplay(project) === style || subtitleDisplay(project) === 'both'
+                          ? 'hideSubtitles'
+                          : 'showSubtitles',
+                        { name: t(key) },
+                      )}
+                      aria-label={t(
+                        subtitleDisplay(project) === style || subtitleDisplay(project) === 'both'
+                          ? 'hideSubtitles'
+                          : 'showSubtitles',
+                        { name: t(key) },
+                      )}
+                      aria-pressed={
+                        subtitleDisplay(project) === style || subtitleDisplay(project) === 'both'
+                      }
+                      disabled={busy}
+                      onClick={() => onEdit((p) => toggleSubtitles(p, style as SubtitleRole))}
+                    >
+                      {subtitleDisplay(project) === style || subtitleDisplay(project) === 'both' ? (
+                        <Eye size={13} />
+                      ) : (
+                        <EyeOff size={13} />
+                      )}
+                    </button>
+                  )}
                 </div>
               ))}
             </div>
@@ -235,7 +301,7 @@ export const Timeline = memo(function Timeline({
                       <Waveform
                         key={track?.id ?? project.media.id}
                         project={project}
-                        track={track}
+                        track={track?.kind === 'audio' ? track : undefined}
                         scale={scale}
                         viewport={viewport}
                         scrollLeft={scrollLeft}

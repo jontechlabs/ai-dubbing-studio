@@ -19,6 +19,11 @@ import { formatTime } from '../domain/time';
 import { IconButton } from './IconButton';
 import { useMemo } from 'react';
 import { cueIndex } from '../domain/cueIndex';
+import {
+  setSubtitleDisplay,
+  subtitleDisplay,
+  type SubtitleDisplay,
+} from '../domain/subtitleDisplay';
 
 export function Player({
   project,
@@ -30,6 +35,7 @@ export function Player({
   onAudio,
   importJob,
   onJobs,
+  onEdit,
 }: {
   project: Project | null;
   transport: Transport;
@@ -40,10 +46,16 @@ export function Player({
   onAudio: () => void;
   importJob?: Job;
   onJobs: () => void;
+  onEdit: (update: (project: Project) => Project) => void;
 }) {
   const { t } = useTranslation();
   const activeCues = useMemo(() => cueIndex(project?.targetCues ?? []), [project?.targetCues]);
-  const activeText = activeCues(transport.time)
+  const sourceCues = useMemo(() => cueIndex(project?.sourceCues ?? []), [project?.sourceCues]);
+  const mode = project ? subtitleDisplay(project) : 'off';
+  const activeText = [
+    ...(mode === 'source' || mode === 'both' ? sourceCues(transport.time) : []),
+    ...(mode === 'target' || mode === 'both' ? activeCues(transport.time) : []),
+  ]
     .map((cue) => cue.text.replace(/<[^>]*>/g, ''))
     .join('\n');
   const contentRef = transport.videoRef;
@@ -59,7 +71,7 @@ export function Player({
         </div>
         <span className="player-mode">
           <AudioLines size={12} />
-          {t('original')}
+          {t(project?.tracks.some((track) => track.kind === 'audio') ? 'audioMix' : 'original')}
         </span>
       </div>
       <div className={`video-stage ${transport.url ? 'has-video' : ''}`} aria-busy={loading}>
@@ -191,6 +203,20 @@ export function Player({
           <span>/ {formatTime(project?.media?.durationMs ?? 0)}</span>
         </div>
         <div className="volume-control">
+          <select
+            className="subtitle-preview-select"
+            aria-label={t('subtitlePreview')}
+            value={mode}
+            disabled={!project}
+            onChange={(event) =>
+              onEdit((p) => setSubtitleDisplay(p, event.target.value as SubtitleDisplay))
+            }
+          >
+            <option value="off">{t('subtitlesOff')}</option>
+            <option value="source">{t('original')}</option>
+            <option value="target">{t('translated')}</option>
+            <option value="both">{t('timingBoth')}</option>
+          </select>
           <Volume2 size={15} />
           <input
             aria-label={t('volume')}

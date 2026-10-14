@@ -19,7 +19,16 @@ import type { Project } from '../domain/types';
 import { IconButton } from './IconButton';
 
 export type Panel =
-  'import' | 'audio' | 'export' | 'settings' | 'jobs' | 'subtitles' | 'alignment' | null;
+  | 'import'
+  | 'audio'
+  | 'characters'
+  | 'models'
+  | 'export'
+  | 'settings'
+  | 'jobs'
+  | 'subtitles'
+  | 'alignment'
+  | null;
 export function Header({
   project,
   saveState,
@@ -99,11 +108,11 @@ export function Header({
           {t('audio')}
         </button>
         <span className="toolbar-separator" />
-        <button className="tool-button" disabled title={t('futureCharacters')}>
+        <button className="tool-button" disabled={!project} onClick={() => onPanel('characters')}>
           <Users size={17} />
           {t('characters')}
         </button>
-        <button className="tool-button" disabled title={t('futureModels')}>
+        <button className="tool-button" onClick={() => onPanel('models')}>
           <Cpu size={17} />
           {t('models')}
         </button>

@@ -4,9 +4,9 @@ A local desktop workspace for preparing video dubbing: review bilingual subtitle
 
 Built with **Tauri 2, React, TypeScript and Rust**. English and French interface. Dark and light themes.
 
-**v0.3.3 — Phase 3 development preview.** Fixes the Windows Bandit installation stuck at 100% after a verified download. Device checking is a separate stage, bounded to 30 seconds, with CPU fallback and refreshable GPU discovery. Verified dependencies and checkpoints are reused. Local Bandit v2 Multilingual separation supports CPU and NVIDIA CUDA 12.8 after optional runtime/model installation. AI voice generation, transcription and translation remain planned.
+**v0.4.0 — Phase 4 development preview.** Adds local AI voice grouping over subtitle intervals, editable characters, portable voice references, model installation, automatic SRT synchronization on import and timeline mute/solo/subtitle visibility controls. Character names and uncertain voice assignments are reviewed manually. Dubbing voice generation remains Phase 5 work.
 
-[Windows downloads](https://github.com/jontechlabs/ai-dubbing-studio/releases/tag/v0.3.3) · [User guide](docs/GETTING-STARTED.md) · [Build instructions](docs/BUILDING.md) · [Français](README.fr.md)
+[Windows downloads](https://github.com/jontechlabs/ai-dubbing-studio/releases/tag/v0.4.0) · [User guide](docs/GETTING-STARTED.md) · [Build instructions](docs/BUILDING.md) · [Français](README.fr.md)
 
 ![Studio with bilingual dialogue, video preview, text editor and timeline](docs/screenshots/studio.png)
 
@@ -16,15 +16,15 @@ Built with **Tauri 2, React, TypeScript and Rust**. English and French interface
 
 | Package | Purpose |
 | --- | --- |
-| [Windows x64 setup](https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.3.3/AI-Dubbing-Studio-0.3.3-Setup.exe) | NSIS installer for the current user, with English/French installer interface |
-| [Portable ZIP](https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.3.3/AI-Dubbing-Studio-Windows-Portable.zip) | Extract the whole folder and launch `AI Dubbing Studio.exe` |
-| [SHA-256 checksums](https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.3.3/SHA256SUMS.txt) | Verify the setup and ZIP downloads |
+| [Windows x64 setup](https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.4.0/AI-Dubbing-Studio-0.4.0-Setup.exe) | NSIS installer for the current user, with English/French installer interface |
+| [Portable ZIP](https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.4.0/AI-Dubbing-Studio-Windows-Portable.zip) | Extract the whole folder and launch `AI Dubbing Studio.exe` |
+| [SHA-256 checksums](https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.4.0/SHA256SUMS.txt) | Verify the setup and ZIP downloads |
 
 Target: **Windows 10/11 x64**, with **Microsoft Edge WebView2 Runtime**. FFmpeg and FFprobe are included. Python, CUDA and AI model downloads are not required for editing and playback. Installation may need Internet access if WebView2 is missing; local project editing does not require a cloud account.
 
 These are **unsigned development builds**. Smart App Control blocked an earlier Phase 1 executable on the development machine. The current Windows GUI and installation workflow are **not fully qualified**. This release is a prerelease. See [validation evidence and limits](VALIDATION.md).
 
-## Available in Phases 1–3
+## Available in Phases 1–4
 
 - Import MKV, MP4, MOV, AVI and WebM; inspect streams with FFprobe and choose an audio track.
 - Copy the original into a portable project folder; create an H.264/AAC preview proxy when required.
@@ -34,6 +34,11 @@ These are **unsigned development builds**. Smart App Control blocked an earlier 
 - Edit source subtitles, translated subtitles and independent TTS pronunciation overrides.
 - Play or loop a line with configurable padding; use volume, fullscreen, zoom and transport shortcuts.
 - Inspect audio waveforms computed from the chosen original track and separated stems, with local cache, progress and cancellation.
+- Identify anonymous voice groups locally with Silero VAD and 3D-Speaker CAMPPlus over existing subtitle intervals. Review/apply proposals, rename characters and correct individual or range assignments.
+- Import or extract multiple voice references per character; edit their transcripts and default reference.
+- Install the speaker runtime/model from Models; save a preferred future TTS engine.
+- Toggle audio mute/solo and subtitle visibility directly from the timeline; preserve player subtitle preferences.
+- Optionally synchronize an imported SRT against the other SRT automatically; ambiguous matches preserve the imported file.
 - Separate speech/music/effects locally using Bandit v2 Multilingual; install an isolated Python runtime and verified model from Audio. Choose CPU or a detected NVIDIA CUDA device.
 - Mix original/stem tracks with persistent mute, solo and gain, synchronized video playback and individual WAV export. Pause/resume/cancel and retry separation jobs.
 - Prepare a 720p/30 fps preview with frequent keyframes, without upscaling low-resolution media. Subtitle timeline blocks stay stable during playback, including the 6,000-dialogue test.
@@ -60,11 +65,25 @@ Read the [Phase 3 guide](docs/PHASE-3.md) for runtime/model installation, GPU pr
 
 ![GPU preference and verified update installation](docs/screenshots/updates.png)
 
-*Actual React interface in browser tests with simulated native IPC, GPU names and a future 0.3.4 update. These screenshots do not show a real available 0.3.4 release or a native Tauri window. The model itself was separately tested with real CPU inference on Windows.*
+*Actual React interface in browser tests with simulated native IPC, GPU names and a future 0.4.1 update. These screenshots do not show a real available 0.4.1 release or a native Tauri window. The model itself was separately tested with real CPU inference on Windows.*
 
 ![Final Bandit device check with a bounded wait](docs/screenshots/bandit-check.png)
 
 *Browser test of the actual processing interface with simulated native job events. The model download is complete; device checking has its own indeterminate progress.*
+
+## Characters, models and subtitle controls
+
+Read the [Phase 4 guide](docs/PHASE-4.md). Speaker identification proposes anonymous groups from the speech in existing subtitle intervals; users supply character names and review uncertain matches. The CPU model is trained on English VoxCeleb and has not been qualified on full multilingual films. Voice grouping does not synthesize dubbing.
+
+![Character manager](docs/screenshots/characters.png)
+
+![Voice references and transcript editing](docs/screenshots/references.png)
+
+![Model installation and future engine preference](docs/screenshots/models.png)
+
+![Timeline mute/solo and subtitle visibility controls](docs/screenshots/track-controls.png)
+
+*Actual React UI in browser tests. The character/model/reference screenshots use simulated native results and a synthetic audio stream. Separate real Windows ONNX inference grouped two test voices and kept their repetitions together; it does not establish accuracy on real film soundtracks. Profile/reference preferences use project format 3; older app versions refuse that format.*
 
 ## First project
 

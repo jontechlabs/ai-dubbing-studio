@@ -1,0 +1,28 @@
+Local speaker identification uses unchanged upstream models, downloaded on request.
+
+3D-Speaker CAMPPlus / VoxCeleb, English speaker embeddings
+Upstream: https://github.com/modelscope/3D-Speaker
+Model export: https://github.com/k2-fsa/sherpa-onnx/releases/tag/speaker-recongition-models
+License: Apache-2.0. Copyright the 3D-Speaker/ModelScope contributors.
+Model: 3dspeaker_speech_campplus_sv_en_voxceleb_16k.onnx
+SHA-256: 357a834f702b80161e5b981182c038e18553c1f2ca752ed6cec2052365d4129b
+
+Silero VAD, k2-fsa 16 kHz ONNX export
+Upstream: https://github.com/snakers4/silero-vad
+License: MIT. Copyright Silero Team.
+Source: https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/silero_vad.onnx
+SHA-256: 9e2449e1087496d8d4caba907f23e0bd3f78d91fa552479bb9c23ac09cbb1fd6
+
+Runtime: sherpa-onnx and sherpa-onnx-core 1.13.8, Apache-2.0,
+https://github.com/k2-fsa/sherpa-onnx (k2-fsa/Xiaomi and contributors).
+NumPy 2.2.6, BSD-3-Clause and bundled dependency notices in its wheel.
+Python 3.12.10 embedded runtime, Python Software Foundation License.
+
+Models are not included in the setup or portable package. Exact official download
+URLs, sizes and hashes are locked in speaker-model.json. No model code is vendored
+or reimplemented. Downloaded wheels retain their .dist-info license notices.
+This app does not identify real-world people: it proposes anonymous voice groups
+for subtitle intervals. Character names are entered by the user. Voice groups
+and candidate references require review, especially with noisy, short, overlapping
+or expressive speech. This model was trained on English VoxCeleb recordings;
+performance on other languages and film soundtracks is not established here.

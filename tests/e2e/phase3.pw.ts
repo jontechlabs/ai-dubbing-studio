@@ -13,6 +13,8 @@ async function nativeMock(page: Page, large = false) {
     const host=window as unknown as Record<string,any>,callbacks=new Map<number,(data:any)=>void>(),listeners=new Map<string,number>();let counter=0,project=structuredClone(initial),job:any;
     const emit=(name:string,payload:any)=>{const id=listeners.get(name);if(id)callbacks.get(id)?.({event:name,id,payload});};
     host.__calls=[];host.__downloadError=false;host.__installed=false;
+    host.__speakerStatus={installed:true,installing:false,sizeBytes:72500000};
+    host.__completeSpeakerAnalysis=()=>{project.formatVersion=3;project.speakerAnalysis={id:'speakers',sourcePath:project.media.path,lines:project.dialogues.map(({id,startMs,endMs}:any)=>({id,startMs,endMs})),assignments:project.dialogues.map((line:any,index:number)=>({dialogueId:line.id,speaker:index%2,similarity:0.95,reason:'identified'})),clusters:[0,1].map((speaker)=>({speaker,referencePath:`characters/reference-${speaker}.wav`,durationMs:4000,referenceDialogueId:project.dialogues[speaker].id}))};project.revision++;emit('project-changed',structuredClone(project));job={...job,status:'succeeded',stage:'done',progress:1};emit('job-changed',job);};
     host.__runtimeStatus={installed:true,installing:false,devices:[{id:'cpu',name:'CPU'},{id:'cuda:0',name:'NVIDIA GPU'}],cudaVersion:'12.8',unavailableDevices:[]};
     host.__probeRuntime=()=>{job={...job,stage:'devicesCheck',progress:null,logs:['Model verified. Checking compute devices (maximum 30 seconds).']};emit('job-changed',job);};
     host.__completeRuntime=()=>{host.__runtimeStatus={installed:true,installing:false,devices:host.__probeFailed?[{id:'cpu',name:'CPU'}]:[{id:'cpu',name:'CPU'},{id:'cuda:0',name:'NVIDIA GeForce RTX 5060 Ti'}],deviceProbeWarning:host.__probeFailed?'DEVICE_PROBE_FAILED':null,cudaVersion:'12.8',unavailableDevices:[]};job={...job,status:'succeeded',stage:'done',progress:1};emit('job-changed',job);};
@@ -29,6 +31,9 @@ async function nativeMock(page: Page, large = false) {
       if(command==='graphics_info')return {preference:'auto',executable:'C:/Studio/ai-dubbing-studio.exe',adapters:[{Name:'Intel iGPU'},{Name:'NVIDIA GPU'}]};
       if(command==='set_graphics_preference'||command==='open_graphics_settings')return null;
       if(command==='separation_status')return structuredClone(host.__runtimeStatus);
+      if(command==='speaker_status')return structuredClone(host.__speakerStatus);
+      if(command==='identify_speakers'){job={id:'speakers',projectId:project.id,kind:'speakers',status:'running',stage:'speakerEmbeddings',progress:0.3,logs:[],error:null};emit('job-changed',job);return job.id;}
+      if(command==='voice_reference_path')return `C:/Studio/characters/${args.referenceId}.wav`;
       if(command==='install_separation_runtime'){job={id:'runtime',projectId:null,kind:'runtime',status:'running',stage:'dependencies',progress:null,logs:[],error:null};emit('job-changed',job);return job.id;}
       if(command==='separate_audio'){job={id:'separation',projectId:project.id,kind:'separation',status:'running',stage:'separate',progress:0.3,logs:[],error:null};emit('job-changed',job);return job.id;}
       if(command==='pause_job'){job={...job,status:args.paused?'paused':'running'};emit('job-changed',job);return null;}
@@ -36,7 +41,7 @@ async function nativeMock(page: Page, large = false) {
       if(command==='replace_project'){if(args.expectedRevision!==project.revision)throw Error('STALE_REVISION');project={...structuredClone(args.project),revision:project.revision+1};return structuredClone(project);}
       if(command==='plugin:event|listen'){listeners.set(args.event,args.handler);return args.handler;}
       if(command==='plugin:event|unlisten'||command==='plugin:resources|close')return null;
-      if(command==='plugin:updater|check')return {rid:45,currentVersion:'0.3.3',version:'0.3.4',body:'Performance et audio',rawJson:{}};
+      if(command==='plugin:updater|check')return {rid:45,currentVersion:'0.4.0',version:'0.4.1',body:'Performance et audio',rawJson:{}};
       if(command==='plugin:updater|download'){
         if(host.__downloadError)throw Error('Invalid signature');
         const channel=args.onEvent.id;callbacks.get(channel)?.({index:0,message:{event:'Started',data:{contentLength:100}}});callbacks.get(channel)?.({index:1,message:{event:'Progress',data:{chunkLength:100}}});callbacks.get(channel)?.({index:2,message:{event:'Finished'}});return 46;
@@ -74,7 +79,7 @@ test('separation preserves unsaved editing; tracks, mixer and pause are persiste
 test('GPU preference and signed update flow reject failure and save before install',async({page})=>{
   await nativeMock(page);await page.goto('/');await page.getByRole('button',{name:'Paramètres',exact:true}).click();
   await page.getByRole('combobox',{name:'Préférence GPU du lecteur'}).selectOption('performance');await expect(page.getByText('Redémarre l’application pour appliquer cette préférence.')).toBeVisible();
-  await page.getByRole('button',{name:'Rechercher une mise à jour'}).click();await expect(page.getByText('La version 0.3.4 est disponible.')).toBeVisible();
+  await page.getByRole('button',{name:'Rechercher une mise à jour'}).click();await expect(page.getByText('La version 0.4.1 est disponible.')).toBeVisible();
   await page.evaluate(()=>(window as any).__downloadError=true);await page.getByRole('button',{name:'Télécharger la mise à jour'}).click();await expect(page.getByRole('alert')).toBeVisible();
   await expect(page.getByRole('button',{name:'Installer et redémarrer'})).toHaveCount(0);await page.evaluate(()=>(window as any).__downloadError=false);
   await page.getByRole('button',{name:'Télécharger la mise à jour'}).click();await expect(page.getByText(/Téléchargement terminé, signature vérifiée/)).toBeVisible();
@@ -127,4 +132,59 @@ test('device check has its own indeterminate stage and a recoverable CPU fallbac
   await page.getByRole('button',{name:'Actualiser les processeurs',exact:true}).click();
   await expect(page.getByRole('alert')).toHaveCount(0);
   await expect(page.getByRole('combobox',{name:'Processeur de séparation audio'}).locator('option')).toHaveCount(3);
+});
+
+test('AI speaker proposals preserve manual corrections and expose editable voice references',async({page})=> {
+  await nativeMock(page);await page.goto('/');await page.getByRole('button',{name:/Réplique 1 ·/}).click();
+  await page.getByRole('button',{name:'Personnages',exact:true}).click();
+  await page.getByRole('textbox',{name:'Nom du personnage',exact:true}).fill('Narrateur');await page.getByRole('button',{name:'Ajouter',exact:true}).click();
+  await page.getByRole('button',{name:'Assigner la réplique sélectionnée'}).click();await expect(page.locator('.save-indicator')).toHaveText('Sauvegardé');
+  await page.getByRole('button',{name:'Identifier les locuteurs par IA',exact:true}).click();
+  await expect(page.getByRole('dialog',{name:'Traitements'})).toBeVisible();await page.evaluate(()=>(window as any).__completeSpeakerAnalysis());
+  await page.getByRole('button',{name:'Fermer',exact:true}).click();await page.getByRole('button',{name:'Personnages',exact:true}).click();
+  await expect(page.getByText('2 groupes de voix proposés')).toBeVisible();await page.getByRole('button',{name:'Créer les personnages et assigner les répliques'}).click();
+  await expect(page.getByRole('combobox',{name:'Personnage',exact:true}).locator('option')).toHaveCount(3);
+  await page.getByRole('combobox',{name:'Personnage',exact:true}).selectOption({label:'Speaker 1'});
+  await page.getByRole('textbox',{name:'Renommer le personnage'}).fill('Shin');
+  await expect(page.getByText('Référence par défaut',{exact:true})).toBeVisible();
+  await page.screenshot({path:'test-results/screenshots/studio-characters.png'});
+  await page.locator('.panel-body').evaluate((element)=>{element.scrollTop=element.scrollHeight;});await page.screenshot({path:'test-results/screenshots/studio-references.png'});
+  await page.getByRole('button',{name:'Fermer',exact:true}).click();
+  await expect(page.getByRole('combobox',{name:'Personnage 1',exact:true})).toHaveValue(await page.evaluate(()=>(window as any).__calls.filter((call:any)=>call.command==='replace_project').at(-1).args.project.characters.find((character:any)=>character.name==='Narrateur').id));
+  await page.getByRole('button',{name:'Modèles',exact:true}).click();await expect(page.getByText(/aucun audio de doublage/)).toBeVisible();
+  await page.getByRole('combobox',{name:'Moteur de voix prévu pour ce projet'}).selectOption('cosyvoice3');
+  await page.screenshot({path:'test-results/screenshots/studio-models.png'});await expect(page.locator('.save-indicator')).toHaveText('Sauvegardé');
+  const saved=await page.evaluate(()=>(window as any).__calls.filter((call:any)=>call.command==='replace_project').at(-1).args.project);
+  expect(saved.modelPreferences.ttsProviderId).toBe('cosyvoice3');expect(saved.dialogues[0].characterId).toBe(saved.characters.find((character:any)=>character.name==='Narrateur').id);expect(saved.characters.find((character:any)=>character.name==='Shin').references).toHaveLength(1);
+});
+
+test('manual characters, inline translation and timeline preview controls persist after reload',async({page})=> {
+  await page.goto('/');await page.getByRole('button',{name:'Explorer l’exemple'}).click();await page.getByRole('button',{name:/Réplique 1 ·/}).click();
+  await page.getByRole('button',{name:'Personnages',exact:true}).click();await page.getByRole('textbox',{name:'Nom du personnage',exact:true}).fill('Shin');await page.getByRole('button',{name:'Ajouter',exact:true}).click();await page.getByRole('button',{name:'Assigner la réplique sélectionnée'}).click();await page.getByRole('button',{name:'Fermer',exact:true}).click();
+  await page.getByRole('textbox',{name:'Sous-titre affiché',exact:true}).fill('');
+  await page.locator('.dialogue-card').first().getByRole('button',{name:'Ajouter une traduction',exact:true}).click();
+  const translation=page.getByRole('textbox',{name:'Sous-titre affiché',exact:true});await expect(translation).toBeFocused();await translation.pressSequentially('Bonjour Shin');await expect(translation).toHaveValue('Bonjour Shin');
+  await page.getByRole('button',{name:'Afficher Sous-titres source',exact:true}).click();await page.locator('video').evaluate((video:HTMLVideoElement)=>{video.currentTime=2;});await expect(page.locator('.subtitle-overlay')).toContainText('Every story');await expect(page.locator('.subtitle-overlay')).toContainText('Bonjour Shin');
+  await page.getByRole('button',{name:'Masquer Sous-titres source',exact:true}).click();await expect(page.locator('.subtitle-overlay')).not.toContainText('Every story');await page.getByRole('button',{name:'Masquer Sous-titres cible',exact:true}).click();await expect(page.locator('.subtitle-overlay')).toHaveText('');
+  await page.getByRole('button',{name:'Couper Audio original',exact:true}).click();await expect(page.getByRole('button',{name:'Activer Audio original',exact:true})).toHaveAttribute('aria-pressed','true');await expect(page.locator('.save-indicator')).toHaveText('Sauvegardé');
+  await page.screenshot({path:'test-results/screenshots/studio-track-controls.png'});await page.reload();await expect(page.getByRole('combobox',{name:'Personnage 1',exact:true}).locator('option:checked')).toHaveText('Shin');await expect(page.getByRole('combobox',{name:'Sous-titres du lecteur'})).toHaveValue('off');await expect(page.getByRole('button',{name:'Activer Audio original',exact:true})).toHaveAttribute('aria-pressed','true');
+});
+
+test('translated SRT can be synchronized automatically during file import',async({page})=> {
+  await page.goto('/');await page.getByRole('button',{name:'Explorer l’exemple'}).click();
+  const starts=[1000,5800,13300,21000,29100,41800,55400,73000],lengths=[1700,2200,3600,1900,2900,1800,4100,2100];
+  const stamp=(ms:number)=>`${String(Math.floor(ms/3600000)).padStart(2,'0')}:${String(Math.floor(ms/60000)%60).padStart(2,'0')}:${String(Math.floor(ms/1000)%60).padStart(2,'0')},${String(ms%1000).padStart(3,'0')}`;
+  for(const [role,shift,label] of [['SRT original',0,'Original'],['SRT traduit',2300,'Traduction']] as const) {
+    await page.getByRole('button',{name:role,exact:true}).click();if(shift===0)await page.getByRole('checkbox',{name:/Caler automatiquement le SRT importé/}).uncheck();
+    const chooser=page.waitForEvent('filechooser');await page.getByRole('button',{name:'Choisir un fichier SRT'}).click();const text=starts.map((start,index)=>`${index+1}\n${stamp(start+shift)} --> ${stamp(start+lengths[index]+shift)}\n${label} ${index}`).join('\n\n');await(await chooser).setFiles({name:'timing.srt',mimeType:'text/plain',buffer:Buffer.from(text)});await expect(page.getByRole('dialog')).toHaveCount(0);
+  }
+  await expect(page.locator('.count-badge')).toHaveText('8');await page.getByRole('button',{name:/Réplique 1 ·/}).click();await expect(page.getByRole('textbox',{name:'Début',exact:true})).toHaveValue('00:00:01.000');await expect(page.getByRole('textbox',{name:'Sous-titre affiché',exact:true})).toHaveValue('Traduction 0');
+});
+
+test('ambiguous synchronization keeps the translated SRT imported without changing original timings',async({page})=> {
+  await page.goto('/');await page.getByRole('button',{name:'Explorer l’exemple'}).click();await page.getByRole('button',{name:'SRT traduit',exact:true}).click();
+  const chooser=page.waitForEvent('filechooser');await page.getByRole('button',{name:'Choisir un fichier SRT'}).click();await(await chooser).setFiles({name:'different.srt',mimeType:'text/plain',buffer:Buffer.from('1\n00:00:10,000 --> 00:00:11,000\nAutre 1\n\n2\n00:00:30,000 --> 00:00:31,000\nAutre 2\n\n3\n00:01:10,000 --> 00:01:11,000\nAutre 3')});
+  await expect(page.getByRole('alert')).toContainText('SRT importé. Calage automatique non appliqué');await page.getByRole('button',{name:'Fermer',exact:true}).click();
+  await page.getByRole('button',{name:'Exporter',exact:true}).click();const download=page.waitForEvent('download');await page.getByRole('button',{name:'Exporter project.json',exact:true}).click();const stream=await(await download).createReadStream();let text='';for await(const bytes of stream!)text+=bytes.toString();const project=JSON.parse(text);
+  expect(project.targetCues).toHaveLength(3);expect(project.targetCues[0].startMs).toBe(10000);expect(project.sourceCues[0].startMs).toBe(750);
 });

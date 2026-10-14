@@ -38,8 +38,9 @@ export function AudioPanel({
     .join(',');
   const active = jobs.some(
     (job) =>
-      ['runtime', 'separation', 'import', 'subtitles'].includes(job.kind) &&
-      ['running', 'queued', 'paused'].includes(job.status),
+      ['runtime', 'separation', 'import', 'subtitles', 'speakerInstall', 'speakers'].includes(
+        job.kind,
+      ) && ['running', 'queued', 'paused'].includes(job.status),
   );
   useEffect(() => {
     let disposed = false;

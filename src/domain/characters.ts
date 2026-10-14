@@ -1,0 +1,106 @@
+import type { Character, Project } from './types';
+const colors = ['#a48bd4', '#82bda0', '#dc9b72', '#79a9cf', '#d18db2', '#c3bd73'];
+export function addCharacter(project: Project, name: string): Project {
+  const value = name.trim();
+  if (!value) throw new Error('INVALID_CHARACTER');
+  const next = structuredClone(project);
+  next.formatVersion = 3;
+  next.characters.push({
+    id: crypto.randomUUID(),
+    name: value,
+    color: colors[next.characters.length % colors.length],
+    references: [],
+    defaultReferenceId: null,
+  });
+  return next;
+}
+export function editCharacter(
+  project: Project,
+  id: string,
+  change: Partial<Pick<Character, 'name' | 'color' | 'defaultReferenceId' | 'references'>>,
+): Project {
+  const next = structuredClone(project);
+  const character = next.characters.find((item) => item.id === id);
+  if (!character) throw new Error('INVALID_CHARACTER');
+  if (change.name !== undefined && !change.name.trim()) throw new Error('INVALID_CHARACTER');
+  Object.assign(character, change);
+  return next;
+}
+export function deleteCharacter(project: Project, id: string): Project {
+  const next = structuredClone(project);
+  next.characters = next.characters.filter((item) => item.id !== id);
+  next.dialogues.forEach((line) => {
+    if (line.characterId === id) line.characterId = null;
+  });
+  return next;
+}
+export function assignCharacter(
+  project: Project,
+  ids: string[],
+  characterId: string | null,
+): Project {
+  if (characterId && !project.characters.some((item) => item.id === characterId))
+    throw new Error('INVALID_CHARACTER');
+  const next = structuredClone(project),
+    selected = new Set(ids);
+  next.dialogues.forEach((line) => {
+    if (selected.has(line.id)) line.characterId = characterId;
+  });
+  return next;
+}
+export function analysisCurrent(project: Project): boolean {
+  const analysis = project.speakerAnalysis;
+  if (!analysis || analysis.sourcePath !== project.media?.path) return false;
+  const lines = new Map(project.dialogues.map((line) => [line.id, line]));
+  return (
+    analysis.lines.length === lines.size &&
+    analysis.lines.every((line) => {
+      const current = lines.get(line.id);
+      return current?.startMs === line.startMs && current?.endMs === line.endMs;
+    })
+  );
+}
+export function applySpeakers(project: Project, referenceLabel = 'Voice sample'): Project {
+  if (!analysisCurrent(project)) throw new Error('STALE_REVISION');
+  let next = structuredClone(project);
+  const analysis = next.speakerAnalysis!,
+    mapping = new Map<number, string>();
+  for (const cluster of analysis.clusters) {
+    if (
+      !analysis.assignments.some(
+        (assignment) =>
+          assignment.speaker === cluster.speaker &&
+          next.dialogues.some((line) => line.id === assignment.dialogueId && !line.characterId),
+      )
+    )
+      continue;
+    next = addCharacter(next, `Speaker ${cluster.speaker + 1}`);
+    const character = next.characters.at(-1)!;
+    const reference = {
+      id: crypto.randomUUID(),
+      label: referenceLabel,
+      path: cluster.referencePath,
+      durationMs: cluster.durationMs,
+      transcript: next.sourceCues
+        .filter((cue) =>
+          next.dialogues
+            .find((line) => line.id === cluster.referenceDialogueId)
+            ?.sourceCueIds.includes(cue.id),
+        )
+        .map((cue) => cue.text)
+        .join('\n'),
+      sourceDialogueId: cluster.referenceDialogueId,
+    };
+    character.references.push(reference);
+    character.defaultReferenceId = reference.id;
+    mapping.set(cluster.speaker, character.id);
+  }
+  const assignments = new Map(analysis.assignments.map((item) => [item.dialogueId, item]));
+  next.dialogues.forEach((line) => {
+    const match = assignments.get(line.id);
+    if (!line.characterId && match?.speaker !== null && match?.speaker !== undefined)
+      line.characterId = mapping.get(match.speaker) ?? null;
+  });
+  next.speakerAnalysis = null;
+  return next;
+}

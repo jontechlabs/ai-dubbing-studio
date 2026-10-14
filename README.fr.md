@@ -1,10 +1,10 @@
-# AI Dubbing Studio — phases 1–3
+# AI Dubbing Studio — phases 1–4
 
-[Version anglaise et captures de l’interface](README.md) · [Téléchargements Windows](https://github.com/jontechlabs/ai-dubbing-studio/releases/tag/v0.3.3)
+[Version anglaise et captures de l’interface](README.md) · [Téléchargements Windows](https://github.com/jontechlabs/ai-dubbing-studio/releases/tag/v0.4.0)
 
 Studio desktop local de travail texte, voix et vidéo. Tauri 2, React, TypeScript strict et Rust.
 
-**v0.3.3** corrige l’installation Bandit bloquée à 100 % après téléchargement : la vérification finale se termine sous Windows, la détection GPU possède une étape distincte limitée à 30 secondes, et le CPU reste disponible si cette détection échoue. Les dépendances et fichiers vérifiés sont réutilisés. [Guide audio et GPU](docs/PHASE-3.md).
+**v0.4.0** ajoute l’identification locale des locuteurs par IA, les personnages modifiables, les références vocales, le panneau Modèles, le calage automatique à l’import d’un SRT et les commandes M/S/œil dans la timeline. Les propositions de voix restent à vérifier et à renommer manuellement. [Guide de la phase 4](docs/PHASE-4.md).
 
 ## Utiliser le studio
 
@@ -18,6 +18,12 @@ La version Windows contient FFmpeg et FFprobe. Bandit v2 Multilingual est dispon
 6. Réouvrir le dossier `.dubproject` depuis le bouton Ouvrir un projet.
 
 L'exemple fourni utilise une vidéo et un son synthétiques. Il ne contient pas de voix doublée.
+
+## Personnages, modèles et commandes de pistes
+
+Installez le modèle de locuteurs depuis Modèles, lancez l’identification depuis Personnages, puis appliquez et corrigez les groupes proposés. Le bouton Ajouter une traduction ouvre l’éditeur même sans sous-titre cible. SRT traduit permet d’importer un fichier ou une piste MKV et propose le calage automatique. M coupe une piste, S l’isole et l’œil affiche/masque les sous-titres. « Voix non générée » concerne le doublage audio, prévu en phase 5.
+
+Les références et préférences utilisent le format de projet 3, refusé par les anciennes versions. Les modèles de voix TTS ne sont pas encore installables ; leur préférence est enregistrable pour préparer le projet. Il reste 3 phases. Voir le guide pour les limites de l’identification et de la synchronisation.
 
 ## Fonctions présentes
 

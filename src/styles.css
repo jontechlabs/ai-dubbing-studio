@@ -978,7 +978,7 @@ h3 {
   overflow: hidden;
 }
 .track-labels {
-  width: 160px;
+  width: 224px;
   flex-shrink: 0;
   background: var(--panel);
   z-index: 2;
@@ -996,6 +996,167 @@ h3 {
   border-bottom: 1px solid color-mix(in srgb, var(--line) 55%, transparent);
   font-size: 10px;
   color: var(--muted);
+}
+.track-label > span {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.timeline-track-controls {
+  display: flex;
+  gap: 3px;
+}
+.timeline-track-controls button,
+.subtitle-eye {
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 3px 5px;
+  color: var(--muted);
+  background: var(--panel);
+  font-size: 10px;
+}
+.timeline-track-controls button[aria-pressed='true'],
+.subtitle-eye[aria-pressed='true'] {
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+.subtitle-preview-select {
+  max-width: 140px;
+  font-size: 10px;
+  background: var(--panel);
+  color: var(--text);
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  padding: 4px;
+}
+.character-label select {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+}
+.character-label select option {
+  background: var(--panel);
+}
+.target-text .add-translation {
+  width: auto;
+  background: transparent;
+  border: 0;
+  color: var(--accent);
+  font-size: 12px;
+  padding: 4px 0;
+  text-align: left;
+}
+.card-footer button.status {
+  background: transparent;
+  padding: 0;
+  border: 0;
+  font-size: 10px;
+  color: var(--muted);
+}
+.character-create,
+.character-name-row,
+.character-range,
+.reference-actions {
+  display: flex;
+  align-items: end;
+  gap: 10px;
+  margin: 14px 0;
+}
+.character-create input,
+.character-range input {
+  width: 100%;
+  min-width: 0;
+  background: var(--panel);
+  color: var(--text);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 8px;
+}
+.character-create input,
+.character-name-row .field:first-child {
+  flex: 1;
+}
+.character-range label {
+  flex: 1;
+  font-size: 11px;
+  color: var(--muted);
+}
+.character-range .button {
+  white-space: nowrap;
+}
+.character-name-row input[type='color'] {
+  width: 55px;
+  height: 36px;
+  padding: 3px;
+}
+.character-details h3,
+.model-card h3,
+.characters-panel h3 {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin: 18px 0 10px;
+  font-size: 14px;
+}
+.characters-panel .settings-section {
+  margin-top: 0;
+}
+.characters-panel details {
+  margin: 12px 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+.speaker-result,
+.model-card,
+.voice-reference {
+  border: 1px solid var(--line);
+  background: var(--panel);
+  border-radius: 9px;
+  padding: 14px;
+  margin: 15px 0;
+}
+.speaker-result p,
+.model-card p {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.6;
+}
+.model-state {
+  color: var(--sage);
+  font-size: 12px;
+}
+.model-card small {
+  display: block;
+  color: var(--muted);
+  margin-bottom: 12px;
+}
+.voice-reference > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+}
+.voice-reference audio {
+  width: 100%;
+  height: 34px;
+  margin: 10px 0;
+}
+.voice-reference textarea {
+  width: 100%;
+  min-height: 65px;
+  background: var(--panel);
+  color: var(--text);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 8px;
+  resize: vertical;
+}
+.danger {
+  color: var(--warning);
 }
 .track-label.video svg {
   color: #8e92b8;

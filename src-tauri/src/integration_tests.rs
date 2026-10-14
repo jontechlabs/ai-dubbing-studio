@@ -20,6 +20,77 @@ fn tool(name: &str) -> PathBuf {
 }
 
 #[tokio::test]
+async fn voice_references_preserve_profiles_and_reject_outside_paths() {
+    let temporary = tempfile::tempdir().unwrap();
+    let root = project::create_root(temporary.path(), "Voice profile").unwrap();
+    let audio = root.join("characters/reference.wav");
+    assert!(media::command(&tool("ffmpeg"))
+        .args([
+            "-hide_banner",
+            "-loglevel",
+            "error",
+            "-f",
+            "lavfi",
+            "-i",
+            "sine=frequency=440:sample_rate=24000",
+            "-t",
+            "1.2",
+            "-ac",
+            "1",
+            "-c:a",
+            "pcm_s16le"
+        ])
+        .arg(&audio)
+        .status()
+        .await
+        .unwrap()
+        .success());
+    assert_eq!(
+        crate::audio_files::reference_duration(&audio).unwrap(),
+        1200
+    );
+    let mut p = Project::new("Profiles".into(), "ja".into(), "fr".into());
+    p.format_version = 3;
+    p.subtitle_display = Some("both".into());
+    p.model_preferences = Some(serde_json::json!({"ttsProviderId":"cosyvoice3"}));
+    p.characters=serde_json::from_value(serde_json::json!([{"id":"shin","name":"Shin","color":"#82bda0","defaultReferenceId":"reference","references":[{"id":"reference","label":"Neutral","path":"characters/reference.wav","durationMs":1200,"transcript":"Hello","sourceDialogueId":null}]}])).unwrap();
+    project::save(&root, &p).unwrap();
+    let loaded = project::load(&root).unwrap();
+    assert_eq!(loaded.characters[0].references[0].transcript, "Hello");
+    assert_eq!(loaded.subtitle_display.as_deref(), Some("both"));
+    assert_eq!(
+        loaded.model_preferences.unwrap()["ttsProviderId"],
+        "cosyvoice3"
+    );
+    p.characters[0].references[0].path = "../outside.wav".into();
+    assert_eq!(p.validate().unwrap_err(), "INVALID_PATH");
+    p.characters[0].references[0].path = "characters/reference.wav".into();
+    p.characters[0].default_reference_id = Some("missing".into());
+    assert_eq!(p.validate().unwrap_err(), "INVALID_REFERENCE_AUDIO");
+}
+
+#[tokio::test]
+async fn speaker_identification_refuses_missing_runtime_without_creating_jobs() {
+    let temporary = tempfile::tempdir().unwrap();
+    let root = project::create_root(temporary.path(), "Speaker runtime").unwrap();
+    let p = Project::new("Speakers".into(), "ja".into(), "fr".into());
+    project::save(&root, &p).unwrap();
+    let core = Arc::new(Core {
+        session: Mutex::new(Some(project::Session::new(root.clone(), p))),
+        jobs: Mutex::new(HashMap::new()),
+        gate: Arc::new(tokio::sync::Semaphore::new(1)),
+        data_dir: temporary.path().to_path_buf(),
+    });
+    let app = tauri::test::mock_app();
+    assert_eq!(
+        crate::speakers::enqueue(core.clone(), app.handle().clone(), 0.75).unwrap_err(),
+        "SPEAKER_RUNTIME_REQUIRED"
+    );
+    assert!(core.jobs.lock().unwrap().is_empty());
+    assert_eq!(project::load(&root).unwrap().revision, 0);
+}
+
+#[tokio::test]
 async fn validates_real_stem_wav_and_reload_mixer_metadata() {
     let temporary = tempfile::tempdir().unwrap();
     let root = project::create_root(temporary.path(), "Stem metadata").unwrap();

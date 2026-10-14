@@ -1,0 +1,42 @@
+{
+  "id": "3dspeaker-campplus-silero",
+  "name": "Identification des locuteurs \u00b7 3D-Speaker + Silero VAD",
+  "revision": "sherpa-onnx-1.13.8",
+  "files": [
+    {
+      "name": "sherpa_onnx-1.13.8-cp312-cp312-win_amd64.whl",
+      "url": "https://files.pythonhosted.org/packages/24/af/33e9dcaa527bbc0c2526959713626607a46da2d7b19871b7773d8607d356/sherpa_onnx-1.13.8-cp312-cp312-win_amd64.whl",
+      "size": 2287856,
+      "sha256": "566e49ad3fb2aa8ceb723a52f9809aa6c2ee0a5eb3b0946c3fd2374af807a5c6",
+      "kind": "wheel"
+    },
+    {
+      "name": "sherpa_onnx_core-1.13.8-py3-none-win_amd64.whl",
+      "url": "https://files.pythonhosted.org/packages/94/38/64356ad97f68fffcf01fe7545407ad18a2ea86c1ffae5b0950f7fac73638/sherpa_onnx_core-1.13.8-py3-none-win_amd64.whl",
+      "size": 16903581,
+      "sha256": "5579e80196d516e6dae23c8f629292ce3142ab8869925d32b94612fd86f93733",
+      "kind": "wheel"
+    },
+    {
+      "name": "numpy-2.2.6-cp312-cp312-win_amd64.whl",
+      "url": "https://files.pythonhosted.org/packages/36/fa/8c9210162ca1b88529ab76b41ba02d433fd54fecaf6feb70ef9f124683f1/numpy-2.2.6-cp312-cp312-win_amd64.whl",
+      "size": 12614190,
+      "sha256": "c1f9540be57940698ed329904db803cf7a402f3fc200bfe599334c9bd84a40b2",
+      "kind": "wheel"
+    },
+    {
+      "name": "speaker.onnx",
+      "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/speaker-recongition-models/3dspeaker_speech_campplus_sv_en_voxceleb_16k.onnx",
+      "size": 29596978,
+      "sha256": "357a834f702b80161e5b981182c038e18553c1f2ca752ed6cec2052365d4129b",
+      "kind": "model"
+    },
+    {
+      "name": "vad.onnx",
+      "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/silero_vad.onnx",
+      "size": 643854,
+      "sha256": "9e2449e1087496d8d4caba907f23e0bd3f78d91fa552479bb9c23ac09cbb1fd6",
+      "kind": "model"
+    }
+  ]
+}

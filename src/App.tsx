@@ -21,6 +21,7 @@ export default function App() {
   const [panel, setPanel] = useState<Panel>(null);
   const [subtitleRole, setSubtitleRole] = useState<'source' | 'target'>('source');
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [translationFocus, setTranslationFocus] = useState(0);
   const [left, setLeft] = useState(Number(localStorage.getItem('studio.left') ?? 36));
   const [timelineHeight, setTimelineHeight] = useState(
     Number(localStorage.getItem('studio.timelineHeight') ?? 242),
@@ -45,13 +46,15 @@ export default function App() {
     );
   const transport = useTransport(studio.project, selected, padding, studio.setError);
   const { seek: seekVideo } = transport;
-  const { run: runProject } = studio;
   const close = useCallback(() => setPanel(null), []);
   const closeSubtitles = useCallback(
     () => setPanel((current) => (current === 'subtitles' ? null : current)),
     [],
   );
   const showJobs = useCallback(() => setPanel('jobs'), []);
+  const showCharacters = useCallback(() => setPanel('characters'), []);
+  const showModels = useCallback(() => setPanel('models'), []);
+  const showAlignment = useCallback(() => setPanel('alignment'), []);
   const select = useCallback(
     (line: Dialogue) => {
       setSelectedId(line.id);
@@ -59,17 +62,16 @@ export default function App() {
     },
     [padding, seekVideo],
   );
-  const importSubtitles = useCallback(
-    (role: 'source' | 'target') => {
-      if (
-        bridge.native &&
-        studio.project?.media?.streams.some((stream) => stream.kind === 'subtitle')
-      ) {
-        setSubtitleRole(role);
-        setPanel('subtitles');
-      } else void runProject(() => bridge.importSubtitles(role));
+  const importSubtitles = useCallback((role: 'source' | 'target') => {
+    setSubtitleRole(role);
+    setPanel('subtitles');
+  }, []);
+  const editTranslation = useCallback(
+    (line: Dialogue) => {
+      select(line);
+      setTranslationFocus((value) => value + 1);
     },
-    [runProject, studio.project],
+    [select],
   );
   const step = (offset: number) => {
     const lines = studio.project?.dialogues ?? [];
@@ -165,6 +167,11 @@ export default function App() {
             onSelect={select}
             onPlay={transport.playLine}
             onImport={importSubtitles}
+            onEdit={studio.edit}
+            onCharacters={showCharacters}
+            onModels={showModels}
+            onAlignment={showAlignment}
+            onTranslation={editTranslation}
             busy={busy}
           />
           <div
@@ -206,6 +213,7 @@ export default function App() {
                   ['queued', 'running'].includes(job.status),
               )}
               onJobs={showJobs}
+              onEdit={studio.edit}
             />
             <Editor
               project={studio.project}
@@ -214,6 +222,7 @@ export default function App() {
               onPlay={transport.playLine}
               busy={busy}
               time={transport.time}
+              translationFocus={translationFocus}
             />
           </div>
         </div>
@@ -292,6 +301,8 @@ export default function App() {
         onEdit={studio.edit}
         videoRef={transport.videoRef}
         busy={busy}
+        selectedId={selectedId}
+        onPanel={setPanel}
       />
       {studio.error && (
         <div className="error-toast" role="alert">

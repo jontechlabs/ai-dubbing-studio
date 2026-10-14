@@ -1,5 +1,5 @@
 import { Mic2, Play, Type, Scissors, Combine } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { dialogueText, editDialogue } from '../domain/subtitles';
 import type { Dialogue, Project } from '../domain/types';
@@ -20,6 +20,7 @@ export function Editor({
   onPlay,
   busy,
   time,
+  translationFocus,
 }: {
   project: Project | null;
   selected: Dialogue | undefined;
@@ -27,9 +28,17 @@ export function Editor({
   onPlay: (d: Dialogue) => void;
   busy: boolean;
   time: number;
+  translationFocus: number;
 }) {
   const { t } = useTranslation();
   const [tab, setTab] = useState<'text' | 'tts'>('text');
+  const targetField = useRef<HTMLTextAreaElement>(null);
+  useEffect(() => {
+    if (translationFocus) {
+      setTab('text');
+      requestAnimationFrame(() => targetField.current?.focus());
+    }
+  }, [translationFocus]);
   if (!project || !selected)
     return (
       <div className="editor empty-editor">
@@ -68,16 +77,16 @@ export function Editor({
       />
       {tab === 'text' ? (
         <div className="editor-fields">
-          {(['source', 'target'] as const).map((role) => (
-            <div className="cue-fields" key={role}>
-              {(role === 'source' ? project.sourceCues : project.targetCues)
-                .filter((cue) =>
-                  (role === 'source' ? selected.sourceCueIds : selected.targetCueIds).includes(
-                    cue.id,
-                  ),
-                )
-                .map((cue, index, cues) => (
-                  <label key={cue.id}>
+          {(['source', 'target'] as const).map((role) => {
+            const ids = role === 'source' ? selected.sourceCueIds : selected.targetCueIds;
+            const existing = (role === 'source' ? project.sourceCues : project.targetCues).filter(
+              (cue) => ids.includes(cue.id),
+            );
+            const fields = existing.length ? existing : [{ id: '', text: '' }];
+            return (
+              <div className="cue-fields" key={role}>
+                {fields.map((cue, index, cues) => (
+                  <label key={`${role}:${index}`}>
                     <span>
                       {t(role === 'source' ? 'original' : 'displayedText')}{' '}
                       <small>
@@ -86,20 +95,25 @@ export function Editor({
                       </small>
                     </span>
                     <textarea
+                      ref={role === 'target' && index === 0 ? targetField : undefined}
                       aria-label={
                         t(role === 'source' ? 'original' : 'displayedText') +
                         (cues.length > 1 ? ` ${index + 1}` : '')
                       }
                       value={cue.text}
                       disabled={busy}
+                      placeholder={t('translationPlaceholder')}
                       onChange={(event) =>
-                        onEdit((p) => editCueText(p, role, cue.id, event.target.value))
+                        cue.id
+                          ? onEdit((p) => editCueText(p, role, cue.id, event.target.value))
+                          : update(role, event.target.value)
                       }
                     />
                   </label>
                 ))}
-            </div>
-          ))}
+              </div>
+            );
+          })}
         </div>
       ) : (
         <div className="tts-editor">

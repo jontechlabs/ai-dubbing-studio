@@ -1,8 +1,8 @@
-# Validation - Phase 3, 14 October 2026
+# Validation - Phase 4, 14 October 2026
 
-## v0.3.3 automated checks
+## v0.4.0 automated checks
 
-The local frontend build, strict TypeScript, ESLint, Prettier, Rust Clippy with -D warnings and rustfmt pass. Suites contain 22 TypeScript tests, 24 Rust tests, 12 Playwright scenarios and 7 Python device/process tests (65 total).
+The local frontend build, strict TypeScript, ESLint, Prettier, Rust Clippy with -D warnings and rustfmt pass. Suites contain 26 TypeScript tests, 26 Rust tests, 16 Playwright scenarios and 10 Python device/process/grouping tests (78 total).
 
 Domain tests retain Phase 2 synchronization/editing coverage and add overlapping/large cue lookup, mixer mute/solo/master gain, legacy original-track creation, unsaved-edit rebase over audio jobs and integer split timestamps. Rust integration checks run actual FFmpeg media, validate real stem WAV structure/sample counts, preserve mixer asset metadata across reload, reject traversal and refuse separation without a runtime without modifying the project. Existing import/subtitle/waveform/cancellation/recovery checks remain.
 
@@ -26,7 +26,7 @@ The [Windows workflow](https://github.com/jontechlabs/ai-dubbing-studio/actions/
 
 An earlier unsigned executable was blocked by Smart App Control. Final native Tauri GUI, installer/uninstaller, effective WebView2 GPU adapter and complete native update/restart remain unqualified. Mocked IPC does not establish those outcomes. Windows rendering preference is an OS request for this executable; it does not guarantee a specific WebView2/decoder adapter.
 
-Screenshots show actual French React UI in browser testing, with simulated native devices/stems/update metadata. The displayed 0.3.4 update is a test scenario, not a released version. Screenshots are not native Tauri captures. The demo has synthetic audio and no generated dubbing.
+Screenshots show actual French React UI in browser testing, with simulated native devices/stems/update metadata. The displayed 0.4.1 update is a test scenario, not a released version. Screenshots are not native Tauri captures. The demo has synthetic audio and no generated dubbing.
 
 Format 1 projects open normally. Adding separated tracks uses format 2, rejected by old app versions. Split text allocation is approximate; SRT synchronization uses timings and does not align speech. Final mix/MKV export and voice generation remain future phases.
 
@@ -45,3 +45,15 @@ The [v0.2.0 Windows run](https://github.com/jontechlabs/ai-dubbing-studio/action
 With the exact embedded Python 3.12.10 runtime, the previous `--info` worker stayed running for 20 seconds while its stdin pipe remained open and exited after that pipe was closed. The fixed real `--info` and full `--runtime-info` probes exit with stdin still open in about 2 and 6 seconds. Real CPU inference using the verified checkpoint and the same open-pipe transport produced all three one-second WAVs and exited successfully in 26 seconds. Blocking raw stdin was also tested and rejected because it stalled Torch initialization on Windows; the final control reader uses nonblocking pipe reads supported by Python 3.12.
 
 Three Python process tests cover actual CLI exit with open stdin, control-reader shutdown, and pause/resume delivery. They replace heavy imports for CI and complement the real embedded-runtime run. Two Rust process tests exercise closed-stdin JSON collection, a stalled probe deadline, and cancellation. The additional browser scenario checks the visible device-check stage, indeterminate progress, CPU availability after failed GPU discovery and successful refresh. Native IPC is mocked in that browser test. GPU discovery failure does not reclassify a verified installation as missing. The GPU probe checks basic kernels; full RTX 5060 Ti inference remains unqualified on this host.
+
+## Phase 4 speaker identification and UI
+
+The exact isolated Python 3.12.10 runtime successfully imports sherpa-onnx/core 1.13.8 and NumPy 2.2.6 extracted from hash-locked Windows wheels. The unchanged CAMPPlus ONNX and Silero VAD models were downloaded from official k2-fsa assets and hashed. Real CPU inference on four subtitle intervals containing two distinct Windows SAPI test voices grouped their repetitions together and produced two candidate reference WAVs. A separate three-second silent input returns NO_SPEECH_FOUND. The initial 0.6 grouping threshold merged the two similar synthetic voices; the shipped, more conservative default is 0.75, with a user-adjustable setting. Similarity is not a calibrated probability of speaker identity.
+
+This establishes model/runtime integration on this host, not diarization quality on Japanese anime, expressive/overlapping voices or a full film. Identification is anonymous embedding clustering over existing subtitle intervals, not person recognition or continuous full-audio segmentation. Reads are limited to 15 seconds per interval; short/ambiguous lines remain unassigned and at most 32 groups are proposed. No model weights or private signing keys are bundled.
+
+Four new domain tests cover serialized profiles/assignments, proposal application that preserves manual assignments and rejects changed timings, preserving a newly extracted reference during an unsaved rename, and subtitle display preferences without deleting cue text/times. Two Rust integration checks use a real mono 24 kHz WAV and format-3 save/load, reject invalid reference paths/default ids, and refuse identification without an installed runtime before creating jobs. Three Python tests cover clustering distinct/repeated vectors, uncertain capped clustering and invalid vectors.
+
+Four additional browser scenarios exercise AI proposal application with manual corrections, editable references and engine preference, inline translation plus saved timeline/player controls, successful automatic synchronization at import, and preserving imported mismatched subtitles when synchronization is refused. Native inference/reference IPC is simulated in the UI tests; browser video/audio elements run normally. The source archive and portable package are checked for model files, Python caches and signing keys. Native GUI, full installed-app model download/identification and installer/update cycle remain unqualified on this development host; Windows Actions validates the frontend, Rust and Python code and packages separately.
+
+TTS engine preferences are saved preparation metadata. CosyVoice3/Fish/Qwen generation is not implemented in this release. Speaker names are entered manually. Manual references may be imported or extracted, with normalization and a 20-second cap; AI references are candidate speech-only clips requiring review and transcript correction. Per-generation/per-line reference-mode selection remains TTS-stage work. Projects using profiles/preferences are format 3, refused by older app versions; formats 1 and 2 remain readable.

@@ -51,6 +51,38 @@ export interface Track {
   solo: boolean;
   gain: number;
 }
+export interface VoiceReference {
+  id: string;
+  label: string;
+  path: string;
+  durationMs: number;
+  transcript: string;
+  sourceDialogueId?: string | null;
+}
+export interface Character {
+  id: string;
+  name: string;
+  color: string;
+  references: VoiceReference[];
+  defaultReferenceId: string | null;
+}
+export interface SpeakerAnalysis {
+  id: string;
+  sourcePath: string;
+  lines: { id: string; startMs: number; endMs: number }[];
+  assignments: {
+    dialogueId: string;
+    speaker: number | null;
+    similarity: number | null;
+    reason: string;
+  }[];
+  clusters: {
+    speaker: number;
+    referencePath: string;
+    durationMs: number;
+    referenceDialogueId: string;
+  }[];
+}
 export interface Project {
   formatVersion: number;
   appVersion: string;
@@ -65,7 +97,10 @@ export interface Project {
   targetCues: Cue[];
   dialogues: Dialogue[];
   tracks: Track[];
-  characters: unknown[];
+  characters: Character[];
+  speakerAnalysis?: SpeakerAnalysis | null;
+  modelPreferences?: { ttsProviderId: string | null };
+  subtitleDisplay?: 'off' | 'source' | 'target' | 'both';
   generations: unknown[];
   pronunciation: Record<string, string>;
 }

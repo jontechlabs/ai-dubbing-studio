@@ -7,7 +7,7 @@ test('automatic synchronization previews, applies, exports, persists and undoes'
   const starts = [1000, 5800, 13300, 21000, 29100, 41800, 55400, 73000], lengths = [1700, 2200, 3600, 1900, 2900, 1800, 4100, 2100];
   const srt = (shift: number, text: string) => starts.map((start, i) => `${i + 1}\n${formatTime(start + shift, ',')} --> ${formatTime(start + lengths[i] + shift, ',')}\n${text} ${i}`).join('\n\n');
   for (const [name, text] of [['SRT original', srt(0, '日本語')], ['SRT traduit', srt(2300, 'Français')]]) {
-    const chooser = page.waitForEvent('filechooser'); await page.getByRole('button', { name, exact: true }).click();
+    await page.getByRole('button', { name, exact: true }).click();await page.getByRole('checkbox',{name:/Caler automatiquement le SRT importé/}).uncheck();const chooser = page.waitForEvent('filechooser'); await page.getByRole('button',{name:'Choisir un fichier SRT'}).click();
     await (await chooser).setFiles({ name: 'timing.srt', mimeType: 'text/plain', buffer: Buffer.from(text) });
   }
   await page.getByRole('button', { name: 'Analyser', exact: true }).click();

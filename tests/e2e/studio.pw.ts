@@ -44,7 +44,7 @@ test('imports local media and SRT files, then reloads the persisted media blob',
   await page.getByRole('button', { name: 'Créer le projet' }).click();
   await expect(page.locator('video')).toBeVisible();
   for (const [name, file] of [['SRT original', 'source'], ['SRT traduit', 'target']]) {
-    const next = page.waitForEvent('filechooser'); await page.getByRole('button', { name, exact: true }).click();
+    await page.getByRole('button', { name, exact: true }).click();const next = page.waitForEvent('filechooser'); await page.getByRole('button',{name:'Choisir un fichier SRT'}).click();
     await (await next).setFiles(`tests/fixtures/${file}.srt`);
     await expect(page.locator('.count-badge')).toHaveText('2');
   }

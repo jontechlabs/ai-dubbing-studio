@@ -1,6 +1,6 @@
 import type { Project } from './types';
 import { alignCues } from './subtitles';
-export const APP_VERSION = '0.3.3';
+export const APP_VERSION = '0.4.0';
 
 export function blankProject(name = 'Untitled', source = 'ja', target = 'fr'): Project {
   const now = new Date().toISOString();
@@ -87,7 +87,12 @@ export function demoProject(): Project {
 export function validateProject(value: unknown): Project {
   if (!value || typeof value !== 'object') throw new Error('INVALID_PROJECT');
   const project = value as Project;
-  if (![1, 2].includes(project.formatVersion)) throw new Error('UNSUPPORTED_PROJECT_VERSION');
+  if (![1, 2, 3].includes(project.formatVersion)) throw new Error('UNSUPPORTED_PROJECT_VERSION');
+  if (
+    project.subtitleDisplay &&
+    !['off', 'source', 'target', 'both'].includes(project.subtitleDisplay)
+  )
+    throw new Error('INVALID_PROJECT');
   if (!project.id || typeof project.name !== 'string' || !Number.isInteger(project.revision))
     throw new Error('INVALID_PROJECT');
   if (
@@ -118,8 +123,31 @@ export function validateProject(value: unknown): Project {
       throw new Error('INVALID_CUE_RANGE');
   }
   const sourceIds = new Set(project.sourceCues.map((cue) => cue.id));
+  const characterIds = new Set<string>();
+  for (const character of project.characters) {
+    if (
+      !character.id ||
+      characterIds.has(character.id) ||
+      !character.name.trim() ||
+      !/^#[0-9a-f]{6}$/i.test(character.color) ||
+      !Array.isArray(character.references)
+    )
+      throw new Error('INVALID_CHARACTER');
+    characterIds.add(character.id);
+    for (const reference of character.references)
+      if (
+        !reference.id ||
+        !reference.path.startsWith('characters/') ||
+        reference.path.includes('..') ||
+        reference.durationMs < 500 ||
+        reference.durationMs > 20000
+      )
+        throw new Error('INVALID_REFERENCE_AUDIO');
+  }
   const targetIds = new Set(project.targetCues.map((cue) => cue.id));
   for (const dialogue of project.dialogues) {
+    if (dialogue.characterId && !characterIds.has(dialogue.characterId))
+      throw new Error('INVALID_CHARACTER');
     if (
       !Array.isArray(dialogue.sourceCueIds) ||
       !Array.isArray(dialogue.targetCueIds) ||

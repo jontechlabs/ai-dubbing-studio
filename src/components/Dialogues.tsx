@@ -14,6 +14,7 @@ import { useTranslation } from 'react-i18next';
 import { dialogueText } from '../domain/subtitles';
 import { formatTime } from '../domain/time';
 import type { Dialogue, Project } from '../domain/types';
+import { assignCharacter } from '../domain/characters';
 
 function DialoguesPane({
   project,
@@ -22,6 +23,11 @@ function DialoguesPane({
   onPlay,
   onImport,
   busy,
+  onEdit,
+  onCharacters,
+  onModels,
+  onAlignment,
+  onTranslation,
 }: {
   project: Project | null;
   selectedId: string | null;
@@ -29,11 +35,20 @@ function DialoguesPane({
   onPlay: (line: Dialogue) => void;
   onImport: (role: 'source' | 'target') => void;
   busy: boolean;
+  onEdit: (update: (project: Project) => Project) => void;
+  onCharacters: () => void;
+  onModels: () => void;
+  onAlignment: () => void;
+  onTranslation: (line: Dialogue) => void;
 }) {
   const { t } = useTranslation();
   const [search, setSearch] = useState('');
   const [review, setReview] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const numbers = useMemo(
+    () => new Map(project?.dialogues.map((line, index) => [line.id, index + 1]) ?? []),
+    [project],
+  );
   const lines = useMemo(() => {
     if (!project) return [];
     const source = new Map(project.sourceCues.map((cue) => [cue.id, cue.text]));
@@ -90,6 +105,13 @@ function DialoguesPane({
           <FilePlus2 size={14} />
           {t('importTarget')}
         </button>
+        <button
+          disabled={!project?.sourceCues.length || !project?.targetCues.length || busy}
+          onClick={onAlignment}
+        >
+          <RefreshCw size={14} />
+          {t('syncSubtitles')}
+        </button>
       </div>
       <div className="dialogue-scroll" ref={scrollRef}>
         {!lines.length ? (
@@ -121,10 +143,16 @@ function DialoguesPane({
                   <DialogueCard
                     project={project!}
                     line={line}
-                    index={item.index + 1}
+                    index={numbers.get(line.id) ?? item.index + 1}
                     selected={line.id === selectedId}
                     onSelect={() => onSelect(line)}
                     onPlay={() => onPlay(line)}
+                    onCharacter={(characterId) =>
+                      onEdit((p) => assignCharacter(p, [line.id], characterId))
+                    }
+                    onCharacters={onCharacters}
+                    onModels={onModels}
+                    onTranslation={() => onTranslation(line)}
                   />
                 </div>
               );
@@ -147,6 +175,10 @@ function DialogueCard({
   selected,
   onSelect,
   onPlay,
+  onCharacter,
+  onCharacters,
+  onModels,
+  onTranslation,
 }: {
   project: Project;
   line: Dialogue;
@@ -154,6 +186,10 @@ function DialogueCard({
   selected: boolean;
   onSelect: () => void;
   onPlay: () => void;
+  onCharacter: (id: string | null) => void;
+  onCharacters: () => void;
+  onModels: () => void;
+  onTranslation: () => void;
 }) {
   const { t } = useTranslation();
   return (
@@ -170,10 +206,38 @@ function DialogueCard({
         <span>{((line.endMs - line.startMs) / 1000).toFixed(2)} s</span>
       </div>
       <div className="character-label">
-        <span className="character-avatar">
+        <span
+          className="character-avatar"
+          style={{
+            color: project.characters.find((character) => character.id === line.characterId)?.color,
+          }}
+        >
           <UserRound size={12} />
         </span>
-        {t('unassigned')}
+        <select
+          aria-label={`${t('character')} ${index}`}
+          value={line.characterId ?? ''}
+          onClick={(event) => event.stopPropagation()}
+          onChange={(event) => onCharacter(event.target.value || null)}
+        >
+          <option value="">{t('unassigned')}</option>
+          {project.characters.map((character) => (
+            <option key={character.id} value={character.id}>
+              {character.name}
+            </option>
+          ))}
+        </select>
+        <button
+          className="text-button"
+          aria-label={`${t('characters')} ${index}`}
+          onClick={(event) => {
+            event.stopPropagation();
+            onSelect();
+            onCharacters();
+          }}
+        >
+          <UserRound size={12} />
+        </button>
         <span className="line-number">{String(index).padStart(2, '0')}</span>
       </div>
       <div className="cue-text original-text">
@@ -203,14 +267,33 @@ function DialogueCard({
           <span className="text-label">
             {project.languages.target.toUpperCase()} · {t('translated')}
           </span>
-          <p>{dialogueText(project, line, 'target') || t('noTranslation')}</p>
+          {dialogueText(project, line, 'target') ? (
+            <p>{dialogueText(project, line, 'target')}</p>
+          ) : (
+            <button
+              className="add-translation"
+              onClick={(event) => {
+                event.stopPropagation();
+                onTranslation();
+              }}
+            >
+              {t('noTranslation')}
+            </button>
+          )}
         </div>
       </div>
       <div className="card-footer">
-        <span className="status">
+        <button
+          className="status"
+          title={t('voiceStatusHint')}
+          onClick={(event) => {
+            event.stopPropagation();
+            onModels();
+          }}
+        >
           <span className="status-dot" />
           {t(line.status)}
-        </span>
+        </button>
         {line.warnings.length > 0 && (
           <span className="warning" title={t('alignment')}>
             <AlertTriangle size={13} />

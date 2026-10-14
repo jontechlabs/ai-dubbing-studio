@@ -28,3 +28,6 @@ The mirrored weights retain CC BY-SA 4.0 and their original attribution.
 See workers/BANDIT-MODEL-LICENSE.txt for provenance, license links and hashes.
 Python 3.12.10 embedded distribution: Python Software Foundation license, retained inside the downloaded runtime.
 PyTorch/Torchaudio and inference dependencies retain their licenses; locked versions are in workers/runtime-requirements.txt and the runtime installers.
+
+Speaker identification
+3D-Speaker CAMPPlus ONNX model (Apache-2.0), Silero VAD (MIT), sherpa-onnx/core 1.13.8 (Apache-2.0), NumPy 2.2.6 (BSD-3-Clause and bundled dependency notices). Downloaded on request; models are not bundled. See workers/SPEAKER-MODEL-LICENSE.txt and speaker-model.json for unchanged upstream sources, versions, exact sizes and hashes.

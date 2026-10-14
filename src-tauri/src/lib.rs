@@ -10,6 +10,7 @@ mod media;
 mod project;
 mod separation;
 mod smoke;
+mod speakers;
 mod subtitles;
 mod waveform;
 pub fn smoke_test(path: &std::path::Path) -> Result<(), String> {
@@ -36,6 +37,74 @@ pub struct Core {
     data_dir: PathBuf,
 }
 type Shared = Arc<Core>;
+#[tauri::command]
+fn speaker_status(
+    app: tauri::AppHandle,
+    core: State<'_, Shared>,
+) -> Result<speakers::Status, String> {
+    speakers::status(&core, &app)
+}
+#[tauri::command]
+fn install_speaker_runtime(
+    app: tauri::AppHandle,
+    core: State<'_, Shared>,
+) -> Result<String, String> {
+    speakers::install(core.inner().clone(), app)
+}
+#[tauri::command]
+fn identify_speakers(
+    app: tauri::AppHandle,
+    core: State<'_, Shared>,
+    threshold: f64,
+) -> Result<String, String> {
+    speakers::enqueue(core.inner().clone(), app, threshold)
+}
+#[tauri::command]
+async fn import_voice_reference(
+    app: tauri::AppHandle,
+    core: State<'_, Shared>,
+    character_id: String,
+    line_id: Option<String>,
+    path: Option<String>,
+    label: String,
+) -> Result<Project, String> {
+    speakers::reference(
+        core.inner().clone(),
+        app,
+        character_id,
+        line_id,
+        path,
+        label,
+    )
+    .await
+}
+#[tauri::command]
+fn voice_reference_path(
+    app: tauri::AppHandle,
+    core: State<'_, Shared>,
+    character_id: String,
+    reference_id: String,
+) -> Result<String, String> {
+    let session = core.session.lock().map_err(io_error)?;
+    let s = session.as_ref().ok_or("NO_PROJECT")?;
+    let reference = s
+        .project
+        .characters
+        .iter()
+        .find(|character| character.id == character_id)
+        .and_then(|character| {
+            character
+                .references
+                .iter()
+                .find(|reference| reference.id == reference_id)
+        })
+        .ok_or("INVALID_REFERENCE_AUDIO")?;
+    let path = project::asset(&s.root, &reference.path)?;
+    app.asset_protocol_scope()
+        .allow_file(&path)
+        .map_err(io_error)?;
+    Ok(path.to_string_lossy().into_owned())
+}
 fn ensure_idle(core: &Core) -> Result<(), String> {
     if jobs::active_processing(core) {
         Err("BUSY".into())
@@ -497,6 +566,24 @@ fn retry_job(app: tauri::AppHandle, core: State<'_, Shared>, id: String) -> Resu
         .ok_or("INVALID_PROJECT")?
         .saved
         .clone();
+    if record.speaker_install {
+        return speakers::install(core.inner().clone(), app);
+    }
+    if let Some(request) = record.speaker_request {
+        let session = core.session.lock().map_err(io_error)?;
+        let s = session.as_ref().ok_or("NO_PROJECT")?;
+        if s.root != request.root
+            || s.project.id != request.project_id
+            || s.project
+                .media
+                .as_ref()
+                .is_none_or(|media| media.path != request.source_path)
+        {
+            return Err("STALE_REVISION".into());
+        }
+        drop(session);
+        return speakers::enqueue(core.inner().clone(), app, request.threshold);
+    }
     if let Some(cuda) = record.runtime_cuda {
         return separation::install(core.inner().clone(), app, cuda);
     }
@@ -644,6 +731,11 @@ pub fn run() {
             cancel_job,
             pause_job,
             retry_job,
+            speaker_status,
+            install_speaker_runtime,
+            identify_speakers,
+            import_voice_reference,
+            voice_reference_path,
             load_demo
         ])
         .run(context)

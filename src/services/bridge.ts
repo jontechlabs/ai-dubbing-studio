@@ -8,6 +8,33 @@ import { browserStore, downloadText, pickBrowserFile } from './browserStore';
 import { audioPeaks, type Waveform } from '../domain/waveform';
 
 export const native = isTauri();
+export function speakerStatus() {
+  return invoke<{ installed: boolean; installing: boolean; sizeBytes: number }>('speaker_status');
+}
+export function installSpeakerRuntime() {
+  return invoke<string>('install_speaker_runtime');
+}
+export function identifySpeakers(threshold = 0.75) {
+  return invoke<string>('identify_speakers', { threshold });
+}
+export async function importVoiceReference(
+  characterId: string,
+  lineId: string | null,
+  label: string,
+): Promise<Project | null> {
+  if (!native) throw new Error('DESKTOP_REQUIRED');
+  const path = lineId
+    ? null
+    : await open({
+        multiple: false,
+        filters: [{ name: 'Audio', extensions: ['wav', 'flac', 'mp3', 'ogg', 'm4a'] }],
+      });
+  if (!lineId && !path) return null;
+  return invoke<Project>('import_voice_reference', { characterId, lineId, path, label });
+}
+export async function voiceReferenceUrl(characterId: string, referenceId: string): Promise<string> {
+  return convertFileSrc(await invoke<string>('voice_reference_path', { characterId, referenceId }));
+}
 export async function graphicsInfo() {
   const data = await invoke<{
     preference: string;

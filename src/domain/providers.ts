@@ -55,3 +55,22 @@ export interface VoiceConversionProvider {
 export interface TranslationProvider {
   translate(text: string, source: string, target: string, signal: AbortSignal): Promise<string>;
 }
+export const futureVoiceProviders = [
+  { id: 'cosyvoice3', name: 'CosyVoice3', phase: 5 },
+  { id: 'fish-s2', name: 'Fish Audio S2', phase: 6 },
+  { id: 'qwen3-tts', name: 'Qwen3-TTS', phase: 6 },
+] as const;
+export interface SpeakerIdentificationProvider {
+  id: string;
+  name: string;
+  capabilities(): ProviderCapabilities;
+  identify(
+    request: {
+      audioPath: string;
+      lines: { id: string; startMs: number; endMs: number }[];
+      threshold: number;
+    },
+    signal: AbortSignal,
+  ): Promise<import('./types').SpeakerAnalysis>;
+  installModel(modelId: string): Promise<void>;
+}

@@ -13,6 +13,8 @@ import { UpdateSettings } from './UpdateSettings';
 import type { Updater } from '../hooks/useUpdater';
 import { AudioPanel } from './AudioPanel';
 import { PlaybackMetrics } from './PlaybackMetrics';
+import { CharactersPanel } from './CharactersPanel';
+import { ModelsPanel } from './ModelsPanel';
 import * as bridge from '../services/bridge';
 import { downloadText } from '../services/browserStore';
 
@@ -36,6 +38,8 @@ export function Panels({
   updater,
   onEdit,
   videoRef,
+  selectedId,
+  onPanel,
 }: {
   panel: Panel;
   project: Project | null;
@@ -56,6 +60,8 @@ export function Panels({
   updater: Updater;
   onEdit: (update: (project: Project) => Project) => void;
   videoRef: RefObject<HTMLVideoElement | null>;
+  selectedId: string | null;
+  onPanel: (panel: Panel) => void;
 }) {
   const { t } = useTranslation();
   const title =
@@ -125,6 +131,28 @@ export function Panels({
           />
         )}
         {panel === 'jobs' && <JobsPanel jobs={jobs} onError={onError} />}
+        {panel === 'characters' && project && (
+          <CharactersPanel
+            project={project}
+            jobs={jobs}
+            selectedId={selectedId}
+            onEdit={onEdit}
+            run={run}
+            showJobs={showJobs}
+            onModels={() => onPanel('models')}
+            onError={onError}
+          />
+        )}
+        {panel === 'models' && (
+          <ModelsPanel
+            project={project}
+            jobs={jobs}
+            onEdit={onEdit}
+            showJobs={showJobs}
+            onAudio={() => onPanel('audio')}
+            onError={onError}
+          />
+        )}
         {panel === 'audio' && (
           <AudioPanel
             project={project}
@@ -319,7 +347,7 @@ function JobsPanel({ jobs, onError }: { jobs: Job[]; onError: (s: string) => voi
               {t('cancel')}
             </button>
           )}
-          {['import', 'separation', 'runtime'].includes(job.kind) &&
+          {['import', 'separation', 'runtime', 'speakerInstall', 'speakers'].includes(job.kind) &&
             ['failed', 'cancelled', 'interrupted'].includes(job.status) && (
               <button
                 className="text-button"

@@ -31,7 +31,7 @@ pub struct Status {
     pub cuda_version: Option<String>,
     pub device_probe_warning: Option<String>,
 }
-fn resources<R: tauri::Runtime>(app: &tauri::AppHandle<R>) -> PathBuf {
+pub(crate) fn resources<R: tauri::Runtime>(app: &tauri::AppHandle<R>) -> PathBuf {
     let packaged = app
         .path()
         .resource_dir()
@@ -46,7 +46,7 @@ fn resources<R: tauri::Runtime>(app: &tauri::AppHandle<R>) -> PathBuf {
 fn runtime(core: &Core) -> PathBuf {
     core.data_dir.join("bandit-runtime")
 }
-fn python(root: &Path) -> PathBuf {
+pub(crate) fn python(root: &Path) -> PathBuf {
     root.join(if cfg!(windows) {
         "python/python.exe"
     } else {
@@ -112,7 +112,7 @@ pub async fn status<R: tauri::Runtime>(
     })
 }
 
-async fn fetch<R: tauri::Runtime>(
+pub(crate) async fn fetch<R: tauri::Runtime>(
     core: &Arc<Core>,
     app: &tauri::AppHandle<R>,
     key: &str,
@@ -168,7 +168,7 @@ async fn runtime_usable<R: tauri::Runtime>(
 
 // Probes have no pause/resume protocol. Close stdin from the start and bound
 // their entire lifetime, including driver initialization and process exit.
-async fn probe(
+pub(crate) async fn probe(
     executable: &Path,
     args: &[String],
     flag: &AtomicBool,
@@ -191,7 +191,7 @@ fn runtime_matches(info: &serde_json::Value, cuda: bool) -> bool {
         && info["cudaVersion"].as_str() == if cuda { Some("12.8") } else { None }
 }
 
-async fn process<R: tauri::Runtime>(
+pub(crate) async fn process<R: tauri::Runtime>(
     core: &Arc<Core>,
     app: &tauri::AppHandle<R>,
     key: &str,
@@ -219,6 +219,7 @@ async fn process<R: tauri::Runtime>(
         .paused
         .clone();
     let mut previous_pause = false;
+    let mut worker_error = None;
     let mut clock = tokio::time::interval(std::time::Duration::from_millis(250));
     let stderr = child.stderr.take().ok_or("PROCESS_FAILED")?;
     let (log_core, log_app, log_key) = (core.clone(), app.clone(), key.to_owned());
@@ -242,7 +243,7 @@ async fn process<R: tauri::Runtime>(
                 if let Ok(value)=serde_json::from_str::<serde_json::Value>(&line) {
                     if let Some(progress)=value["progress"].as_f64() { job.progress=Some(progress.clamp(0.0,1.0)); }
                     if let Some(stage)=value["stage"].as_str() { job.stage=stage.into(); }
-                    if value.get("error").is_some() { job.logs.push(line); }
+                    if let Some(error)=value["error"].as_str() { worker_error=Some(error.to_owned()); job.logs.push(line); }
                 } else { job.logs.push(line); }
             }); }
         }
@@ -252,10 +253,10 @@ async fn process<R: tauri::Runtime>(
     if status.success() {
         Ok(())
     } else {
-        Err("SEPARATION_FAILED".into())
+        Err(worker_error.unwrap_or_else(|| "SEPARATION_FAILED".into()))
     }
 }
-fn finish<R: tauri::Runtime>(
+pub(crate) fn finish<R: tauri::Runtime>(
     core: &Core,
     app: &tauri::AppHandle<R>,
     key: &str,
@@ -288,7 +289,8 @@ pub fn install<R: tauri::Runtime>(
         return Err("RUNTIME_PLATFORM_UNSUPPORTED".into());
     }
     if core.jobs.lock().map_err(io_error)?.values().any(|job| {
-        ["runtime", "separation"].contains(&job.saved.record.kind.as_str())
+        ["runtime", "separation", "speakerInstall", "speakers"]
+            .contains(&job.saved.record.kind.as_str())
             && ["queued", "running", "paused"].contains(&job.saved.record.status.as_str())
     }) {
         return Err("BUSY".into());
@@ -355,7 +357,8 @@ pub fn enqueue<R: tauri::Runtime>(
     device: String,
 ) -> Result<String, String> {
     if core.jobs.lock().map_err(io_error)?.values().any(|job| {
-        ["runtime", "separation"].contains(&job.saved.record.kind.as_str())
+        ["runtime", "separation", "speakerInstall", "speakers"]
+            .contains(&job.saved.record.kind.as_str())
             && ["queued", "running", "paused"].contains(&job.saved.record.status.as_str())
     }) {
         return Err("BUSY".into());
@@ -418,7 +421,7 @@ pub fn enqueue<R: tauri::Runtime>(
             jobs::update(&core,&app,&key,|job|job.stage="commit".into());
             let mut session=core.session.lock().map_err(io_error)?;let s=session.as_mut().ok_or("NO_PROJECT")?;
             if s.root!=root || s.project.id!=project_id || s.project.media.as_ref().is_none_or(|media|media.path!=source_path || media.audio_stream_index!=Some(index)){return Err("STALE_REVISION".into());}
-            let mut next=s.project.clone();next.format_version=2;
+            let mut next=s.project.clone();next.format_version=next.format_version.max(2);
             next.tracks.retain(|track|track.kind!="audio");
             if let Some(original)=next.tracks.iter_mut().find(|track|track.kind=="original"){original.mute=true;original.solo=false;}else{next.tracks.push(Track{id:"original".into(),kind:"original".into(),language:next.languages.source.clone(),mute:true,solo:false,gain:1.0,role:None,path:None,duration_ms:None,source_path:None,generation_id:None});}
             for role in ["speech","music","sfx"] { next.tracks.push(Track{id:id(),kind:"audio".into(),language:next.languages.source.clone(),mute:false,solo:false,gain:1.0,role:Some(role.into()),path:Some(format!("{relative}/{role}.wav")),duration_ms:Some(duration),source_path:Some(source_path.clone()),generation_id:Some(key.clone())}); }
