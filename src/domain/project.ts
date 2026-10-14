@@ -1,6 +1,7 @@
 import type { Project } from './types';
 import { alignCues } from './subtitles';
-export const APP_VERSION = '0.4.0';
+import { validVoiceVariant } from './modelVariants';
+export const APP_VERSION = '0.4.1';
 
 export function blankProject(name = 'Untitled', source = 'ja', target = 'fr'): Project {
   const now = new Date().toISOString();
@@ -87,6 +88,9 @@ export function demoProject(): Project {
 export function validateProject(value: unknown): Project {
   if (!value || typeof value !== 'object') throw new Error('INVALID_PROJECT');
   const project = value as Project;
+  const preferences = project.modelPreferences;
+  if (preferences && !validVoiceVariant(preferences.ttsProviderId, preferences.voiceVariantId))
+    throw new Error('INVALID_PROJECT');
   if (![1, 2, 3].includes(project.formatVersion)) throw new Error('UNSUPPORTED_PROJECT_VERSION');
   if (
     project.subtitleDisplay &&

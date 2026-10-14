@@ -37,7 +37,7 @@ pub struct Status {
     size_bytes: u64,
 }
 fn root(core: &Core) -> PathBuf {
-    core.data_dir.join("speaker-runtime")
+    crate::model_storage::root(core).join("speaker-runtime")
 }
 fn manifest<R: tauri::Runtime>(app: &tauri::AppHandle<R>) -> Result<Manifest, String> {
     serde_json::from_slice(
@@ -62,6 +62,7 @@ fn busy(core: &Core) -> bool {
                     "speakerInstall",
                     "speakers",
                     "reference",
+                    "modelMove",
                 ]
                 .contains(&job.saved.record.kind.as_str())
         })

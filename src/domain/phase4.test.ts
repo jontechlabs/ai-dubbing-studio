@@ -80,3 +80,14 @@ test('subtitle eye controls preserve timings, text and the saved preview mode', 
   expect(hidden.targetCues).toEqual(project.targetCues);
   expect(subtitleDisplay(validateProject(JSON.parse(JSON.stringify(hidden))))).toBe('off');
 });
+test('quantized voice profiles survive save/rebase and cannot select a different engine variant', () => {
+  const base = demoProject(),
+    local = structuredClone(base),
+    remote = structuredClone(base);
+  local.formatVersion = 3;
+  local.modelPreferences = { ttsProviderId: 'fish-s2', voiceVariantId: 'fish-s2-fp8' };
+  const merged = validateProject(JSON.parse(JSON.stringify(rebaseProject(base, local, remote))));
+  expect(merged.modelPreferences).toEqual(local.modelPreferences);
+  merged.modelPreferences!.ttsProviderId = 'qwen3-tts';
+  expect(() => validateProject(merged)).toThrow('INVALID_PROJECT');
+});

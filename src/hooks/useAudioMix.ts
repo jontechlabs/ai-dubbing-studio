@@ -1,7 +1,17 @@
-import { useEffect, useRef, type RefObject } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, type RefObject } from 'react';
 import type { Project } from '../domain/types';
 import { audioTracks, effectiveGain } from '../domain/audio';
 import { audioUrls } from '../services/bridge';
+
+type Node = { gain: GainNode; audio: HTMLMediaElement; source: MediaElementAudioSourceNode };
+type Graph = {
+  context: AudioContext;
+  nodes: Map<string, Node>;
+  released: boolean;
+  sync: () => void;
+};
+// One source node per media element, including React's effect replay.
+const graphs = new WeakMap<HTMLVideoElement, Graph>();
 
 export function useAudioMix(
   videoRef: RefObject<HTMLVideoElement | null>,
@@ -10,86 +20,125 @@ export function useAudioMix(
   volume: number,
   onError: (message: string) => void,
 ) {
-  const graph = useRef<{
-    context: AudioContext;
-    nodes: Map<string, { gain: GainNode; audio: HTMLMediaElement }>;
-  } | null>(null);
+  const graph = useRef<Graph | null>(null);
   const current = useRef({ project, volume });
   current.current = { project, volume };
-  const files =
-    project?.tracks
-      .filter((track) => track.kind === 'audio')
-      .map((track) => `${track.id}:${track.path}`)
-      .join('|') ?? '';
-  useEffect(() => {
+  const [initialized, setInitialized] = useState<string | null>(null);
+  const key = url ? `${project?.media?.id}|${url}` : null;
+  const files = (project ? audioTracks(project) : [])
+    .filter((track) => track.kind === 'audio')
+    .map((track) => `${track.id}:${track.path}`)
+    .join('|');
+
+  const apply = (active: Graph) => {
+    const state = current.current;
+    const tracks = state.project ? audioTracks(state.project) : [];
+    for (const [id, node] of active.nodes) {
+      const track = tracks.find(
+        (track) => (track.kind === 'original' ? 'original' : track.id) === id,
+      );
+      const gain = track ? effectiveGain(track, tracks, state.volume) : 0;
+      node.gain.gain.value = gain;
+      // The embedded soundtrack must also be cut at the media element itself.
+      node.audio.muted = gain === 0;
+    }
+    active.sync();
+  };
+  const applyRef = useRef(apply);
+  applyRef.current = apply;
+
+  useLayoutEffect(() => {
     const video = videoRef.current;
-    if (!video || !url) return;
-    const context = new AudioContext();
-    const nodes = new Map<string, { gain: GainNode; audio: HTMLMediaElement }>();
-    const gain = context.createGain();
-    context.createMediaElementSource(video).connect(gain).connect(context.destination);
-    video.volume = 1;
-    nodes.set('original', { gain, audio: video });
-    graph.current = { context, nodes };
-    const apply = () => {
-      const state = current.current;
-      if (!state.project) return;
-      const tracks = audioTracks(state.project);
-      for (const track of tracks) {
-        const node = nodes.get(track.kind === 'original' ? 'original' : track.id);
-        if (node) node.gain.gain.value = effectiveGain(track, tracks, state.volume);
+    if (!video || !url || !key) return;
+    video.muted = true;
+    let active = graphs.get(video);
+    try {
+      if (!active) {
+        const context = new AudioContext();
+        try {
+          const gain = context.createGain();
+          gain.gain.value = 0;
+          const source = context.createMediaElementSource(video);
+          source.connect(gain).connect(context.destination);
+          active = {
+            context,
+            nodes: new Map([['original', { gain, audio: video, source }]]),
+            released: false,
+            sync: () => {},
+          };
+          graphs.set(video, active);
+        } catch (error) {
+          void context.close();
+          throw error;
+        }
       }
-    };
-    apply();
+    } catch {
+      onError('AUDIO_PLAYBACK_FAILED');
+      return;
+    }
+    active.released = false;
+    const attached = active;
+    graph.current = attached;
+    video.volume = 1;
     const resume = () => {
-      void context.resume().catch(() => undefined);
+      void attached.context.resume().catch(() => onError('AUDIO_PLAYBACK_FAILED'));
     };
-    const sync = () => {
-      for (const node of nodes.values()) {
+    attached.sync = () => {
+      for (const node of attached.nodes.values()) {
         if (node.audio === video) continue;
-        if (node.gain.gain.value === 0) {
+        if (node.audio.muted || video.paused) {
           node.audio.pause();
           continue;
         }
         if (Math.abs(node.audio.currentTime - video.currentTime) > 0.08)
           node.audio.currentTime = video.currentTime;
         node.audio.playbackRate = video.playbackRate;
-        if (video.paused) node.audio.pause();
-        else if (node.audio.paused)
-          void node.audio.play().catch(() => onError('AUDIO_PLAYBACK_FAILED'));
+        if (node.audio.paused) void node.audio.play().catch(() => onError('AUDIO_PLAYBACK_FAILED'));
       }
     };
     const play = () => {
       resume();
-      sync();
+      attached.sync();
     };
+    for (const event of ['pause', 'seeking', 'ratechange', 'ended'])
+      video.addEventListener(event, attached.sync);
     video.addEventListener('play', play);
-    video.addEventListener('pause', sync);
-    video.addEventListener('seeking', sync);
-    video.addEventListener('ratechange', sync);
     document.addEventListener('pointerdown', resume, true);
     document.addEventListener('keydown', resume, true);
-    const timer = setInterval(sync, 200);
+    const timer = setInterval(attached.sync, 200);
+    applyRef.current(attached);
+    setInitialized(key);
     return () => {
       clearInterval(timer);
       document.removeEventListener('pointerdown', resume, true);
       document.removeEventListener('keydown', resume, true);
+      for (const event of ['pause', 'seeking', 'ratechange', 'ended'])
+        video.removeEventListener(event, attached.sync);
       video.removeEventListener('play', play);
-      video.removeEventListener('pause', sync);
-      video.removeEventListener('seeking', sync);
-      video.removeEventListener('ratechange', sync);
-      for (const node of nodes.values()) {
-        if (node.audio !== video) {
+      video.pause();
+      video.muted = true;
+      for (const [id, node] of attached.nodes) {
+        node.gain.gain.value = 0;
+        if (id !== 'original') {
           node.audio.pause();
           node.audio.removeAttribute('src');
           node.audio.load();
+          node.source.disconnect();
+          node.gain.disconnect();
+          attached.nodes.delete(id);
         }
-        node.gain.disconnect();
       }
       graph.current = null;
-      void context.close();
+      attached.released = true;
+      queueMicrotask(() => {
+        if (attached.released) {
+          graphs.delete(video);
+          void attached.context.close();
+        }
+      });
     };
-  }, [url, videoRef, onError]);
+  }, [key, url, videoRef, onError]);
+
   useEffect(() => {
     const active = graph.current,
       p = current.current.project;
@@ -104,9 +153,16 @@ export function useAudioMix(
             .map((track) => track.id),
         );
         for (const [id, node] of active.nodes)
-          if (id !== 'original' && !desired.has(id)) {
+          if (
+            id !== 'original' &&
+            (!desired.has(id) ||
+              !urls[id] ||
+              node.audio.src !== new URL(urls[id], document.baseURI).href)
+          ) {
             node.audio.pause();
             node.audio.removeAttribute('src');
+            node.audio.load();
+            node.source.disconnect();
             node.gain.disconnect();
             active.nodes.delete(id);
           }
@@ -115,22 +171,16 @@ export function useAudioMix(
             const audio = new Audio();
             audio.crossOrigin = 'anonymous';
             audio.preload = 'auto';
-            audio.src = src;
-            audio.currentTime = videoRef.current?.currentTime ?? 0;
+            audio.muted = true;
             const gain = active.context.createGain();
             gain.gain.value = 0;
-            active.context
-              .createMediaElementSource(audio)
-              .connect(gain)
-              .connect(active.context.destination);
-            active.nodes.set(id, { audio, gain });
+            const source = active.context.createMediaElementSource(audio);
+            source.connect(gain).connect(active.context.destination);
+            audio.src = src;
+            active.nodes.set(id, { audio, gain, source });
             audio.addEventListener('error', () => onError('AUDIO_PLAYBACK_FAILED'));
           }
-        const tracks = audioTracks(current.current.project!);
-        for (const track of tracks) {
-          const node = active.nodes.get(track.kind === 'original' ? 'original' : track.id);
-          if (node) node.gain.gain.value = effectiveGain(track, tracks, current.current.volume);
-        }
+        applyRef.current(active);
       })
       .catch(() => {
         if (!disposed) onError('AUDIO_PLAYBACK_FAILED');
@@ -138,14 +188,14 @@ export function useAudioMix(
     return () => {
       disposed = true;
     };
-  }, [files, url, videoRef, onError]);
-  useEffect(() => {
-    const active = graph.current;
-    if (!active || !project) return;
-    const tracks = audioTracks(project);
-    for (const track of tracks) {
-      const node = active.nodes.get(track.kind === 'original' ? 'original' : track.id);
-      if (node) node.gain.gain.value = effectiveGain(track, tracks, volume);
-    }
-  }, [project?.tracks, project, volume]);
+  }, [files, key, videoRef, onError]);
+
+  useLayoutEffect(() => {
+    if (graph.current) applyRef.current(graph.current);
+  }, [project, volume]);
+  const tracks = project ? audioTracks(project) : [];
+  return {
+    originalMuted:
+      !key || initialized !== key || !tracks[0] || effectiveGain(tracks[0], tracks, volume) === 0,
+  };
 }

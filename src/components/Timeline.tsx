@@ -9,6 +9,8 @@ import {
   ScanLine,
   Eye,
   EyeOff,
+  Volume2,
+  VolumeX,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { Dialogue, Project, Track } from '../domain/types';
@@ -202,11 +204,11 @@ export const Timeline = memo(function Timeline({
                       <button
                         title={t(track.mute ? 'enableTrack' : 'muteTrack', { name: t(key) })}
                         aria-label={t(track.mute ? 'enableTrack' : 'muteTrack', { name: t(key) })}
-                        aria-pressed={track.mute}
+                        aria-pressed={!track.mute}
                         disabled={busy}
                         onClick={() => onEdit((p) => editTrack(p, track.id, { mute: !track.mute }))}
                       >
-                        M
+                        {track.mute ? <VolumeX size={12} /> : <Volume2 size={12} />}
                       </button>
                       <button
                         title={t('soloTrack', { name: t(key) })}

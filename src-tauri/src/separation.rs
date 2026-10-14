@@ -44,7 +44,7 @@ pub(crate) fn resources<R: tauri::Runtime>(app: &tauri::AppHandle<R>) -> PathBuf
     }
 }
 fn runtime(core: &Core) -> PathBuf {
-    core.data_dir.join("bandit-runtime")
+    crate::model_storage::root(core).join("bandit-runtime")
 }
 pub(crate) fn python(root: &Path) -> PathBuf {
     root.join(if cfg!(windows) {
@@ -64,12 +64,14 @@ pub async fn status<R: tauri::Runtime>(
     core: Arc<Core>,
     app: tauri::AppHandle<R>,
 ) -> Result<Status, String> {
+    // Keep model relocation from deleting a Python executable while a probe uses it.
+    let permit = core.gate.clone().try_acquire_owned().ok();
     let installing = core.jobs.lock().map_err(io_error)?.values().any(|job| {
         job.saved.record.kind == "runtime"
             && ["running", "queued"].contains(&job.saved.record.status.as_str())
     });
     let ready = installed(&core);
-    let inventory = if ready {
+    let inventory = if ready && permit.is_some() {
         probe(
             &python(&runtime(&core)),
             &[
@@ -86,7 +88,8 @@ pub async fn status<R: tauri::Runtime>(
     } else {
         None
     };
-    let warning = (ready && inventory.is_none()).then(|| "DEVICE_PROBE_FAILED".to_owned());
+    let warning = (ready && permit.is_some() && inventory.is_none())
+        .then(|| "DEVICE_PROBE_FAILED".to_owned());
     let metadata: serde_json::Value = std::fs::read(runtime(&core).join("ready.json"))
         .ok()
         .and_then(|bytes| serde_json::from_slice(&bytes).ok())
@@ -289,8 +292,14 @@ pub fn install<R: tauri::Runtime>(
         return Err("RUNTIME_PLATFORM_UNSUPPORTED".into());
     }
     if core.jobs.lock().map_err(io_error)?.values().any(|job| {
-        ["runtime", "separation", "speakerInstall", "speakers"]
-            .contains(&job.saved.record.kind.as_str())
+        [
+            "runtime",
+            "separation",
+            "speakerInstall",
+            "speakers",
+            "modelMove",
+        ]
+        .contains(&job.saved.record.kind.as_str())
             && ["queued", "running", "paused"].contains(&job.saved.record.status.as_str())
     }) {
         return Err("BUSY".into());
@@ -357,8 +366,14 @@ pub fn enqueue<R: tauri::Runtime>(
     device: String,
 ) -> Result<String, String> {
     if core.jobs.lock().map_err(io_error)?.values().any(|job| {
-        ["runtime", "separation", "speakerInstall", "speakers"]
-            .contains(&job.saved.record.kind.as_str())
+        [
+            "runtime",
+            "separation",
+            "speakerInstall",
+            "speakers",
+            "modelMove",
+        ]
+        .contains(&job.saved.record.kind.as_str())
             && ["queued", "running", "paused"].contains(&job.saved.record.status.as_str())
     }) {
         return Err("BUSY".into());

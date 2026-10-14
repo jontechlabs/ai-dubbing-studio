@@ -203,6 +203,25 @@ impl Project {
             return Err("INVALID_PROJECT".into());
         }
         if let Some(preferences) = &self.model_preferences {
+            if !preferences["voiceVariantId"].is_null() {
+                let valid = match preferences["ttsProviderId"].as_str() {
+                    Some("cosyvoice3") => ["cosy3-official", "cosy3-gguf-q4"]
+                        .contains(&preferences["voiceVariantId"].as_str().unwrap_or("")),
+                    Some("fish-s2") => [
+                        "fish-s2-fp8",
+                        "fish-s2-gguf-q6",
+                        "fish-s2-gguf-q4",
+                        "fish-s2-bf16",
+                    ]
+                    .contains(&preferences["voiceVariantId"].as_str().unwrap_or("")),
+                    Some("qwen3-tts") => ["qwen3-06b-bf16", "qwen3-17b-bf16", "qwen3-17b-gguf-q5"]
+                        .contains(&preferences["voiceVariantId"].as_str().unwrap_or("")),
+                    _ => false,
+                };
+                if !valid {
+                    return Err("INVALID_PROJECT".into());
+                }
+            }
             if !preferences["ttsProviderId"].is_null()
                 && !preferences["ttsProviderId"]
                     .as_str()

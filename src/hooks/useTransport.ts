@@ -122,8 +122,9 @@ export function useTransport(
     frame = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(frame);
   }, [loop, selected, project?.media?.durationMs, padding]);
-  useAudioMix(videoRef, project, url, volume, onError);
+  const mix = useAudioMix(videoRef, project, url, volume, onError);
   return {
+    ...mix,
     videoRef,
     url,
     ready,

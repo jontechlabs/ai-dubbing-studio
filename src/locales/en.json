@@ -137,7 +137,9 @@
     "devicesCheck": "Checking compute devices (30 s maximum)",
     "speakerModel": "Installing speaker model",
     "speakerEmbeddings": "Analyzing voices in subtitle lines",
-    "speakerClustering": "Grouping speakers"
+    "speakerClustering": "Grouping speakers",
+    "modelMove": "Copying and verifying models",
+    "modelCommit": "Activating the new folder"
   },
   "shortcuts": "Space: play · J/K/L: transport · O: original · Ctrl+S: save · Ctrl+Z/Y: undo/redo",
   "errors": {
@@ -189,7 +191,13 @@
     "SPEAKER_RUNTIME_FAILED": "The speaker model is not ready. Repair it from Models.",
     "SPEAKER_ANALYSIS_FAILED": "Speaker identification failed. Check the processing logs.",
     "NO_DIALOGUES": "Import subtitles before identifying speakers.",
-    "NO_SPEECH_FOUND": "No sufficiently long voice was detected in these lines. Check the audio track and subtitle timings."
+    "NO_SPEECH_FOUND": "No sufficiently long voice was detected in these lines. Check the audio track and subtitle timings.",
+    "INVALID_MODEL_STORAGE": "Choose an accessible absolute local folder path.",
+    "MODEL_STORAGE_CONFLICT": "The destination already contains a Bandit or speaker installation. Choose an empty folder to avoid overwriting it.",
+    "MODEL_STORAGE_NESTED": "The destination cannot be inside a model installation or be its parent.",
+    "MODEL_STORAGE_LINK": "An installation contains a symbolic link or junction. Move it manually before changing the folder.",
+    "MODEL_STORAGE_CHANGED": "A file changed during copying. Retry the move.",
+    "MODEL_STORAGE_VERIFY_FAILED": "The copied model could not be verified. Original models were preserved."
   },
   "preparingVideo": "Preparing video…",
   "loadingVideo": "Loading video…",
@@ -272,7 +280,7 @@
   "separateAudio": "Separate speech / music / effects",
   "separationQuality": "Separation is an estimate and may contain leakage or artifacts. A film may take a long time on CPU. Results appear in the timeline on success; previous outputs are retained.",
   "audioMixer": "Audio tracks",
-  "mixerHint": "M mutes a track; S solos it. Player volume sets the master level. Separated stems replace the original during playback after separation.",
+  "mixerHint": "The enabled speaker activates a track; the crossed speaker mutes it. S solos a track. Player volume controls the master level. After separation, stems replace the original soundtrack.",
   "mute": "Mute",
   "solo": "Solo",
   "trackGain": "Track volume",
@@ -349,5 +357,37 @@
   "hideSubtitles": "Hide {{name}}",
   "showSubtitles": "Show {{name}}",
   "subtitleImportWorking": "Importing and synchronizing subtitles…",
-  "speakerReferenceLabel": "Voice sample (AI)"
+  "speakerReferenceLabel": "Voice sample (AI)",
+  "modelStorageTitle": "Model storage",
+  "modelStorageHint": "Choose a local folder. Bandit and speaker models, downloads and Python environments move together. Copies are verified before switching the active folder. Allow enough free space for a complete copy at the destination.",
+  "modelStoragePath": "Model folder",
+  "modelStorageCurrent": "Active folder:",
+  "modelStorageMove": "Apply and move",
+  "modelStorageDefault": "Use the default folder",
+  "modelStorageMoved": "Models moved. The new folder is active.",
+  "modelStorageProgress": "Model move progress",
+  "modelStorageCleanupWarning": "The new folder is active, but some files could not be removed from the old folder. See the Processing logs.",
+  "chooseFolder": "Choose a folder",
+  "voiceVariantPreference": "Planned model variant",
+  "voiceVariantsHint": "Preparatory catalogue: the selection is saved, while voice downloads and generation will arrive in phases 5 and 6.",
+  "voiceVariants16Gb": "For 16 GB VRAM, prefer a small model or a quantized profile. Actual memory depends on the engine, context and batch; file size is not VRAM. Candidates are not yet qualified on your GPU.",
+  "variantCandidate16Gb": "16 GB candidate",
+  "variantOfficial": "Official weights",
+  "variantCommunity": "Community conversion",
+  "variantEngine": "Required engine",
+  "variantNotIntegrated": "Engine and variant are not yet integrated in the studio.",
+  "variantCopySource": "Copy source link",
+  "variantReportedVram": "VRAM reported by the source: approximately {{gb}} GB.",
+  "variantExceeds16Gb": "Exceeds the capacity of a 16 GB card.",
+  "variantDetails": {
+    "cosyOfficial": "Small official 0.5B model; a starting point for the CosyVoice engine. The studio does not guarantee a VRAM figure.",
+    "cosyGguf": "cstr conversion: Q4_K talker and Q8_0 flow. Approximately 745 MB of weights for preset voices; cloning also requires the tokenizer and speaker encoder. Requires the compatible CrispASR engine.",
+    "fishFp8": "drbaph FP8 conversion with BF16 activations. Requires a specific FP8Linear loader; the official engine alone is insufficient. Fish Audio Research license.",
+    "fishGguf": "rodrigomt Q6_K conversion, approximately 4.3 GB file size. Requires the experimental community s2.cpp engine. Fish Audio Research license.",
+    "fishGgufSmall": "rodrigomt Q4_K_M conversion, approximately 3.4 GB file size, with stronger quantization. Requires experimental s2.cpp; compare quality with Q6_K. Fish Audio Research license.",
+    "fishFull": "Official BF16 weights. Fish recommends 24 GB for S2 Pro; prefer a smaller variant with 16 GB. Fish Audio Research license.",
+    "qwenSmall": "Official Base 0.6B BF16 voice-cloning model, with fewer parameters than 1.7B. Plan one loaded model and one subtitle at a time during integration.",
+    "qwenFull": "Official Base 1.7B BF16 voice-cloning model. Complete engine memory remains to be measured; 0.6B and the GGUF profile are lighter alternatives.",
+    "qwenGguf": "HaujetZhao project: Q5_K talker, Q8_0 predictor and ONNX FP16 components. Converted from official weights; the complete hybrid engine is needed, rather than opening one GGUF in an LLM player."
+  }
 }

@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import type { Job, Project } from '../domain/types';
 import * as bridge from '../services/bridge';
 import { futureVoiceProviders } from '../domain/providers';
+import { VoiceVariantSettings } from './VoiceVariantSettings';
 export function ModelsPanel({
   project,
   jobs,
@@ -26,7 +27,7 @@ export function ModelsPanel({
   const completion = jobs
     .filter(
       (job) =>
-        ['runtime', 'speakerInstall'].includes(job.kind) &&
+        ['runtime', 'speakerInstall', 'modelMove'].includes(job.kind) &&
         ['succeeded', 'failed', 'cancelled'].includes(job.status),
     )
     .map((job) => `${job.id}:${job.status}`)
@@ -114,7 +115,10 @@ export function ModelsPanel({
               onEdit((p) => ({
                 ...p,
                 formatVersion: 3,
-                modelPreferences: { ttsProviderId: event.target.value || null },
+                modelPreferences: {
+                  ttsProviderId: event.target.value || null,
+                  voiceVariantId: null,
+                },
               }))
             }
           >
@@ -127,6 +131,7 @@ export function ModelsPanel({
           </select>
         </label>
         <p className="panel-description">{t('modelVoiceHint')}</p>
+        {project && <VoiceVariantSettings project={project} onEdit={onEdit} />}
       </div>
     </div>
   );

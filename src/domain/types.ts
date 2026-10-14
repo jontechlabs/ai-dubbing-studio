@@ -99,7 +99,7 @@ export interface Project {
   tracks: Track[];
   characters: Character[];
   speakerAnalysis?: SpeakerAnalysis | null;
-  modelPreferences?: { ttsProviderId: string | null };
+  modelPreferences?: { ttsProviderId: string | null; voiceVariantId?: string | null };
   subtitleDisplay?: 'off' | 'source' | 'target' | 'both';
   generations: unknown[];
   pronunciation: Record<string, string>;

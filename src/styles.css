@@ -1862,3 +1862,32 @@ pre {
     max-width: 130px;
   }
 }
+.model-storage-current code {
+  overflow-wrap: anywhere;
+}
+.model-storage-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+.model-storage-progress {
+  margin-top: 16px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+.model-storage-progress progress {
+  width: 100%;
+}
+.voice-variant-detail {
+  border: 1px solid var(--border);
+  padding: 12px;
+  border-radius: 8px;
+}
+.voice-variant-detail code {
+  display: block;
+  overflow-wrap: anywhere;
+  font-size: 11px;
+}

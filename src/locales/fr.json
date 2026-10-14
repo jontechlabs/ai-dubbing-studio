@@ -137,7 +137,9 @@
     "devicesCheck": "Vérification des processeurs de calcul (30 s maximum)",
     "speakerModel": "Installation du modèle de locuteurs",
     "speakerEmbeddings": "Analyse des voix par réplique",
-    "speakerClustering": "Regroupement des locuteurs"
+    "speakerClustering": "Regroupement des locuteurs",
+    "modelMove": "Copie et vérification des modèles",
+    "modelCommit": "Activation du nouveau dossier"
   },
   "shortcuts": "Espace : lecture · J/K/L : transport · O : original · Ctrl+S : sauvegarde · Ctrl+Z/Y : annuler/rétablir",
   "errors": {
@@ -189,7 +191,13 @@
     "SPEAKER_RUNTIME_FAILED": "Le modèle de locuteurs n’est pas prêt. Réparez son installation depuis Modèles.",
     "SPEAKER_ANALYSIS_FAILED": "L’identification des locuteurs a échoué. Consultez les logs du traitement.",
     "NO_DIALOGUES": "Importez des sous-titres avant d’identifier les locuteurs.",
-    "NO_SPEECH_FOUND": "Aucune voix suffisamment longue n’a été détectée dans les répliques. Vérifiez la piste audio et les timecodes des SRT."
+    "NO_SPEECH_FOUND": "Aucune voix suffisamment longue n’a été détectée dans les répliques. Vérifiez la piste audio et les timecodes des SRT.",
+    "INVALID_MODEL_STORAGE": "Choisissez un chemin absolu de dossier local accessible.",
+    "MODEL_STORAGE_CONFLICT": "La destination contient déjà une installation Bandit ou locuteurs. Choisissez un dossier vide pour éviter tout écrasement.",
+    "MODEL_STORAGE_NESTED": "La destination ne peut pas se trouver à l’intérieur d’une installation de modèle, ni en être un parent.",
+    "MODEL_STORAGE_LINK": "Une installation contient un lien symbolique ou une jonction. Déplacez-la manuellement avant de changer le dossier.",
+    "MODEL_STORAGE_CHANGED": "Un fichier a changé pendant la copie. Relancez le déplacement.",
+    "MODEL_STORAGE_VERIFY_FAILED": "La copie du modèle n’a pas pu être vérifiée. Les modèles d’origine ont été conservés."
   },
   "preparingVideo": "Préparation de la vidéo…",
   "loadingVideo": "Chargement de la vidéo…",
@@ -272,7 +280,7 @@
   "separateAudio": "Séparer voix / musique / effets",
   "separationQuality": "La séparation est une estimation et peut contenir des fuites ou artefacts. Sur CPU, un film peut prendre longtemps. Les résultats apparaissent dans la timeline après réussite ; les anciennes sorties restent conservées.",
   "audioMixer": "Pistes audio",
-  "mixerHint": "M coupe une piste ; S l’écoute en solo. Le volume du lecteur règle le niveau général. Les stems remplacent l’original à l’écoute après une séparation.",
+  "mixerHint": "Le haut-parleur allumé active la piste ; le haut-parleur barré la coupe. S écoute une piste en solo. Le volume du lecteur règle le niveau général. Après séparation, les stems remplacent l’original.",
   "mute": "Couper",
   "solo": "Solo",
   "trackGain": "Volume de piste",
@@ -349,5 +357,37 @@
   "hideSubtitles": "Masquer {{name}}",
   "showSubtitles": "Afficher {{name}}",
   "subtitleImportWorking": "Import et calage des sous-titres en cours…",
-  "speakerReferenceLabel": "Extrait de voix (IA)"
+  "speakerReferenceLabel": "Extrait de voix (IA)",
+  "modelStorageTitle": "Stockage des modèles",
+  "modelStorageHint": "Choisissez un dossier local. Les modèles Bandit et locuteurs, leurs téléchargements et leurs environnements Python sont déplacés ensemble. La copie est vérifiée avant de changer le dossier actif. Prévoyez assez de place pour une copie complète dans la destination.",
+  "modelStoragePath": "Dossier des modèles",
+  "modelStorageCurrent": "Dossier actif :",
+  "modelStorageMove": "Appliquer et déplacer",
+  "modelStorageDefault": "Utiliser le dossier par défaut",
+  "modelStorageMoved": "Modèles déplacés. Le nouveau dossier est actif.",
+  "modelStorageProgress": "Progression du déplacement des modèles",
+  "modelStorageCleanupWarning": "Le nouveau dossier est actif, mais certains fichiers de l’ancien dossier n’ont pas pu être supprimés. Consultez les logs dans Traitements.",
+  "chooseFolder": "Choisir un dossier",
+  "voiceVariantPreference": "Variante du modèle prévue",
+  "voiceVariantsHint": "Catalogue préparatoire : la sélection est enregistrée, mais le téléchargement et la génération de ces voix seront disponibles aux phases 5 et 6.",
+  "voiceVariants16Gb": "Pour 16 Go de VRAM, privilégiez un petit modèle ou un profil quantifié. La mémoire réelle dépend du moteur, du contexte et du lot ; la taille du fichier ne représente pas la VRAM. Les candidats ne sont pas encore validés sur votre GPU.",
+  "variantCandidate16Gb": "candidat 16 Go",
+  "variantOfficial": "Poids officiels",
+  "variantCommunity": "Conversion communautaire",
+  "variantEngine": "Moteur requis",
+  "variantNotIntegrated": "Moteur et variante pas encore intégrés dans le studio.",
+  "variantCopySource": "Copier le lien de la source",
+  "variantReportedVram": "VRAM annoncée par la source : environ {{gb}} Go.",
+  "variantExceeds16Gb": "Dépasse la capacité de votre carte de 16 Go.",
+  "variantDetails": {
+    "cosyOfficial": "Petit modèle 0,5B officiel ; un point de départ pour le moteur CosyVoice. Aucun chiffre de VRAM n’est garanti par le studio.",
+    "cosyGguf": "Conversion cstr : talker Q4_K et flow Q8_0. Environ 745 Mo de poids pour les voix prédéfinies ; le clonage demande aussi tokenizer et encodeur de voix. Nécessite le moteur CrispASR compatible.",
+    "fishFp8": "Conversion drbaph en FP8 avec activations BF16. Chargeur FP8Linear spécifique nécessaire ; le moteur officiel seul ne suffit pas. Licence Fish Audio Research.",
+    "fishGguf": "Conversion rodrigomt Q6_K, environ 4,3 Go de fichier. Nécessite s2.cpp, moteur communautaire expérimental. Licence Fish Audio Research.",
+    "fishGgufSmall": "Conversion rodrigomt Q4_K_M, environ 3,4 Go de fichier, davantage quantifiée. Nécessite s2.cpp expérimental ; la qualité doit être comparée à Q6_K. Licence Fish Audio Research.",
+    "fishFull": "Poids BF16 officiels. Fish recommande 24 Go pour S2 Pro ; privilégiez une variante allégée avec 16 Go. Licence Fish Audio Research.",
+    "qwenSmall": "Modèle officiel Base 0,6B pour le clonage vocal en BF16 ; moins de paramètres que le 1,7B. Garder un seul modèle chargé et traiter une réplique à la fois lors de l’intégration.",
+    "qwenFull": "Modèle officiel Base 1,7B en BF16 pour le clonage vocal. La mémoire du moteur complet reste à mesurer ; le 0,6B et le profil GGUF sont des alternatives plus légères.",
+    "qwenGguf": "Projet HaujetZhao : talker Q5_K, predictor Q8_0 et composants ONNX FP16. Conversion depuis les poids officiels, pas un simple GGUF à ouvrir dans un lecteur LLM ; le moteur hybride complet est nécessaire."
+  }
 }

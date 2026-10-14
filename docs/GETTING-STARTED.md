@@ -2,7 +2,7 @@
 
 ## Install or extract
 
-Get the Windows x64 setup or portable ZIP from [v0.4.0 releases](https://github.com/jontechlabs/ai-dubbing-studio/releases/tag/v0.4.0). These are unsigned development builds; the final native GUI is not fully qualified. See [validation](../VALIDATION.md).
+Get the Windows x64 setup or portable ZIP from [v0.4.1 releases](https://github.com/jontechlabs/ai-dubbing-studio/releases/tag/v0.4.1). These are unsigned development builds; the final native GUI is not fully qualified. See [validation](../VALIDATION.md).
 
 - **Setup:** run the NSIS installer. It installs for the current user and provides French/English language selection.
 - **Portable:** extract the entire ZIP, then run `AI Dubbing Studio.exe` inside the extracted folder. Keep `binaries/` and `demo/` beside the executable. The app uses local application data for job records; “portable” describes the executable package, not a zero-footprint mode.
@@ -12,7 +12,7 @@ WebView2 Runtime must be available. FFmpeg/FFprobe are bundled. No AI runtime or
 To verify a download in PowerShell, compare its value with the release's `SHA256SUMS.txt`:
 
 ```powershell
-Get-FileHash .\AI-Dubbing-Studio-0.4.0-Setup.exe -Algorithm SHA256
+Get-FileHash .\AI-Dubbing-Studio-0.4.1-Setup.exe -Algorithm SHA256
 Get-FileHash .\AI-Dubbing-Studio-Windows-Portable.zip -Algorithm SHA256
 ```
 
@@ -40,7 +40,7 @@ See the [Phase 2 guide](PHASE-2.md) for timecode editing, waveform, drag/resize,
 
 See the [Phase 3 guide](PHASE-3.md). Audio contains Bandit installation, device selection, separation and mixer. Settings contains GPU preference, playback counters and signed updates. Installing 0.3.0 manually enables future in-app updates.
 
-See the [Phase 4 guide](PHASE-4.md) to install the local speaker model, apply/correct anonymous voice proposals, create characters and voice references. The translated SRT picker offers optional automatic synchronization. Timeline M/S buttons control audio and eye buttons control subtitle preview. Profiles and saved preview preferences use project format 3, refused by older app versions.
+See the [Phase 4 guide](PHASE-4.md) to install the local speaker model, apply/correct anonymous voice proposals, create characters and voice references. The translated SRT picker offers optional automatic synchronization. Timeline speaker/S buttons control audio and eye buttons control subtitle preview. Profiles and saved preview preferences use project format 3, refused by older app versions.
 
 ## Keyboard shortcuts
 
@@ -76,3 +76,7 @@ The export dialog provides source/translated SRT and diagnostics. A finished dub
 | A browser project is missing | Browser data belongs to that browser/origin's IndexedDB. Clearing site data removes it. Desktop project folders are separate. |
 
 Diagnostics may contain local paths. Review them before sharing an issue report.
+
+## Dossier des modèles et variantes (0.4.1)
+
+Consultez le [guide du stockage, des pistes et des profils GGUF/FP8](MODELS-AND-STORAGE.md). Le haut-parleur remplace M : allumé = activé, barré = coupé. Les profils TTS sont des préférences préparatoires pour les phases 5 et 6.

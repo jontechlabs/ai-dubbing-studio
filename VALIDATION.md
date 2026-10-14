@@ -1,8 +1,8 @@
 # Validation - Phase 4, 14 October 2026
 
-## v0.4.0 automated checks
+## v0.4.1 automated checks
 
-The local frontend build, strict TypeScript, ESLint, Prettier, Rust Clippy with -D warnings and rustfmt pass. Suites contain 26 TypeScript tests, 26 Rust tests, 16 Playwright scenarios and 10 Python device/process/grouping tests (78 total).
+The local frontend build, strict TypeScript, ESLint, Prettier, Rust Clippy with -D warnings and rustfmt pass. Suites contain 27 TypeScript tests, 34 Rust tests on Linux (33 on Windows), 21 Playwright scenarios and 10 Python device/process/grouping tests (92 locally, 91 on Windows).
 
 Domain tests retain Phase 2 synchronization/editing coverage and add overlapping/large cue lookup, mixer mute/solo/master gain, legacy original-track creation, unsaved-edit rebase over audio jobs and integer split timestamps. Rust integration checks run actual FFmpeg media, validate real stem WAV structure/sample counts, preserve mixer asset metadata across reload, reject traversal and refuse separation without a runtime without modifying the project. Existing import/subtitle/waveform/cancellation/recovery checks remain.
 
@@ -26,7 +26,7 @@ The [Windows workflow](https://github.com/jontechlabs/ai-dubbing-studio/actions/
 
 An earlier unsigned executable was blocked by Smart App Control. Final native Tauri GUI, installer/uninstaller, effective WebView2 GPU adapter and complete native update/restart remain unqualified. Mocked IPC does not establish those outcomes. Windows rendering preference is an OS request for this executable; it does not guarantee a specific WebView2/decoder adapter.
 
-Screenshots show actual French React UI in browser testing, with simulated native devices/stems/update metadata. The displayed 0.4.1 update is a test scenario, not a released version. Screenshots are not native Tauri captures. The demo has synthetic audio and no generated dubbing.
+Screenshots show actual French React UI in browser testing, with simulated native devices/stems/update metadata. The displayed 0.4.2 update is a test scenario, not a released version. Screenshots are not native Tauri captures. The demo has synthetic audio and no generated dubbing.
 
 Format 1 projects open normally. Adding separated tracks uses format 2, rejected by old app versions. Split text allocation is approximate; SRT synchronization uses timings and does not align speech. Final mix/MKV export and voice generation remain future phases.
 
@@ -57,3 +57,11 @@ Four new domain tests cover serialized profiles/assignments, proposal applicatio
 Four additional browser scenarios exercise AI proposal application with manual corrections, editable references and engine preference, inline translation plus saved timeline/player controls, successful automatic synchronization at import, and preserving imported mismatched subtitles when synchronization is refused. Native inference/reference IPC is simulated in the UI tests; browser video/audio elements run normally. The source archive and portable package are checked for model files, Python caches and signing keys. Native GUI, full installed-app model download/identification and installer/update cycle remain unqualified on this development host; Windows Actions validates the frontend, Rust and Python code and packages separately.
 
 TTS engine preferences are saved preparation metadata. CosyVoice3/Fish/Qwen generation is not implemented in this release. Speaker names are entered manually. Manual references may be imported or extracted, with normalization and a 20-second cap; AI references are candidate speech-only clips requiring review and transcript correction. Per-generation/per-line reference-mode selection remains TTS-stage work. Projects using profiles/preferences are format 3, refused by older app versions; formats 1 and 2 remain readable.
+
+## Model migration and audible mute regression (v0.4.1)
+
+The command integration test blocks a busy migration and reuses the moved speaker installation through the production status path. Production Rust migration tests copy model/runtime trees, verify bytes and durable configuration reload, remove originals after commit, cancel mid-copy with staging cleanup, refuse conflicting/nested destinations and linked files, roll back published directories when configuration saving fails, preserve files added during copying, and retain a configured unavailable drive without silently falling back. Links are tested on Linux; Windows code also rejects reparse points. Cross-volume operation uses copy/verify rather than filesystem rename for the source transfer; a physical two-drive Windows move is not yet qualified here.
+
+Chrome Web Audio tests tap actual output gains with analyser nodes: audible original, all tracks silent, selected stem audible, silence after save/reload, replacement of a playing media element with the same URL, and no embedded soundtrack leakage after an audio-graph initialization failure. Tests assert native video mute as well as output sample energy. They use real decoded video/WAV audio, with mocked project IPC. Native WebView2 playback on the user’s hardware remains to be confirmed.
+
+GGUF/FP8/BF16 catalogue selections persist and reject variants belonging to a different engine. UI checks expose provenance, the complete required engine, the source-reported FP8 memory figure and the 24 GB BF16 warning. Catalogue entries are preparation metadata: no TTS weights or third-party runtime are installed, and no quantized TTS inference is claimed.

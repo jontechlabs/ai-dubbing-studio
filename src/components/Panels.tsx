@@ -15,6 +15,7 @@ import { AudioPanel } from './AudioPanel';
 import { PlaybackMetrics } from './PlaybackMetrics';
 import { CharactersPanel } from './CharactersPanel';
 import { ModelsPanel } from './ModelsPanel';
+import { ModelStorageSettings } from './ModelStorageSettings';
 import * as bridge from '../services/bridge';
 import { downloadText } from '../services/browserStore';
 
@@ -121,6 +122,7 @@ export function Panels({
         )}
         {panel === 'settings' && (
           <SettingsPanel
+            onError={onError}
             jobs={jobs}
             padding={padding}
             setPadding={setPadding}
@@ -200,6 +202,7 @@ export function Panels({
   );
 }
 function SettingsPanel({
+  onError,
   jobs,
   padding,
   setPadding,
@@ -208,6 +211,7 @@ function SettingsPanel({
   updater,
   videoRef,
 }: {
+  onError: (message: string) => void;
   jobs: Job[];
   padding: number;
   setPadding: (n: number) => void;
@@ -229,6 +233,7 @@ function SettingsPanel({
   );
   return (
     <div className="panel-body">
+      <ModelStorageSettings jobs={jobs} onError={onError} />
       <UpdateSettings
         updater={updater}
         busy={jobs.some((job) => ['queued', 'running', 'paused'].includes(job.status))}
@@ -339,6 +344,7 @@ function JobsPanel({ jobs, onError }: { jobs: Job[]; onError: (s: string) => voi
           </span>
           {['running', 'queued', 'paused'].includes(job.status) && (
             <button
+              disabled={job.kind === 'modelMove' && job.stage === 'modelCommit'}
               className="text-button"
               onClick={() => {
                 void bridge.cancelJob(job.id).catch((e) => onError(String(e)));

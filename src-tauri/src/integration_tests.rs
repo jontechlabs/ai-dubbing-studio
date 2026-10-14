@@ -79,6 +79,7 @@ async fn speaker_identification_refuses_missing_runtime_without_creating_jobs() 
         session: Mutex::new(Some(project::Session::new(root.clone(), p))),
         jobs: Mutex::new(HashMap::new()),
         gate: Arc::new(tokio::sync::Semaphore::new(1)),
+        model_dir: Mutex::new(temporary.path().to_path_buf()),
         data_dir: temporary.path().to_path_buf(),
     });
     let app = tauri::test::mock_app();
@@ -142,6 +143,7 @@ async fn separation_requires_installed_runtime_and_preserves_project() {
         session: Mutex::new(Some(project::Session::new(root.clone(), p))),
         jobs: Mutex::new(HashMap::new()),
         gate: Arc::new(tokio::sync::Semaphore::new(1)),
+        model_dir: Mutex::new(temporary.path().to_path_buf()),
         data_dir: temporary.path().to_path_buf(),
     });
     let app = tauri::test::mock_app();
@@ -217,6 +219,7 @@ async fn waveform_uses_selected_track_preserves_delay_and_reuses_cache() {
         session: Mutex::new(Some(project::Session::new(root.clone(), p))),
         jobs: Mutex::new(HashMap::new()),
         gate: Arc::new(tokio::sync::Semaphore::new(1)),
+        model_dir: Mutex::new(temporary.path().to_path_buf()),
         data_dir: temporary.path().to_path_buf(),
     });
     let app = tauri::test::mock_app();
@@ -305,6 +308,7 @@ async fn queued_waveform_can_be_cancelled_without_blocking_project_edits() {
         session: Mutex::new(Some(project::Session::new(root.clone(), p))),
         jobs: Mutex::new(HashMap::new()),
         gate: Arc::new(tokio::sync::Semaphore::new(1)),
+        model_dir: Mutex::new(temporary.path().to_path_buf()),
         data_dir: temporary.path().to_path_buf(),
     });
     let app = tauri::test::mock_app();
@@ -423,6 +427,7 @@ async fn extracts_both_mkv_text_tracks_and_preserves_dialogue_edits() {
         session: Mutex::new(Some(project::Session::new(root.clone(), p))),
         jobs: Mutex::new(HashMap::new()),
         gate: Arc::new(tokio::sync::Semaphore::new(1)),
+        model_dir: Mutex::new(temporary.path().to_owned()),
         data_dir: temporary.path().to_owned(),
     });
     let app = tauri::test::mock_app();
@@ -561,6 +566,7 @@ async fn cancels_queued_subtitle_extraction_without_changing_the_project() {
         session: Mutex::new(Some(project::Session::new(root.clone(), p))),
         jobs: Mutex::new(HashMap::new()),
         gate: Arc::new(tokio::sync::Semaphore::new(1)),
+        model_dir: Mutex::new(temporary.path().to_owned()),
         data_dir: temporary.path().to_owned(),
     });
     let app = tauri::test::mock_app();
@@ -612,6 +618,7 @@ async fn job_queue_import_cancel_and_retry_preserve_the_project() {
         session: Mutex::new(Some(project::Session::new(root.clone(), p.clone()))),
         jobs: Mutex::new(HashMap::new()),
         gate: Arc::new(tokio::sync::Semaphore::new(1)),
+        model_dir: Mutex::new(temporary.path().to_owned()),
         data_dir: temporary.path().to_owned(),
     });
     let app = tauri::test::mock_app();
@@ -773,5 +780,76 @@ async fn imports_real_mkv_and_reloads_edited_subtitles() {
     assert_eq!(
         loaded.dialogues[0].tts_text.as_deref(),
         Some("Prononciation")
+    );
+}
+#[tokio::test]
+async fn model_storage_command_refuses_busy_and_reuses_moved_speaker_installation() {
+    let temporary = tempfile::tempdir().unwrap();
+    let data = temporary.path().join("data");
+    std::fs::create_dir(&data).unwrap();
+    let root = data.join("speaker-runtime");
+    std::fs::create_dir(&root).unwrap();
+    let interpreter = crate::separation::python(&root);
+    std::fs::create_dir_all(interpreter.parent().unwrap()).unwrap();
+    std::fs::write(&interpreter, b"interpreter fixture").unwrap();
+    for file in ["ready.json", "speaker.onnx", "vad.onnx"] {
+        std::fs::write(root.join(file), b"fixture").unwrap();
+    }
+    std::fs::write(data.join("projects-untouched.txt"), b"projects").unwrap();
+    let core = Arc::new(Core {
+        session: Mutex::new(None),
+        jobs: Mutex::new(HashMap::new()),
+        gate: Arc::new(tokio::sync::Semaphore::new(1)),
+        model_dir: Mutex::new(data.clone()),
+        data_dir: data.clone(),
+    });
+    let app = tauri::test::mock_app();
+    let dest = temporary.path().join("new model folder");
+    let permit = core.gate.clone().acquire_owned().await.unwrap();
+    assert_eq!(
+        crate::model_storage::change(core.clone(), app.handle().clone(), dest.clone()).unwrap_err(),
+        "BUSY"
+    );
+    assert!(core.jobs.lock().unwrap().is_empty());
+    assert!(!dest.exists());
+    drop(permit);
+    let key =
+        crate::model_storage::change(core.clone(), app.handle().clone(), dest.clone()).unwrap();
+    tokio::time::timeout(std::time::Duration::from_secs(10), async {
+        loop {
+            let status = core
+                .jobs
+                .lock()
+                .unwrap()
+                .get(&key)
+                .unwrap()
+                .saved
+                .record
+                .status
+                .clone();
+            if status == "succeeded" {
+                break;
+            }
+            assert!(!["failed", "cancelled"].contains(&status.as_str()));
+            tokio::time::sleep(std::time::Duration::from_millis(20)).await;
+        }
+    })
+    .await
+    .unwrap();
+    assert_eq!(
+        crate::model_storage::root(&core),
+        dest.canonicalize().unwrap()
+    );
+    assert_eq!(
+        crate::model_storage::load(&data).unwrap(),
+        dest.canonicalize().unwrap()
+    );
+    let status =
+        serde_json::to_value(crate::speakers::status(&core, app.handle()).unwrap()).unwrap();
+    assert_eq!(status["installed"], true);
+    assert!(!root.exists());
+    assert_eq!(
+        std::fs::read(data.join("projects-untouched.txt")).unwrap(),
+        b"projects"
     );
 }

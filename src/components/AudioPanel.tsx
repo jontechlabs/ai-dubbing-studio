@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Download, LoaderCircle, RefreshCw, Scissors } from 'lucide-react';
+import { Download, LoaderCircle, RefreshCw, Scissors, Volume2, VolumeX } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { Job, Project } from '../domain/types';
 import { audioTracks, editTrack } from '../domain/audio';
@@ -30,7 +30,7 @@ export function AudioPanel({
   const runtimeCompletion = jobs
     .filter(
       (job) =>
-        job.kind === 'runtime' &&
+        ['runtime', 'modelMove'].includes(job.kind) &&
         ['succeeded', 'failed', 'cancelled', 'interrupted'].includes(job.status),
     )
     .map((job) => `${job.id}:${job.status}`)
@@ -38,9 +38,15 @@ export function AudioPanel({
     .join(',');
   const active = jobs.some(
     (job) =>
-      ['runtime', 'separation', 'import', 'subtitles', 'speakerInstall', 'speakers'].includes(
-        job.kind,
-      ) && ['running', 'queued', 'paused'].includes(job.status),
+      [
+        'runtime',
+        'separation',
+        'import',
+        'subtitles',
+        'speakerInstall',
+        'speakers',
+        'modelMove',
+      ].includes(job.kind) && ['running', 'queued', 'paused'].includes(job.status),
   );
   useEffect(() => {
     let disposed = false;
@@ -175,12 +181,14 @@ export function AudioPanel({
               <div className="mixer-row" key={track.id}>
                 <strong>{t(track.kind === 'original' ? 'original' : `stem.${track.role}`)}</strong>
                 <button
-                  className={`mixer-toggle ${track.mute ? 'active' : ''}`}
-                  aria-pressed={track.mute}
-                  aria-label={`${t('mute')} ${t(track.kind === 'original' ? 'original' : `stem.${track.role}`)}`}
+                  className={`mixer-toggle ${!track.mute ? 'active' : ''}`}
+                  aria-pressed={!track.mute}
+                  aria-label={t(track.mute ? 'enableTrack' : 'muteTrack', {
+                    name: t(track.kind === 'original' ? 'original' : `stem.${track.role}`),
+                  })}
                   onClick={() => onEdit((p) => editTrack(p, track.id, { mute: !track.mute }))}
                 >
-                  M
+                  {track.mute ? <VolumeX size={14} /> : <Volume2 size={14} />}
                 </button>
                 <button
                   className={`mixer-toggle ${track.solo ? 'active' : ''}`}

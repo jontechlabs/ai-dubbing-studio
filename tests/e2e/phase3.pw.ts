@@ -10,9 +10,11 @@ async function nativeMock(page: Page, large = false) {
   await page.route('**/preview.mp4',async route=>route.fulfill({status:200,contentType:'video/mp4',body:await fs.readFile('public/demo.mp4')}));
   await page.route('**/*.wav',route=>route.fulfill({status:200,contentType:'audio/wav',body:wav(/\/(speech|music|sfx)\.wav$/.test(new URL(route.request().url()).pathname)?16:4)}));
   await page.addInitScript(({initial})=>{
-    const host=window as unknown as Record<string,any>,callbacks=new Map<number,(data:any)=>void>(),listeners=new Map<string,number>();let counter=0,project=structuredClone(initial),job:any;
+    const host=window as unknown as Record<string,any>,callbacks=new Map<number,(data:any)=>void>(),listeners=new Map<string,number>();let counter=0,project=JSON.parse(localStorage.getItem('nativeMockProject')||'null')||structuredClone(initial),job:any;
     const emit=(name:string,payload:any)=>{const id=listeners.get(name);if(id)callbacks.get(id)?.({event:name,id,payload});};
     host.__calls=[];host.__downloadError=false;host.__installed=false;
+    host.__replaceMedia=()=>{project.media.id+='-replacement';project.tracks.find((track:any)=>track.kind==='original').mute=true;project.revision++;emit('project-changed',structuredClone(project));};
+    host.__completeModelMove=()=>{host.__modelFolder=host.__pendingModelFolder;job={...job,status:'succeeded',stage:'done',progress:1};emit('job-changed',job);};
     host.__speakerStatus={installed:true,installing:false,sizeBytes:72500000};
     host.__completeSpeakerAnalysis=()=>{project.formatVersion=3;project.speakerAnalysis={id:'speakers',sourcePath:project.media.path,lines:project.dialogues.map(({id,startMs,endMs}:any)=>({id,startMs,endMs})),assignments:project.dialogues.map((line:any,index:number)=>({dialogueId:line.id,speaker:index%2,similarity:0.95,reason:'identified'})),clusters:[0,1].map((speaker)=>({speaker,referencePath:`characters/reference-${speaker}.wav`,durationMs:4000,referenceDialogueId:project.dialogues[speaker].id}))};project.revision++;emit('project-changed',structuredClone(project));job={...job,status:'succeeded',stage:'done',progress:1};emit('job-changed',job);};
     host.__runtimeStatus={installed:true,installing:false,devices:[{id:'cpu',name:'CPU'},{id:'cuda:0',name:'NVIDIA GPU'}],cudaVersion:'12.8',unavailableDevices:[]};
@@ -27,6 +29,9 @@ async function nativeMock(page: Page, large = false) {
       if(command==='media_path')return 'preview.mp4';
       if(command==='get_waveform')return {durationMs:16000,stepMs:20,audioStreamIndex:args.trackId?0:1,peaks:Array.from({length:800},(_,i)=>0.1+(i%9)/12)};
       if(command==='audio_paths')return Object.fromEntries(project.tracks.filter((track:any)=>track.kind==='audio').map((track:any)=>[track.id,track.path]));
+      if(command==='model_storage_info')return {path:host.__modelFolder||'C:/Studio/models',defaultPath:'C:/Studio/models',moving:job?.kind==='modelMove'&&job.status==='running'};
+      if(command==='plugin:dialog|open')return 'D:/AI Models';
+      if(command==='change_model_storage'){host.__pendingModelFolder=args.path;job={id:'modelMove',projectId:'',kind:'modelMove',status:'running',stage:'modelMove',progress:0.4,logs:[],error:null};emit('job-changed',job);return job.id;}
       if(command==='environment')return {platform:'windows',ffmpeg:true,ffprobe:true};
       if(command==='graphics_info')return {preference:'auto',executable:'C:/Studio/ai-dubbing-studio.exe',adapters:[{Name:'Intel iGPU'},{Name:'NVIDIA GPU'}]};
       if(command==='set_graphics_preference'||command==='open_graphics_settings')return null;
@@ -38,10 +43,10 @@ async function nativeMock(page: Page, large = false) {
       if(command==='separate_audio'){job={id:'separation',projectId:project.id,kind:'separation',status:'running',stage:'separate',progress:0.3,logs:[],error:null};emit('job-changed',job);return job.id;}
       if(command==='pause_job'){job={...job,status:args.paused?'paused':'running'};emit('job-changed',job);return null;}
       if(command==='cancel_job'){job={...job,status:'cancelled'};emit('job-changed',job);return null;}
-      if(command==='replace_project'){if(args.expectedRevision!==project.revision)throw Error('STALE_REVISION');project={...structuredClone(args.project),revision:project.revision+1};return structuredClone(project);}
+      if(command==='replace_project'){if(args.expectedRevision!==project.revision)throw Error('STALE_REVISION');project={...structuredClone(args.project),revision:project.revision+1};localStorage.setItem('nativeMockProject',JSON.stringify(project));return structuredClone(project);}
       if(command==='plugin:event|listen'){listeners.set(args.event,args.handler);return args.handler;}
       if(command==='plugin:event|unlisten'||command==='plugin:resources|close')return null;
-      if(command==='plugin:updater|check')return {rid:45,currentVersion:'0.4.0',version:'0.4.1',body:'Performance et audio',rawJson:{}};
+      if(command==='plugin:updater|check')return {rid:45,currentVersion:'0.4.1',version:'0.4.2',body:'Performance et audio',rawJson:{}};
       if(command==='plugin:updater|download'){
         if(host.__downloadError)throw Error('Invalid signature');
         const channel=args.onEvent.id;callbacks.get(channel)?.({index:0,message:{event:'Started',data:{contentLength:100}}});callbacks.get(channel)?.({index:1,message:{event:'Progress',data:{chunkLength:100}}});callbacks.get(channel)?.({index:2,message:{event:'Finished'}});return 46;
@@ -79,7 +84,7 @@ test('separation preserves unsaved editing; tracks, mixer and pause are persiste
 test('GPU preference and signed update flow reject failure and save before install',async({page})=>{
   await nativeMock(page);await page.goto('/');await page.getByRole('button',{name:'Paramètres',exact:true}).click();
   await page.getByRole('combobox',{name:'Préférence GPU du lecteur'}).selectOption('performance');await expect(page.getByText('Redémarre l’application pour appliquer cette préférence.')).toBeVisible();
-  await page.getByRole('button',{name:'Rechercher une mise à jour'}).click();await expect(page.getByText('La version 0.4.1 est disponible.')).toBeVisible();
+  await page.getByRole('button',{name:'Rechercher une mise à jour'}).click();await expect(page.getByText('La version 0.4.2 est disponible.')).toBeVisible();
   await page.evaluate(()=>(window as any).__downloadError=true);await page.getByRole('button',{name:'Télécharger la mise à jour'}).click();await expect(page.getByRole('alert')).toBeVisible();
   await expect(page.getByRole('button',{name:'Installer et redémarrer'})).toHaveCount(0);await page.evaluate(()=>(window as any).__downloadError=false);
   await page.getByRole('button',{name:'Télécharger la mise à jour'}).click();await expect(page.getByText(/Téléchargement terminé, signature vérifiée/)).toBeVisible();
@@ -166,8 +171,8 @@ test('manual characters, inline translation and timeline preview controls persis
   const translation=page.getByRole('textbox',{name:'Sous-titre affiché',exact:true});await expect(translation).toBeFocused();await translation.pressSequentially('Bonjour Shin');await expect(translation).toHaveValue('Bonjour Shin');
   await page.getByRole('button',{name:'Afficher Sous-titres source',exact:true}).click();await page.locator('video').evaluate((video:HTMLVideoElement)=>{video.currentTime=2;});await expect(page.locator('.subtitle-overlay')).toContainText('Every story');await expect(page.locator('.subtitle-overlay')).toContainText('Bonjour Shin');
   await page.getByRole('button',{name:'Masquer Sous-titres source',exact:true}).click();await expect(page.locator('.subtitle-overlay')).not.toContainText('Every story');await page.getByRole('button',{name:'Masquer Sous-titres cible',exact:true}).click();await expect(page.locator('.subtitle-overlay')).toHaveText('');
-  await page.getByRole('button',{name:'Couper Audio original',exact:true}).click();await expect(page.getByRole('button',{name:'Activer Audio original',exact:true})).toHaveAttribute('aria-pressed','true');await expect(page.locator('.save-indicator')).toHaveText('Sauvegardé');
-  await page.screenshot({path:'test-results/screenshots/studio-track-controls.png'});await page.reload();await expect(page.getByRole('combobox',{name:'Personnage 1',exact:true}).locator('option:checked')).toHaveText('Shin');await expect(page.getByRole('combobox',{name:'Sous-titres du lecteur'})).toHaveValue('off');await expect(page.getByRole('button',{name:'Activer Audio original',exact:true})).toHaveAttribute('aria-pressed','true');
+  await page.getByRole('button',{name:'Couper Audio original',exact:true}).click();await expect(page.getByRole('button',{name:'Activer Audio original',exact:true})).toHaveAttribute('aria-pressed','false');await expect(page.locator('.save-indicator')).toHaveText('Sauvegardé');
+  await page.screenshot({path:'test-results/screenshots/studio-track-controls.png'});await page.reload();await expect(page.getByRole('combobox',{name:'Personnage 1',exact:true}).locator('option:checked')).toHaveText('Shin');await expect(page.getByRole('combobox',{name:'Sous-titres du lecteur'})).toHaveValue('off');await expect(page.getByRole('button',{name:'Activer Audio original',exact:true})).toHaveAttribute('aria-pressed','false');
 });
 
 test('translated SRT can be synchronized automatically during file import',async({page})=> {
@@ -187,4 +192,78 @@ test('ambiguous synchronization keeps the translated SRT imported without changi
   await expect(page.getByRole('alert')).toContainText('SRT importé. Calage automatique non appliqué');await page.getByRole('button',{name:'Fermer',exact:true}).click();
   await page.getByRole('button',{name:'Exporter',exact:true}).click();const download=page.waitForEvent('download');await page.getByRole('button',{name:'Exporter project.json',exact:true}).click();const stream=await(await download).createReadStream();let text='';for await(const bytes of stream!)text+=bytes.toString();const project=JSON.parse(text);
   expect(project.targetCues).toHaveLength(3);expect(project.targetCues[0].startMs).toBe(10000);expect(project.sourceCues[0].startMs).toBe(750);
+});
+test('model storage selection shows progress and switches the active folder only on completion',async({page})=>{
+  await nativeMock(page);await page.goto('/');await page.getByRole('button',{name:'Paramètres',exact:true}).click();
+  const path=page.getByRole('textbox',{name:'Dossier des modèles',exact:true});await expect(path).toHaveValue('C:/Studio/models');
+  await page.getByRole('button',{name:'Choisir un dossier',exact:true}).click();await expect(path).toHaveValue('D:/AI Models');
+  await page.getByRole('button',{name:'Appliquer et déplacer',exact:true}).click();
+  await expect(page.getByRole('progressbar',{name:'Progression du déplacement des modèles'})).toHaveAttribute('value','0.4');
+  await expect(page.getByRole('button',{name:'Appliquer et déplacer',exact:true})).toBeDisabled();await expect(page.locator('.model-storage-current')).toContainText('C:/Studio/models');
+  await page.screenshot({path:'test-results/screenshots/studio-model-storage.png'});
+  await page.evaluate(()=>(window as any).__completeModelMove());await expect(path).toHaveValue('D:/AI Models');
+  await expect(page.getByText('Modèles déplacés. Le nouveau dossier est actif.')).toBeVisible();
+  await page.getByRole('button',{name:'Fermer',exact:true}).click();await page.getByRole('button',{name:'Paramètres',exact:true}).click();await expect(path).toHaveValue('D:/AI Models');
+  await page.getByRole('button',{name:'Utiliser le dossier par défaut'}).click();await expect(path).toHaveValue('C:/Studio/models');
+});
+
+async function measureAudio(page:Page) {
+  await page.addInitScript(()=>{
+    const host=window as any, taps:{node:AudioNode;analyser:AnalyserNode;connected:boolean}[]=[];
+    const connect=AudioNode.prototype.connect,disconnect=AudioNode.prototype.disconnect;
+    AudioNode.prototype.connect=function(...args:any[]) {
+      const result=(connect as any).apply(this,args);
+      if(this instanceof GainNode && args[0]===this.context.destination) {
+        const analyser=this.context.createAnalyser();analyser.fftSize=1024;(connect as any).call(this,analyser);taps.push({node:this,analyser,connected:true});
+      }
+      return result;
+    };
+    AudioNode.prototype.disconnect=function(...args:any[]){for(const tap of taps)if(tap.node===this)tap.connected=false;return(disconnect as any).apply(this,args);};
+    host.__rms=()=>Math.max(0,...taps.filter(tap=>tap.connected&&tap.node.context.state==='running').map(tap=>{const data=new Float32Array(tap.analyser.fftSize);tap.analyser.getFloatTimeDomainData(data);return Math.sqrt(data.reduce((sum,value)=>sum+value*value,0)/data.length);}));
+  });
+}
+
+test('real audio output becomes silent when all tracks are disabled and resumes only the selected stem',async({page})=>{
+  const errors:string[]=[];page.on('pageerror',error=>errors.push(error.message));
+  await nativeMock(page);await measureAudio(page);await page.goto('/');await expect(page.getByRole('button',{name:'Lecture',exact:true})).toBeEnabled();
+  await page.getByRole('button',{name:'Lecture',exact:true}).click();await expect.poll(()=>page.evaluate(()=>(window as any).__rms())).toBeGreaterThan(0.001);
+  await page.getByRole('button',{name:'Couper Audio original',exact:true}).click();await expect.poll(()=>page.evaluate(()=>(window as any).__rms())).toBeLessThan(0.000001);await expect(page.locator('video')).toHaveJSProperty('muted',true);
+  await page.getByRole('button',{name:'Activer Audio original',exact:true}).click();await expect.poll(()=>page.evaluate(()=>(window as any).__rms())).toBeGreaterThan(0.001);
+  await page.evaluate(()=>(window as any).__completeSeparation());await expect(page.locator('.track-label')).toHaveCount(7);
+  for(const name of ['Voix','Musique','Effets'])await page.getByRole('button',{name:'Couper '+name,exact:true}).click();
+  await expect.poll(()=>page.evaluate(()=>(window as any).__rms())).toBeLessThan(0.000001);await expect(page.locator('video')).toHaveJSProperty('muted',true);
+  await page.getByRole('button',{name:'Activer Voix',exact:true}).click();await expect.poll(()=>page.evaluate(()=>(window as any).__rms())).toBeGreaterThan(0.005);
+  await page.getByRole('button',{name:'Couper Voix',exact:true}).click();await expect.poll(()=>page.evaluate(()=>(window as any).__rms())).toBeLessThan(0.000001);await expect(page.locator('.save-indicator')).toHaveText('Sauvegardé');
+  await page.screenshot({path:'test-results/screenshots/studio-track-controls.png'});
+  await page.reload();await expect(page.locator('video')).toHaveJSProperty('muted',true);await expect(page.getByRole('button',{name:'Lecture',exact:true})).toBeEnabled();
+  await page.getByRole('button',{name:'Lecture',exact:true}).click();await expect.poll(()=>page.evaluate(()=>(window as any).__rms())).toBeLessThan(0.000001);await expect.poll(()=>page.locator('video').evaluate((video:HTMLVideoElement)=>video.currentTime)).toBeGreaterThan(1);
+  expect(errors).toEqual([]);
+});
+
+test('a failed audio graph never leaves the embedded soundtrack enabled',async({page})=>{
+  await nativeMock(page);await page.addInitScript(()=>{AudioContext.prototype.createMediaElementSource=()=>{throw new Error('audio device unavailable');};});
+  await page.goto('/');await expect(page.getByRole('button',{name:'Lecture',exact:true})).toBeEnabled();await page.getByRole('button',{name:'Lecture',exact:true}).click();
+  await expect(page.locator('video')).toHaveJSProperty('muted',true);await expect(page.getByRole('alert')).toBeVisible();
+  await page.getByRole('button',{name:'Couper Audio original',exact:true}).click();await page.getByRole('button',{name:'Activer Audio original',exact:true}).click();await expect(page.locator('video')).toHaveJSProperty('muted',true);
+});
+test('GGUF and FP8 profiles expose engine requirements and persist the intended variant',async({page})=>{
+  await nativeMock(page);await page.goto('/');await page.getByRole('button',{name:'Modèles',exact:true}).click();
+  const provider=page.getByRole('combobox',{name:'Moteur de voix prévu pour ce projet'});await provider.selectOption('fish-s2');
+  const variant=page.getByRole('combobox',{name:'Variante du modèle prévue'});await variant.selectOption('fish-s2-fp8');
+  await expect(page.getByText('VRAM annoncée par la source : environ 12 Go.')).toBeVisible();await expect(page.getByText('Moteur et variante pas encore intégrés dans le studio.')).toBeVisible();
+  await page.locator('.panel-body').evaluate(element=>{element.scrollTop=element.scrollHeight;});await page.screenshot({path:'test-results/screenshots/studio-model-variants.png'});
+  await expect(page.locator('.save-indicator')).toHaveText('Sauvegardé');await page.reload();await page.getByRole('button',{name:'Modèles',exact:true}).click();await expect(variant).toHaveValue('fish-s2-fp8');
+  await variant.selectOption('fish-s2-bf16');await expect(page.getByText(/Dépasse la capacité/)).toBeVisible();
+  await provider.selectOption('cosyvoice3');await expect(variant).toHaveValue('');await variant.selectOption('cosy3-gguf-q4');await expect(page.getByText(/talker Q4_K/)).toBeVisible();
+  await provider.selectOption('qwen3-tts');await variant.selectOption('qwen3-17b-gguf-q5');await expect(page.getByText(/Projet HaujetZhao/)).toBeVisible();
+});
+
+test('replacing a playing media element closes its graph and preserves a muted new soundtrack',async({page})=>{
+  const errors:string[]=[];page.on('pageerror',error=>errors.push(error.message));
+  await nativeMock(page);await measureAudio(page);await page.goto('/');await expect(page.getByRole('button',{name:'Lecture',exact:true})).toBeEnabled();
+  await page.getByRole('button',{name:'Lecture',exact:true}).click();await expect.poll(()=>page.evaluate(()=>(window as any).__rms())).toBeGreaterThan(0.001);
+  await page.evaluate(()=>{(window as any).__oldVideo=document.querySelector('video');(window as any).__replaceMedia();});
+  await expect(page.getByRole('button',{name:'Lecture',exact:true})).toBeEnabled();expect(await page.evaluate(()=>(window as any).__oldVideo.paused&&(window as any).__oldVideo.muted)).toBe(true);
+  await page.getByRole('button',{name:'Lecture',exact:true}).click();await expect(page.locator('video')).toHaveJSProperty('muted',true);await expect.poll(()=>page.evaluate(()=>(window as any).__rms())).toBeLessThan(0.000001);
+  await page.getByRole('button',{name:'Activer Audio original',exact:true}).click();await expect.poll(()=>page.evaluate(()=>(window as any).__rms())).toBeGreaterThan(0.001);expect(errors).toEqual([]);
 });

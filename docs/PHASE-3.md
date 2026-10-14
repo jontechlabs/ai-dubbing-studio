@@ -2,7 +2,7 @@
 
 ## Séparer voix, musique et effets
 
-Ouvrez **Audio** après l’import vidéo. Cliquez sur **Installer Bandit** : le studio installe Python et ses bibliothèques dans son espace de données, puis télécharge les poids multilingues de 447 Mo. Le téléchargement et son empreinte SHA-256 sont vérifiés. Prévoir environ 2 Go en mode CPU et davantage avec CUDA. Cette installation utilise Internet ; la séparation des médias reste locale.
+Ouvrez **Audio** après l’import vidéo. Cliquez sur **Installer Bandit** : le studio installe Python et ses bibliothèques dans le dossier de modèles configurable depuis Paramètres, puis télécharge les poids multilingues de 447 Mo. Le téléchargement et son empreinte SHA-256 sont vérifiés. Prévoir environ 2 Go en mode CPU et davantage avec CUDA. Cette installation utilise Internet ; la séparation des médias reste locale.
 
 Depuis **v0.3.2**, les poids sont téléchargés depuis un miroir GitHub du checkpoint officiel inchangé, avec le lien public Zenodo comme source de repli. La licence CC-BY-SA 4.0, les auteurs, le DOI et les empreintes sont inclus dans la notice du modèle. Le fichier doit avoir exactement la taille et l’empreinte attendues avant d’être installé. Les erreurs temporaires reçoivent au maximum deux tentatives par source ; un refus 403 passe directement à la suivante.
 
@@ -24,7 +24,7 @@ Sur CPU, un film complet peut être très long à traiter. Le calcul utilise des
 
 ## Écouter et exporter
 
-Le mixeur **Audio** contient l’original, les voix, la musique et les effets. **M** coupe une piste, **S** l’écoute en solo ; plusieurs solos peuvent être actifs. Les niveaux de piste vont de 0 à 200 %, avec le volume du lecteur comme niveau général. La lecture vidéo synchronise les stems. Après une séparation, l’original est coupé pour éviter de doubler la bande-son. Les réglages sont sauvegardés dans le projet.
+Le mixeur **Audio** contient l’original, les voix, la musique et les effets. Le **haut-parleur** active ou coupe une piste, **S** l’écoute en solo ; plusieurs solos peuvent être actifs. Les niveaux de piste vont de 0 à 200 %, avec le volume du lecteur comme niveau général. La lecture vidéo synchronise les stems. Après une séparation, l’original est coupé pour éviter de doubler la bande-son. Les réglages sont sauvegardés dans le projet.
 
 Le bouton de téléchargement sur chaque stem exporte son WAV séparé. Les sorties des anciennes tentatives restent conservées dans `stems/`, avec leur provenance dans le projet ; elles ne sont pas écrasées par une nouvelle séparation. L’export du mix final reste prévu en phase 7.
 

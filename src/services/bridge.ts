@@ -8,6 +8,21 @@ import { browserStore, downloadText, pickBrowserFile } from './browserStore';
 import { audioPeaks, type Waveform } from '../domain/waveform';
 
 export const native = isTauri();
+export interface ModelStorageInfo {
+  path: string;
+  defaultPath: string;
+  moving: boolean;
+}
+export function modelStorageInfo() {
+  return invoke<ModelStorageInfo>('model_storage_info');
+}
+export function changeModelStorage(path: string) {
+  return invoke<string>('change_model_storage', { path });
+}
+export async function pickModelDirectory() {
+  const path = await open({ directory: true, multiple: false });
+  return typeof path === 'string' ? path : null;
+}
 export function speakerStatus() {
   return invoke<{ installed: boolean; installing: boolean; sizeBytes: number }>('speaker_status');
 }

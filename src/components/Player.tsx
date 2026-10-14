@@ -79,7 +79,8 @@ export function Player({
           <>
             <video
               crossOrigin="anonymous"
-              key={project?.media?.id}
+              key={`${project?.media?.id}|${transport.url}`}
+              muted={transport.originalMuted}
               ref={contentRef}
               src={transport.url}
               playsInline

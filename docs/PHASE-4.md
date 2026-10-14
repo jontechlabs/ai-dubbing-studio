@@ -42,7 +42,7 @@ L’option **Caler automatiquement le SRT importé sur l’autre SRT** est activ
 
 ## Pistes audio et sous-titres du lecteur
 
-- Dans la timeline, **M** coupe/réactive une piste audio ; **S** l’écoute en solo. Plusieurs solos sont possibles. Le panneau Audio conserve les contrôles de volume et d’export WAV.
+- Dans la timeline, le **haut-parleur** active/coupe une piste audio ; **S** l’écoute en solo. Plusieurs solos sont possibles. Le panneau Audio conserve les contrôles de volume et d’export WAV.
 - L’**œil** sur chaque piste de sous-titres affiche ou masque son texte dans le lecteur. Il ne supprime aucun sous-titre et ne retire pas les blocs de la timeline.
 - Le lecteur propose **Sous-titres masqués**, **Original**, **Traduction** ou **Les deux SRT**. Ce choix est sauvegardé avec le projet. Par défaut, la traduction est affichée si elle existe, sinon l’original.
 
@@ -60,4 +60,8 @@ Install the speaker model from Models, then use Characters to identify anonymous
 
 Import or extract voice references, edit their actual spoken transcript and choose a default. Manual references are normalized into a mono WAV and limited to 20 seconds. Project format 3 preserves these profiles and subtitle preview preferences.
 
-Import a translated SRT or an embedded text subtitle stream; optional automatic synchronization aligns the imported file against the existing other SRT. Ambiguous results preserve the imported file and its timings. Click Add a translation to type one line manually. Timeline M/S controls mute/solo audio; eye controls and the player selector control subtitle visibility without deleting text. Voice not generated means no dubbing audio exists. TTS engine preferences are saved for future phases; generation remains Phase 5 work.
+Import a translated SRT or an embedded text subtitle stream; optional automatic synchronization aligns the imported file against the existing other SRT. Ambiguous results preserve the imported file and its timings. Click Add a translation to type one line manually. Timeline speaker/S controls enable/solo audio; eye controls and the player selector control subtitle visibility without deleting text. Voice not generated means no dubbing audio exists. TTS engine preferences are saved for future phases; generation remains Phase 5 work.
+
+## Dossier des modèles et variantes (0.4.1)
+
+Consultez le [guide du stockage, des pistes et des profils GGUF/FP8](MODELS-AND-STORAGE.md). Le haut-parleur remplace M : allumé = activé, barré = coupé. Les profils TTS sont des préférences préparatoires pour les phases 5 et 6.

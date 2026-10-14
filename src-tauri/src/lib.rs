@@ -7,6 +7,7 @@ mod graphics;
 mod integration_tests;
 mod jobs;
 mod media;
+mod model_storage;
 mod project;
 mod separation;
 mod smoke;
@@ -35,8 +36,21 @@ pub struct Core {
     jobs: Mutex<HashMap<String, Control>>,
     gate: Arc<tokio::sync::Semaphore>,
     data_dir: PathBuf,
+    model_dir: Mutex<PathBuf>,
 }
 type Shared = Arc<Core>;
+#[tauri::command]
+fn model_storage_info(core: State<'_, Shared>) -> Result<model_storage::Info, String> {
+    model_storage::info(&core)
+}
+#[tauri::command]
+fn change_model_storage(
+    app: tauri::AppHandle,
+    core: State<'_, Shared>,
+    path: String,
+) -> Result<String, String> {
+    model_storage::change(core.inner().clone(), app, PathBuf::from(path))
+}
 #[tauri::command]
 fn speaker_status(
     app: tauri::AppHandle,
@@ -699,11 +713,14 @@ pub fn run() {
                 session: Mutex::new(None),
                 jobs: Mutex::new(restored),
                 gate: Arc::new(tokio::sync::Semaphore::new(1)),
+                model_dir: Mutex::new(model_storage::load(&data_dir)?),
                 data_dir,
             }));
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
+            model_storage_info,
+            change_model_storage,
             create_project,
             open_project,
             restore_project,
