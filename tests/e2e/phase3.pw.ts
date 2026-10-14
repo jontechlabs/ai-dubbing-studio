@@ -2,13 +2,13 @@ import { test, expect, type Page } from '@playwright/test';
 import { demoProject } from '../../src/domain/project';
 import fs from 'node:fs/promises';
 
-function wav() {
-  const samples=48000*16,bytes=Buffer.alloc(44+samples*4);bytes.write('RIFF');bytes.writeUInt32LE(bytes.length-8,4);bytes.write('WAVEfmt ',8);bytes.writeUInt32LE(16,16);bytes.writeUInt16LE(1,20);bytes.writeUInt16LE(2,22);bytes.writeUInt32LE(48000,24);bytes.writeUInt32LE(192000,28);bytes.writeUInt16LE(4,32);bytes.writeUInt16LE(16,34);bytes.write('data',36);bytes.writeUInt32LE(samples*4,40);
+function wav(seconds=16) {
+  const samples=48000*seconds,bytes=Buffer.alloc(44+samples*4);bytes.write('RIFF');bytes.writeUInt32LE(bytes.length-8,4);bytes.write('WAVEfmt ',8);bytes.writeUInt32LE(16,16);bytes.writeUInt16LE(1,20);bytes.writeUInt16LE(2,22);bytes.writeUInt32LE(48000,24);bytes.writeUInt32LE(192000,28);bytes.writeUInt16LE(4,32);bytes.writeUInt16LE(16,34);bytes.write('data',36);bytes.writeUInt32LE(samples*4,40);
   for(let i=0;i<samples;i++){const value=Math.round(Math.sin(i/48000*440*2*Math.PI)*1000);bytes.writeInt16LE(value,44+i*4);bytes.writeInt16LE(value,46+i*4);}return bytes;
 }
 async function nativeMock(page: Page, large = false) {
   await page.route('**/preview.mp4',async route=>route.fulfill({status:200,contentType:'video/mp4',body:await fs.readFile('public/demo.mp4')}));
-  await page.route('**/*.wav',route=>route.fulfill({status:200,contentType:'audio/wav',body:wav()}));
+  await page.route('**/*.wav',route=>route.fulfill({status:200,contentType:'audio/wav',body:wav(/\/(speech|music|sfx)\.wav$/.test(new URL(route.request().url()).pathname)?16:4)}));
   await page.addInitScript(({initial})=>{
     const host=window as unknown as Record<string,any>,callbacks=new Map<number,(data:any)=>void>(),listeners=new Map<string,number>();let counter=0,project=structuredClone(initial),job:any;
     const emit=(name:string,payload:any)=>{const id=listeners.get(name);if(id)callbacks.get(id)?.({event:name,id,payload});};
