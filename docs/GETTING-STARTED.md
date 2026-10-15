@@ -28,7 +28,7 @@ Text tracks are extracted from the imported original video copy, converted to UT
 
 External files must be UTF-8 SRT; CRLF, BOM and multiline cues are accepted. Extraction can be cancelled through Processing; cancellation or conversion failure preserves existing subtitles. No automatic transcription or translation is performed.
 
-Select a dialogue to seek its scene. The **Text** tab edits the displayed source/translation. The **Pronunciation** tab stores a separate voice text override for future TTS. Changing a translated subtitle does not silently change an existing override. CosyVoice3 generation is available from Dub on each dialogue. See [Phase 5](PHASE-5.md) for installation, CUDA and references.
+Select a dialogue to seek its scene. The **Text** tab edits the displayed source/translation. The **Pronunciation** tab stores a separate voice text override. Changing a translated subtitle does not silently change an existing override. **Dub** on each dialogue opens CosyVoice3, Fish S2 FP8/GGUF or Qwen3-TTS GGUF generation. See [Phase 6](PHASE-6.md) for model installation, GPU choice and reference requirements.
 
 Use the player and timeline to review the scene. **Play this line** uses configurable padding before/after the cue. Enable looping for repeated review. Settings also contain interface language and theme.
 

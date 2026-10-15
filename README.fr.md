@@ -18,7 +18,7 @@ Zones silencieuses ou audibles et volume indépendant par zone, sélection dans 
 
 ## Utiliser le studio
 
-La version Windows contient FFmpeg et FFprobe. Bandit v2 Multilingual et CosyVoice3 sont disponibles après installation optionnelle depuis l'application. La transcription et les autres moteurs de voix restent prévus pour les phases suivantes.
+La version Windows contient FFmpeg et FFprobe. Bandit v2 Multilingual, CosyVoice3, Fish S2 et Qwen3-TTS sont disponibles après installation optionnelle depuis l'application. La transcription automatique reste à intégrer.
 
 1. Importer une vidéo et choisir la langue source, la langue cible et la piste audio.
 2. Choisir le dossier parent du projet. Le studio crée un dossier `Nom.dubproject` et copie le média.
@@ -31,9 +31,9 @@ L'exemple fourni utilise une vidéo et un son synthétiques. Il ne contient pas 
 
 ## Personnages, modèles et commandes de pistes
 
-Installez le modèle de locuteurs depuis Modèles, lancez l’identification depuis Personnages, puis appliquez et corrigez les groupes proposés. Le bouton Ajouter une traduction ouvre l’éditeur même sans sous-titre cible. SRT traduit permet d’importer un fichier ou une piste MKV et propose le calage automatique. M coupe une piste, S l’isole et l’œil affiche/masque les sous-titres. **Doubler** ouvre la génération CosyVoice3.
+Installez le modèle de locuteurs depuis Modèles, lancez l’identification depuis Personnages, puis appliquez et corrigez les groupes proposés. Le bouton Ajouter une traduction ouvre l’éditeur même sans sous-titre cible. SRT traduit permet d’importer un fichier ou une piste MKV et propose le calage automatique. Le haut-parleur active ou coupe une piste, S l’isole et l’œil affiche/masque les sous-titres. **Doubler** ouvre le choix du moteur, du GPU et de la référence vocale.
 
-Les références et préférences utilisent le format de projet 3, les zones audio le format 4 et les essais vocaux le format 5. Les anciennes versions refusent les formats plus récents. Fish, Qwen et les variantes GGUF sont encore préparatoires. Il reste 2 phases.
+Les références et préférences utilisent le format de projet 3, les zones audio le format 4 et les essais vocaux le format 5. Les anciennes versions refusent les formats plus récents. Fish FP8 et les profils Fish/Qwen GGUF Q8_0 sont intégrés. Il reste une phase : mix final, export MKV et langues multiples.
 
 ## Fonctions présentes
 
@@ -64,7 +64,7 @@ La phase 2 est disponible. Le calage compare les timings et refuse les propositi
 
 Captures de l’interface réelle en aperçu navigateur, avec média synthétique.
 
-Consultez les guides de [phase 3](docs/PHASE-3.md), [phase 4](docs/PHASE-4.md) et [phase 5](docs/PHASE-5.md). Il reste deux phases : autres moteurs/gestion des modèles (6), puis mix et export MKV final (7). L'écoute des essais WAV est indépendante de la vidéo dans cette version.
+Consultez les guides de [phase 3](docs/PHASE-3.md), [phase 4](docs/PHASE-4.md), [phase 5](docs/PHASE-5.md) et [phase 6](docs/PHASE-6.md). Il reste la phase 7 pour le mix et l'export MKV final. L'écoute des essais WAV est indépendante de la vidéo dans cette version.
 
 ## Raccourcis
 

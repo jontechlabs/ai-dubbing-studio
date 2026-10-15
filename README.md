@@ -46,7 +46,7 @@ These are **unsigned development builds**. Smart App Control blocked an earlier 
 - Inspect audio waveforms computed from the chosen original track and separated stems, with local cache, progress and cancellation.
 - Identify anonymous voice groups locally with Silero VAD and 3D-Speaker CAMPPlus over existing subtitle intervals. Review/apply proposals, rename characters and correct individual or range assignments.
 - Import or extract multiple voice references per character; edit their transcripts and default reference.
-- Install the speaker runtime/model and official CosyVoice3 RL from Models. Generate, compare, select and review individual dubbing takes; retain preferences for future engines.
+- Install speaker identification, CosyVoice3 RL, Fish S2 FP8/GGUF and Qwen3-TTS GGUF from Models. Generate, compare, select and review individual dubbing takes with a chosen engine and GPU.
 - Toggle audio mute/solo and subtitle visibility directly from the timeline; preserve player subtitle preferences.
 - Optionally synchronize an imported SRT against the other SRT automatically; ambiguous matches preserve the imported file.
 - Separate speech/music/effects locally using Bandit v2 Multilingual; install an isolated Python runtime and verified model from Audio. Choose CPU or a detected NVIDIA CUDA device.
@@ -162,15 +162,15 @@ See [architecture and persistence](docs/ARCHITECTURE.md).
 | 2 | Waveforms, timecode editing, subtitle movement, split/merge, automatic SRT synchronization | Implemented; development preview |
 | 3 | Bandit speech/music/SFX separation and audio track management | Implemented; CPU validated, CUDA unqualified |
 | 4 | Characters, voice references, local AI speaker grouping and dialogue assignment | Implemented; proposals require review |
-| 5 | First TTS provider, per-line generation, multiple takes and review | Planned |
-| 6 | Additional TTS providers and model manager | Planned |
+| 5 | First TTS provider, per-line generation, multiple takes and review | Implemented; CosyVoice3 CPU inference validated |
+| 6 | Additional TTS providers and model manager | Implemented; Fish/Qwen GGUF and Fish FP8, RTX validation pending |
 | 7 | Final mix export, MKV packaging and multiple languages | Planned |
 
-Provider type definitions remain contracts for future integrations. Bandit and local speaker identification are implemented with upstream workers and verified model installation. General model management, voice cloning and generated speech remain future work.
+Local model installation/repair, storage migration, voice cloning and per-line speech generation are implemented. One phase remains: final scene mixing, MKV export and multiple languages.
 
 ## Validation
 
-The current local checks passed **26 TypeScript tests, 26 Rust tests, 16 Playwright scenarios and 10 Python worker tests (78)**, plus the frontend build, ESLint, Prettier, Rust formatting and Clippy. Tests cover prior media/SRT/mixer flows and new characters, references, safe voice proposals, automatic import synchronization and saved preview controls. Real Windows ONNX/VAD inference grouped two synthetic test voices and their repetitions. Browser scenarios simulate native IPC; they do not replace native GUI or full-film accuracy testing. See [VALIDATION.md](VALIDATION.md) for evidence and limits.
+The suites contain **39 TypeScript tests, 46 Rust/Linux tests (45 Windows), 30 Chrome scenarios and 17 Python worker tests**: 132 locally, 131 on Windows. The frontend build, ESLint, Prettier, Rust formatting and Clippy are also checked. Real Windows inference covers CosyVoice3, Qwen GGUF, Fish GGUF and a limited-token Fish FP8 core run on CPU. Browser scenarios simulate native IPC; actual RTX generation and the full native GUI workflow remain unqualified here. See [VALIDATION.md](VALIDATION.md) for evidence and limits.
 
 The earlier [v0.1.1 clean Windows run](https://github.com/jontechlabs/ai-dubbing-studio/actions/runs/38362204358) passed its checks and packaging. Current runs are available under [Actions](https://github.com/jontechlabs/ai-dubbing-studio/actions).
 
