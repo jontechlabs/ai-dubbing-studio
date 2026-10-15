@@ -359,7 +359,10 @@ pub async fn analyze(
         ]);
     let audio = output(command, 20 * 8000 * 4, flag).await?;
     progress(0.7);
-    let (mouth, quality, unstable) = mouth_signal(&frames)?;
+    let (mut mouth, quality, unstable) = mouth_signal(&frames)?;
+    // FFmpeg may emit a final frame whose 40 ms bin extends past an arbitrary
+    // subtitle timecode. Keep proposals entirely inside the requested window.
+    mouth.truncate(((options.end_ms - options.start_ms) / STEP) as usize);
     let samples: Vec<_> = audio
         .as_chunks::<4>()
         .0
@@ -611,7 +614,7 @@ mod tests {
                 line_id: "line".into(),
                 generation_id: "take".into(),
                 start_ms: 0,
-                end_ms: 5000,
+                end_ms: 4993,
                 region: Region {
                     x: 0.3125,
                     y: 0.37777778,
@@ -631,6 +634,8 @@ mod tests {
         )
         .await
         .unwrap();
+        assert!(result.mouth.len() as u64 * STEP <= request.options.end_ms);
+        assert!(result.start_ms + result.duration_ms <= request.options.end_ms);
         assert!(
             result.start_ms.abs_diff(1000) <= 120,
             "onset {}",
