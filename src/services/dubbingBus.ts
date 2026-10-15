@@ -1,7 +1,7 @@
 import type { Project, Track } from '../domain/types';
 import { dubbingClips } from '../domain/mix';
 import { audioTracks, effectiveGain, gainChanges, regionGain } from '../domain/audio';
-import { generationUrl } from './bridge';
+import { dubbingUrl } from './bridge';
 
 // Decode only the nearby takes; schedule them against the video clock, never a UI timer.
 export class DubbingBus {
@@ -19,9 +19,7 @@ export class DubbingBus {
     if (this.project !== project) {
       this.project = project;
       this.clips = dubbingClips(project);
-      const signature = this.clips
-        .map((c) => `${c.generation.id}:${c.startMs}:${c.endMs}`)
-        .join('|');
+      const signature = this.clips.map((c) => `${c.cacheKey}:${c.startMs}:${c.endMs}`).join('|');
       if (this.signature !== signature) this.stop();
       this.signature = signature;
       this.reported = false;
@@ -32,16 +30,22 @@ export class DubbingBus {
     private context: AudioContext,
     private onError: (error: string) => void,
   ) {}
-  private load(id: string) {
+  private load(clip: ReturnType<typeof dubbingClips>[number]) {
+    const id = clip.cacheKey;
     let promise = this.cache.get(id);
     if (!promise) {
-      promise = generationUrl(id).then(async (url) => {
-        const response = await fetch(url, { signal: this.controller.signal });
-        if (!response.ok) throw Error('AUDIO_PLAYBACK_FAILED');
-        const buffer = await this.context.decodeAudioData(await response.arrayBuffer());
-        if (!this.disposed && this.cache.get(id) === promise) this.decoded.set(id, buffer);
-        return buffer;
-      });
+      promise = dubbingUrl(clip.generation.id, clip.slotMs)
+        .then(async (url) => {
+          const response = await fetch(url, { signal: this.controller.signal });
+          if (!response.ok) throw Error('AUDIO_PLAYBACK_FAILED');
+          const buffer = await this.context.decodeAudioData(await response.arrayBuffer());
+          if (!this.disposed && this.cache.get(id) === promise) this.decoded.set(id, buffer);
+          return buffer;
+        })
+        .catch((error: unknown) => {
+          if (this.cache.get(id) === promise) this.cache.delete(id);
+          throw error;
+        });
       this.cache.set(id, promise);
     }
     return promise;
@@ -51,8 +55,10 @@ export class DubbingBus {
     const tracks = audioTracks(project),
       track = tracks.find((t) => t.kind === 'dubbing');
     if (!track || !effectiveGain(track, tracks, volume)) return;
-    const nearby = this.getClips(project).filter((c) => c.endMs > time && c.startMs < time + 3000);
-    const keep = new Set([...nearby.map((c) => c.generation.id), ...this.voices.keys()]);
+    const nearby = this.getClips(project).filter(
+      (c) => c.slotMs > 0 && c.endMs > time && c.startMs < time + 3000,
+    );
+    const keep = new Set([...nearby.map((c) => c.cacheKey), ...this.voices.keys()]);
     for (const id of this.cache.keys()) {
       if (this.cache.size <= 24) break;
       if (!keep.has(id)) {
@@ -60,7 +66,7 @@ export class DubbingBus {
         this.decoded.delete(id);
       }
     }
-    await Promise.all(nearby.map((c) => this.load(c.generation.id)));
+    await Promise.all(nearby.map((c) => this.load(c)));
   }
   stop() {
     for (const voice of this.voices.values()) {
@@ -91,9 +97,9 @@ export class DubbingBus {
       this.stop();
     this.anchor ??= { time: now, position, rate };
     const clips = this.getClips(project).filter(
-      (c) => c.endMs > position && c.startMs < position + 500 * rate,
+      (c) => c.slotMs > 0 && c.endMs > position && c.startMs < position + 500 * rate,
     );
-    const desired = new Set(clips.map((c) => c.generation.id));
+    const desired = new Set(clips.map((c) => c.cacheKey));
     for (const [id, voice] of this.voices)
       if (!desired.has(id)) {
         voice.source.onended = null;
@@ -103,7 +109,7 @@ export class DubbingBus {
         this.voices.delete(id);
       }
     for (const clip of clips) {
-      const id = clip.generation.id,
+      const id = clip.cacheKey,
         buffer = this.decoded.get(id);
       if (!buffer || position >= clip.startMs + buffer.duration * 1000) continue;
       let voice = this.voices.get(id);

@@ -13,6 +13,65 @@ fn options() -> Options {
         seed: 7,
     }
 }
+
+#[tokio::test]
+async fn engine_exit_keeps_last_stage_stderr_exit_status_and_protocol_error() {
+    let temporary = tempfile::tempdir().unwrap();
+    let core = Arc::new(Core {
+        session: Mutex::new(None),
+        jobs: Mutex::new(HashMap::new()),
+        gate: Arc::new(tokio::sync::Semaphore::new(1)),
+        data_dir: temporary.path().into(),
+        model_dir: Mutex::new(temporary.path().into()),
+    });
+    let app = tauri::test::mock_app();
+    let script = temporary.path().join("crash.py");
+    std::fs::write(&script, r#"import json,sys,os
+print(json.dumps({'stage':'ttsReferenceTokens','progress':None,'log':'Reference tokenization on CPU'}),flush=True)
+print('A warning is not a fatal error',file=sys.stderr,flush=True)
+if sys.argv[-1]=='protocol':
+    print(json.dumps({'error':'TTS_OUT_OF_MEMORY'}),flush=True)
+    sys.exit(1)
+if os.name=='nt':
+    import ctypes
+    ctypes.windll.kernel32.ExitProcess(0xC0000005)
+os._exit(23)
+"#).unwrap();
+    let executable = PathBuf::from(if cfg!(windows) { "python" } else { "python3" });
+    for mode in ["native", "protocol"] {
+        let key = jobs::create(&core, app.handle(), "tts", "test".into(), None);
+        let result = separation::process(
+            &core,
+            app.handle(),
+            &key,
+            &executable,
+            &[script.to_string_lossy().into_owned(), mode.into()],
+            &AtomicBool::new(false),
+        )
+        .await;
+        let expected = if mode == "protocol" {
+            "TTS_OUT_OF_MEMORY"
+        } else if cfg!(windows) {
+            "TTS_NATIVE_CRASH"
+        } else {
+            "TTS_ENGINE_FAILED"
+        };
+        assert_eq!(result.unwrap_err(), expected);
+        let jobs = core.jobs.lock().unwrap();
+        let job = &jobs.get(&key).unwrap().saved.record;
+        assert_eq!(job.stage, "ttsReferenceTokens");
+        assert!(job.logs.iter().any(|l| l.contains("warning")));
+        assert!(job
+            .logs
+            .iter()
+            .any(|l| l.contains("Reference tokenization on CPU")));
+        assert!(job.logs.last().unwrap().contains("exit code"));
+        assert!(job.logs.last().unwrap().contains("ttsReferenceTokens"));
+        if mode == "native" && cfg!(windows) {
+            assert!(job.logs.last().unwrap().contains("0xC0000005"));
+        }
+    }
+}
 #[test]
 fn dependency_extraction_copy_observes_cancellation_between_chunks() {
     struct Source<'a> {
@@ -186,16 +245,22 @@ async fn generation_job_keeps_takes_and_cancellation_preserves_previous_audio() 
     });
     let app = tauri::test::mock_app();
     let script = temp.path().join("worker.py");
-    std::fs::write(&script,r#"import json,sys,wave,struct,time
+    std::fs::write(&script,r#"import json,sys,wave,struct,time,os
 r=json.load(open(sys.argv[-1],encoding='utf-8'))
 open(r['preparedReferenceAudio'],'wb').write(b'normalized reference fixture')
+if r['seed']==88 and not r.get('compatibilityMode'):
+    open(r['outputPath'],'wb').write(b'partial from failed CUDA attempt')
+    print(json.dumps({'stage':'ttsReferenceTokens','progress':None}),flush=True)
+    os._exit(23)
+if r['seed']==88:
+    assert r['device']=='cuda:0' and r['compatibilityMode'] is True
 if r['seed']==99:
     open(r['outputPath'],'wb').write(b'partial')
     print(json.dumps({'stage':'ttsGenerate','progress':None}),flush=True)
     time.sleep(10)
 with wave.open(r['outputPath'],'wb') as out:
     out.setparams((1,2,24000,0,'NONE','not compressed'));out.writeframes(struct.pack('<h',1000)*28800)
-json.dump({'device':'cpu','deviceName':'Protocol test','peakVramMb':0},open(r['resultPath'],'w'))
+json.dump({'device':r['device'],'deviceName':'Protocol test','peakVramMb':0,'compatibilityMode':r.get('compatibilityMode',False)},open(r['resultPath'],'w'))
 "#).unwrap();
     let launch = WorkerLaunch {
         python: PathBuf::from(if cfg!(windows) { "python" } else { "python3" }),
@@ -262,4 +327,33 @@ json.dump({'device':'cpu','deviceName':'Protocol test','peakVramMb':0},open(r['r
     invalid = loaded;
     invalid.generations[0]["path"] = "../outside.wav".into();
     assert_eq!(invalid.validate().unwrap_err(), "INVALID_PATH");
+    let mut retry = request.clone();
+    retry.options.seed = 88;
+    retry.options.device = "cuda:0".into();
+    let key = jobs::create(&core, app.handle(), "tts", p.id.clone(), None);
+    execute_with_launch(
+        &core,
+        app.handle(),
+        &key,
+        &retry,
+        &AtomicBool::new(false),
+        &launch,
+    )
+    .await
+    .unwrap();
+    let recovered = project::load(&root).unwrap();
+    assert_eq!(recovered.generations.len(), 3);
+    assert_eq!(recovered.generations[2]["device"], "cuda:0");
+    assert_eq!(recovered.generations[2]["compatibilityMode"], true);
+    assert!(core
+        .jobs
+        .lock()
+        .unwrap()
+        .get(&key)
+        .unwrap()
+        .saved
+        .record
+        .logs
+        .iter()
+        .any(|l| l.contains("Retrying once")));
 }

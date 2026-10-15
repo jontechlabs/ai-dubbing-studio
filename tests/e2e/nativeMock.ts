@@ -20,6 +20,7 @@ export async function nativeMock(page: Page, large = false) {
       project.generations.push(generation);project.formatVersion=5;line.selectedGenerationIds[project.languages.target]=id;line.status=durationMs>line.endMs-line.startMs?'review':'generated';project.revision++;emit('project-changed',structuredClone(project));job={...job,status:'succeeded',stage:'done',progress:1};emit('job-changed',job);localStorage.setItem('nativeMockProject',JSON.stringify(project));
     };
     host.__replaceMedia=()=>{project.media.id+='-replacement';project.tracks.find((track:any)=>track.kind==='original').mute=true;project.revision++;emit('project-changed',structuredClone(project));};
+    host.__setFirstSlot=(endMs:number)=>{project.dialogues[0].endMs=endMs;project.revision++;emit('project-changed',structuredClone(project));};
     host.__seedDubbing=()=>{job={id:'tts-seed',projectId:project.id,kind:'tts',status:'running',stage:'ttsGenerate',progress:null,logs:[],error:null};for(const line of project.dialogues){host.__pendingTts={lineId:line.id,options:{variantId:'cosy3-official',device:'cpu',referenceMode:'current',referenceId:null,mode:'crossLingual',speed:1,seed:7}};host.__completeTts(2000);}};
     host.__completeModelMove=()=>{host.__modelFolder=host.__pendingModelFolder;job={...job,status:'succeeded',stage:'done',progress:1};emit('job-changed',job);};
     host.__speakerStatus={installed:true,installing:false,sizeBytes:72500000};
@@ -38,6 +39,7 @@ export async function nativeMock(page: Page, large = false) {
       if(command==='install_tts_runtime'){job={id:'tts-install',projectId:'',kind:'ttsInstall',status:'running',stage:'dependencies',progress:null,logs:[],error:null};emit('job-changed',job);return job.id;}
       if(command==='generate_line'){host.__pendingTts=structuredClone(args);job={id:'tts-job',projectId:project.id,kind:'tts',status:'running',stage:'ttsGenerate',progress:null,logs:[],error:null};emit('job-changed',job);return job.id;}
       if(command==='generation_path')return `C:/Studio/generations/${args.id}.wav`;
+      if(command==='dubbing_path')return `C:/Studio/generations/${args.id}.wav`;
       if(command==='export_generation')return null;
       if(command==='list_jobs')return job?[job]:[];
       if(command==='media_path')return 'preview.mp4';

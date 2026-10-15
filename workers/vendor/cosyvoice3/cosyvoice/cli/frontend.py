@@ -38,14 +38,15 @@ class CosyVoiceFrontEnd:
                  allowed_special: str = 'all'):
         self.tokenizer = get_tokenizer()
         self.feat_extractor = feat_extractor
-        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        # Reference analysis stays on CPU. The neural model explicitly transfers
+        # these small tensors to its selected CUDA device at inference time.
+        self.device = torch.device('cpu')
         option = onnxruntime.SessionOptions()
         option.graph_optimization_level = onnxruntime.GraphOptimizationLevel.ORT_ENABLE_ALL
         option.intra_op_num_threads = 1
         self.campplus_session = onnxruntime.InferenceSession(campplus_model, sess_options=option, providers=["CPUExecutionProvider"])
         self.speech_tokenizer_session = onnxruntime.InferenceSession(speech_tokenizer_model, sess_options=option,
-                                                                     providers=["CUDAExecutionProvider" if torch.cuda.is_available() else
-                                                                                "CPUExecutionProvider"])
+                                                                     providers=["CPUExecutionProvider"])
         if os.path.exists(spk2info):
             self.spk2info = torch.load(spk2info, map_location=self.device, weights_only=True)
         else:

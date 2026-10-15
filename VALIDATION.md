@@ -1,5 +1,17 @@
 # Validation - Phase 7, 15 October 2026
 
+## v0.7.1 automatic fitting and CosyVoice diagnostics
+
+Local checks cover **43 TypeScript tests, 53 Rust/Linux tests (52 Windows), 36 Chrome scenarios and 21 Python tests**. The signed Windows package workflow is checked before publication; its final run and build commit will be recorded here.
+
+New real-FFmpeg tests compress a two-tone voice to an exact 24,000-frame slot, measure its unchanged pitch and retained final tone, check cache reuse and invalidation, preserve the original WAV, and leave short takes unchanged. A full FLAC MKV test measures voice levels before and after the next selected take, verifying no overlap. Duplicate starts require review. Existing mix, mute/solo/region, AAC, cancellation and source-stream preservation checks remain in place. Chrome measures audible/silent output around the adjusted boundary and verifies new native fitting requests after timecode edits; its IPC is simulated.
+
+The production CosyVoice adapter generated a **2.08-second, mono 24 kHz PCM16 WAV on native Windows/CPU** using SoundFile/SciPy reference decoding and CPU ONNX analysis, with the full pinned model and an extended Windows model path. No new checkpoint/runtime download is required. New Python checks execute the real reference loader with native paths and verify CPU frontend provider selection even when CUDA is reported available. A Rust child-process test keeps stderr, JSON log fields, last stage and decimal/hex exit status, preserves explicit protocol errors, and distinguishes native Windows exit codes from Python failures. The generation orchestration test simulates an abrupt first GPU attempt and verifies a single compatibility retry using the same selected device, cleanup of partial output, a valid saved take and recorded compatibility metadata. The simulated child is not a neural CUDA test.
+
+The user's original log ends at warnings and does **not** establish the fatal cause. Reference backend dispatch and the unavailable ONNX provider request have been removed from that path. A conservative CUDA retry disables FP16, fused attention and cuDNN while retaining the selected GPU; its controls are checked against the pinned Torch API and unit fixtures. This host has AMD graphics: the reported RTX failure and the effectiveness/performance of that retry **remain unverified on the RTX 5060 Ti**. The improved exit/stage/native-stack diagnostics are intended to make any remaining hardware-specific failure actionable. Native GUI/installer interaction retains the limitations documented below.
+
+Fitting is automatic and shared by playback/export. It only compresses overly long selected voices; shorter ones retain natural speed. Above 1.5× the export panel requests review; zero-length duplicate slots are omitted with an explicit review warning. A/B and WAV export keep the original take. Cache WAVs consume project disk space and can be rebuilt. Model weights, project format 1–6, loudness handling and target-language scope are unchanged.
+
 ## v0.7.0 synchronized mix, MKV and Windows model paths
 
 Windows checks and signed-update package production passed in [run 38734427967](https://github.com/jontechlabs/ai-dubbing-studio/actions/runs/38734427967), built from `9ede6c21f4fbec0a4ccf17684c9a543f4ab776ee`. The installer and portable archive are copied unchanged from that workflow output.

@@ -70,6 +70,7 @@ export interface Generation {
   device: string;
   deviceName: string;
   peakVramMb: number;
+  compatibilityMode?: boolean;
   inputHash: string;
 }
 export interface AudioRegion {

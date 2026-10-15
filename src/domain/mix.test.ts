@@ -44,6 +44,30 @@ function fixture() {
   return p;
 }
 describe('synchronized mix', () => {
+  it('fits long takes to their current slot and next selected start without stretching short takes', () => {
+    const p = fixture();
+    p.dialogues[0].endMs = 4500;
+    p.dialogues[1].startMs = 1750;
+    const before = JSON.stringify(p.generations);
+    const clips = dubbingClips(p);
+    expect(clips[0].slotMs).toBe(1000);
+    expect(clips[0].endMs).toBe(1750);
+    expect(clips[0].cacheKey).toContain(':1000');
+    expect(mixReport(p).adjusted).toBeGreaterThan(0);
+    expect(mixReport(p).fast).toBeGreaterThan(0);
+    (p.generations[0] as Generation).durationMs = 400;
+    expect(dubbingClips(p)[0].endMs).toBe(1150);
+    expect(JSON.stringify(p.generations).replace('"durationMs":400', '"durationMs":2000')).toBe(
+      before,
+    );
+    p.dialogues[1].startMs = p.dialogues[0].startMs;
+    expect(mixReport(p).conflicts).toBe(2);
+    expect(
+      dubbingClips(p)
+        .slice(0, 2)
+        .every((c) => c.endMs === c.startMs),
+    ).toBe(true);
+  });
   it('uses only the selected language/source takes and places them at current dialogue starts', () => {
     const p = fixture();
     const old = JSON.stringify(p.generations);

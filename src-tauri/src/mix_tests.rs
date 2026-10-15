@@ -360,6 +360,182 @@ async fn assembly_adds_overlapping_takes_at_current_dialogue_start_and_rejects_m
 }
 
 #[tokio::test]
+async fn fitted_voice_preserves_pitch_tail_original_and_exact_slot_length() {
+    let (_temporary, root, _p) = fixture().await;
+    let source = root.join("generations/tones.wav");
+    ffmpeg(
+        &[
+            "-f",
+            "lavfi",
+            "-i",
+            "aevalsrc=0.2*sin(2*PI*if(lt(t\\,1.6)\\,440\\,880)*t):s=24000:d=2",
+            "-c:a",
+            "pcm_s16le",
+        ],
+        &source,
+    )
+    .await;
+    let original = fs::read(&source).unwrap();
+    let flag = AtomicBool::new(false);
+    let path = crate::voice_fit::take(&root, "generations/tones.wav", 1000, &tool("ffmpeg"), &flag)
+        .await
+        .unwrap();
+    assert_eq!(
+        audio_files::pcm_frames(&path, 1, 24000, "test").unwrap(),
+        24000
+    );
+    let data = pcm(&path, "0:a:0").await;
+    let frequency = |start: usize, end: usize| {
+        let mono: Vec<_> = data[start * 48 * 2..end * 48 * 2]
+            .iter()
+            .step_by(2)
+            .copied()
+            .collect();
+        mono.windows(2)
+            .filter(|v| v[0] <= 0.0 && v[1] > 0.0)
+            .count() as f64
+            * 1000.0
+            / (end - start) as f64
+    };
+    assert!((frequency(100, 600) - 440.0).abs() < 8.0);
+    // The final syllable/tone must be moved into the slot, not simply cut off.
+    assert!(
+        (frequency(850, 950) - 880.0).abs() < 25.0,
+        "tail frequency {}",
+        frequency(850, 950)
+    );
+    assert_eq!(
+        crate::voice_fit::take(&root, "generations/tones.wav", 1000, &tool("ffmpeg"), &flag)
+            .await
+            .unwrap(),
+        path
+    );
+    let changed =
+        crate::voice_fit::take(&root, "generations/tones.wav", 750, &tool("ffmpeg"), &flag)
+            .await
+            .unwrap();
+    assert_ne!(changed, path);
+    assert_eq!(
+        audio_files::pcm_frames(&changed, 1, 24000, "test").unwrap(),
+        18000
+    );
+    assert_eq!(
+        crate::voice_fit::take(&root, "generations/tones.wav", 2500, &tool("ffmpeg"), &flag)
+            .await
+            .unwrap(),
+        source.canonicalize().unwrap()
+    );
+    assert_eq!(
+        crate::voice_fit::take(
+            &root,
+            "generations/tones.wav",
+            1000,
+            &tool("ffmpeg"),
+            &AtomicBool::new(true)
+        )
+        .await
+        .unwrap_err(),
+        "CANCELLED"
+    );
+    assert_eq!(fs::read(source).unwrap(), original);
+}
+
+#[tokio::test]
+async fn export_fits_to_next_take_and_flags_zero_slots() {
+    let (_temporary, root, mut p) = fixture().await;
+    p.tracks[1].mute = true;
+    p.tracks[2].gain = 1.0;
+    p.tracks[2].regions.clear();
+    let mut second = p.dialogues[0].clone();
+    second.id = "second".into();
+    second.start_ms = 2000;
+    second.end_ms = 2500;
+    second
+        .selected_generation_ids
+        .insert("fr".into(), "second".into());
+    p.dialogues.push(second);
+    let mut generation = p.generations[0].clone();
+    generation["id"] = "second".into();
+    generation["dialogueId"] = "second".into();
+    generation["path"] = "generations/second.wav".into();
+    generation["durationMs"] = 500.into();
+    generation["startMs"] = 2000.into();
+    generation["endMs"] = 2500.into();
+    p.generations.push(generation);
+    ffmpeg(
+        &[
+            "-f",
+            "lavfi",
+            "-i",
+            "aevalsrc=0.1:s=24000:d=0.5",
+            "-c:a",
+            "pcm_s16le",
+        ],
+        &root.join("generations/second.wav"),
+    )
+    .await;
+    let selected = clips(&p);
+    assert_eq!(selected[0].slot_ms, 1000);
+    assert_eq!(selected[0].frames, 24000);
+    let app = tauri::test::mock_app();
+    let app = app.handle().clone();
+    let core = core(&root, p.clone());
+    let request = Request {
+        root: root.clone(),
+        project_id: p.id.clone(),
+        revision: 0,
+        output: root.join("exports/fitted.mkv"),
+        options: Options {
+            include_original: false,
+            source_subtitles: false,
+            target_subtitles: false,
+            codec: "flac".into(),
+            allow_incomplete: false,
+        },
+    };
+    validate(&p, &request.options).unwrap();
+    let key = jobs::create(&core, &app, "mkvExport", p.id.clone(), None);
+    export(
+        &core,
+        &app,
+        &key,
+        &request,
+        &p,
+        &Arc::new(AtomicBool::new(false)),
+    )
+    .await
+    .unwrap();
+    let data = pcm(&request.output, "0:a:0").await;
+    let average = |ms: usize| {
+        data[ms * 48 * 2..(ms + 10) * 48 * 2]
+            .iter()
+            .copied()
+            .sum::<f32>()
+            / 960.0
+    };
+    for (ms, expected) in [
+        (500, 0.0),
+        (1300, 0.2),
+        (1900, 0.2),
+        (2100, 0.1),
+        (2450, 0.1),
+        (2600, 0.0),
+    ] {
+        assert!(
+            (average(ms) - expected).abs() < 0.015,
+            "{ms}: {} expected {expected}",
+            average(ms)
+        );
+    }
+    p.dialogues[1].start_ms = p.dialogues[0].start_ms;
+    assert!(clips(&p).iter().all(|c| c.slot_ms == 0));
+    assert_eq!(
+        validate(&p, &request.options).unwrap_err(),
+        "MIX_REVIEW_REQUIRED"
+    );
+}
+
+#[tokio::test]
 async fn export_job_captures_saved_levels_and_produces_aac_while_edits_continue() {
     let (_temporary, root, p) = fixture().await;
     let app = tauri::test::mock_app();

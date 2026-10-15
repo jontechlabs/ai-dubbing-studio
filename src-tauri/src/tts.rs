@@ -508,19 +508,25 @@ async fn execute_with_launch<R: tauri::Runtime>(
         if request.options.variant().contains("gguf") {
             return crate::voice_engines::generate_gguf(core, app, key, &input_value, flag).await;
         }
-        separation::process(
-            core,
-            app,
-            key,
-            &launch.python,
-            &[
+        let args = [
                 launch.script.to_string_lossy().into_owned(),
                 "--request".into(),
                 input.to_string_lossy().into_owned(),
-            ],
-            flag,
-        )
-        .await
+            ];
+        let first = separation::process(core, app, key, &launch.python, &args, flag).await;
+        if request.options.variant() == "cosy3-official" && request.options.device != "cpu"
+            && first.as_ref().is_err_and(|e| ["TTS_NATIVE_CRASH", "TTS_ENGINE_FAILED"].contains(&e.as_str()))
+            && !flag.load(Ordering::Relaxed) {
+            jobs::update(core, app, key, |j| {
+                j.stage = "ttsCompatibility".into(); j.progress = None;
+                j.logs.push("CosyVoice stopped unexpectedly. Retrying once with a compatible CUDA profile on the SAME selected device (FP32, math attention, no cuDNN). No CPU fallback.".into());
+            });
+            let _ = std::fs::remove_file(&destination);
+            let _ = std::fs::remove_file(&result_path);
+            let mut compatible = input_value.clone(); compatible["compatibilityMode"] = true.into();
+            project::atomic_write(&input, &serde_json::to_vec(&compatible).map_err(io_error)?)?;
+            separation::process(core, app, key, &launch.python, &args, flag).await
+        } else { first }
     })
     .await
     .map_err(|_| "TTS_TIMEOUT".to_owned())
@@ -548,7 +554,7 @@ async fn execute_with_launch<R: tauri::Runtime>(
         }
         .into());
     }
-    let generation = serde_json::json!({"id":generation_id,"kind":"tts","dialogueId":line.id,"providerId":if request.options.variant()=="cosy3-official"{"cosyvoice3"}else if request.options.variant().starts_with("fish"){"fish-s2"}else{"qwen3-tts"},"modelId":request.options.variant(),"path":format!("generations/{generation_id}.wav"),"createdAt":now(),"sourcePath":p.media.as_ref().map(|m|&m.path),"startMs":line.start_ms,"endMs":line.end_ms,"text":text(&p,line),"language":p.languages.target,"characterId":line.character_id,"durationMs":duration,"sampleRate":24000,"options":request.options,"referenceTranscript":transcript,"referenceId":if request.options.reference_mode=="current"{None}else{reference(&p,line,&request.options).ok().map(|r|&r.id)},"device":metadata["device"],"deviceName":metadata["deviceName"],"peakVramMb":metadata["peakVramMb"],"inputHash":request.fingerprint});
+    let generation = serde_json::json!({"id":generation_id,"kind":"tts","dialogueId":line.id,"providerId":if request.options.variant()=="cosy3-official"{"cosyvoice3"}else if request.options.variant().starts_with("fish"){"fish-s2"}else{"qwen3-tts"},"modelId":request.options.variant(),"path":format!("generations/{generation_id}.wav"),"createdAt":now(),"sourcePath":p.media.as_ref().map(|m|&m.path),"startMs":line.start_ms,"endMs":line.end_ms,"text":text(&p,line),"language":p.languages.target,"characterId":line.character_id,"durationMs":duration,"sampleRate":24000,"options":request.options,"referenceTranscript":transcript,"referenceId":if request.options.reference_mode=="current"{None}else{reference(&p,line,&request.options).ok().map(|r|&r.id)},"device":metadata["device"],"deviceName":metadata["deviceName"],"peakVramMb":metadata["peakVramMb"],"compatibilityMode":metadata["compatibilityMode"].as_bool().unwrap_or(false),"inputHash":request.fingerprint});
     let mut session = core.session.lock().map_err(io_error)?;
     let s = session.as_mut().ok_or("NO_PROJECT")?;
     if s.root != request.root || s.project.id != request.project_id {

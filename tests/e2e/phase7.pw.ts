@@ -11,6 +11,28 @@ async function setup(page:Page){await nativeMock(page);await measure(page);await
 const rms=(page:Page)=>page.evaluate(()=>(window as any).__rms());
 async function position(page:Page,time:number){await page.locator('video').evaluate((video:HTMLVideoElement,t)=>{video.playbackRate=0.25;video.currentTime=t;},time);}
 
+test('automatic fitting uses current slots and invalidates decoded audio after timing edits',async({page})=>{
+  await setup(page);
+  await expect(page.locator('.save-indicator')).toHaveText('Sauvegardé');
+  await page.evaluate(()=>(window as any).__setFirstSlot(1750));
+  await position(page,1.1);
+  await page.getByRole('button',{name:'Lecture',exact:true}).click();
+  await expect.poll(()=>rms(page)).toBeGreaterThan(0.01);
+  await expect.poll(()=>page.evaluate(()=>(window as any).__calls.some((c:any)=>c.command==='dubbing_path'&&c.args.id==='take-1'&&c.args.slotMs===1000))).toBe(true);
+  await position(page,1.8);
+  await expect.poll(()=>rms(page)).toBeLessThan(0.000001);
+  await page.getByRole('button',{name:'Pause',exact:true}).click();
+  await expect(page.locator('.save-indicator')).toHaveText('Sauvegardé');
+  await page.evaluate(()=>(window as any).__setFirstSlot(2250));
+  await position(page,1.8);
+  await page.getByRole('button',{name:'Lecture',exact:true}).click();
+  await expect.poll(()=>rms(page)).toBeGreaterThan(0.01);
+  await expect.poll(()=>page.evaluate(()=>(window as any).__calls.some((c:any)=>c.command==='dubbing_path'&&c.args.id==='take-1'&&c.args.slotMs===1500))).toBe(true);
+  await page.getByRole('button',{name:'Pause',exact:true}).click();
+  await page.getByRole('button',{name:'Exporter',exact:true}).click();
+  await expect(page.getByText('1 prises ajustées automatiquement.',{exact:false})).toBeVisible();
+});
+
 test('selected dubbing follows video seeks, pauses, gain, solo and mute with no original audio leak',async({page})=>{
   const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));await setup(page);
   await expect(page.getByRole('button',{name:'Activer Audio original',exact:true})).toBeVisible();

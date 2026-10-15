@@ -42,12 +42,18 @@ def read_json_lists(list_file):
 
 
 def load_wav(wav, target_sr, min_sr=16000):
-    speech, sample_rate = torchaudio.load(wav, backend='soundfile')
-    speech = speech.mean(dim=0, keepdim=True)
+    # Decode the small reference directly. Avoid TorchAudio's native backend
+    # dispatcher/DLL loading on Windows; SciPy resampling stays on the CPU.
+    import soundfile as sf
+    from scipy.signal import resample_poly
+    from math import gcd
+    audio, sample_rate = sf.read(wav, dtype='float32', always_2d=True)
+    audio = audio.mean(axis=1)
     if sample_rate != target_sr:
         assert sample_rate >= min_sr, 'wav sample rate {} must be greater than {}'.format(sample_rate, target_sr)
-        speech = torchaudio.transforms.Resample(orig_freq=sample_rate, new_freq=target_sr)(speech)
-    return speech
+        divisor = gcd(sample_rate, target_sr)
+        audio = resample_poly(audio, target_sr // divisor, sample_rate // divisor)
+    return torch.from_numpy(audio.copy()).unsqueeze(0)
 
 
 def convert_onnx_to_trt(trt_model, trt_kwargs, onnx_model, fp16):

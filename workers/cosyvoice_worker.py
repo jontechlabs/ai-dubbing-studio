@@ -1,6 +1,7 @@
 """Local CosyVoice3 RL adapter. Official inference runs in an isolated process."""
 import argparse
 import contextlib
+import faulthandler
 import hashlib
 import json
 import os
@@ -98,6 +99,19 @@ def validate_request(request):
     return device
 
 
+def compatibility_profile(torch, device, enabled):
+    """Keep CUDA selection while avoiding FP16/cuDNN/fused attention on retry."""
+    if enabled and device.startswith('cuda:'):
+        torch.backends.cudnn.enabled = False
+        torch.backends.cuda.enable_flash_sdp(False)
+        torch.backends.cuda.enable_mem_efficient_sdp(False)
+        torch.backends.cuda.enable_cudnn_sdp(False)
+        torch.backends.cuda.enable_math_sdp(True)
+        report(stage='ttsCompatibility', progress=None,
+               log='CosyVoice compatible CUDA profile: FP32, math attention, cuDNN disabled; same selected GPU.')
+    return device.startswith('cuda:') and not enabled
+
+
 def generate(request):
     validate_request(request)
     from voice_reference import prepare_reference
@@ -125,6 +139,8 @@ def generate_normalized(request):
     if device.startswith('cuda:'):
         torch.cuda.set_device(device)
         torch.cuda.reset_peak_memory_stats()
+    compatible = request.get('compatibilityMode', False) is True
+    fp16 = compatibility_profile(torch, device, compatible)
     reference = Path(request['referenceAudio'])
     info = sf.info(reference)
     if info.channels != 1 or info.samplerate != 24000 or not 1 <= info.duration <= 20:
@@ -146,12 +162,22 @@ def generate_normalized(request):
     original_loader = official.load_hyperpyyaml
     official.load_hyperpyyaml = inference_yaml
     try:
-        model = CosyVoice3(str(directory), fp16=device.startswith('cuda:'), load_trt=False, load_vllm=False)
+        model = CosyVoice3(str(directory), fp16=fp16, load_trt=False, load_vllm=False)
     finally:
         official.load_hyperpyyaml = original_loader
     # The official Windows ONNX wheel runs reference tokenization on CPU.
     # Torch LLM, flow and vocoder use the selected CUDA device.
-    report(stage='ttsGenerate', progress=None, device=requested, deviceName=name)
+    report(stage='ttsReferenceAnalysis', progress=None, log='Reference analysis: SoundFile/SciPy and ONNX CPU; neural inference: ' + name)
+    # Emit a boundary for each expensive reference step. Fatal native faults now
+    # leave both this last stage and a faulthandler stack in the processing log.
+    for method, stage in [('_extract_speech_feat', 'ttsReferenceFeatures'), ('_extract_speech_token', 'ttsReferenceTokens'), ('_extract_spk_embedding', 'ttsReferenceSpeaker')]:
+        original = getattr(model.frontend, method)
+        def tracked(*args, _original=original, _stage=stage, **kwargs):
+            report(stage=_stage, progress=None)
+            result = _original(*args, **kwargs)
+            report(stage='ttsGenerate', progress=None)
+            return result
+        setattr(model.frontend, method, tracked)
     prefix = 'You are a helpful assistant.<|endofprompt|>'
     options = {'stream': False, 'speed': request['speed'], 'text_frontend': False}
     with torch.inference_mode():
@@ -168,6 +194,7 @@ def generate_normalized(request):
     output = Path(request['outputPath'])
     sf.write(output, speech, model.sample_rate, subtype='PCM_16', format='WAV')
     metadata = {'device': requested if requested != 'auto' else device, 'deviceName': name,
+                'compatibilityMode': compatible,
                 'sampleRate': model.sample_rate, 'durationMs': round(speech.size * 1000 / model.sample_rate),
                 'peakVramMb': round(torch.cuda.max_memory_allocated() / 1024**2) if device.startswith('cuda:') else 0}
     Path(request['resultPath']).write_text(json.dumps(metadata), encoding='utf-8')
@@ -176,6 +203,7 @@ def generate_normalized(request):
 
 def main():
     global report
+    faulthandler.enable(file=sys.stderr, all_threads=True)
     parser = argparse.ArgumentParser()
     parser.add_argument('--info', action='store_true')
     parser.add_argument('--runtime-info', action='store_true')

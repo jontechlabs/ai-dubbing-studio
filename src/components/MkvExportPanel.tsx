@@ -31,7 +31,7 @@ export function MkvExportPanel({
   const [working, setWorking] = useState(false);
   const report = mixReport(project),
     tracks = audioTracks(project);
-  const review = report.missing + report.stale + report.long > 0;
+  const review = report.missing + report.stale + report.fast + report.conflicts > 0;
   const audible = tracks.filter((track) => effectiveGain(track, tracks, 1) > 0);
   return (
     <section className="settings-section mkv-export-panel">
@@ -46,6 +46,7 @@ export function MkvExportPanel({
             .join(' · ') || t('allAudioSilent')}
         </p>
         <p className="panel-description">{t('mixNaturalLength')}</p>
+        <p>{t('mixFitSummary', report)}</p>
         {!!report.clips.length && (
           <button className="button accent wide" disabled={busy} onClick={() => onEdit(dubbingMix)}>
             {t('prepareDubbingMix')}

@@ -10,6 +10,8 @@
   "adapterChanges": [
     "matcha/utils/__init__.py: omit eager imports of unused training/download helpers. Neural inference code and checkpoints are unchanged.",
     "workers/cosyvoice_adapter.py filters the pinned YAML to inference keys before the official HyperPyYAML loader; training objects and YAML seed resets are excluded.",
-    "cosyvoice/cli/cosyvoice.py: use os.path.join for model files, including Windows extended-length paths. Inference and weights are unchanged."
+    "cosyvoice/cli/cosyvoice.py: use os.path.join for model files, including Windows extended-length paths. Inference and weights are unchanged.",
+    "cosyvoice/utils/file_utils.py: decode reference audio with SoundFile and resample with SciPy, avoiding TorchAudio native backend dispatch on Windows.",
+    "cosyvoice/cli/frontend.py: explicitly use CPU for reference tensors and both ONNX sessions. Neural inference still uses the selected CUDA device."
   ]
 }

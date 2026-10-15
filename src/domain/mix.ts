@@ -22,7 +22,24 @@ export function dubbingClips(project: Project) {
         },
       ];
     })
-    .sort((a, b) => a.startMs - b.startMs);
+    .sort((a, b) => a.startMs - b.startMs)
+    .map((clip, index, clips) => {
+      const next = clips[index + 1];
+      const duplicate = clips[index - 1]?.startMs === clip.startMs;
+      const slotMs = duplicate
+        ? 0
+        : Math.max(
+            0,
+            Math.min(clip.line.endMs, next?.startMs ?? Infinity, project.media!.durationMs) -
+              clip.startMs,
+          );
+      return {
+        ...clip,
+        slotMs,
+        endMs: clip.startMs + Math.min(slotMs, clip.generation.durationMs),
+        cacheKey: `${project.id}:${clip.generation.id}:${slotMs}`,
+      };
+    });
 }
 export function mixReport(project: Project) {
   const clips = dubbingClips(project);
@@ -34,6 +51,8 @@ export function mixReport(project: Project) {
     clips,
     missing,
     stale: clips.filter((c) => staleGeneration(project, c.line, c.generation)).length,
-    long: clips.filter((c) => c.generation.durationMs > c.line.endMs - c.line.startMs).length,
+    adjusted: clips.filter((c) => c.slotMs > 0 && c.generation.durationMs > c.slotMs).length,
+    fast: clips.filter((c) => c.slotMs > 0 && c.generation.durationMs / c.slotMs > 1.5).length,
+    conflicts: clips.filter((c) => c.slotMs === 0).length,
   };
 }

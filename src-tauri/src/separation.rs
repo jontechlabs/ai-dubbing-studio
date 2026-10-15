@@ -247,6 +247,7 @@ pub(crate) async fn process<R: tauri::Runtime>(
                     if value.get("progress").is_some_and(|progress|progress.is_null()) { job.progress=None; }
                     if let Some(progress)=value["progress"].as_f64() { job.progress=Some(progress.clamp(0.0,1.0)); }
                     if let Some(stage)=value["stage"].as_str() { job.stage=stage.into(); }
+                    if let Some(log)=value["log"].as_str() { job.logs.push(log.into()); }
                     if let Some(error)=value["error"].as_str() { worker_error=Some(error.to_owned()); job.logs.push(line); }
                 } else { job.logs.push(line); }
             }); }
@@ -257,7 +258,26 @@ pub(crate) async fn process<R: tauri::Runtime>(
     if status.success() {
         Ok(())
     } else {
-        Err(worker_error.unwrap_or_else(|| "SEPARATION_FAILED".into()))
+        let mut failure = "SEPARATION_FAILED";
+        jobs::update(core, app, key, |job| {
+            if job.kind == "tts" {
+                failure = match status.code().map(|c| c as u32) {
+                    Some(0xC0000005 | 0xC0000409 | 0xC000001D) => "TTS_NATIVE_CRASH",
+                    Some(0xC0000017 | 0xC000009A) => "TTS_SYSTEM_MEMORY",
+                    _ => "TTS_ENGINE_FAILED",
+                };
+            }
+            job.logs.push(format!(
+                "Worker terminated during {}: {}; exit code {} (0x{:08X}).",
+                job.stage,
+                status,
+                status
+                    .code()
+                    .map_or_else(|| "unavailable".into(), |c| c.to_string()),
+                status.code().unwrap_or(0) as u32
+            ));
+        });
+        Err(worker_error.unwrap_or_else(|| failure.into()))
     }
 }
 pub(crate) fn finish<R: tauri::Runtime>(

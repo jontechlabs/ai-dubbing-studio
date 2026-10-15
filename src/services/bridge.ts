@@ -43,6 +43,10 @@ export async function generationUrl(id: string) {
   if (!native) throw Error('DESKTOP_REQUIRED');
   return convertFileSrc(await invoke<string>('generation_path', { id }));
 }
+export async function dubbingUrl(id: string, slotMs: number) {
+  if (!native) throw Error('DESKTOP_REQUIRED');
+  return convertFileSrc(await invoke<string>('dubbing_path', { id, slotMs }));
+}
 export async function exportGeneration(id: string) {
   const path = await save({
     defaultPath: `doublage-${id.slice(0, 8)}.wav`,

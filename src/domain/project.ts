@@ -2,7 +2,7 @@ import type { Project } from './types';
 import { alignCues } from './subtitles';
 import { validVoiceVariant } from './modelVariants';
 import { validVoiceSettings } from './tts';
-export const APP_VERSION = '0.7.0';
+export const APP_VERSION = '0.7.1';
 
 export function blankProject(name = 'Untitled', source = 'ja', target = 'fr'): Project {
   const now = new Date().toISOString();

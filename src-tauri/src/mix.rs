@@ -36,13 +36,16 @@ pub struct Request {
     pub options: Options,
 }
 #[derive(Clone)]
-struct Clip {
-    path: String,
+pub(crate) struct Clip {
+    pub id: String,
+    pub path: String,
+    pub slot_ms: u64,
     start: u64,
     frames: u64,
+    end_ms: u64,
 }
 
-fn clips(p: &Project) -> Vec<Clip> {
+pub(crate) fn clips(p: &Project) -> Vec<Clip> {
     let Some(media) = &p.media else {
         return vec![];
     };
@@ -66,7 +69,10 @@ fn clips(p: &Project) -> Vec<Clip> {
                 return None;
             }
             Some(Clip {
+                id: id.clone(),
                 path: g["path"].as_str()?.into(),
+                slot_ms: 0,
+                end_ms: line.end_ms.min(media.info.duration_ms),
                 start: line.start_ms * 24,
                 frames: g["durationMs"]
                     .as_u64()?
@@ -76,6 +82,17 @@ fn clips(p: &Project) -> Vec<Clip> {
         })
         .collect();
     clips.sort_by_key(|c| c.start);
+    let starts: Vec<_> = clips.iter().map(|c| c.start).collect();
+    for (index, clip) in clips.iter_mut().enumerate() {
+        let next = starts.get(index + 1).copied().unwrap_or(u64::MAX);
+        let duplicate = index > 0 && starts[index - 1] == clip.start;
+        clip.slot_ms = if duplicate {
+            0
+        } else {
+            (clip.end_ms * 24).min(next).saturating_sub(clip.start) / 24
+        };
+        clip.frames = clip.frames.min(clip.slot_ms * 24);
+    }
     clips
 }
 fn default_track(kind: &str, mute: bool) -> Track {
@@ -242,6 +259,7 @@ fn validate(p: &Project, options: &Options) -> Result<(), String> {
         return Err("INVALID_EXPORT".into());
     }
     if !options.allow_incomplete {
+        let selected = clips(p);
         for line in &p.dialogues {
             if tts::text(p, line).is_empty() {
                 continue;
@@ -260,7 +278,13 @@ fn validate(p: &Project, options: &Options) -> Result<(), String> {
                     || g["startMs"] != line.start_ms
                     || g["endMs"] != line.end_ms
                     || g["characterId"] != serde_json::json!(line.character_id)
-                    || g["durationMs"].as_u64().unwrap_or(0) > line.end_ms - line.start_ms
+                    || selected
+                        .iter()
+                        .find(|c| c.id == g["id"].as_str().unwrap_or(""))
+                        .is_none_or(|c| {
+                            c.slot_ms == 0
+                                || g["durationMs"].as_f64().unwrap_or(0.0) / c.slot_ms as f64 > 1.5
+                        })
             }) {
                 return Err("MIX_REVIEW_REQUIRED".into());
             }
@@ -375,7 +399,29 @@ async fn export<R: tauri::Runtime>(
         .any(|t| t.kind == "dubbing" && gain(t, &tracks) > 0.0);
     if dubbed {
         let root = request.root.clone();
-        let selected = clips(p);
+        let mut selected = clips(p);
+        selected.retain(|c| c.slot_ms > 0);
+        jobs::update(core, app, key, |j| {
+            j.stage = "mixFit".into();
+            j.progress = Some(0.0);
+        });
+        let total = selected.len().max(1);
+        for (index, clip) in selected.iter_mut().enumerate() {
+            let fitted =
+                crate::voice_fit::take(&root, &clip.path, clip.slot_ms, &executable, flag).await?;
+            clip.path = fitted
+                .strip_prefix(&root)
+                .map_err(io_error)?
+                .to_string_lossy()
+                .replace('\\', "/");
+            jobs::update(core, app, key, |j| {
+                j.progress = Some((index + 1) as f64 / total as f64)
+            });
+        }
+        jobs::update(core, app, key, |j| {
+            j.stage = "mixAssemble".into();
+            j.progress = Some(0.0);
+        });
         let duration = p.media.as_ref().unwrap().info.duration_ms;
         let file = voices.clone();
         let cancel = flag.clone();

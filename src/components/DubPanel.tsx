@@ -467,6 +467,7 @@ export function DubPanel({
             {generation.peakVramMb > 0 && (
               <small>{t('ttsPeakVram', { mb: generation.peakVramMb })}</small>
             )}
+            {generation.compatibilityMode && <small>{t('ttsCompatibleTake')}</small>}
             {(stale || long) && <p className="warning">{t(stale ? 'ttsStale' : 'ttsTooLong')}</p>}
             <div className="generation-actions">
               <button className="button subtle" onClick={() => onPlay(generation)}>

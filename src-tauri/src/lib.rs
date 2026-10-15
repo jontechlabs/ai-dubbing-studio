@@ -17,6 +17,7 @@ mod speakers;
 mod subtitles;
 mod tts;
 mod voice_engines;
+mod voice_fit;
 mod waveform;
 pub fn smoke_test(path: &std::path::Path) -> Result<(), String> {
     smoke::run(path)
@@ -88,6 +89,53 @@ fn generate_line(
     options: tts::Options,
 ) -> Result<String, String> {
     tts::enqueue(core.inner().clone(), app, line_id, options)
+}
+#[tauri::command]
+async fn dubbing_path(
+    app: tauri::AppHandle,
+    core: State<'_, Shared>,
+    id: String,
+    slot_ms: u64,
+) -> Result<String, String> {
+    let (root, path) = {
+        let session = core.session.lock().map_err(io_error)?;
+        let s = session.as_ref().ok_or("NO_PROJECT")?;
+        if slot_ms == 0
+            || slot_ms
+                > s.project
+                    .media
+                    .as_ref()
+                    .ok_or("MEDIA_MISSING")?
+                    .info
+                    .duration_ms
+        {
+            return Err("MIX_SLOT_CONFLICT".into());
+        }
+        let generation = s
+            .project
+            .generations
+            .iter()
+            .find(|g| g["id"] == id && g["kind"] == "tts")
+            .ok_or("INVALID_GENERATION")?;
+        (
+            s.root.clone(),
+            generation["path"]
+                .as_str()
+                .ok_or("INVALID_GENERATION")?
+                .to_owned(),
+        )
+    };
+    // Timings may still be in the editor's autosave queue. The renderer supplies
+    // its current slot, while the native side owns and validates every file path.
+    let path = voice_fit::take(
+        &root,
+        &path,
+        slot_ms,
+        &media::binary(&app, "ffmpeg")?,
+        &AtomicBool::new(false),
+    )
+    .await?;
+    Ok(path.to_string_lossy().into_owned())
 }
 #[tauri::command]
 fn generation_path(core: State<'_, Shared>, id: String) -> Result<String, String> {
@@ -882,6 +930,7 @@ pub fn run() {
             install_tts_runtime,
             generate_line,
             generation_path,
+            dubbing_path,
             export_generation,
             model_storage_info,
             model_storage_size,
