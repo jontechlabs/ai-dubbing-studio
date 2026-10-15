@@ -114,7 +114,7 @@ export function ModelsPanel({
             onChange={(event) =>
               onEdit((p) => ({
                 ...p,
-                formatVersion: 3,
+                formatVersion: Math.max(p.formatVersion, 3),
                 modelPreferences: {
                   ttsProviderId: event.target.value || null,
                   voiceVariantId: null,

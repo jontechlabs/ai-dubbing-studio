@@ -8,7 +8,7 @@ export function subtitleDisplay(project: Project): SubtitleDisplay {
 }
 export function setSubtitleDisplay(project: Project, display: SubtitleDisplay): Project {
   const next = structuredClone(project);
-  next.formatVersion = 3;
+  next.formatVersion = Math.max(next.formatVersion, 3);
   next.subtitleDisplay = display;
   for (const role of ['source', 'target'] as const) {
     let track = next.tracks.find((item) => item.id === role);

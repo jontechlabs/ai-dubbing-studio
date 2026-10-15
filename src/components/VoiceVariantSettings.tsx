@@ -26,7 +26,7 @@ export function VoiceVariantSettings({
           onChange={(event) =>
             onEdit((p) => ({
               ...p,
-              formatVersion: 3,
+              formatVersion: Math.max(p.formatVersion, 3),
               modelPreferences: {
                 ...p.modelPreferences!,
                 voiceVariantId: event.target.value || null,

@@ -64,6 +64,15 @@ pub struct Dialogue {
 }
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
+pub struct AudioRegion {
+    pub id: String,
+    pub start_ms: u64,
+    pub end_ms: u64,
+    pub gain: f64,
+    pub mute: bool,
+}
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct Track {
     pub id: String,
     pub kind: String,
@@ -71,6 +80,10 @@ pub struct Track {
     pub mute: bool,
     pub solo: bool,
     pub gain: f64,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub regions: Vec<AudioRegion>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub regions_enabled: Option<bool>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub role: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -189,7 +202,7 @@ impl Project {
         }
     }
     pub fn validate(&self) -> Result<(), String> {
-        if ![1, 2, 3].contains(&self.format_version) {
+        if ![1, 2, 3, 4].contains(&self.format_version) {
             return Err("UNSUPPORTED_PROJECT_VERSION".into());
         }
         if self.id.is_empty() || self.name.trim().is_empty() {
@@ -272,6 +285,33 @@ impl Project {
             return Err("INVALID_PROJECT".into());
         }
         for track in &self.tracks {
+            if !track.regions.is_empty() || track.regions_enabled.is_some() {
+                let limit = track
+                    .duration_ms
+                    .or_else(|| self.media.as_ref().map(|media| media.info.duration_ms))
+                    .ok_or("INVALID_AUDIO_REGION")?;
+                let mut ids = std::collections::HashSet::new();
+                let mut previous_end = 0;
+                if self.format_version < 4
+                    || !["audio", "original"].contains(&track.kind.as_str())
+                    || track.regions.len() > 10000
+                {
+                    return Err("INVALID_AUDIO_REGION".into());
+                }
+                for region in &track.regions {
+                    if region.id.is_empty()
+                        || !ids.insert(&region.id)
+                        || region.start_ms < previous_end
+                        || region.end_ms <= region.start_ms
+                        || region.end_ms > limit
+                        || !region.gain.is_finite()
+                        || !(0.0..=2.0).contains(&region.gain)
+                    {
+                        return Err("INVALID_AUDIO_REGION".into());
+                    }
+                    previous_end = region.end_ms;
+                }
+            }
             if let Some(path) = &track.path {
                 valid_relative(path)?;
             }

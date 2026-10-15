@@ -233,7 +233,7 @@ pub fn enqueue<R: tauri::Runtime>(
             let mut clusters=result["clusters"].clone();for cluster in clusters.as_array_mut().ok_or("SPEAKER_ANALYSIS_FAILED")? {let file=cluster["referenceFile"].as_str().ok_or("SPEAKER_ANALYSIS_FAILED")?;let path=format!("{relative}/{file}");project::asset(&request.root,&path)?;cluster["referencePath"]=path.into();}
             let analysis:SpeakerAnalysis=serde_json::from_value(serde_json::json!({"id":key,"sourcePath":request.source_path,"lines":result["lines"],"clusters":clusters,"assignments":result["assignments"]})).map_err(io_error)?;
             let mut session=core.session.lock().map_err(io_error)?;let s=session.as_mut().ok_or("NO_PROJECT")?;if s.root!=request.root || s.project.id!=request.project_id || s.project.media.as_ref().is_none_or(|media|media.path!=request.source_path){return Err("STALE_REVISION".into());}
-            let mut next=s.project.clone();next.format_version=3;next.speaker_analysis=Some(analysis);let saved=s.replace(next,s.project.revision)?;let _=app.emit("project-changed",saved);let _=std::fs::remove_file(audio);Ok(())
+            let mut next=s.project.clone();next.format_version=next.format_version.max(3);next.speaker_analysis=Some(analysis);let saved=s.replace(next,s.project.revision)?;let _=app.emit("project-changed",saved);let _=std::fs::remove_file(audio);Ok(())
         }.await;
         if result.is_err()
             && folder
@@ -368,7 +368,7 @@ pub async fn reference<R: tauri::Runtime>(
         return Err("STALE_REVISION".into());
     }
     let mut next = s.project.clone();
-    next.format_version = 3;
+    next.format_version = next.format_version.max(3);
     let character = next
         .characters
         .iter_mut()

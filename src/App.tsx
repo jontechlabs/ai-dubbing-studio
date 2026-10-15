@@ -7,7 +7,7 @@ import { Header, type Panel } from './components/Header';
 import { Panels } from './components/Panels';
 import { Player } from './components/Player';
 import { Timeline } from './components/Timeline';
-import type { Dialogue } from './domain/types';
+import type { AudioSelection, Dialogue } from './domain/types';
 import { useProject } from './hooks/useProject';
 import { useShortcuts } from './hooks/useShortcuts';
 import { useTransport } from './hooks/useTransport';
@@ -19,6 +19,11 @@ export default function App() {
   const studio = useProject();
   const updater = useUpdater(studio.flush);
   const [panel, setPanel] = useState<Panel>(null);
+  const [audioSelection, setAudioSelection] = useState<AudioSelection | null>(null);
+  const selectAudio = useCallback((value: AudioSelection) => {
+    setAudioSelection(value);
+    setPanel('audio');
+  }, []);
   const [subtitleRole, setSubtitleRole] = useState<'source' | 'target'>('source');
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [translationFocus, setTranslationFocus] = useState(0);
@@ -253,6 +258,7 @@ export default function App() {
         />
         <div style={{ height: timelineHeight, flexShrink: 0 }}>
           <Timeline
+            onAudioSelection={selectAudio}
             project={studio.project}
             selected={selected}
             timeRef={transport.timeRef}
@@ -282,6 +288,7 @@ export default function App() {
         </button>
       </footer>
       <Panels
+        audioSelection={audioSelection}
         panel={panel}
         project={studio.project}
         jobs={studio.jobs}

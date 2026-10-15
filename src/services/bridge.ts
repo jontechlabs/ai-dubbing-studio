@@ -16,6 +16,16 @@ export interface ModelStorageInfo {
 export function modelStorageInfo() {
   return invoke<ModelStorageInfo>('model_storage_info');
 }
+export interface ModelStorageSize {
+  path: string;
+  bytes: number;
+  files: number;
+  skipped: number;
+  partial: boolean;
+}
+export function modelStorageSize() {
+  return invoke<ModelStorageSize>('model_storage_size');
+}
 export function changeModelStorage(path: string) {
   return invoke<string>('change_model_storage', { path });
 }
@@ -92,14 +102,18 @@ export async function audioUrls(project: Project) {
   const paths = await invoke<Record<string, string>>('audio_paths');
   return Object.fromEntries(Object.entries(paths).map(([id, path]) => [id, convertFileSrc(path)]));
 }
-export async function exportAudioTrack(project: Project, id: string) {
+export async function exportAudioTrack(project: Project, id: string, edited = false) {
   const track = project.tracks.find((track) => track.id === id);
-  if (!track || !native) return;
+  if (!track || !native) return false;
   const path = await save({
-    defaultPath: `${track.role ?? 'audio'}.wav`,
+    defaultPath: `${track.role ?? 'audio'}${edited ? '-montage' : ''}.wav`,
     filters: [{ name: 'WAV', extensions: ['wav'] }],
   });
-  if (path) await invoke('export_audio_track', { id, path });
+  if (path) {
+    await invoke('export_audio_track', { id, path, edited });
+    return true;
+  }
+  return false;
 }
 const commandErrors: string[] = [];
 export function diagnosticErrors() {
@@ -252,6 +266,11 @@ export async function importMedia(
   return storeBrowser({
     ...browserProject,
     revision: browserProject.revision + 1,
+    tracks: browserProject.tracks.map((track) =>
+      track.kind === 'original'
+        ? { ...track, regions: undefined, regionsEnabled: undefined }
+        : track,
+    ),
     media: {
       id: path,
       path: file.name,

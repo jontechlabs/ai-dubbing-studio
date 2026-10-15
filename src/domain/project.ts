@@ -1,7 +1,7 @@
 import type { Project } from './types';
 import { alignCues } from './subtitles';
 import { validVoiceVariant } from './modelVariants';
-export const APP_VERSION = '0.4.1';
+export const APP_VERSION = '0.4.2';
 
 export function blankProject(name = 'Untitled', source = 'ja', target = 'fr'): Project {
   const now = new Date().toISOString();
@@ -91,7 +91,7 @@ export function validateProject(value: unknown): Project {
   const preferences = project.modelPreferences;
   if (preferences && !validVoiceVariant(preferences.ttsProviderId, preferences.voiceVariantId))
     throw new Error('INVALID_PROJECT');
-  if (![1, 2, 3].includes(project.formatVersion)) throw new Error('UNSUPPORTED_PROJECT_VERSION');
+  if (![1, 2, 3, 4].includes(project.formatVersion)) throw new Error('UNSUPPORTED_PROJECT_VERSION');
   if (
     project.subtitleDisplay &&
     !['off', 'source', 'target', 'both'].includes(project.subtitleDisplay)
@@ -125,6 +125,41 @@ export function validateProject(value: unknown): Project {
       cue.endMs <= cue.startMs
     )
       throw new Error('INVALID_CUE_RANGE');
+  }
+  for (const track of project.tracks) {
+    if (!Number.isFinite(track.gain) || track.gain < 0 || track.gain > 2)
+      throw new Error('INVALID_PROJECT');
+    if (track.regions !== undefined || track.regionsEnabled !== undefined) {
+      if (
+        project.formatVersion < 4 ||
+        !['original', 'audio'].includes(track.kind) ||
+        (track.regionsEnabled !== undefined && typeof track.regionsEnabled !== 'boolean') ||
+        (track.regions !== undefined && !Array.isArray(track.regions)) ||
+        (track.regions?.length ?? 0) > 10000
+      )
+        throw new Error('INVALID_AUDIO_REGION');
+      const limit = track.durationMs ?? project.media?.durationMs ?? 0;
+      let previous = 0;
+      const ids = new Set<string>();
+      for (const item of track.regions ?? []) {
+        if (
+          !item.id ||
+          ids.has(item.id) ||
+          !Number.isSafeInteger(item.startMs) ||
+          !Number.isSafeInteger(item.endMs) ||
+          item.startMs < previous ||
+          item.endMs <= item.startMs ||
+          item.endMs > limit ||
+          !Number.isFinite(item.gain) ||
+          item.gain < 0 ||
+          item.gain > 2 ||
+          typeof item.mute !== 'boolean'
+        )
+          throw new Error('INVALID_AUDIO_REGION');
+        previous = item.endMs;
+        ids.add(item.id);
+      }
+    }
   }
   const sourceIds = new Set(project.sourceCues.map((cue) => cue.id));
   const characterIds = new Set<string>();

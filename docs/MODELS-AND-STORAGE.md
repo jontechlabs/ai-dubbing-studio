@@ -43,3 +43,11 @@ Pour 16 Go, nous privilégions les petits modèles et les profils quantifiés, u
 ![Choix préparatoire Fish FP8](screenshots/model-variants.png)
 
 Capture React réelle en navigateur ; le modèle n’est pas chargé. Aucun poids TTS n’est téléchargé automatiquement par cette sélection.
+
+## Taille du dossier (0.4.2)
+
+Paramètres affiche la taille cumulée des fichiers du dossier actif, son nombre de fichiers et un bouton Actualiser. Le calcul se fait en arrière-plan et se relance après un déplacement ou une installation de modèles. Les liens/jonctions ne sont pas suivis. Un calcul interrompu par la limite de durée ou des fichiers inaccessibles est indiqué comme partiel. Il s’agit de la taille logique des fichiers : l’espace réellement alloué par le système de fichiers peut différer.
+
+![Taille du dossier des modèles](screenshots/storage-size.png)
+
+Les zones audio, volumes par section et commandes rapides sont détaillés dans le [guide audio](AUDIO-REGIONS.md).

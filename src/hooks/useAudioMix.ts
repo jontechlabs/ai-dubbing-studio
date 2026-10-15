@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState, type RefObject } from 'react';
 import type { Project } from '../domain/types';
-import { audioTracks, effectiveGain } from '../domain/audio';
+import { audioTracks, effectiveGain, gainChanges, regionGain } from '../domain/audio';
 import { audioUrls } from '../services/bridge';
 
 type Node = { gain: GainNode; audio: HTMLMediaElement; source: MediaElementAudioSourceNode };
@@ -9,6 +9,7 @@ type Graph = {
   nodes: Map<string, Node>;
   released: boolean;
   sync: () => void;
+  schedule: () => void;
 };
 // One source node per media element, including React's effect replay.
 const graphs = new WeakMap<HTMLVideoElement, Graph>();
@@ -38,10 +39,10 @@ export function useAudioMix(
         (track) => (track.kind === 'original' ? 'original' : track.id) === id,
       );
       const gain = track ? effectiveGain(track, tracks, state.volume) : 0;
-      node.gain.gain.value = gain;
       // The embedded soundtrack must also be cut at the media element itself.
       node.audio.muted = gain === 0;
     }
+    active.schedule();
     active.sync();
   };
   const applyRef = useRef(apply);
@@ -65,6 +66,7 @@ export function useAudioMix(
             nodes: new Map([['original', { gain, audio: video, source }]]),
             released: false,
             sync: () => {},
+            schedule: () => {},
           };
           graphs.set(video, active);
         } catch (error) {
@@ -73,6 +75,7 @@ export function useAudioMix(
         }
       }
     } catch {
+      setInitialized(null);
       onError('AUDIO_PLAYBACK_FAILED');
       return;
     }
@@ -80,13 +83,43 @@ export function useAudioMix(
     const attached = active;
     graph.current = attached;
     video.volume = 1;
+    attached.schedule = () => {
+      const state = current.current,
+        tracks = state.project ? audioTracks(state.project) : [];
+      const now = attached.context.currentTime,
+        position = video.currentTime * 1000;
+      for (const [id, node] of attached.nodes) {
+        const track = tracks.find(
+          (track) => (track.kind === 'original' ? 'original' : track.id) === id,
+        );
+        const base = track ? effectiveGain(track, tracks, state.volume) : 0;
+        node.gain.gain.cancelScheduledValues(now);
+        node.gain.gain.setValueAtTime(base * (track ? regionGain(track, position) : 1), now);
+        if (
+          track &&
+          !video.paused &&
+          !video.seeking &&
+          video.readyState >= 3 &&
+          video.playbackRate > 0
+        ) {
+          for (const point of gainChanges(track, position, position + 3000 * video.playbackRate))
+            node.gain.gain.setValueAtTime(
+              base * point.gain,
+              now + (point.timeMs - position) / 1000 / video.playbackRate,
+            );
+        }
+      }
+    };
     const resume = () => {
-      void attached.context.resume().catch(() => onError('AUDIO_PLAYBACK_FAILED'));
+      void attached.context
+        .resume()
+        .then(() => attached.schedule())
+        .catch(() => onError('AUDIO_PLAYBACK_FAILED'));
     };
     attached.sync = () => {
       for (const node of attached.nodes.values()) {
         if (node.audio === video) continue;
-        if (node.audio.muted || video.paused) {
+        if (node.audio.muted || video.paused || video.seeking || video.readyState < 3) {
           node.audio.pause();
           continue;
         }
@@ -100,25 +133,38 @@ export function useAudioMix(
       resume();
       attached.sync();
     };
-    for (const event of ['pause', 'seeking', 'ratechange', 'ended'])
-      video.addEventListener(event, attached.sync);
+    const reschedule = () => {
+      attached.schedule();
+      attached.sync();
+    };
+    for (const event of ['pause', 'seeking', 'seeked', 'ratechange', 'ended', 'waiting', 'playing'])
+      video.addEventListener(event, reschedule);
     video.addEventListener('play', play);
     document.addEventListener('pointerdown', resume, true);
     document.addEventListener('keydown', resume, true);
-    const timer = setInterval(attached.sync, 200);
+    const timer = setInterval(reschedule, 200);
     applyRef.current(attached);
     setInitialized(key);
     return () => {
       clearInterval(timer);
       document.removeEventListener('pointerdown', resume, true);
       document.removeEventListener('keydown', resume, true);
-      for (const event of ['pause', 'seeking', 'ratechange', 'ended'])
-        video.removeEventListener(event, attached.sync);
+      for (const event of [
+        'pause',
+        'seeking',
+        'seeked',
+        'ratechange',
+        'ended',
+        'waiting',
+        'playing',
+      ])
+        video.removeEventListener(event, reschedule);
       video.removeEventListener('play', play);
       video.pause();
       video.muted = true;
       for (const [id, node] of attached.nodes) {
-        node.gain.gain.value = 0;
+        node.gain.gain.cancelScheduledValues(attached.context.currentTime);
+        node.gain.gain.setValueAtTime(0, attached.context.currentTime);
         if (id !== 'original') {
           node.audio.pause();
           node.audio.removeAttribute('src');

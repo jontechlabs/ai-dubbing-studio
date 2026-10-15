@@ -1891,3 +1891,116 @@ pre {
   overflow-wrap: anywhere;
   font-size: 11px;
 }
+.audio-quick-controls {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.audio-quick-controls .button {
+  padding: 6px 8px;
+  font-size: 11px;
+}
+.audio-regions-editor {
+  scroll-margin-top: 15px;
+}
+.region-time-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 12px;
+}
+.region-time-fields input {
+  font-family: var(--mono);
+  font-size: 11px;
+  min-width: 0;
+}
+.region-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin: 12px 0;
+}
+.region-actions .button {
+  font-size: 11px;
+}
+.audio-region-list {
+  margin: 15px 0;
+  display: grid;
+  gap: 5px;
+  max-height: 220px;
+  overflow-y: auto;
+}
+.audio-region-list > div {
+  display: flex;
+  align-items: center;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  padding: 5px;
+}
+.audio-region-list .selected {
+  border-color: var(--accent);
+}
+.audio-region-list .text-button {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+  text-align: left;
+}
+.audio-selection-tool {
+  cursor: crosshair;
+  touch-action: none;
+}
+.audio-region {
+  position: absolute;
+  top: 2px;
+  bottom: 2px;
+  z-index: 2;
+  border: 1px solid var(--accent);
+  border-radius: 3px;
+  overflow: hidden;
+  color: var(--text);
+  font-size: 10px;
+  background: color-mix(in srgb, var(--accent) 32%, transparent);
+  padding: 0 3px;
+  min-width: 0;
+}
+.audio-region.silent {
+  background: repeating-linear-gradient(
+    135deg,
+    #402629b0,
+    #402629b0 5px,
+    #ad5e6960 5px,
+    #ad5e6960 8px
+  );
+  border-color: #bd7382;
+}
+.audio-region.bypassed {
+  opacity: 0.35;
+  border-style: dashed;
+}
+.audio-range-selection {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  z-index: 3;
+  background: #b491f052;
+  border: 1px solid var(--accent);
+  pointer-events: none;
+}
+.model-storage-size {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 14px 0;
+  font-size: 12px;
+}
+.model-storage-size small {
+  display: block;
+  width: 100%;
+  color: var(--muted);
+  font-size: 10px;
+}

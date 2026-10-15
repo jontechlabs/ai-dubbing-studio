@@ -1,14 +1,14 @@
 # AI Dubbing Studio — phases 1–4
 
-[Version anglaise et captures de l’interface](README.md) · [Téléchargements Windows](https://github.com/jontechlabs/ai-dubbing-studio/releases/tag/v0.4.1)
+[Version anglaise et captures de l’interface](README.md) · [Téléchargements Windows](https://github.com/jontechlabs/ai-dubbing-studio/releases/tag/v0.4.2)
 
 Studio desktop local de travail texte, voix et vidéo. Tauri 2, React, TypeScript strict et Rust.
 
-**v0.4.1** ajoute l’identification locale des locuteurs par IA, les personnages modifiables, les références vocales, le panneau Modèles, le calage automatique à l’import d’un SRT et les commandes haut-parleur/S/œil dans la timeline. Les propositions de voix restent à vérifier et à renommer manuellement. [Guide de la phase 4](docs/PHASE-4.md).
+**v0.4.2** ajoute l’identification locale des locuteurs par IA, les personnages modifiables, les références vocales, le panneau Modèles, le calage automatique à l’import d’un SRT et les commandes haut-parleur/S/œil dans la timeline. Les propositions de voix restent à vérifier et à renommer manuellement. [Guide de la phase 4](docs/PHASE-4.md).
 
-## Nouveautés du correctif 0.4.1
+## Nouveautés du correctif 0.4.2
 
-Dossier global des modèles configurable avec déplacement et vérification des installations existantes. Coupure du son original également sur la vidéo, commandes haut-parleur explicites et catalogue préparatoire GGUF/FP8/BF16 pour les GPU de 16 Go. Les variantes TTS ne sont pas encore exécutables. [Guide du stockage et des variantes](docs/MODELS-AND-STORAGE.md).
+Zones silencieuses ou audibles et volume indépendant par zone, sélection dans la timeline, commandes rapides globales ou par piste et export des pistes séparées avec le montage. Les paramètres affichent la taille du dossier des modèles avec actualisation. [Guide des zones audio](docs/AUDIO-REGIONS.md) · [Stockage et variantes](docs/MODELS-AND-STORAGE.md).
 
 ## Utiliser le studio
 
@@ -96,7 +96,7 @@ Les tests de parcours utilisent Chrome et gèrent automatiquement leur serveur V
 
 `project.json` est la source de vérité. Les chemins des assets sont relatifs, les timings en millisecondes entières et les identifiants stables. Les fichiers vidéo d'origine ne sont pas modifiés. Le projet contient les documents source/cible et leurs associations. Un changement de traduction ne modifie pas automatiquement une surcharge TTS.
 
-Les projets aux formats 1 et 2 restent lisibles. L’ajout de stems utilise au moins le format 2 ; personnages, références et préférences utilisent le format 3, refusé par les versions antérieures à 0.4.1. Les formats inconnus sont refusés sans réécriture. `recovery/pending.json` permet de reprendre une sauvegarde interrompue ; `recovery/previous.json` conserve la version précédente. Une génération future restera un fichier distinct avec sa provenance et ne sera pas écrasée par un job.
+Les projets aux formats 1 et 2 restent lisibles. L’ajout de stems utilise au moins le format 2 ; personnages, références et préférences utilisent le format 3, refusé par les versions antérieures à 0.4.2. Les formats inconnus sont refusés sans réécriture. `recovery/pending.json` permet de reprendre une sauvegarde interrompue ; `recovery/previous.json` conserve la version précédente. Une génération future restera un fichier distinct avec sa provenance et ne sera pas écrasée par un job.
 
 Les projets déplacés s'ouvrent depuis leur nouveau dossier. Les médias et caches doivent rester dans le dossier projet. La modification concurrente par deux instances n'est pas prise en charge dans cette version.
 

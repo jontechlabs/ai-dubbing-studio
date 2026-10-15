@@ -468,6 +468,14 @@ async fn execute<R: tauri::Runtime>(
         return Err("STALE_REVISION".into());
     }
     let mut next = s.project.clone();
+    if request.reuse.is_none() {
+        for track in &mut next.tracks {
+            if track.kind == "original" {
+                track.regions.clear();
+                track.regions_enabled = None;
+            }
+        }
+    }
     let mut info = info;
     if let Some(old) = &request.reuse {
         info.original_name = old.info.original_name.clone();

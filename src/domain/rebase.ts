@@ -53,12 +53,29 @@ export function rebaseProject(base: Project, local: Project, incoming: Project):
       originals.find((track) => track.id === localTrack.id);
     const server = next.tracks.find((track) => track.id === localTrack.id);
     if (!server) {
-      if (!before) next.tracks.push(structuredClone(localTrack));
+      if (
+        !before ||
+        (localTrack.kind === 'original' && !base.tracks.some((track) => track.id === localTrack.id))
+      )
+        next.tracks.push(
+          structuredClone(
+            localTrack.kind === 'original' && incoming.media?.path !== base.media?.path
+              ? { ...localTrack, regions: undefined, regionsEnabled: undefined }
+              : localTrack,
+          ),
+        );
       continue;
     }
-    for (const key of ['mute', 'solo', 'gain'] as const)
-      if (changed(before?.[key], localTrack[key]))
+    for (const key of ['mute', 'solo', 'gain', 'regions', 'regionsEnabled'] as const)
+      if (
+        localTrack.kind === 'original' &&
+        (key === 'regions' || key === 'regionsEnabled') &&
+        incoming.media?.path !== base.media?.path
+      )
+        continue;
+      else if (changed(before?.[key], localTrack[key]))
         Object.assign(server, { [key]: localTrack[key] });
   }
+  next.formatVersion = Math.max(next.formatVersion, local.formatVersion);
   return next;
 }

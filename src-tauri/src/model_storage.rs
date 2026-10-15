@@ -67,6 +67,77 @@ pub fn info(core: &Core) -> Result<Info, String> {
     })
 }
 
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Size {
+    pub path: PathBuf,
+    pub bytes: u64,
+    pub files: u64,
+    pub skipped: u64,
+    pub partial: bool,
+}
+pub fn directory_size(path: &Path) -> Result<Size, String> {
+    if !path.is_dir() {
+        return Err("INVALID_MODEL_STORAGE".into());
+    }
+    let started = std::time::Instant::now();
+    let mut result = Size {
+        path: path.to_path_buf(),
+        bytes: 0,
+        files: 0,
+        skipped: 0,
+        partial: false,
+    };
+    let mut stack = vec![path.to_path_buf()];
+    let mut entries = 0u64;
+    while let Some(directory) = stack.pop() {
+        if started.elapsed() > std::time::Duration::from_secs(20) || entries > 2_000_000 {
+            result.partial = true;
+            break;
+        }
+        let listing = match fs::read_dir(&directory) {
+            Ok(value) => value,
+            Err(_) => {
+                result.skipped += 1;
+                result.partial = true;
+                continue;
+            }
+        };
+        for entry in listing {
+            entries += 1;
+            if entries > 2_000_000 || started.elapsed() > std::time::Duration::from_secs(20) {
+                result.partial = true;
+                break;
+            }
+            let entry = match entry {
+                Ok(value) => value,
+                Err(_) => {
+                    result.skipped += 1;
+                    result.partial = true;
+                    continue;
+                }
+            };
+            let metadata = match check_link(&entry.path()) {
+                Ok(value) => value,
+                Err(error) => {
+                    result.skipped += 1;
+                    if error != "MODEL_STORAGE_LINK" {
+                        result.partial = true;
+                    }
+                    continue;
+                }
+            };
+            if metadata.is_dir() {
+                stack.push(entry.path());
+            } else if metadata.is_file() {
+                result.bytes = result.bytes.saturating_add(metadata.len());
+                result.files += 1;
+            }
+        }
+    }
+    Ok(result)
+}
+
 fn check_link(path: &Path) -> Result<fs::Metadata, String> {
     let metadata = fs::symlink_metadata(path).map_err(io_error)?;
     #[cfg(windows)]
@@ -389,6 +460,25 @@ mod tests {
         fs::create_dir_all(source.join("speaker-runtime")).unwrap();
         fs::write(source.join("speaker-runtime/speaker.onnx"), b"model").unwrap();
         (temp, data, source, dest)
+    }
+    #[test]
+    fn folder_size_counts_nested_files_without_reading_contents() {
+        let temporary = tempfile::tempdir().unwrap();
+        fs::create_dir(temporary.path().join("nested")).unwrap();
+        fs::write(temporary.path().join("one.bin"), vec![0; 2048]).unwrap();
+        fs::write(temporary.path().join("nested/two.bin"), vec![1; 4096]).unwrap();
+        let size = directory_size(temporary.path()).unwrap();
+        assert_eq!(size.bytes, 6144);
+        assert_eq!(size.files, 2);
+        assert!(!size.partial);
+        assert!(directory_size(&temporary.path().join("absent")).is_err());
+        #[cfg(unix)]
+        {
+            std::os::unix::fs::symlink(temporary.path(), temporary.path().join("loop")).unwrap();
+            let size = directory_size(temporary.path()).unwrap();
+            assert_eq!(size.bytes, 6144);
+            assert_eq!(size.skipped, 1);
+        }
     }
     #[test]
     fn moves_all_installations_and_reloads_durable_path() {

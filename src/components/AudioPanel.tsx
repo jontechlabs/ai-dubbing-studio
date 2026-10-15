@@ -1,7 +1,10 @@
 import { useEffect, useState } from 'react';
 import { Download, LoaderCircle, RefreshCw, Scissors, Volume2, VolumeX } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import type { Job, Project } from '../domain/types';
+import type { AudioSelection, Dialogue, Job, Project } from '../domain/types';
+import type { RefObject } from 'react';
+import { AudioQuickControls } from './AudioQuickControls';
+import { AudioRegionsEditor } from './AudioRegionsEditor';
 import { audioTracks, editTrack } from '../domain/audio';
 import * as bridge from '../services/bridge';
 export function AudioPanel({
@@ -11,6 +14,9 @@ export function AudioPanel({
   onEdit,
   showJobs,
   onError,
+  selection,
+  selected,
+  videoRef,
 }: {
   project: Project | null;
   jobs: Job[];
@@ -18,6 +24,9 @@ export function AudioPanel({
   onEdit: (update: (project: Project) => Project) => void;
   showJobs: () => void;
   onError: (error: string) => void;
+  selection: AudioSelection | null;
+  selected?: Dialogue;
+  videoRef: RefObject<HTMLVideoElement | null>;
 }) {
   const { t } = useTranslation();
   const [runtime, setRuntime] = useState<Awaited<
@@ -176,6 +185,8 @@ export function AudioPanel({
         <>
           <h3>{t('audioMixer')}</h3>
           <p className="panel-description">{t('mixerHint')}</p>
+          <AudioQuickControls project={project!} onEdit={onEdit} />
+          <p className="panel-description">{t('quickAudioHint')}</p>
           <div className="audio-mixer">
             {tracks.map((track) => (
               <div className="mixer-row" key={track.id}>
@@ -213,7 +224,7 @@ export function AudioPanel({
                 {track.kind === 'audio' && (
                   <button
                     className="mixer-export"
-                    aria-label={`${t('export')} ${t(`stem.${track.role}`)}`}
+                    aria-label={t('exportSourceTrack', { name: t(`stem.${track.role}`) })}
                     onClick={() =>
                       void run(async () => {
                         await bridge.exportAudioTrack(project!, track.id);
@@ -227,6 +238,22 @@ export function AudioPanel({
               </div>
             ))}
           </div>
+          {project?.media && (
+            <AudioRegionsEditor
+              key={`${project.media.id}:${selection?.trackId}:${selection?.regionId}:${selection?.startMs}:${selection?.endMs}`}
+              project={project}
+              selection={selection}
+              selected={selected}
+              videoRef={videoRef}
+              onEdit={onEdit}
+              onExport={(id) =>
+                void run(async () => {
+                  if (await bridge.exportAudioTrack(project, id, true)) showJobs();
+                  return null;
+                })
+              }
+            />
+          )}
         </>
       )}
       <div className="settings-section">

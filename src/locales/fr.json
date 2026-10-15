@@ -139,7 +139,8 @@
     "speakerEmbeddings": "Analyse des voix par réplique",
     "speakerClustering": "Regroupement des locuteurs",
     "modelMove": "Copie et vérification des modèles",
-    "modelCommit": "Activation du nouveau dossier"
+    "modelCommit": "Activation du nouveau dossier",
+    "audioRender": "Export de la piste avec zones"
   },
   "shortcuts": "Espace : lecture · J/K/L : transport · O : original · Ctrl+S : sauvegarde · Ctrl+Z/Y : annuler/rétablir",
   "errors": {
@@ -197,7 +198,9 @@
     "MODEL_STORAGE_NESTED": "La destination ne peut pas se trouver à l’intérieur d’une installation de modèle, ni en être un parent.",
     "MODEL_STORAGE_LINK": "Une installation contient un lien symbolique ou une jonction. Déplacez-la manuellement avant de changer le dossier.",
     "MODEL_STORAGE_CHANGED": "Un fichier a changé pendant la copie. Relancez le déplacement.",
-    "MODEL_STORAGE_VERIFY_FAILED": "La copie du modèle n’a pas pu être vérifiée. Les modèles d’origine ont été conservés."
+    "MODEL_STORAGE_VERIFY_FAILED": "La copie du modèle n’a pas pu être vérifiée. Les modèles d’origine ont été conservés.",
+    "INVALID_AUDIO_REGION": "Vérifiez les timecodes : la zone doit avoir une durée positive et rester dans la piste.",
+    "AUDIO_EXPORT_FAILED": "L’export de la piste audio a échoué. Consultez les logs."
   },
   "preparingVideo": "Préparation de la vidéo…",
   "loadingVideo": "Chargement de la vidéo…",
@@ -389,5 +392,41 @@
     "qwenSmall": "Modèle officiel Base 0,6B pour le clonage vocal en BF16 ; moins de paramètres que le 1,7B. Garder un seul modèle chargé et traiter une réplique à la fois lors de l’intégration.",
     "qwenFull": "Modèle officiel Base 1,7B en BF16 pour le clonage vocal. La mémoire du moteur complet reste à mesurer ; le 0,6B et le profil GGUF sont des alternatives plus légères.",
     "qwenGguf": "Projet HaujetZhao : talker Q5_K, predictor Q8_0 et composants ONNX FP16. Conversion depuis les poids officiels, pas un simple GGUF à ouvrir dans un lecteur LLM ; le moteur hybride complet est nécessaire."
-  }
+  },
+  "allAudioSilent": "Tout rendre silencieux",
+  "allAudioAudible": "Tout rendre audible",
+  "restoreAudioRegions": "Réappliquer les zones",
+  "quickAudioHint": "Tout audible active les pistes, retire les solos et ignore temporairement leurs zones. Les volumes sont conservés. Réappliquer les zones retrouve le montage.",
+  "audioRegionsTitle": "Zones audio",
+  "audioRegionsHint": "Sélectionnez une plage avec les timecodes ou faites Maj + glisser sur une piste de la timeline. Une nouvelle zone remplace les chevauchements. Hors des zones, la piste reste audible.",
+  "regionTrack": "Piste à modifier",
+  "wholeTrackSilent": "Toute la piste silencieuse",
+  "wholeTrackAudible": "Toute la piste audible",
+  "applyTrackRegions": "Appliquer les zones de cette piste",
+  "regionStart": "Début de la zone",
+  "regionEnd": "Fin de la zone",
+  "regionFromDialogue": "Utiliser la réplique sélectionnée",
+  "regionVolume": "Volume de la zone",
+  "regionMuted": "Silencieuse",
+  "makeRegionSilent": "Rendre la zone silencieuse",
+  "makeRegionAudible": "Rendre la zone audible",
+  "isolateRegion": "N’écouter que cette zone",
+  "isolateRegionHint": "Remplace les zones de cette piste par une écoute limitée à la plage sélectionnée. Annulable avec Ctrl+Z.",
+  "saveRegion": "Enregistrer la zone",
+  "regionSaved": "Zone enregistrée. Les réglages de la piste restent prioritaires.",
+  "editRegion": "Modifier la zone {{index}}",
+  "deleteRegion": "Supprimer la zone {{index}}",
+  "exportTrackRegions": "Exporter cette piste avec les zones",
+  "regionGainHint": "Volume entendu = volume général × volume de piste × volume de zone. Une piste coupée ou exclue par un solo reste silencieuse. Les exports avec zones des pistes séparées incluent le volume de piste et les zones ; le solo et le volume général restent propres au lecteur.",
+  "selectAudioArea": "Sélectionner une zone audio (ou Maj + glisser)",
+  "timelineAudioRegion": "Zone audio {{index}} · {{name}}",
+  "modelStorageSize": "Taille du dossier",
+  "modelStorageCalculating": "Calcul en cours…",
+  "modelStorageSizeUnavailable": "Indisponible",
+  "modelStorageRefreshSize": "Actualiser la taille du dossier",
+  "modelStorageFiles": "{{count}} fichiers",
+  "modelStorageSizePartial": "calcul partiel",
+  "modelStorageSizeHint": "Somme des tailles des fichiers du dossier, sans suivre les liens et jonctions. L’espace réellement alloué peut différer.",
+  "exportSourceTrack": "Exporter le WAV source {{name}}",
+  "refresh": "Actualiser"
 }

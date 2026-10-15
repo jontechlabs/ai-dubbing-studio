@@ -4,7 +4,7 @@ export function addCharacter(project: Project, name: string): Project {
   const value = name.trim();
   if (!value) throw new Error('INVALID_CHARACTER');
   const next = structuredClone(project);
-  next.formatVersion = 3;
+  next.formatVersion = Math.max(next.formatVersion, 3);
   next.characters.push({
     id: crypto.randomUUID(),
     name: value,

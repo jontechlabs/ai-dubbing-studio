@@ -16,11 +16,11 @@ async function nativeMock(page: Page, large = false) {
     host.__replaceMedia=()=>{project.media.id+='-replacement';project.tracks.find((track:any)=>track.kind==='original').mute=true;project.revision++;emit('project-changed',structuredClone(project));};
     host.__completeModelMove=()=>{host.__modelFolder=host.__pendingModelFolder;job={...job,status:'succeeded',stage:'done',progress:1};emit('job-changed',job);};
     host.__speakerStatus={installed:true,installing:false,sizeBytes:72500000};
-    host.__completeSpeakerAnalysis=()=>{project.formatVersion=3;project.speakerAnalysis={id:'speakers',sourcePath:project.media.path,lines:project.dialogues.map(({id,startMs,endMs}:any)=>({id,startMs,endMs})),assignments:project.dialogues.map((line:any,index:number)=>({dialogueId:line.id,speaker:index%2,similarity:0.95,reason:'identified'})),clusters:[0,1].map((speaker)=>({speaker,referencePath:`characters/reference-${speaker}.wav`,durationMs:4000,referenceDialogueId:project.dialogues[speaker].id}))};project.revision++;emit('project-changed',structuredClone(project));job={...job,status:'succeeded',stage:'done',progress:1};emit('job-changed',job);};
+    host.__completeSpeakerAnalysis=()=>{project.formatVersion=Math.max(3,project.formatVersion);project.speakerAnalysis={id:'speakers',sourcePath:project.media.path,lines:project.dialogues.map(({id,startMs,endMs}:any)=>({id,startMs,endMs})),assignments:project.dialogues.map((line:any,index:number)=>({dialogueId:line.id,speaker:index%2,similarity:0.95,reason:'identified'})),clusters:[0,1].map((speaker)=>({speaker,referencePath:`characters/reference-${speaker}.wav`,durationMs:4000,referenceDialogueId:project.dialogues[speaker].id}))};project.revision++;emit('project-changed',structuredClone(project));job={...job,status:'succeeded',stage:'done',progress:1};emit('job-changed',job);};
     host.__runtimeStatus={installed:true,installing:false,devices:[{id:'cpu',name:'CPU'},{id:'cuda:0',name:'NVIDIA GPU'}],cudaVersion:'12.8',unavailableDevices:[]};
     host.__probeRuntime=()=>{job={...job,stage:'devicesCheck',progress:null,logs:['Model verified. Checking compute devices (maximum 30 seconds).']};emit('job-changed',job);};
     host.__completeRuntime=()=>{host.__runtimeStatus={installed:true,installing:false,devices:host.__probeFailed?[{id:'cpu',name:'CPU'}]:[{id:'cpu',name:'CPU'},{id:'cuda:0',name:'NVIDIA GeForce RTX 5060 Ti'}],deviceProbeWarning:host.__probeFailed?'DEVICE_PROBE_FAILED':null,cudaVersion:'12.8',unavailableDevices:[]};job={...job,status:'succeeded',stage:'done',progress:1};emit('job-changed',job);};
-    host.__completeSeparation=()=>{project.formatVersion=2;project.tracks.find((track:any)=>track.kind==='original').mute=true;for(const role of ['speech','music','sfx'])project.tracks.push({id:role,kind:'audio',role,path:`stems/run/${role}.wav`,durationMs:16000,sourcePath:project.media.path,language:'en',gain:1,mute:false,solo:false});project.revision++;emit('project-changed',structuredClone(project));job={...job,status:'succeeded',stage:'done',progress:1};emit('job-changed',job);};
+    host.__completeSeparation=()=>{project.formatVersion=Math.max(2,project.formatVersion);project.tracks.find((track:any)=>track.kind==='original').mute=true;for(const role of ['speech','music','sfx'])project.tracks.push({id:role,kind:'audio',role,path:`stems/run/${role}.wav`,durationMs:16000,sourcePath:project.media.path,language:'en',gain:1,mute:false,solo:false});project.revision++;emit('project-changed',structuredClone(project));job={id:'separation',projectId:project.id,kind:'separation',logs:[],error:null,...job,status:'succeeded',stage:'done',progress:1};emit('job-changed',job);};
     host.isTauri=true;host.__TAURI_EVENT_PLUGIN_INTERNALS__={unregisterListener:()=>{}};
     host.__TAURI_INTERNALS__={metadata:{currentWindow:{label:'main'}},convertFileSrc:(path:string)=>path.endsWith('.wav')?`/audio/${path.split('/').at(-1)}`:'/preview.mp4',transformCallback:(fn:(data:any)=>void)=>{const id=++counter;callbacks.set(id,fn);return id;},unregisterCallback:(id:number)=>callbacks.delete(id),invoke:async(command:string,args:any={})=>{
       host.__calls.push({command,args:JSON.parse(JSON.stringify(args))});
@@ -30,6 +30,9 @@ async function nativeMock(page: Page, large = false) {
       if(command==='get_waveform')return {durationMs:16000,stepMs:20,audioStreamIndex:args.trackId?0:1,peaks:Array.from({length:800},(_,i)=>0.1+(i%9)/12)};
       if(command==='audio_paths')return Object.fromEntries(project.tracks.filter((track:any)=>track.kind==='audio').map((track:any)=>[track.id,track.path]));
       if(command==='model_storage_info')return {path:host.__modelFolder||'C:/Studio/models',defaultPath:'C:/Studio/models',moving:job?.kind==='modelMove'&&job.status==='running'};
+      if(command==='model_storage_size'){if(host.__sizeError)throw Error('disk unavailable');return {path:host.__modelFolder||'C:/Studio/models',bytes:host.__modelBytes??4831838208,files:974,skipped:0,partial:false};}
+      if(command==='plugin:dialog|save')return 'C:/Exports/speech-montage.wav';
+      if(command==='export_audio_track'){job={id:'export',projectId:project.id,kind:'audioExport',status:'running',stage:'audioRender',progress:0.5,logs:[],error:null};emit('job-changed',job);return job.id;}
       if(command==='plugin:dialog|open')return 'D:/AI Models';
       if(command==='change_model_storage'){host.__pendingModelFolder=args.path;job={id:'modelMove',projectId:'',kind:'modelMove',status:'running',stage:'modelMove',progress:0.4,logs:[],error:null};emit('job-changed',job);return job.id;}
       if(command==='environment')return {platform:'windows',ffmpeg:true,ffprobe:true};
@@ -46,7 +49,7 @@ async function nativeMock(page: Page, large = false) {
       if(command==='replace_project'){if(args.expectedRevision!==project.revision)throw Error('STALE_REVISION');project={...structuredClone(args.project),revision:project.revision+1};localStorage.setItem('nativeMockProject',JSON.stringify(project));return structuredClone(project);}
       if(command==='plugin:event|listen'){listeners.set(args.event,args.handler);return args.handler;}
       if(command==='plugin:event|unlisten'||command==='plugin:resources|close')return null;
-      if(command==='plugin:updater|check')return {rid:45,currentVersion:'0.4.1',version:'0.4.2',body:'Performance et audio',rawJson:{}};
+      if(command==='plugin:updater|check')return {rid:45,currentVersion:'0.4.2',version:'0.4.3',body:'Performance et audio',rawJson:{}};
       if(command==='plugin:updater|download'){
         if(host.__downloadError)throw Error('Invalid signature');
         const channel=args.onEvent.id;callbacks.get(channel)?.({index:0,message:{event:'Started',data:{contentLength:100}}});callbacks.get(channel)?.({index:1,message:{event:'Progress',data:{chunkLength:100}}});callbacks.get(channel)?.({index:2,message:{event:'Finished'}});return 46;
@@ -84,7 +87,7 @@ test('separation preserves unsaved editing; tracks, mixer and pause are persiste
 test('GPU preference and signed update flow reject failure and save before install',async({page})=>{
   await nativeMock(page);await page.goto('/');await page.getByRole('button',{name:'Paramètres',exact:true}).click();
   await page.getByRole('combobox',{name:'Préférence GPU du lecteur'}).selectOption('performance');await expect(page.getByText('Redémarre l’application pour appliquer cette préférence.')).toBeVisible();
-  await page.getByRole('button',{name:'Rechercher une mise à jour'}).click();await expect(page.getByText('La version 0.4.2 est disponible.')).toBeVisible();
+  await page.getByRole('button',{name:'Rechercher une mise à jour'}).click();await expect(page.getByText('La version 0.4.3 est disponible.')).toBeVisible();
   await page.evaluate(()=>(window as any).__downloadError=true);await page.getByRole('button',{name:'Télécharger la mise à jour'}).click();await expect(page.getByRole('alert')).toBeVisible();
   await expect(page.getByRole('button',{name:'Installer et redémarrer'})).toHaveCount(0);await page.evaluate(()=>(window as any).__downloadError=false);
   await page.getByRole('button',{name:'Télécharger la mise à jour'}).click();await expect(page.getByText(/Téléchargement terminé, signature vérifiée/)).toBeVisible();
@@ -266,4 +269,60 @@ test('replacing a playing media element closes its graph and preserves a muted n
   await expect(page.getByRole('button',{name:'Lecture',exact:true})).toBeEnabled();expect(await page.evaluate(()=>(window as any).__oldVideo.paused&&(window as any).__oldVideo.muted)).toBe(true);
   await page.getByRole('button',{name:'Lecture',exact:true}).click();await expect(page.locator('video')).toHaveJSProperty('muted',true);await expect.poll(()=>page.evaluate(()=>(window as any).__rms())).toBeLessThan(0.000001);
   await page.getByRole('button',{name:'Activer Audio original',exact:true}).click();await expect.poll(()=>page.evaluate(()=>(window as any).__rms())).toBeGreaterThan(0.001);expect(errors).toEqual([]);
+});
+test('audio regions schedule real silence and independent gain through playback, seeking and reload',async({page})=>{
+  const errors:string[]=[];page.on('pageerror',error=>errors.push(error.message));
+  await nativeMock(page);await measureAudio(page);await page.goto('/');await page.evaluate(()=>(window as any).__completeSeparation());
+  await expect(page.locator('.track-label')).toHaveCount(7);await page.getByRole('button',{name:'Audio',exact:true}).click();
+  const panel=page.getByRole('dialog',{name:'Audio',exact:true});
+  await panel.getByRole('button',{name:'Tout rendre silencieux',exact:true}).click();
+  await page.getByRole('combobox',{name:'Piste à modifier'}).selectOption('speech');
+  await panel.getByRole('button',{name:'Activer Voix',exact:true}).click();
+  const start=page.getByRole('textbox',{name:'Début de la zone'}),end=page.getByRole('textbox',{name:'Fin de la zone'});
+  await start.fill('00:00:01.000');await end.fill('00:00:03.000');await page.getByRole('button',{name:'Rendre la zone silencieuse',exact:true}).click();
+  await start.fill('00:00:03.000');await end.fill('00:00:05.000');await page.getByRole('slider',{name:'Volume de la zone',exact:true}).fill('0.25');await page.getByRole('button',{name:'Rendre la zone audible',exact:true}).click();
+  await page.getByRole('slider',{name:'Volume de piste Voix',exact:true}).fill('0.5');
+  await page.locator('.audio-regions-editor').evaluate(element=>element.scrollIntoView({block:'start'}));
+  await page.screenshot({path:'test-results/screenshots/studio-audio-regions.png'});
+  await page.getByRole('button',{name:'Fermer',exact:true}).click();await expect(page.locator('.audio-region')).toHaveCount(2);
+  await page.locator('video').evaluate((video:HTMLVideoElement)=>{video.currentTime=0.1;});await page.getByRole('button',{name:'Lecture',exact:true}).click();
+  await expect.poll(()=>page.evaluate(()=>(window as any).__rms())).toBeGreaterThan(0.007);
+  await expect.poll(()=>page.locator('video').evaluate((video:HTMLVideoElement)=>video.currentTime)).toBeGreaterThan(1.25);
+  await expect.poll(()=>page.evaluate(()=>(window as any).__rms())).toBeLessThan(0.000001);
+  await page.locator('video').evaluate((video:HTMLVideoElement)=>{video.currentTime=3.5;});
+  await expect.poll(()=>page.evaluate(()=>(window as any).__rms())).toBeLessThan(0.003);await expect.poll(()=>page.evaluate(()=>(window as any).__rms())).toBeGreaterThan(0.0015);
+  await page.locator('video').evaluate((video:HTMLVideoElement)=>{video.currentTime=5.5;});await expect.poll(()=>page.evaluate(()=>(window as any).__rms())).toBeGreaterThan(0.007);
+  await page.locator('video').evaluate((video:HTMLVideoElement)=>{video.currentTime=2.8;video.playbackRate=2;});
+  await expect.poll(()=>page.evaluate(()=>(window as any).__rms())).toBeGreaterThan(0.0015);
+  await page.getByRole('button',{name:'Pause',exact:true}).click();await expect.poll(()=>page.evaluate(()=>(window as any).__rms())).toBeLessThan(0.000001);
+  await page.getByRole('button',{name:'Tout rendre audible',exact:true}).click();
+  await page.getByRole('button',{name:'Audio',exact:true}).click();await page.getByRole('combobox',{name:'Piste à modifier'}).selectOption('speech');await expect(page.getByRole('checkbox',{name:'Appliquer les zones de cette piste'})).not.toBeChecked();
+  await panel.getByRole('button',{name:'Réappliquer les zones',exact:true}).click();await expect(page.getByRole('checkbox',{name:'Appliquer les zones de cette piste'})).toBeChecked();
+  await page.getByRole('button',{name:'Exporter cette piste avec les zones',exact:true}).click();await expect(page.getByRole('dialog',{name:'Traitements'})).toBeVisible();
+  expect(await page.evaluate(()=>(window as any).__calls.some((call:any)=>call.command==='export_audio_track'&&call.args.edited===true))).toBe(true);
+  await page.getByRole('button',{name:'Annuler',exact:true}).click();await page.getByRole('button',{name:'Fermer',exact:true}).click();await expect(page.locator('.save-indicator')).toHaveText('Sauvegardé');
+  await page.reload();await expect(page.locator('.audio-region')).toHaveCount(2);
+  const restored=await page.evaluate(()=>JSON.parse(localStorage.getItem('nativeMockProject')!));
+  expect(restored.formatVersion).toBe(4);expect(restored.tracks.find((track:any)=>track.id==='speech')).toMatchObject({gain:0.5,regionsEnabled:true});
+  expect(errors).toEqual([]);
+});
+
+test('timeline range selection paints inside regions, validates bounds, and supports undo',async({page})=>{
+  await page.goto('/');await page.getByRole('button',{name:'Explorer l’exemple'}).click();await expect(page.getByRole('button',{name:'Lecture',exact:true})).toBeEnabled();
+  const row=page.locator('.timeline-track.audio').first();const box=await row.boundingBox();expect(box).not.toBeNull();
+  await page.keyboard.down('Shift');await page.mouse.move(box!.x+box!.width*0.15,box!.y+16);await page.mouse.down();await page.mouse.move(box!.x+box!.width*0.4,box!.y+16,{steps:8});await page.mouse.up();await page.keyboard.up('Shift');
+  await expect(page.getByRole('dialog',{name:'Audio',exact:true})).toBeVisible();await page.getByRole('button',{name:'N’écouter que cette zone',exact:true}).click();
+  await expect(page.locator('.audio-region')).toHaveCount(3);await page.getByRole('textbox',{name:'Fin de la zone'}).fill('99:00:00.000');await page.getByRole('button',{name:'Enregistrer la zone',exact:true}).click();await expect(page.getByRole('alert')).toContainText('timecodes');
+  await page.getByRole('button',{name:'Fermer',exact:true}).click();await page.keyboard.press('Control+z');await expect(page.locator('.audio-region')).toHaveCount(0);
+  await page.keyboard.press('Control+y');await expect(page.locator('.audio-region')).toHaveCount(3);
+  await page.locator('.audio-region.audible').first().click();await expect(page.getByRole('dialog',{name:'Audio',exact:true})).toBeVisible();await page.getByRole('slider',{name:'Volume de la zone'}).fill('0.4');await page.getByRole('button',{name:'Enregistrer la zone',exact:true}).click();await expect(page.locator('.audio-region.audible')).toContainText('40%');
+  await page.getByRole('button',{name:'Fermer',exact:true}).click();await expect(page.locator('.save-indicator')).toHaveText('Sauvegardé');await page.reload();await expect(page.locator('.audio-region')).toHaveCount(3);
+});
+
+test('model folder size is shown, can be refreshed and recovers from an unavailable drive',async({page})=>{
+  await nativeMock(page);await page.goto('/');await page.getByRole('button',{name:'Paramètres',exact:true}).click();await expect(page.locator('.model-storage-size')).toContainText('4,5 GiB');
+  await page.evaluate(()=>(window as any).__modelBytes=1073741824);await page.getByRole('button',{name:'Actualiser la taille du dossier'}).click();await expect(page.locator('.model-storage-size')).toContainText('1 GiB');
+  await page.evaluate(()=>(window as any).__sizeError=true);await page.getByRole('button',{name:'Actualiser la taille du dossier'}).click();await expect(page.locator('.model-storage-size')).toContainText('Indisponible');
+  await page.evaluate(()=>(window as any).__sizeError=false);await page.getByRole('button',{name:'Actualiser la taille du dossier'}).click();await expect(page.locator('.model-storage-size')).toContainText('1 GiB');
+  await page.screenshot({path:'test-results/screenshots/studio-storage-size.png'});
 });

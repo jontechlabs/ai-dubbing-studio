@@ -139,7 +139,8 @@
     "speakerEmbeddings": "Analyzing voices in subtitle lines",
     "speakerClustering": "Grouping speakers",
     "modelMove": "Copying and verifying models",
-    "modelCommit": "Activating the new folder"
+    "modelCommit": "Activating the new folder",
+    "audioRender": "Exporting edited audio track"
   },
   "shortcuts": "Space: play · J/K/L: transport · O: original · Ctrl+S: save · Ctrl+Z/Y: undo/redo",
   "errors": {
@@ -197,7 +198,9 @@
     "MODEL_STORAGE_NESTED": "The destination cannot be inside a model installation or be its parent.",
     "MODEL_STORAGE_LINK": "An installation contains a symbolic link or junction. Move it manually before changing the folder.",
     "MODEL_STORAGE_CHANGED": "A file changed during copying. Retry the move.",
-    "MODEL_STORAGE_VERIFY_FAILED": "The copied model could not be verified. Original models were preserved."
+    "MODEL_STORAGE_VERIFY_FAILED": "The copied model could not be verified. Original models were preserved.",
+    "INVALID_AUDIO_REGION": "Check the timecodes: the region must have positive duration and stay inside the track.",
+    "AUDIO_EXPORT_FAILED": "Audio track export failed. See processing logs."
   },
   "preparingVideo": "Preparing video…",
   "loadingVideo": "Loading video…",
@@ -389,5 +392,41 @@
     "qwenSmall": "Official Base 0.6B BF16 voice-cloning model, with fewer parameters than 1.7B. Plan one loaded model and one subtitle at a time during integration.",
     "qwenFull": "Official Base 1.7B BF16 voice-cloning model. Complete engine memory remains to be measured; 0.6B and the GGUF profile are lighter alternatives.",
     "qwenGguf": "HaujetZhao project: Q5_K talker, Q8_0 predictor and ONNX FP16 components. Converted from official weights; the complete hybrid engine is needed, rather than opening one GGUF in an LLM player."
-  }
+  },
+  "allAudioSilent": "Silence all",
+  "allAudioAudible": "Make all audible",
+  "restoreAudioRegions": "Reapply regions",
+  "quickAudioHint": "Make all audible enables tracks, clears solos and temporarily bypasses regions. Volumes are preserved. Reapply regions restores the edit.",
+  "audioRegionsTitle": "Audio regions",
+  "audioRegionsHint": "Choose timecodes or Shift-drag on a timeline audio track. New regions replace overlapping ranges. Outside regions, the track remains audible.",
+  "regionTrack": "Track to edit",
+  "wholeTrackSilent": "Silence whole track",
+  "wholeTrackAudible": "Make whole track audible",
+  "applyTrackRegions": "Apply this track’s regions",
+  "regionStart": "Region start",
+  "regionEnd": "Region end",
+  "regionFromDialogue": "Use selected dialogue",
+  "regionVolume": "Region volume",
+  "regionMuted": "Silent",
+  "makeRegionSilent": "Silence region",
+  "makeRegionAudible": "Make region audible",
+  "isolateRegion": "Listen only to this region",
+  "isolateRegionHint": "Replaces this track’s regions with listening limited to the selection. Undo with Ctrl+Z.",
+  "saveRegion": "Save region",
+  "regionSaved": "Region saved. Track settings retain priority.",
+  "editRegion": "Edit region {{index}}",
+  "deleteRegion": "Delete region {{index}}",
+  "exportTrackRegions": "Export this track with regions",
+  "regionGainHint": "Heard volume = master × track × region volume. Muted tracks or tracks excluded by solo remain silent. Edited exports of separated tracks include track gain and regions; solo and master volume are player settings.",
+  "selectAudioArea": "Select audio region (or Shift-drag)",
+  "timelineAudioRegion": "Audio region {{index}} · {{name}}",
+  "modelStorageSize": "Folder size",
+  "modelStorageCalculating": "Calculating…",
+  "modelStorageSizeUnavailable": "Unavailable",
+  "modelStorageRefreshSize": "Refresh folder size",
+  "modelStorageFiles": "{{count}} files",
+  "modelStorageSizePartial": "partial scan",
+  "modelStorageSizeHint": "Sum of file sizes in the folder, without following symbolic links or junctions. Actual allocated disk space may differ.",
+  "exportSourceTrack": "Export source WAV {{name}}",
+  "refresh": "Refresh"
 }

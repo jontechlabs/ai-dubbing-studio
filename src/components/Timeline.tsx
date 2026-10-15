@@ -11,9 +11,11 @@ import {
   EyeOff,
   Volume2,
   VolumeX,
+  MousePointer2,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import type { Dialogue, Project, Track } from '../domain/types';
+import type { AudioSelection, Dialogue, Project, Track } from '../domain/types';
+import { AudioQuickControls } from './AudioQuickControls';
 import { timeToX, xToTime } from '../domain/time';
 import { IconButton } from './IconButton';
 import { moveCue, type SubtitleRole } from '../domain/timing';
@@ -30,6 +32,7 @@ export const Timeline = memo(function Timeline({
   onSelect,
   onEdit,
   busy,
+  onAudioSelection,
 }: {
   project: Project | null;
   selected: Dialogue | undefined;
@@ -38,10 +41,17 @@ export const Timeline = memo(function Timeline({
   onSelect: (line: Dialogue) => void;
   onEdit: (update: (p: Project) => Project) => void;
   busy: boolean;
+  onAudioSelection: (selection: AudioSelection) => void;
 }) {
   const { t } = useTranslation();
   const scroll = useRef<HTMLDivElement>(null);
   const head = useRef<HTMLDivElement>(null);
+  const [audioTool, setAudioTool] = useState(false);
+  const [audioDrag, setAudioDrag] = useState<{
+    trackId: string;
+    anchor: number;
+    end: number;
+  } | null>(null);
   const associations = useMemo(() => {
     const source = new Map<string, Dialogue>(),
       target = new Map<string, Dialogue>(),
@@ -154,6 +164,15 @@ export const Timeline = memo(function Timeline({
     <section className="timeline-pane">
       <div className="timeline-heading">
         <div>
+          {project?.media && <AudioQuickControls project={project} onEdit={onEdit} compact />}
+          <IconButton
+            label={t('selectAudioArea')}
+            active={audioTool}
+            disabled={!project?.media || busy}
+            onClick={() => setAudioTool((value) => !value)}
+          >
+            <MousePointer2 size={15} />
+          </IconButton>
           <IconButton
             label={t('trackHeight')}
             onClick={() => setRowHeight(rowHeight === 37 ? 64 : 37)}
@@ -290,7 +309,64 @@ export const Timeline = memo(function Timeline({
               ))}
             </div>
             {tracks.map(({ key, style, track }) => (
-              <div key={key} className={`timeline-track ${style}`} style={{ height: rowHeight }}>
+              <div
+                key={key}
+                className={`timeline-track ${style} ${audioTool && track ? 'audio-selection-tool' : ''}`}
+                style={{ height: rowHeight }}
+                onPointerDown={(event) => {
+                  if (!track || busy || event.button !== 0 || (!audioTool && !event.shiftKey))
+                    return;
+                  event.preventDefault();
+                  event.stopPropagation();
+                  event.currentTarget.setPointerCapture(event.pointerId);
+                  const max = track.durationMs ?? project!.media!.durationMs;
+                  const point = xToTime(
+                    event.clientX - event.currentTarget.getBoundingClientRect().left,
+                    0,
+                    scale,
+                    max,
+                  );
+                  setAudioDrag({ trackId: track.id, anchor: point, end: point });
+                }}
+                onPointerMove={(event) => {
+                  if (
+                    !track ||
+                    audioDrag?.trackId !== track.id ||
+                    !event.currentTarget.hasPointerCapture(event.pointerId)
+                  )
+                    return;
+                  event.stopPropagation();
+                  const max = track.durationMs ?? project!.media!.durationMs;
+                  setAudioDrag({
+                    ...audioDrag,
+                    end: xToTime(
+                      event.clientX - event.currentTarget.getBoundingClientRect().left,
+                      0,
+                      scale,
+                      max,
+                    ),
+                  });
+                }}
+                onPointerUp={(event) => {
+                  if (
+                    !audioDrag ||
+                    !track ||
+                    !event.currentTarget.hasPointerCapture(event.pointerId)
+                  )
+                    return;
+                  event.stopPropagation();
+                  event.currentTarget.releasePointerCapture(event.pointerId);
+                  if (Math.abs(audioDrag.end - audioDrag.anchor) >= 50)
+                    onAudioSelection({
+                      mediaId: project!.media!.id,
+                      trackId: track.id,
+                      startMs: Math.min(audioDrag.anchor, audioDrag.end),
+                      endMs: Math.max(audioDrag.anchor, audioDrag.end),
+                    });
+                  setAudioDrag(null);
+                }}
+                onPointerCancel={() => setAudioDrag(null)}
+              >
                 {style === 'video' || style === 'audio' ? (
                   <div
                     className="media-strip"
@@ -410,6 +486,55 @@ export const Timeline = memo(function Timeline({
                       </button>
                     );
                   })
+                )}
+                {track &&
+                  (track.regions ?? [])
+                    .filter(
+                      (region) =>
+                        region.endMs * scale >= scrollLeft &&
+                        region.startMs * scale <= scrollLeft + viewport,
+                    )
+                    .map((region, index) => (
+                      <button
+                        key={region.id}
+                        className={`audio-region ${region.mute || region.gain === 0 ? 'silent' : 'audible'} ${track.regionsEnabled === false ? 'bypassed' : ''}`}
+                        style={{
+                          left: region.startMs * scale,
+                          width: Math.max(3, (region.endMs - region.startMs) * scale),
+                        }}
+                        title={`${formatTime(region.startMs)} → ${formatTime(region.endMs)} · ${region.mute ? t('regionMuted') : Math.round(region.gain * 100) + '%'}`}
+                        aria-label={t('timelineAudioRegion', { name: t(key), index: index + 1 })}
+                        disabled={busy}
+                        onPointerDown={(event) => {
+                          if (!audioTool && !event.shiftKey) event.stopPropagation();
+                        }}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          if (audioTool || event.shiftKey) return;
+                          onAudioSelection({
+                            mediaId: project!.media!.id,
+                            trackId: track.id,
+                            regionId: region.id,
+                            startMs: region.startMs,
+                            endMs: region.endMs,
+                          });
+                        }}
+                      >
+                        {region.mute || region.gain === 0 ? (
+                          <VolumeX size={10} />
+                        ) : (
+                          Math.round(region.gain * 100) + '%'
+                        )}
+                      </button>
+                    ))}
+                {track && audioDrag?.trackId === track.id && (
+                  <div
+                    className="audio-range-selection"
+                    style={{
+                      left: Math.min(audioDrag.anchor, audioDrag.end) * scale,
+                      width: Math.max(2, Math.abs(audioDrag.end - audioDrag.anchor) * scale),
+                    }}
+                  />
                 )}
               </div>
             ))}

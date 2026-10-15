@@ -38,6 +38,20 @@ export interface Dialogue {
   warnings: string[];
   selectedGenerationIds: Record<string, string>;
 }
+export interface AudioRegion {
+  id: string;
+  startMs: number;
+  endMs: number;
+  gain: number;
+  mute: boolean;
+}
+export interface AudioSelection {
+  mediaId: string;
+  trackId: string;
+  startMs: number;
+  endMs: number;
+  regionId?: string;
+}
 export interface Track {
   id: string;
   kind: 'video' | 'original' | 'subtitle' | 'audio';
@@ -50,6 +64,8 @@ export interface Track {
   mute: boolean;
   solo: boolean;
   gain: number;
+  regions?: AudioRegion[];
+  regionsEnabled?: boolean;
 }
 export interface VoiceReference {
   id: string;

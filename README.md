@@ -4,25 +4,25 @@ A local desktop workspace for preparing video dubbing: review bilingual subtitle
 
 Built with **Tauri 2, React, TypeScript and Rust**. English and French interface. Dark and light themes.
 
-**v0.4.1 — Phase 4 development preview.** Adds local AI voice grouping over subtitle intervals, editable characters, portable voice references, model installation, automatic SRT synchronization on import and timeline mute/solo/subtitle visibility controls. Character names and uncertain voice assignments are reviewed manually. Dubbing voice generation remains Phase 5 work.
+**v0.4.2 — Phase 4 development preview.** Adds local AI voice grouping over subtitle intervals, editable characters, portable voice references, model installation, automatic SRT synchronization on import and timeline mute/solo/subtitle visibility controls. Character names and uncertain voice assignments are reviewed manually. Dubbing voice generation remains Phase 5 work.
 
-[Windows downloads](https://github.com/jontechlabs/ai-dubbing-studio/releases/tag/v0.4.1) · [User guide](docs/GETTING-STARTED.md) · [Build instructions](docs/BUILDING.md) · [Français](README.fr.md)
+[Windows downloads](https://github.com/jontechlabs/ai-dubbing-studio/releases/tag/v0.4.2) · [User guide](docs/GETTING-STARTED.md) · [Build instructions](docs/BUILDING.md) · [Français](README.fr.md)
 
 ![Studio with bilingual dialogue, video preview, text editor and timeline](docs/screenshots/studio.png)
 
 *Actual French React interface running in the browser preview with the bundled synthetic example. This is not a captured Windows Tauri window. The example has synthetic sound and does not contain generated dubbing.*
 
-## Changes in 0.4.1
+## Changes in 0.4.2
 
-Configurable model folder with verified migration of existing installations, an embedded-video mute safeguard, explicit speaker enable/disable controls, and a preparatory GGUF/FP8/BF16 catalogue for 16 GB GPUs. TTS variants are not yet executable. [Storage and variant guide (French)](docs/MODELS-AND-STORAGE.md).
+Audio regions with independent silence and volume, timeline range selection, fast global/track commands and edited WAV export for separated tracks. Model settings show the folder's file size and a refresh control. [Audio region guide (French)](docs/AUDIO-REGIONS.md) · [Storage and variants](docs/MODELS-AND-STORAGE.md).
 
 ## Windows downloads
 
 | Package | Purpose |
 | --- | --- |
-| [Windows x64 setup](https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.4.1/AI-Dubbing-Studio-0.4.1-Setup.exe) | NSIS installer for the current user, with English/French installer interface |
-| [Portable ZIP](https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.4.1/AI-Dubbing-Studio-Windows-Portable.zip) | Extract the whole folder and launch `AI Dubbing Studio.exe` |
-| [SHA-256 checksums](https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.4.1/SHA256SUMS.txt) | Verify the setup and ZIP downloads |
+| [Windows x64 setup](https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.4.2/AI-Dubbing-Studio-0.4.2-Setup.exe) | NSIS installer for the current user, with English/French installer interface |
+| [Portable ZIP](https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.4.2/AI-Dubbing-Studio-Windows-Portable.zip) | Extract the whole folder and launch `AI Dubbing Studio.exe` |
+| [SHA-256 checksums](https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.4.2/SHA256SUMS.txt) | Verify the setup and ZIP downloads |
 
 Target: **Windows 10/11 x64**, with **Microsoft Edge WebView2 Runtime**. FFmpeg and FFprobe are included. Python, CUDA and AI model downloads are not required for editing and playback. Installation may need Internet access if WebView2 is missing; local project editing does not require a cloud account.
 
@@ -69,7 +69,7 @@ Read the [Phase 3 guide](docs/PHASE-3.md) for runtime/model installation, GPU pr
 
 ![GPU preference and verified update installation](docs/screenshots/updates.png)
 
-*Actual React interface in browser tests with simulated native IPC, GPU names and a future 0.4.1 update. These screenshots do not show a real available 0.4.1 release or a native Tauri window. The model itself was separately tested with real CPU inference on Windows.*
+*Actual React interface in browser tests with simulated native IPC, GPU names and a future 0.4.2 update. These screenshots do not show a real available 0.4.2 release or a native Tauri window. The model itself was separately tested with real CPU inference on Windows.*
 
 ![Final Bandit device check with a bounded wait](docs/screenshots/bandit-check.png)
 

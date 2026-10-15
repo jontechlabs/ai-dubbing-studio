@@ -1,3 +1,4 @@
+mod audio_edit;
 mod audio_files;
 mod domain;
 mod downloads;
@@ -42,6 +43,13 @@ type Shared = Arc<Core>;
 #[tauri::command]
 fn model_storage_info(core: State<'_, Shared>) -> Result<model_storage::Info, String> {
     model_storage::info(&core)
+}
+#[tauri::command]
+async fn model_storage_size(core: State<'_, Shared>) -> Result<model_storage::Size, String> {
+    let path = model_storage::root(&core);
+    tauri::async_runtime::spawn_blocking(move || model_storage::directory_size(&path))
+        .await
+        .map_err(io_error)?
 }
 #[tauri::command]
 fn change_model_storage(
@@ -463,10 +471,15 @@ fn audio_paths(
 }
 #[tauri::command]
 async fn export_audio_track(
+    app: tauri::AppHandle,
     core: State<'_, Shared>,
     id: String,
     path: String,
-) -> Result<(), String> {
+    edited: Option<bool>,
+) -> Result<Option<String>, String> {
+    if edited.unwrap_or(false) {
+        return audio_edit::enqueue(core.inner().clone(), app, &id, PathBuf::from(path)).map(Some);
+    }
     let (input, root) = {
         let session = core.session.lock().map_err(io_error)?;
         let s = session.as_ref().ok_or("NO_PROJECT")?;
@@ -496,7 +509,7 @@ async fn export_audio_track(
         std::io::copy(&mut input, &mut temporary).map_err(io_error)?;
         temporary.as_file().sync_all().map_err(io_error)?;
         temporary.persist(output).map_err(io_error)?;
-        Ok(())
+        Ok(None)
     })
     .await
     .map_err(io_error)?
@@ -720,6 +733,7 @@ pub fn run() {
         })
         .invoke_handler(tauri::generate_handler![
             model_storage_info,
+            model_storage_size,
             change_model_storage,
             create_project,
             open_project,

@@ -2,7 +2,7 @@
 
 ## Install or extract
 
-Get the Windows x64 setup or portable ZIP from [v0.4.1 releases](https://github.com/jontechlabs/ai-dubbing-studio/releases/tag/v0.4.1). These are unsigned development builds; the final native GUI is not fully qualified. See [validation](../VALIDATION.md).
+Get the Windows x64 setup or portable ZIP from [v0.4.2 releases](https://github.com/jontechlabs/ai-dubbing-studio/releases/tag/v0.4.2). These are unsigned development builds; the final native GUI is not fully qualified. See [validation](../VALIDATION.md).
 
 - **Setup:** run the NSIS installer. It installs for the current user and provides French/English language selection.
 - **Portable:** extract the entire ZIP, then run `AI Dubbing Studio.exe` inside the extracted folder. Keep `binaries/` and `demo/` beside the executable. The app uses local application data for job records; “portable” describes the executable package, not a zero-footprint mode.
@@ -12,7 +12,7 @@ WebView2 Runtime must be available. FFmpeg/FFprobe are bundled. No AI runtime or
 To verify a download in PowerShell, compare its value with the release's `SHA256SUMS.txt`:
 
 ```powershell
-Get-FileHash .\AI-Dubbing-Studio-0.4.1-Setup.exe -Algorithm SHA256
+Get-FileHash .\AI-Dubbing-Studio-0.4.2-Setup.exe -Algorithm SHA256
 Get-FileHash .\AI-Dubbing-Studio-Windows-Portable.zip -Algorithm SHA256
 ```
 
@@ -77,6 +77,10 @@ The export dialog provides source/translated SRT and diagnostics. A finished dub
 
 Diagnostics may contain local paths. Review them before sharing an issue report.
 
-## Dossier des modèles et variantes (0.4.1)
+## Dossier des modèles et variantes (0.4.2)
 
 Consultez le [guide du stockage, des pistes et des profils GGUF/FP8](MODELS-AND-STORAGE.md). Le haut-parleur remplace M : allumé = activé, barré = coupé. Les profils TTS sont des préférences préparatoires pour les phases 5 et 6.
+
+## Audio regions (0.4.2)
+
+Shift-drag on an audio timeline track to edit a range, or open Audio → Audio regions. Track and region volumes are independent. Quick commands can silence everything or bypass regions temporarily. See the [illustrated audio guide](AUDIO-REGIONS.md). Model storage shows the sum of file sizes; Refresh recalculates it without blocking the interface.

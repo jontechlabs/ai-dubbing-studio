@@ -1,8 +1,8 @@
-# Validation - Phase 4, 14 October 2026
+# Validation - Phase 4, 15 October 2026
 
-## v0.4.1 automated checks
+## v0.4.2 automated checks
 
-The local frontend build, strict TypeScript, ESLint, Prettier, Rust Clippy with -D warnings and rustfmt pass. Suites contain 27 TypeScript tests, 34 Rust tests on Linux (33 on Windows), 21 Playwright scenarios and 10 Python device/process/grouping tests (92 locally, 91 on Windows).
+The local frontend build, strict TypeScript, ESLint, Prettier, Rust Clippy with -D warnings and rustfmt pass. Suites contain 33 TypeScript tests, 39 Rust tests on Linux (38 on Windows), 24 Playwright scenarios and 10 Python device/process/grouping tests (106 locally, 105 on Windows).
 
 Domain tests retain Phase 2 synchronization/editing coverage and add overlapping/large cue lookup, mixer mute/solo/master gain, legacy original-track creation, unsaved-edit rebase over audio jobs and integer split timestamps. Rust integration checks run actual FFmpeg media, validate real stem WAV structure/sample counts, preserve mixer asset metadata across reload, reject traversal and refuse separation without a runtime without modifying the project. Existing import/subtitle/waveform/cancellation/recovery checks remain.
 
@@ -26,7 +26,7 @@ The [Windows workflow](https://github.com/jontechlabs/ai-dubbing-studio/actions/
 
 An earlier unsigned executable was blocked by Smart App Control. Final native Tauri GUI, installer/uninstaller, effective WebView2 GPU adapter and complete native update/restart remain unqualified. Mocked IPC does not establish those outcomes. Windows rendering preference is an OS request for this executable; it does not guarantee a specific WebView2/decoder adapter.
 
-Screenshots show actual French React UI in browser testing, with simulated native devices/stems/update metadata. The displayed 0.4.2 update is a test scenario, not a released version. Screenshots are not native Tauri captures. The demo has synthetic audio and no generated dubbing.
+Screenshots show actual French React UI in browser testing, with simulated native devices/stems/update metadata. The displayed 0.4.3 update is a test scenario, not a released version. Screenshots are not native Tauri captures. The demo has synthetic audio and no generated dubbing.
 
 Format 1 projects open normally. Adding separated tracks uses format 2, rejected by old app versions. Split text allocation is approximate; SRT synchronization uses timings and does not align speech. Final mix/MKV export and voice generation remain future phases.
 
@@ -66,3 +66,11 @@ Chrome Web Audio tests tap actual output gains with analyser nodes: audible orig
 
 GGUF/FP8/BF16 catalogue selections persist and reject variants belonging to a different engine. UI checks expose provenance, the complete required engine, the source-reported FP8 memory figure and the 24 GB BF16 warning. Catalogue entries are preparation metadata: no TTS weights or third-party runtime are installed, and no quantized TTS inference is claimed.
 An additional real Windows relocation check copied all 974 files of the installed speaker Python/model environment to a different path containing spaces, verified every SHA-256, ran the exact embedded interpreter probe and completed real ONNX/VAD inference with the same two repeated synthetic voices. This checks runtime portability after copying on the same physical drive; the production migration transaction and source cleanup are exercised separately by Rust tests.
+
+## Audio regions and model folder size (0.4.2)
+
+Six domain scenarios exercise non-overlapping replacement and fragments, half-open endpoints, master/track/region gain multiplication, mute/solo priority, bypass/restore without losing volumes, invalid ranges, format-4 persistence and rebase over media jobs. Three Chrome scenarios use actual Web Audio sample energy for live silence and reduced section gain, seeking/rate changes/reload, range selection/undo/redo, edited-export IPC, and folder-size refresh/unavailable-drive recovery. Native IPC is simulated in browser tests.
+
+Four Rust audio checks render a real PCM16 stereo WAV with exact boundary samples and preserved source/duration, preserve an old export on cancellation, validate format-4 roundtrip/reject downgrade and overlap, and run the production export job with a captured settings snapshot and source-overwrite protection. Folder enumeration checks nested file totals, missing folders and link-cycle exclusion on Linux. File-size scans read metadata, skip links/junctions, run in a blocking worker and report partial totals after a bounded scan. Values represent logical file bytes, not filesystem allocated clusters or deduplicated storage.
+
+Native Tauri GUI, WebView2 on the user’s computer and complete installer/update interaction remain unqualified on this development host. These checks do not establish sample-accurate synchronization of separate media decoders on every Windows audio device. No final mixed/MKV export or TTS generation is claimed.

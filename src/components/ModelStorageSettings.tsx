@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { FolderOpen, HardDrive, LoaderCircle } from 'lucide-react';
+import { FolderOpen, HardDrive, LoaderCircle, RefreshCw } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { Job } from '../domain/types';
 import * as bridge from '../services/bridge';
@@ -11,15 +11,19 @@ export function ModelStorageSettings({
   jobs: Job[];
   onError: (message: string) => void;
 }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [info, setInfo] = useState<bridge.ModelStorageInfo | null>(null);
   const [path, setPath] = useState('');
   const [working, setWorking] = useState(false);
+  const [size, setSize] = useState<bridge.ModelStorageSize | null>(null);
+  const [sizeError, setSizeError] = useState(false);
+  const [refresh, setRefresh] = useState(0);
+  const [sizeLoading, setSizeLoading] = useState(false);
   const job = jobs.find((job) => job.kind === 'modelMove');
   const completion = jobs
     .filter(
       (job) =>
-        job.kind === 'modelMove' &&
+        ['modelMove', 'runtime', 'speakerInstall'].includes(job.kind) &&
         ['succeeded', 'failed', 'cancelled', 'interrupted'].includes(job.status),
     )
     .map((job) => `${job.id}:${job.status}`)
@@ -43,12 +47,69 @@ export function ModelStorageSettings({
       disposed = true;
     };
   }, [completion, onError]);
+  useEffect(() => {
+    if (!bridge.native) return;
+    let disposed = false;
+    setSizeLoading(true);
+    setSizeError(false);
+    setSize(null);
+    void bridge
+      .modelStorageSize()
+      .then((value) => {
+        if (!disposed) setSize(value);
+      })
+      .catch(() => {
+        if (!disposed) setSizeError(true);
+      })
+      .finally(() => {
+        if (!disposed) setSizeLoading(false);
+      });
+    return () => {
+      disposed = true;
+    };
+  }, [completion, refresh]);
+  const sizeText = size
+    ? (() => {
+        const units = ['B', 'KiB', 'MiB', 'GiB', 'TiB'];
+        const index =
+          size.bytes === 0 ? 0 : Math.min(4, Math.floor(Math.log(size.bytes) / Math.log(1024)));
+        return `${new Intl.NumberFormat(i18n.resolvedLanguage, { maximumFractionDigits: 2 }).format(size.bytes / 1024 ** index)} ${units[index]}`;
+      })()
+    : '';
   return (
     <section className="settings-section model-storage">
       <h3>
         <HardDrive size={16} /> {t('modelStorageTitle')}
       </h3>
       <p className="panel-description">{t('modelStorageHint')}</p>
+      <div className="model-storage-size" role="status">
+        <strong>
+          {t('modelStorageSize')}:{' '}
+          {sizeLoading
+            ? t('modelStorageCalculating')
+            : sizeError
+              ? t('modelStorageSizeUnavailable')
+              : !bridge.native
+                ? '—'
+                : `${size?.partial ? '≥ ' : ''}${sizeText}`}
+        </strong>
+        <button
+          className="text-button"
+          aria-label={t('modelStorageRefreshSize')}
+          disabled={!bridge.native || sizeLoading || busy}
+          onClick={() => setRefresh((value) => value + 1)}
+        >
+          <RefreshCw size={14} />
+          {t('refresh')}
+        </button>
+        {size && (
+          <small>
+            {t('modelStorageFiles', { count: size.files })}
+            {size.partial ? ` · ${t('modelStorageSizePartial')}` : ''}
+          </small>
+        )}
+        <small>{t('modelStorageSizeHint')}</small>
+      </div>
       <label className="field">
         <span>{t('modelStoragePath')}</span>
         <input

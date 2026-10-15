@@ -1,7 +1,7 @@
 import { useEffect, useState, type RefObject } from 'react';
 import { Check, Download, FileText, LoaderCircle, Terminal, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import type { EnvironmentInfo, Job, Project } from '../domain/types';
+import type { AudioSelection, EnvironmentInfo, Job, Project } from '../domain/types';
 import { APP_VERSION } from '../domain/project';
 import type { Panel } from './Header';
 import { ImportPanel } from './ImportPanel';
@@ -41,6 +41,7 @@ export function Panels({
   videoRef,
   selectedId,
   onPanel,
+  audioSelection,
 }: {
   panel: Panel;
   project: Project | null;
@@ -63,6 +64,7 @@ export function Panels({
   videoRef: RefObject<HTMLVideoElement | null>;
   selectedId: string | null;
   onPanel: (panel: Panel) => void;
+  audioSelection: AudioSelection | null;
 }) {
   const { t } = useTranslation();
   const title =
@@ -157,6 +159,9 @@ export function Panels({
         )}
         {panel === 'audio' && (
           <AudioPanel
+            selection={audioSelection?.mediaId === project?.media?.id ? audioSelection : null}
+            selected={project?.dialogues.find((line) => line.id === selectedId)}
+            videoRef={videoRef}
             project={project}
             jobs={jobs}
             run={run}
