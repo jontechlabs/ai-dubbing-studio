@@ -55,7 +55,9 @@ export function VoiceVariantSettings({
           <small>
             {t('variantEngine')}: {selected.engine}
           </small>
-          <p className="panel-description">{t('variantNotIntegrated')}</p>
+          <p className="panel-description">
+            {t(selected.id === 'cosy3-official' ? 'ttsVariantReady' : 'variantNotIntegrated')}
+          </p>
           {selected.reportedVramGb && (
             <p className={selected.reportedVramGb > 16 ? 'warning' : 'panel-description'}>
               {t('variantReportedVram', { gb: selected.reportedVramGb })}

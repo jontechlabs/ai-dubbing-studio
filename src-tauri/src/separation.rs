@@ -244,6 +244,7 @@ pub(crate) async fn process<R: tauri::Runtime>(
             _ = jobs::cancelled(flag) => { let _=child.kill().await; let _=child.wait().await; let _=logger.await; return Err("CANCELLED".into()); },
             line = lines.next_line() => { let Some(line)=line.map_err(io_error)? else { break }; jobs::update(core,app,key,|job| {
                 if let Ok(value)=serde_json::from_str::<serde_json::Value>(&line) {
+                    if value.get("progress").is_some_and(|progress|progress.is_null()) { job.progress=None; }
                     if let Some(progress)=value["progress"].as_f64() { job.progress=Some(progress.clamp(0.0,1.0)); }
                     if let Some(stage)=value["stage"].as_str() { job.stage=stage.into(); }
                     if let Some(error)=value["error"].as_str() { worker_error=Some(error.to_owned()); job.logs.push(line); }
@@ -296,6 +297,8 @@ pub fn install<R: tauri::Runtime>(
             "runtime",
             "separation",
             "speakerInstall",
+            "ttsInstall",
+            "tts",
             "speakers",
             "modelMove",
         ]
@@ -370,6 +373,8 @@ pub fn enqueue<R: tauri::Runtime>(
             "runtime",
             "separation",
             "speakerInstall",
+            "ttsInstall",
+            "tts",
             "speakers",
             "modelMove",
         ]

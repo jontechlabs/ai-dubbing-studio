@@ -1,7 +1,14 @@
 import { useEffect, useState, type RefObject } from 'react';
 import { Check, Download, FileText, LoaderCircle, Terminal, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import type { AudioSelection, EnvironmentInfo, Job, Project } from '../domain/types';
+import type {
+  AudioSelection,
+  Dialogue,
+  EnvironmentInfo,
+  Generation,
+  Job,
+  Project,
+} from '../domain/types';
 import { APP_VERSION } from '../domain/project';
 import type { Panel } from './Header';
 import { ImportPanel } from './ImportPanel';
@@ -15,6 +22,7 @@ import { AudioPanel } from './AudioPanel';
 import { PlaybackMetrics } from './PlaybackMetrics';
 import { CharactersPanel } from './CharactersPanel';
 import { ModelsPanel } from './ModelsPanel';
+import { DubPanel } from './DubPanel';
 import { ModelStorageSettings } from './ModelStorageSettings';
 import * as bridge from '../services/bridge';
 import { downloadText } from '../services/browserStore';
@@ -42,6 +50,9 @@ export function Panels({
   selectedId,
   onPanel,
   audioSelection,
+  onPlayGeneration,
+  onOriginal,
+  activeGenerationId,
 }: {
   panel: Panel;
   project: Project | null;
@@ -65,6 +76,9 @@ export function Panels({
   selectedId: string | null;
   onPanel: (panel: Panel) => void;
   audioSelection: AudioSelection | null;
+  onPlayGeneration: (generation: Generation) => void;
+  onOriginal: (line: Dialogue) => void;
+  activeGenerationId: string | null;
 }) {
   const { t } = useTranslation();
   const title =
@@ -105,6 +119,22 @@ export function Panels({
         </div>
         {panel === 'import' && (
           <ImportPanel run={run} onClose={close} onStarted={showJobs} onError={onError} />
+        )}
+        {panel === 'dub' && project && (
+          <DubPanel
+            project={project}
+            line={project.dialogues.find((d) => d.id === selectedId)}
+            jobs={jobs}
+            onEdit={onEdit}
+            snapshot={snapshot}
+            onStarted={showJobs}
+            onError={onError}
+            onModels={() => onPanel('models')}
+            onCharacters={() => onPanel('characters')}
+            onOriginal={onOriginal}
+            onPlay={onPlayGeneration}
+            activeGenerationId={activeGenerationId}
+          />
         )}
         {panel === 'alignment' && project && (
           <AlignmentPanel
@@ -358,7 +388,15 @@ function JobsPanel({ jobs, onError }: { jobs: Job[]; onError: (s: string) => voi
               {t('cancel')}
             </button>
           )}
-          {['import', 'separation', 'runtime', 'speakerInstall', 'speakers'].includes(job.kind) &&
+          {[
+            'import',
+            'separation',
+            'runtime',
+            'speakerInstall',
+            'speakers',
+            'ttsInstall',
+            'tts',
+          ].includes(job.kind) &&
             ['failed', 'cancelled', 'interrupted'].includes(job.status) && (
               <button
                 className="text-button"

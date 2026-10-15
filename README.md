@@ -4,9 +4,15 @@ A local desktop workspace for preparing video dubbing: review bilingual subtitle
 
 Built with **Tauri 2, React, TypeScript and Rust**. English and French interface. Dark and light themes.
 
-**v0.4.2 — Phase 4 development preview.** Adds local AI voice grouping over subtitle intervals, editable characters, portable voice references, model installation, automatic SRT synchronization on import and timeline mute/solo/subtitle visibility controls. Character names and uncertain voice assignments are reviewed manually. Dubbing voice generation remains Phase 5 work.
+**v0.5.0 — Phase 5 development preview.** Generate individual dubbing lines with official **CosyVoice3 0.5B RL**. Includes verified local installation, NVIDIA CUDA 12.8, character/current-line voice references, preserved alternative takes, A/B listening, selection, review and individual WAV export. [Dubbing guide (French)](docs/PHASE-5.md).
 
-[Windows downloads](https://github.com/jontechlabs/ai-dubbing-studio/releases/tag/v0.4.2) · [User guide](docs/GETTING-STARTED.md) · [Build instructions](docs/BUILDING.md) · [Français](README.fr.md)
+Install from **Models**, then choose **Dub** on a dialogue. For Japanese reference speech and French output, use cross-language cloning without a reference transcript. Model files total 5.05 GiB; runtime dependencies are additional. CUDA devices execute a kernel and FP16 matrix multiplication before being offered. GPU generation on an RTX 5060 Ti remains to be confirmed on that hardware; real Windows inference validation is documented in [VALIDATION](VALIDATION.md).
+
+![Dubbing takes, A/B comparison and review](docs/screenshots/dubbing-line.png)
+
+*Actual React browser UI with simulated native results/devices. These are not RTX performance measurements. WAV take listening is independent from video playback in this phase.*
+
+[Windows downloads](https://github.com/jontechlabs/ai-dubbing-studio/releases/tag/v0.5.0) · [User guide](docs/GETTING-STARTED.md) · [Build instructions](docs/BUILDING.md) · [Français](README.fr.md)
 
 ![Studio with bilingual dialogue, video preview, text editor and timeline](docs/screenshots/studio.png)
 
@@ -20,9 +26,9 @@ Audio regions with independent silence and volume, timeline range selection, fas
 
 | Package | Purpose |
 | --- | --- |
-| [Windows x64 setup](https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.4.2/AI-Dubbing-Studio-0.4.2-Setup.exe) | NSIS installer for the current user, with English/French installer interface |
-| [Portable ZIP](https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.4.2/AI-Dubbing-Studio-Windows-Portable.zip) | Extract the whole folder and launch `AI Dubbing Studio.exe` |
-| [SHA-256 checksums](https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.4.2/SHA256SUMS.txt) | Verify the setup and ZIP downloads |
+| [Windows x64 setup](https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.5.0/AI-Dubbing-Studio-0.5.0-Setup.exe) | NSIS installer for the current user, with English/French installer interface |
+| [Portable ZIP](https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.5.0/AI-Dubbing-Studio-Windows-Portable.zip) | Extract the whole folder and launch `AI Dubbing Studio.exe` |
+| [SHA-256 checksums](https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.5.0/SHA256SUMS.txt) | Verify the setup and ZIP downloads |
 
 Target: **Windows 10/11 x64**, with **Microsoft Edge WebView2 Runtime**. FFmpeg and FFprobe are included. Python, CUDA and AI model downloads are not required for editing and playback. Installation may need Internet access if WebView2 is missing; local project editing does not require a cloud account.
 
@@ -40,7 +46,7 @@ These are **unsigned development builds**. Smart App Control blocked an earlier 
 - Inspect audio waveforms computed from the chosen original track and separated stems, with local cache, progress and cancellation.
 - Identify anonymous voice groups locally with Silero VAD and 3D-Speaker CAMPPlus over existing subtitle intervals. Review/apply proposals, rename characters and correct individual or range assignments.
 - Import or extract multiple voice references per character; edit their transcripts and default reference.
-- Install the speaker runtime/model from Models; save a preferred future TTS engine.
+- Install the speaker runtime/model and official CosyVoice3 RL from Models. Generate, compare, select and review individual dubbing takes; retain preferences for future engines.
 - Toggle audio mute/solo and subtitle visibility directly from the timeline; preserve player subtitle preferences.
 - Optionally synchronize an imported SRT against the other SRT automatically; ambiguous matches preserve the imported file.
 - Separate speech/music/effects locally using Bandit v2 Multilingual; install an isolated Python runtime and verified model from Audio. Choose CPU or a detected NVIDIA CUDA device.
@@ -69,7 +75,7 @@ Read the [Phase 3 guide](docs/PHASE-3.md) for runtime/model installation, GPU pr
 
 ![GPU preference and verified update installation](docs/screenshots/updates.png)
 
-*Actual React interface in browser tests with simulated native IPC, GPU names and a future 0.4.2 update. These screenshots do not show a real available 0.4.2 release or a native Tauri window. The model itself was separately tested with real CPU inference on Windows.*
+*Actual React interface in browser tests with simulated native IPC, GPU names and a future update scenario. These are not native Tauri captures. Bandit and CosyVoice3 have separate real Windows CPU inference checks.*
 
 ![Final Bandit device check with a bounded wait](docs/screenshots/bandit-check.png)
 

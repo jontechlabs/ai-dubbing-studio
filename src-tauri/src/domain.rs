@@ -61,6 +61,8 @@ pub struct Dialogue {
     pub status: String,
     pub warnings: Vec<String>,
     pub selected_generation_ids: HashMap<String, String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub voice_settings: Option<crate::tts::Options>,
 }
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -202,7 +204,7 @@ impl Project {
         }
     }
     pub fn validate(&self) -> Result<(), String> {
-        if ![1, 2, 3, 4].contains(&self.format_version) {
+        if ![1, 2, 3, 4, 5].contains(&self.format_version) {
             return Err("UNSUPPORTED_PROJECT_VERSION".into());
         }
         if self.id.is_empty() || self.name.trim().is_empty() {
@@ -257,6 +259,12 @@ impl Project {
         }
         let mut ids = std::collections::HashSet::new();
         for d in &self.dialogues {
+            if let Some(settings) = &d.voice_settings {
+                if self.format_version < 5 {
+                    return Err("INVALID_TTS_REQUEST".into());
+                }
+                settings.validate()?;
+            }
             if d.end_ms <= d.start_ms
                 || !ids.insert(&d.id)
                 || d.source_cue_ids
@@ -374,6 +382,7 @@ impl Project {
                 }
             }
         }
+        crate::tts::validate_generations(self)?;
         Ok(())
     }
 }

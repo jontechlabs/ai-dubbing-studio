@@ -9,6 +9,9 @@ export function useShortcuts(actions: {
   backward: () => void;
   pause: () => void;
   forward: () => void;
+  dub?: () => void;
+  regenerate?: () => void;
+  validate?: () => void;
 }) {
   useEffect(() => {
     const listener = (event: KeyboardEvent) => {
@@ -32,6 +35,9 @@ export function useShortcuts(actions: {
               j: actions.backward,
               k: actions.pause,
               l: actions.forward,
+              t: actions.dub,
+              r: actions.regenerate,
+              v: actions.validate,
             } as Record<string, () => void>
           )[key];
       if (action) {

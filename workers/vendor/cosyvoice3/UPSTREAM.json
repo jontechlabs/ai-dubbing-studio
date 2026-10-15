@@ -1,0 +1,14 @@
+{
+  "cosyvoice": {
+    "url": "https://github.com/QwenAudio/CosyVoice",
+    "revision": "074ca6dc9e80a2f424f1f74b48bdd7d3fea531cc"
+  },
+  "matcha": {
+    "url": "https://github.com/shivammehta25/Matcha-TTS",
+    "revision": "dd9105b34bf2be2230f4aa1e4769fb586a3c824e"
+  },
+  "adapterChanges": [
+    "matcha/utils/__init__.py: omit eager imports of unused training/download helpers. Neural inference code and checkpoints are unchanged.",
+    "workers/cosyvoice_adapter.py filters the pinned YAML to inference keys before the official HyperPyYAML loader; training objects and YAML seed resets are excluded."
+  ]
+}

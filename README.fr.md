@@ -1,10 +1,16 @@
-# AI Dubbing Studio — phases 1–4
+# AI Dubbing Studio — phases 1–5
 
-[Version anglaise et captures de l’interface](README.md) · [Téléchargements Windows](https://github.com/jontechlabs/ai-dubbing-studio/releases/tag/v0.4.2)
+[Version anglaise et captures de l’interface](README.md) · [Téléchargements Windows](https://github.com/jontechlabs/ai-dubbing-studio/releases/tag/v0.5.0)
 
 Studio desktop local de travail texte, voix et vidéo. Tauri 2, React, TypeScript strict et Rust.
 
-**v0.4.2** ajoute l’identification locale des locuteurs par IA, les personnages modifiables, les références vocales, le panneau Modèles, le calage automatique à l’import d’un SRT et les commandes haut-parleur/S/œil dans la timeline. Les propositions de voix restent à vérifier et à renommer manuellement. [Guide de la phase 4](docs/PHASE-4.md).
+**v0.5.0** ajoute le doublage par réplique avec **CosyVoice3 0.5B RL** : installation locale vérifiée, profil CUDA 12.8 pour NVIDIA RTX, références vocales, plusieurs essais conservés, comparaison A/B, sélection, validation et export WAV individuel. [Guide de la phase 5](docs/PHASE-5.md).
+
+Installez CosyVoice3 depuis **Modèles**, puis cliquez sur **Doubler** dans une réplique. Pour une référence japonaise et une traduction française, utilisez le mode **Entre langues**, sans transcription de la référence. Les poids prennent environ 5,05 GiB sur disque ; Python et les dépendances s'ajoutent. Le calcul FP16 CUDA est contrôlé avant de proposer un GPU. La génération sur une RTX 5060 Ti reste à confirmer sur le matériel de l'utilisateur.
+
+![Essais de doublage et comparaison](docs/screenshots/dubbing-line.png)
+
+Capture de l'interface React réelle avec résultats et périphériques simulés. Les tests d'inférence Windows réels sont décrits dans [VALIDATION](VALIDATION.md).
 
 ## Nouveautés du correctif 0.4.2
 
@@ -12,7 +18,7 @@ Zones silencieuses ou audibles et volume indépendant par zone, sélection dans 
 
 ## Utiliser le studio
 
-La version Windows contient FFmpeg et FFprobe. Bandit v2 Multilingual est disponible après installation optionnelle du runtime et du modèle depuis Audio. Les moteurs de voix et la transcription restent prévus pour les phases suivantes.
+La version Windows contient FFmpeg et FFprobe. Bandit v2 Multilingual et CosyVoice3 sont disponibles après installation optionnelle depuis l'application. La transcription et les autres moteurs de voix restent prévus pour les phases suivantes.
 
 1. Importer une vidéo et choisir la langue source, la langue cible et la piste audio.
 2. Choisir le dossier parent du projet. Le studio crée un dossier `Nom.dubproject` et copie le média.
@@ -25,9 +31,9 @@ L'exemple fourni utilise une vidéo et un son synthétiques. Il ne contient pas 
 
 ## Personnages, modèles et commandes de pistes
 
-Installez le modèle de locuteurs depuis Modèles, lancez l’identification depuis Personnages, puis appliquez et corrigez les groupes proposés. Le bouton Ajouter une traduction ouvre l’éditeur même sans sous-titre cible. SRT traduit permet d’importer un fichier ou une piste MKV et propose le calage automatique. M coupe une piste, S l’isole et l’œil affiche/masque les sous-titres. « Voix non générée » concerne le doublage audio, prévu en phase 5.
+Installez le modèle de locuteurs depuis Modèles, lancez l’identification depuis Personnages, puis appliquez et corrigez les groupes proposés. Le bouton Ajouter une traduction ouvre l’éditeur même sans sous-titre cible. SRT traduit permet d’importer un fichier ou une piste MKV et propose le calage automatique. M coupe une piste, S l’isole et l’œil affiche/masque les sous-titres. **Doubler** ouvre la génération CosyVoice3.
 
-Les références et préférences utilisent le format de projet 3, refusé par les anciennes versions. Les modèles de voix TTS ne sont pas encore installables ; leur préférence est enregistrable pour préparer le projet. Il reste 3 phases. Voir le guide pour les limites de l’identification et de la synchronisation.
+Les références et préférences utilisent le format de projet 3, les zones audio le format 4 et les essais vocaux le format 5. Les anciennes versions refusent les formats plus récents. Fish, Qwen et les variantes GGUF sont encore préparatoires. Il reste 2 phases.
 
 ## Fonctions présentes
 
@@ -50,7 +56,7 @@ Les références et préférences utilisent le format de projet 3, refusé par l
 - Aperçu fluide 720p/30 fps, images clés rapprochées et suppression du recalcul des blocs à chaque image.
 - Préférence GPU Windows, compteurs de lecture et mises à jour signées depuis Paramètres.
 
-La phase 2 est disponible. Le calage compare les timings et refuse les propositions ambiguës ; les blocs non associés restent inchangés. Il ne recale pas encore les sous-titres sur les voix. Consultez le [guide détaillé de la phase 2](docs/PHASE-2.md). La séparation est disponible en phase 3 ; la transcription et les voix IA restent prévues dans les phases suivantes. Le conteneur MKV et les exports audio finaux arriveront en phase 7.
+La phase 2 est disponible. Le calage compare les timings et refuse les propositions ambiguës ; les blocs non associés restent inchangés. Il ne recale pas encore les sous-titres sur les voix. Consultez le [guide détaillé de la phase 2](docs/PHASE-2.md). La séparation est disponible en phase 3 ; la génération CosyVoice3 est disponible en phase 5 et la transcription reste à intégrer. Le conteneur MKV et les exports audio finaux arriveront en phase 7.
 
 ![Studio de la phase 2](docs/screenshots/studio.png)
 
@@ -58,11 +64,11 @@ La phase 2 est disponible. Le calage compare les timings et refuse les propositi
 
 Captures de l’interface réelle en aperçu navigateur, avec média synthétique.
 
-Consultez les guides de [phase 3](docs/PHASE-3.md) et [phase 4](docs/PHASE-4.md). Il reste trois phases : premier moteur de voix (5), autres moteurs/gestion des modèles (6), mix et export MKV final (7).
+Consultez les guides de [phase 3](docs/PHASE-3.md), [phase 4](docs/PHASE-4.md) et [phase 5](docs/PHASE-5.md). Il reste deux phases : autres moteurs/gestion des modèles (6), puis mix et export MKV final (7). L'écoute des essais WAV est indépendante de la vidéo dans cette version.
 
 ## Raccourcis
 
-Espace : lecture/pause. O : lire l'original de la réplique. J : retour temporel. K : pause. L : lecture puis accélération. Ctrl+S : sauvegarde. Ctrl+Z / Ctrl+Y : undo/redo. Les raccourcis de transport restent inactifs pendant une saisie.
+Espace : lecture/pause. O : lire l'original. T : écouter le doublage sélectionné. R : ouvrir les réglages de doublage. V : valider l'essai sélectionné. J : retour temporel. K : pause. L : lecture puis accélération. Ctrl+S : sauvegarde. Ctrl+Z / Ctrl+Y : undo/redo. Les raccourcis restent inactifs pendant une saisie.
 
 ## Développement
 

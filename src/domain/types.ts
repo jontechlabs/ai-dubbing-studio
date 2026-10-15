@@ -37,6 +37,39 @@ export interface Dialogue {
   status: 'ungenerated' | 'generated' | 'review' | 'validated' | 'error';
   warnings: string[];
   selectedGenerationIds: Record<string, string>;
+  voiceSettings?: VoiceSettings;
+}
+export interface VoiceSettings {
+  device: string;
+  referenceMode: 'character' | 'current' | 'custom';
+  referenceId: string | null;
+  mode: 'zeroShot' | 'crossLingual';
+  speed: number;
+  seed: number;
+}
+export interface Generation {
+  kind: 'tts';
+  id: string;
+  dialogueId: string;
+  providerId: string;
+  modelId: string;
+  path: string;
+  createdAt: string;
+  sourcePath: string | null;
+  startMs: number;
+  endMs: number;
+  text: string;
+  language: string;
+  characterId: string | null;
+  durationMs: number;
+  sampleRate: number;
+  options: VoiceSettings;
+  referenceTranscript: string;
+  referenceId?: string | null;
+  device: string;
+  deviceName: string;
+  peakVramMb: number;
+  inputHash: string;
 }
 export interface AudioRegion {
   id: string;
@@ -117,7 +150,7 @@ export interface Project {
   speakerAnalysis?: SpeakerAnalysis | null;
   modelPreferences?: { ttsProviderId: string | null; voiceVariantId?: string | null };
   subtitleDisplay?: 'off' | 'source' | 'target' | 'both';
-  generations: unknown[];
+  generations: (Generation | { id: string; kind?: string; [key: string]: unknown })[];
   pronunciation: Record<string, string>;
 }
 export interface Job {

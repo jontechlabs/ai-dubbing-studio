@@ -48,6 +48,10 @@ pub struct PersistedJob {
     pub speaker_install: bool,
     #[serde(default)]
     pub speaker_request: Option<crate::speakers::Request>,
+    #[serde(default)]
+    pub tts_install: Option<bool>,
+    #[serde(default)]
+    pub tts_request: Option<crate::tts::Request>,
 }
 #[derive(Clone, Serialize, Deserialize)]
 pub struct SeparationRequest {
@@ -92,6 +96,8 @@ pub fn create<R: tauri::Runtime>(
                     runtime_cuda: None,
                     speaker_install: false,
                     speaker_request: None,
+                    tts_install: None,
+                    tts_request: None,
                 },
                 cancel: Arc::new(AtomicBool::new(false)),
                 paused: Arc::new(AtomicBool::new(false)),

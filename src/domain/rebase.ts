@@ -9,12 +9,37 @@ export function rebaseProject(base: Project, local: Project, incoming: Project):
     'languages',
     'sourceCues',
     'targetCues',
-    'dialogues',
     'pronunciation',
     'modelPreferences',
     'subtitleDisplay',
   ] as const)
     if (changed(base[key], local[key])) Object.assign(next, { [key]: structuredClone(local[key]) });
+  if (changed(base.dialogues, local.dialogues))
+    next.dialogues = local.dialogues.map((line) => {
+      const before = base.dialogues.find((d) => d.id === line.id),
+        server = incoming.dialogues.find((d) => d.id === line.id);
+      if (!server || !before) return structuredClone(line);
+      return {
+        ...structuredClone(line),
+        selectedGenerationIds: changed(before.selectedGenerationIds, line.selectedGenerationIds)
+          ? line.selectedGenerationIds
+          : server.selectedGenerationIds,
+        status:
+          changed(before.status, line.status) &&
+          (!changed(before.selectedGenerationIds, server.selectedGenerationIds) ||
+            changed(before.selectedGenerationIds, line.selectedGenerationIds))
+            ? line.status
+            : server.status,
+      };
+    });
+  if (changed(base.generations, local.generations)) {
+    const localIds = new Set(local.generations.map((g) => g.id)),
+      previousIds = new Set(base.generations.map((g) => g.id));
+    next.generations = next.generations.filter((g) => !previousIds.has(g.id) || localIds.has(g.id));
+    for (const g of local.generations)
+      if (!next.generations.some((item) => item.id === g.id))
+        next.generations.push(structuredClone(g));
+  }
   if (changed(base.characters, local.characters)) {
     const original = new Map(base.characters.map((character) => [character.id, character]));
     const localIds = new Set(local.characters.map((character) => character.id));

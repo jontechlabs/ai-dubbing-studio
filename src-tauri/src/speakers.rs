@@ -60,6 +60,8 @@ fn busy(core: &Core) -> bool {
                     "runtime",
                     "separation",
                     "speakerInstall",
+                    "ttsInstall",
+                    "tts",
                     "speakers",
                     "reference",
                     "modelMove",
@@ -150,7 +152,7 @@ pub fn install<R: tauri::Runtime>(
     });
     Ok(output)
 }
-fn audio_source(project: &Project, root: &Path) -> Result<(PathBuf, u32), String> {
+pub(crate) fn audio_source(project: &Project, root: &Path) -> Result<(PathBuf, u32), String> {
     if let Some(track) = project.tracks.iter().find(|track| {
         track.role.as_deref() == Some("speech")
             && track.source_path == project.media.as_ref().map(|media| media.path.clone())

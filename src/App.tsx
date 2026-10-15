@@ -7,7 +7,9 @@ import { Header, type Panel } from './components/Header';
 import { Panels } from './components/Panels';
 import { Player } from './components/Player';
 import { Timeline } from './components/Timeline';
-import type { AudioSelection, Dialogue } from './domain/types';
+import type { AudioSelection, Dialogue, Generation } from './domain/types';
+import { selectedGeneration, reviewGeneration } from './domain/tts';
+import { useGenerationAudio } from './hooks/useGenerationAudio';
 import { useProject } from './hooks/useProject';
 import { useShortcuts } from './hooks/useShortcuts';
 import { useTransport } from './hooks/useTransport';
@@ -50,6 +52,13 @@ export default function App() {
         ['import', 'subtitles'].includes(job.kind) && ['queued', 'running'].includes(job.status),
     );
   const transport = useTransport(studio.project, selected, padding, studio.setError);
+  const generationAudio = useGenerationAudio(
+    transport.videoRef,
+    transport.url ?? undefined,
+    transport.volume,
+    studio.setError,
+  );
+  const { stop: stopGeneration } = generationAudio;
   const { seek: seekVideo } = transport;
   const close = useCallback(() => setPanel(null), []);
   const closeSubtitles = useCallback(
@@ -58,14 +67,14 @@ export default function App() {
   );
   const showJobs = useCallback(() => setPanel('jobs'), []);
   const showCharacters = useCallback(() => setPanel('characters'), []);
-  const showModels = useCallback(() => setPanel('models'), []);
   const showAlignment = useCallback(() => setPanel('alignment'), []);
   const select = useCallback(
     (line: Dialogue) => {
+      stopGeneration();
       setSelectedId(line.id);
       seekVideo(Math.max(0, line.startMs - padding));
     },
-    [padding, seekVideo],
+    [padding, seekVideo, stopGeneration],
   );
   const importSubtitles = useCallback((role: 'source' | 'target') => {
     setSubtitleRole(role);
@@ -85,11 +94,39 @@ export default function App() {
     if (next) select(next);
   };
   const original = () => {
+    generationAudio.stop();
     if (selected) transport.playLine(selected);
     else transport.toggle();
   };
+  const openDub = (line: Dialogue) => {
+    select(line);
+    setPanel('dub');
+  };
+  const playGeneration = (generation: Generation) => {
+    if (generationAudio.active === generation.id) {
+      generationAudio.stop();
+      return;
+    }
+    const line = studio.project?.dialogues.find((d) => d.id === generation.dialogueId);
+    if (line) select(line);
+    generationAudio.play(generation);
+  };
+  const playDub = (line: Dialogue) => {
+    const generation = studio.project && selectedGeneration(studio.project, line);
+    if (generation) playGeneration(generation);
+    else openDub(line);
+  };
   useShortcuts({
     toggle: transport.toggle,
+    dub: () => {
+      if (selected) playDub(selected);
+    },
+    regenerate: () => {
+      if (selected) openDub(selected);
+    },
+    validate: () => {
+      if (selected && !busy) studio.edit((p) => reviewGeneration(p, selected.id, true));
+    },
     original,
     save: () => {
       void studio.save();
@@ -174,7 +211,8 @@ export default function App() {
             onImport={importSubtitles}
             onEdit={studio.edit}
             onCharacters={showCharacters}
-            onModels={showModels}
+            onDub={openDub}
+            onPlayDub={playDub}
             onAlignment={showAlignment}
             onTranslation={editTranslation}
             busy={busy}
@@ -270,6 +308,9 @@ export default function App() {
         </div>
       </main>
       <footer className="statusbar">
+        {generationAudio.active && (
+          <button onClick={generationAudio.stop}>{t('ttsStopListening')}</button>
+        )}
         <div>
           <ShieldCheck size={12} />
           <span>{t('local')}</span>
@@ -288,6 +329,12 @@ export default function App() {
         </button>
       </footer>
       <Panels
+        activeGenerationId={generationAudio.active}
+        onPlayGeneration={playGeneration}
+        onOriginal={(line) => {
+          generationAudio.stop();
+          transport.playLine(line);
+        }}
         audioSelection={audioSelection}
         panel={panel}
         project={studio.project}

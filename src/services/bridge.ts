@@ -8,6 +8,37 @@ import { browserStore, downloadText, pickBrowserFile } from './browserStore';
 import { audioPeaks, type Waveform } from '../domain/waveform';
 
 export const native = isTauri();
+export interface TtsStatus {
+  installed: boolean;
+  installing: boolean;
+  sizeBytes: number;
+  inventory: {
+    devices: { id: string; name: string }[];
+    unavailableDevices?: { id: string; name: string; reason: string }[];
+    cudaVersion?: string | null;
+    warning?: string | null;
+  };
+}
+export function ttsStatus() {
+  return invoke<TtsStatus>('tts_status');
+}
+export function installTtsRuntime(cuda: boolean) {
+  return invoke<string>('install_tts_runtime', { cuda });
+}
+export function generateLine(lineId: string, options: import('../domain/types').VoiceSettings) {
+  return invoke<string>('generate_line', { lineId, options });
+}
+export async function generationUrl(id: string) {
+  if (!native) throw Error('DESKTOP_REQUIRED');
+  return convertFileSrc(await invoke<string>('generation_path', { id }));
+}
+export async function exportGeneration(id: string) {
+  const path = await save({
+    defaultPath: `doublage-${id.slice(0, 8)}.wav`,
+    filters: [{ name: 'WAV', extensions: ['wav'] }],
+  });
+  if (path) await invoke('export_generation', { id, path });
+}
 export interface ModelStorageInfo {
   path: string;
   defaultPath: string;

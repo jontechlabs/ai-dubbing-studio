@@ -1,7 +1,8 @@
 import type { Project } from './types';
 import { alignCues } from './subtitles';
 import { validVoiceVariant } from './modelVariants';
-export const APP_VERSION = '0.4.2';
+import { validVoiceSettings } from './tts';
+export const APP_VERSION = '0.5.0';
 
 export function blankProject(name = 'Untitled', source = 'ja', target = 'fr'): Project {
   const now = new Date().toISOString();
@@ -91,7 +92,8 @@ export function validateProject(value: unknown): Project {
   const preferences = project.modelPreferences;
   if (preferences && !validVoiceVariant(preferences.ttsProviderId, preferences.voiceVariantId))
     throw new Error('INVALID_PROJECT');
-  if (![1, 2, 3, 4].includes(project.formatVersion)) throw new Error('UNSUPPORTED_PROJECT_VERSION');
+  if (![1, 2, 3, 4, 5].includes(project.formatVersion))
+    throw new Error('UNSUPPORTED_PROJECT_VERSION');
   if (
     project.subtitleDisplay &&
     !['off', 'source', 'target', 'both'].includes(project.subtitleDisplay)
@@ -207,5 +209,63 @@ export function validateProject(value: unknown): Project {
       !Array.isArray(project.media.streams))
   )
     throw new Error('INVALID_PROJECT');
+  const generations = new Set<string>();
+  for (const generation of project.generations) {
+    if (generation.kind !== 'tts') continue;
+    if (
+      !validVoiceSettings(generation.options) ||
+      !Number.isSafeInteger(generation.startMs) ||
+      !Number.isSafeInteger(generation.endMs) ||
+      typeof generation.startMs !== 'number' ||
+      typeof generation.endMs !== 'number' ||
+      generation.endMs <= generation.startMs ||
+      generation.sampleRate !== 24000 ||
+      typeof generation.referenceTranscript !== 'string'
+    )
+      throw Error('INVALID_GENERATION');
+    if (
+      project.formatVersion < 5 ||
+      !generation.id ||
+      generations.has(generation.id) ||
+      typeof generation.path !== 'string' ||
+      !generation.path.startsWith('generations/') ||
+      generation.path.includes('..') ||
+      generation.path.includes('\\') ||
+      generation.path.includes(':') ||
+      typeof generation.durationMs !== 'number' ||
+      !Number.isSafeInteger(generation.durationMs) ||
+      generation.durationMs <= 0 ||
+      generation.durationMs > 120000 ||
+      !generation.dialogueId ||
+      !generation.language ||
+      typeof generation.text !== 'string' ||
+      !generation.inputHash
+    )
+      throw Error('INVALID_GENERATION');
+    generations.add(generation.id);
+  }
+  for (const line of project.dialogues) {
+    if (
+      line.voiceSettings &&
+      (project.formatVersion < 5 ||
+        !['character', 'current', 'custom'].includes(line.voiceSettings.referenceMode) ||
+        !['zeroShot', 'crossLingual'].includes(line.voiceSettings.mode) ||
+        !Number.isFinite(line.voiceSettings.speed) ||
+        line.voiceSettings.speed < 0.5 ||
+        line.voiceSettings.speed > 2 ||
+        !Number.isInteger(line.voiceSettings.seed) ||
+        line.voiceSettings.seed < 0 ||
+        line.voiceSettings.seed > 4294967295 ||
+        !/^(auto|cpu|cuda:\d{1,2})$/.test(line.voiceSettings.device))
+    )
+      throw Error('INVALID_TTS_REQUEST');
+    for (const [language, id] of Object.entries(line.selectedGenerationIds))
+      if (
+        !project.generations.some(
+          (g) => g.id === id && g.dialogueId === line.id && g.language === language,
+        )
+      )
+        throw Error('INVALID_GENERATION');
+  }
   return project;
 }

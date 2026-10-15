@@ -14,6 +14,7 @@ mod separation;
 mod smoke;
 mod speakers;
 mod subtitles;
+mod tts;
 mod waveform;
 pub fn smoke_test(path: &std::path::Path) -> Result<(), String> {
     smoke::run(path)
@@ -40,6 +41,84 @@ pub struct Core {
     model_dir: Mutex<PathBuf>,
 }
 type Shared = Arc<Core>;
+#[tauri::command]
+async fn tts_status(app: tauri::AppHandle, core: State<'_, Shared>) -> Result<tts::Status, String> {
+    tts::status(core.inner().clone(), app).await
+}
+#[tauri::command]
+fn install_tts_runtime(
+    app: tauri::AppHandle,
+    core: State<'_, Shared>,
+    cuda: bool,
+) -> Result<String, String> {
+    tts::install(core.inner().clone(), app, cuda)
+}
+#[tauri::command]
+fn generate_line(
+    app: tauri::AppHandle,
+    core: State<'_, Shared>,
+    line_id: String,
+    options: tts::Options,
+) -> Result<String, String> {
+    tts::enqueue(core.inner().clone(), app, line_id, options)
+}
+#[tauri::command]
+fn generation_path(core: State<'_, Shared>, id: String) -> Result<String, String> {
+    let session = core.session.lock().map_err(io_error)?;
+    let s = session.as_ref().ok_or("NO_PROJECT")?;
+    let generation = s
+        .project
+        .generations
+        .iter()
+        .find(|g| g["id"] == id)
+        .ok_or("INVALID_GENERATION")?;
+    Ok(project::asset(
+        &s.root,
+        generation["path"].as_str().ok_or("INVALID_GENERATION")?,
+    )?
+    .to_string_lossy()
+    .into_owned())
+}
+#[tauri::command]
+async fn export_generation(
+    core: State<'_, Shared>,
+    id: String,
+    path: String,
+) -> Result<(), String> {
+    let core = core.inner().clone();
+    tauri::async_runtime::spawn_blocking(move || {
+        let session = core.session.lock().map_err(io_error)?;
+        let s = session.as_ref().ok_or("NO_PROJECT")?;
+        let generation = s
+            .project
+            .generations
+            .iter()
+            .find(|g| g["id"] == id)
+            .ok_or("INVALID_GENERATION")?;
+        let source = project::asset(
+            &s.root,
+            generation["path"].as_str().ok_or("INVALID_GENERATION")?,
+        )?;
+        let output = PathBuf::from(path);
+        let parent = output
+            .parent()
+            .ok_or("INVALID_PATH")?
+            .canonicalize()
+            .map_err(io_error)?;
+        if parent.starts_with(&s.root) && parent != s.root.join("exports") {
+            return Err("INVALID_PATH".into());
+        }
+        if output.exists() && output.canonicalize().map_err(io_error)? == source {
+            return Err("INVALID_PATH".into());
+        }
+        project::atomic_write(
+            &parent.join(output.file_name().ok_or("INVALID_PATH")?),
+            &std::fs::read(source).map_err(io_error)?,
+        )
+    })
+    .await
+    .map_err(io_error)?
+}
 #[tauri::command]
 fn model_storage_info(core: State<'_, Shared>) -> Result<model_storage::Info, String> {
     model_storage::info(&core)
@@ -596,6 +675,21 @@ fn retry_job(app: tauri::AppHandle, core: State<'_, Shared>, id: String) -> Resu
     if record.speaker_install {
         return speakers::install(core.inner().clone(), app);
     }
+    if let Some(cuda) = record.tts_install {
+        return tts::install(core.inner().clone(), app, cuda);
+    }
+    if let Some(request) = record.tts_request {
+        let session = core.session.lock().map_err(io_error)?;
+        let s = session.as_ref().ok_or("NO_PROJECT")?;
+        if s.root != request.root
+            || s.project.id != request.project_id
+            || tts::fingerprint(&s.project, &request.line_id)? != request.fingerprint
+        {
+            return Err("STALE_REVISION".into());
+        }
+        drop(session);
+        return tts::enqueue(core.inner().clone(), app, request.line_id, request.options);
+    }
     if let Some(request) = record.speaker_request {
         let session = core.session.lock().map_err(io_error)?;
         let s = session.as_ref().ok_or("NO_PROJECT")?;
@@ -732,6 +826,11 @@ pub fn run() {
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
+            tts_status,
+            install_tts_runtime,
+            generate_line,
+            generation_path,
+            export_generation,
             model_storage_info,
             model_storage_size,
             change_model_storage,

@@ -15,6 +15,7 @@ import { dialogueText } from '../domain/subtitles';
 import { formatTime } from '../domain/time';
 import type { Dialogue, Project } from '../domain/types';
 import { assignCharacter } from '../domain/characters';
+import { selectedGeneration, staleGeneration } from '../domain/tts';
 
 function DialoguesPane({
   project,
@@ -25,9 +26,10 @@ function DialoguesPane({
   busy,
   onEdit,
   onCharacters,
-  onModels,
   onAlignment,
   onTranslation,
+  onDub,
+  onPlayDub,
 }: {
   project: Project | null;
   selectedId: string | null;
@@ -37,9 +39,10 @@ function DialoguesPane({
   busy: boolean;
   onEdit: (update: (project: Project) => Project) => void;
   onCharacters: () => void;
-  onModels: () => void;
   onAlignment: () => void;
   onTranslation: (line: Dialogue) => void;
+  onDub: (line: Dialogue) => void;
+  onPlayDub: (line: Dialogue) => void;
 }) {
   const { t } = useTranslation();
   const [search, setSearch] = useState('');
@@ -55,7 +58,11 @@ function DialoguesPane({
     const target = new Map(project.targetCues.map((cue) => [cue.id, cue.text]));
     return project.dialogues.filter(
       (d) =>
-        (!review || d.warnings.length > 0 || d.status === 'review') &&
+        (!review ||
+          d.warnings.length > 0 ||
+          d.status === 'review' ||
+          (selectedGeneration(project, d) &&
+            staleGeneration(project, d, selectedGeneration(project, d)!))) &&
         [
           ...d.sourceCueIds.map((id) => source.get(id)),
           ...d.targetCueIds.map((id) => target.get(id)),
@@ -151,8 +158,9 @@ function DialoguesPane({
                       onEdit((p) => assignCharacter(p, [line.id], characterId))
                     }
                     onCharacters={onCharacters}
-                    onModels={onModels}
                     onTranslation={() => onTranslation(line)}
+                    onDub={() => onDub(line)}
+                    onPlayDub={() => onPlayDub(line)}
                   />
                 </div>
               );
@@ -177,8 +185,9 @@ function DialogueCard({
   onPlay,
   onCharacter,
   onCharacters,
-  onModels,
   onTranslation,
+  onDub,
+  onPlayDub,
 }: {
   project: Project;
   line: Dialogue;
@@ -188,10 +197,13 @@ function DialogueCard({
   onPlay: () => void;
   onCharacter: (id: string | null) => void;
   onCharacters: () => void;
-  onModels: () => void;
   onTranslation: () => void;
+  onDub: () => void;
+  onPlayDub: () => void;
 }) {
   const { t } = useTranslation();
+  const generation = selectedGeneration(project, line);
+  const stale = !!generation && staleGeneration(project, line, generation);
   return (
     <article className={`dialogue-card ${selected ? 'selected' : ''}`} onClick={onSelect}>
       <button
@@ -260,7 +272,15 @@ function DialogueCard({
         </div>
       </div>
       <div className="cue-text target-text">
-        <button disabled title={t('noDub')} aria-label={t('translated')}>
+        <button
+          disabled={!generation}
+          title={t(generation ? 'ttsListenDub' : 'noDub')}
+          aria-label={t('translated')}
+          onClick={(event) => {
+            event.stopPropagation();
+            onPlayDub();
+          }}
+        >
           <Play size={12} />
         </button>
         <div>
@@ -285,23 +305,29 @@ function DialogueCard({
       <div className="card-footer">
         <button
           className="status"
-          title={t('voiceStatusHint')}
+          title={t('ttsOpenHint')}
           onClick={(event) => {
             event.stopPropagation();
-            onModels();
+            onDub();
           }}
         >
           <span className="status-dot" />
-          {t(line.status)}
+          {t(stale ? 'review' : line.status)}
         </button>
         {line.warnings.length > 0 && (
           <span className="warning" title={t('alignment')}>
             <AlertTriangle size={13} />
           </span>
         )}
-        <button disabled title={t('futureTts')}>
+        <button
+          title={t('ttsOpenHint')}
+          onClick={(event) => {
+            event.stopPropagation();
+            onDub();
+          }}
+        >
           <RefreshCw size={12} />
-          {t('regenerate')}
+          {t(generation ? 'regenerate' : 'ttsDubLine')}
         </button>
       </div>
     </article>

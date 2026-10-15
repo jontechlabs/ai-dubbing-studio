@@ -384,6 +384,8 @@ pub fn change<R: tauri::Runtime>(
                 "runtime",
                 "separation",
                 "speakerInstall",
+                "ttsInstall",
+                "tts",
                 "speakers",
                 "modelMove",
             ]

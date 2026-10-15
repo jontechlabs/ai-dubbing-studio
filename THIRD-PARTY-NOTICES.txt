@@ -1,5 +1,22 @@
 AI Dubbing Studio
 
+CosyVoice3 0.5B RL
+Official source: https://github.com/QwenAudio/CosyVoice
+Revision: 074ca6dc9e80a2f424f1f74b48bdd7d3fea531cc, Apache-2.0.
+Matcha-TTS source: https://github.com/shivammehta25/Matcha-TTS
+Revision: dd9105b34bf2be2230f4aa1e4769fb586a3c824e, MIT.
+Source and licenses: workers/vendor/cosyvoice3. UPSTREAM.json records adapter changes.
+Only inference YAML keys are instantiated; eager training-helper imports are omitted.
+Neural model code and checkpoint tensors are unchanged.
+Official model revision: 29e01c4e8d000f4bcd70751be16fa94bf3d85a18 at
+https://huggingface.co/FunAudioLLM/Fun-CosyVoice3-0.5B-2512
+RL LLM, flow, vocoder, tokenizer and speaker weights are downloaded on request, not bundled.
+Pure Python OpenAI Whisper 20231117 (MIT) and ANTLR runtime 4.9.3 (BSD-3-Clause)
+wheels built from their published source distributions are bundled with their license metadata.
+Whisper supplies reference mel feature extraction here; no Whisper transcription weights are bundled.
+Python, Torch, Torchaudio and other dependencies are downloaded from hash-locked upstream files;
+their wheel distributions retain their respective licenses and notices.
+
 FFmpeg and FFprobe are independent local command-line programs.
 Windows build: Gyan.dev FFmpeg essentials release 9.0.2.
 Build distribution: https://www.gyan.dev/ffmpeg/builds/

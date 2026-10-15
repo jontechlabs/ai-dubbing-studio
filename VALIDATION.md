@@ -1,4 +1,16 @@
-# Validation - Phase 4, 15 October 2026
+# Validation - Phase 5, 15 October 2026
+
+## v0.5.0 CosyVoice3
+
+Suites contain 38 TypeScript tests, 42 Rust/Linux tests (41 Windows), 27 Chrome scenarios and 13 Python tests: 120 locally, 119 on Windows. See the Windows workflow for the build commit result.
+
+The official RL model set (5,427,042,285 bytes), pinned CosyVoice and Matcha code successfully generated a French 24 kHz mono PCM16 WAV on Windows from a synthetic SAPI speech reference. The CPU runtime produced 2.96 seconds. A fresh Python 3.12.10 installation created solely by downloading, SHA-256 checking and extracting the locked Windows wheels reports Torch/Torchaudio 2.8.0 and CUDA 12.8. The same production adapter, run on CPU in that CUDA environment, produced a distinct 2.56-second WAV with another seed and speed. No media upload occurred. These establish model/runtime integration and valid output, not subjective voice quality or accuracy across arbitrary clips.
+
+The runtime manifest locks 101 common wheels plus CPU/CUDA Torch/audio variants. Platform-specific SoundFile wheels include libsndfile. The inference adapter excludes training-only YAML objects and seed resets, and Matcha avoids eager training-helper imports. Neural inference code and checkpoint tensors remain unchanged. No pip resolution or system Python is used by application installation.
+
+Three new Rust tests cover input/reference validation and snapshot changes, refusal without a runtime before creating jobs, and production generation orchestration with a Python protocol fixture: distinct output paths, format-5 reload, exact PCM structure, cancellation with a partial output and preservation of previous audio. The fixture does not run neural inference; separate real-engine checks above complement it. Five domain tests cover pronunciation isolation, take selection/removal/review, stale-output refusal, settings serialization and rebase over unsaved edits. Three browser scenarios cover CUDA installation preference, device/reference choice, multiple takes, A/B controls, validation, playback/export IPC, stale outputs, deletion and reload. Native IPC and GPU results in browser screenshots are simulated.
+
+The development host has AMD graphics and a remote display adapter, not an RTX 5060 Ti. Actual RTX CUDA generation, FP16 quality/VRAM use and full native GUI/install/update interaction remain unqualified here. Device detection executes CUDA kernels and FP16 matrix multiplication before offering a GPU. Each generation unloads afterwards; Bandit/TTS share a processing gate. WAV listening is independent of video playback. Full scene mixing/export remains Phase 7 work.
 
 ## v0.4.2 automated checks
 

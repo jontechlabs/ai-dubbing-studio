@@ -1,4 +1,6 @@
-# Modèles, stockage et GPU de 16 Go — v0.4.1
+# Modèles, stockage et GPU de 16 Go — v0.5.0
+
+**CosyVoice3 0.5B RL officiel est maintenant installable et utilisable.** Voir le [guide de la phase 5](PHASE-5.md) pour le profil CUDA 12.8, la génération et les références. Son environnement est inclus dans le déplacement du stockage et dans le compteur de taille. Les autres moteurs et les conversions GGUF ci-dessous restent préparatoires.
 
 ## Changer le dossier des modèles
 
@@ -24,11 +26,11 @@ Cette commande remplace M, dont l’état actif signifiait auparavant « mute »
 
 ## Variantes adaptées à une carte de 16 Go
 
-Dans **Modèles**, choisissez le moteur prévu puis **Variante du modèle prévue**. Le choix est sauvegardé avec le projet. **Ce catalogue prépare les phases 5 et 6 : les moteurs TTS et leurs variantes ne sont pas encore installables ni utilisables dans v0.4.1.** Bandit et l’identification des locuteurs restent les moteurs opérationnels.
+Dans **Modèles**, choisissez le **Moteur préféré pour le projet** puis la **Variante préférée**. La variante officielle CosyVoice3 RL est utilisable. **Fish, Qwen et les conversions GGUF restent préparatoires pour la phase 6.** Le choix seul ne télécharge pas un futur moteur.
 
 | Moteur | Variante proposée | Source et conditions |
 | --- | --- | --- |
-| CosyVoice3 0.5B | Poids officiels PyTorch | [Modèle officiel](https://huggingface.co/FunAudioLLM/Fun-CosyVoice3-0.5B-2512). Petit modèle à intégrer en phase 5. |
+| CosyVoice3 0.5B RL | Poids officiels PyTorch | [Modèle officiel](https://huggingface.co/FunAudioLLM/Fun-CosyVoice3-0.5B-2512). Installable et utilisable en phase 5 ; précision mixte FP16 sur CUDA. |
 | CosyVoice3 0.5B | GGUF Q4_K + flow Q8_0 | [Conversion cstr](https://huggingface.co/cstr/cosyvoice3-0.5b-2512-GGUF), moteur CrispASR. Environ 745 Mo de poids pour les voix prédéfinies ; composants supplémentaires pour cloner une référence. |
 | Fish S2 Pro | FP8 avec activations BF16 | [Conversion drbaph](https://huggingface.co/drbaph/s2-pro-fp8), environ 12 Go de VRAM annoncés ; chargeur FP8Linear spécifique. |
 | Fish S2 Pro | GGUF Q6_K ou Q4_K_M | [Conversion rodrigomt](https://huggingface.co/rodrigomt/s2-pro-gguf), fichiers d’environ 4,3 ou 3,4 Go ; nécessite le moteur expérimental s2.cpp. |

@@ -14,7 +14,12 @@ pub fn reference_duration(path: &Path) -> Result<u64, String> {
     }
     Ok(duration)
 }
-fn pcm_frames(path: &Path, channels: u16, sample_rate: u32, error: &str) -> Result<u64, String> {
+pub(crate) fn pcm_frames(
+    path: &Path,
+    channels: u16,
+    sample_rate: u32,
+    error: &str,
+) -> Result<u64, String> {
     let mut file = std::fs::File::open(path).map_err(io_error)?;
     let length = file.metadata().map_err(io_error)?.len();
     let mut header = [0_u8; 12];

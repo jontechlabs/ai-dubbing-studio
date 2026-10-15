@@ -2004,3 +2004,74 @@ pre {
   color: var(--muted);
   font-size: 10px;
 }
+.dub-panel h3 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.dub-panel .field textarea {
+  min-height: 78px;
+  resize: vertical;
+}
+.tts-not-ready {
+  background: var(--surface-raised, #26212e);
+  padding: 12px;
+  border-radius: 9px;
+}
+.generation-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 22px;
+}
+.generation-card {
+  padding: 13px;
+  margin: 10px 0;
+  border: 1px solid var(--border, #393341);
+  border-radius: 10px;
+  background: var(--surface-raised, #1c1b24);
+}
+.generation-card.selected {
+  border-color: var(--accent, #bba0ec);
+  background: #a581da16;
+}
+.generation-card > strong {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.generation-card small {
+  display: block;
+  color: var(--text-muted, #a5a1b3);
+  margin: 7px 0;
+}
+.generation-actions,
+.generation-review {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 9px;
+  margin-top: 12px;
+}
+.generation-compare {
+  padding: 12px 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+.generation-compare > strong {
+  width: 100%;
+}
+.generation-compare > div {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.cosy-model .checkbox-field {
+  display: flex;
+  gap: 8px;
+  margin: 14px 0;
+  line-height: 1.5;
+}

@@ -103,6 +103,7 @@ fn dialogue(source: Option<&Cue>, target: Option<&Cue>, uncertain: bool) -> Dial
             vec![]
         },
         selected_generation_ids: HashMap::new(),
+        voice_settings: None,
     }
 }
 pub fn align(source: &[Cue], target: &[Cue]) -> Vec<Dialogue> {
@@ -145,6 +146,7 @@ pub fn reconcile(previous: &[Dialogue], aligned: Vec<Dialogue>) -> Vec<Dialogue>
                 line.tts_text = old.tts_text.clone();
                 line.character_id = old.character_id.clone();
                 line.selected_generation_ids = old.selected_generation_ids.clone();
+                line.voice_settings = old.voice_settings.clone();
                 line.status = if old.status == "ungenerated" {
                     "ungenerated"
                 } else {

@@ -23,7 +23,7 @@ export function ModelStorageSettings({
   const completion = jobs
     .filter(
       (job) =>
-        ['modelMove', 'runtime', 'speakerInstall'].includes(job.kind) &&
+        ['modelMove', 'runtime', 'speakerInstall', 'ttsInstall'].includes(job.kind) &&
         ['succeeded', 'failed', 'cancelled', 'interrupted'].includes(job.status),
     )
     .map((job) => `${job.id}:${job.status}`)

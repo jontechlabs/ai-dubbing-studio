@@ -27,8 +27,13 @@ foreach ($resource in $config.bundle.resources.PSObject.Properties) {
     if (-not $resource.Value.StartsWith('workers/')) { continue }
     $source = Join-Path (Join-Path $repoRoot 'src-tauri') $resource.Name
     $destination = Join-Path $portable $resource.Value
-    New-Item -ItemType Directory -Force -Path (Split-Path -Parent $destination) | Out-Null
-    Copy-Item -LiteralPath $source -Destination $destination
+    if (Test-Path -LiteralPath $source -PathType Container) {
+        New-Item -ItemType Directory -Force -Path $destination | Out-Null
+        Get-ChildItem -LiteralPath $source -Force | ForEach-Object { Copy-Item -LiteralPath $_.FullName -Destination $destination -Recurse }
+    } else {
+        New-Item -ItemType Directory -Force -Path (Split-Path -Parent $destination) | Out-Null
+        Copy-Item -LiteralPath $source -Destination $destination
+    }
 }
 $setupName = "AI-Dubbing-Studio-$version-Setup.exe"
 $portableName = 'AI-Dubbing-Studio-Windows-Portable.zip'

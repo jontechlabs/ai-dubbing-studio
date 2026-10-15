@@ -16,7 +16,7 @@ export const voiceVariants: VoiceVariant[] = [
   {
     id: 'cosy3-official',
     providerId: 'cosyvoice3',
-    name: 'CosyVoice3 0.5B',
+    name: 'CosyVoice3 0.5B RL',
     format: 'PyTorch',
     origin: 'official',
     engine: 'CosyVoice',

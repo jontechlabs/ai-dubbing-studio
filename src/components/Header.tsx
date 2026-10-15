@@ -28,6 +28,7 @@ export type Panel =
   | 'jobs'
   | 'subtitles'
   | 'alignment'
+  | 'dub'
   | null;
 export function Header({
   project,
