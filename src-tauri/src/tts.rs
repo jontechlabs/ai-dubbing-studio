@@ -20,6 +20,8 @@ mod tests;
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Options {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub mood: Option<String>,
     #[serde(default)]
     pub variant_id: Option<String>,
     pub device: String,
@@ -34,6 +36,21 @@ impl Options {
         self.variant_id.as_deref().unwrap_or("cosy3-official")
     }
     pub fn validate(&self) -> Result<(), String> {
+        let mood = self.mood.as_deref().unwrap_or("default");
+        if ![
+            "default",
+            "angry",
+            "happy",
+            "sad",
+            "calm",
+            "surprised",
+            "whisper",
+        ]
+        .contains(&mood)
+            || (self.variant().starts_with("qwen3") && mood != "default")
+        {
+            return Err("TTS_STYLE_UNSUPPORTED".into());
+        }
         if self.variant() != "cosy3-official"
             && !crate::voice_engines::IDS.contains(&self.variant())
         {
@@ -300,8 +317,13 @@ pub fn enqueue<R: tauri::Runtime>(
     core: Arc<Core>,
     app: tauri::AppHandle<R>,
     line_id: String,
-    options: Options,
+    mut options: Options,
 ) -> Result<String, String> {
+    if options.variant() == "cosy3-official"
+        && options.mood.as_deref().is_some_and(|m| m != "default")
+    {
+        options.mode = "crossLingual".into();
+    }
     options.validate()?;
     if busy(&core) {
         return Err("BUSY".into());
@@ -502,7 +524,16 @@ async fn execute_with_launch<R: tauri::Runtime>(
     }
     let input = directory.join(format!("{generation_id}.request.json"));
     let result_path = directory.join(format!("{generation_id}.result.json"));
-    let input_value = serde_json::json!({"preparedReferenceAudio":ref_prepared,"variantId":request.options.variant(),"text":text(&p,line),"language":p.languages.target,"referenceAudio":reference_audio,"referenceTranscript":transcript,"modelDir":launch.model,"outputPath":destination,"resultPath":result_path,"device":request.options.device,"speed":request.options.speed,"mode":request.options.mode,"seed":request.options.seed});
+    let raw_text = text(&p, line);
+    let prompt_text = if request.options.variant().starts_with("fish-s2") {
+        match request.options.mood.as_deref().unwrap_or("default") {
+            "default" => raw_text.clone(),
+            mood => format!("[{mood}] {raw_text}"),
+        }
+    } else {
+        raw_text.clone()
+    };
+    let input_value = serde_json::json!({"preparedReferenceAudio":ref_prepared,"variantId":request.options.variant(),"text":raw_text,"promptText":prompt_text,"mood":request.options.mood,"language":p.languages.target,"referenceAudio":reference_audio,"referenceTranscript":transcript,"modelDir":launch.model,"outputPath":destination,"resultPath":result_path,"device":request.options.device,"speed":request.options.speed,"mode":request.options.mode,"seed":request.options.seed});
     project::atomic_write(&input, &serde_json::to_vec(&input_value).map_err(io_error)?)?;
     let result = tokio::time::timeout(Duration::from_secs(900), async {
         if request.options.variant().contains("gguf") {
@@ -563,7 +594,18 @@ async fn execute_with_launch<R: tauri::Runtime>(
     let unchanged =
         fingerprint(&s.project, &request.line_id).is_ok_and(|value| value == request.fingerprint);
     let mut next = s.project.clone();
-    next.format_version = next.format_version.max(5);
+    next.format_version = next.format_version.max(
+        if request
+            .options
+            .mood
+            .as_deref()
+            .is_some_and(|m| m != "default")
+        {
+            7
+        } else {
+            5
+        },
+    );
     next.generations.push(generation);
     if let Some(line) = next.dialogues.iter_mut().find(|l| l.id == request.line_id) {
         if unchanged {
@@ -605,6 +647,9 @@ pub fn validate_generations(p: &Project) -> Result<(), String> {
         let settings: Options =
             serde_json::from_value(g["options"].clone()).map_err(|_| "INVALID_GENERATION")?;
         settings.validate()?;
+        if p.format_version < 7 && settings.mood.as_deref().is_some_and(|m| m != "default") {
+            return Err("INVALID_GENERATION".into());
+        }
         if g["startMs"].as_u64().is_none()
             || g["endMs"]
                 .as_u64()
@@ -632,6 +677,15 @@ pub fn validate_generations(p: &Project) -> Result<(), String> {
         }
     }
     for line in &p.dialogues {
+        if p.format_version < 7
+            && line
+                .voice_settings
+                .as_ref()
+                .and_then(|v| v.mood.as_deref())
+                .is_some_and(|m| m != "default")
+        {
+            return Err("INVALID_PROJECT".into());
+        }
         for (language, key) in &line.selected_generation_ids {
             if !p.generations.iter().any(|g| {
                 g["id"] == *key && g["dialogueId"] == line.id && g["language"] == *language

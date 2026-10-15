@@ -105,6 +105,7 @@ async fn dubbing_path(
     core: State<'_, Shared>,
     id: String,
     slot_ms: u64,
+    exact_duration: Option<bool>,
 ) -> Result<String, String> {
     let (root, path) = {
         let session = core.session.lock().map_err(io_error)?;
@@ -136,10 +137,11 @@ async fn dubbing_path(
     };
     // Timings may still be in the editor's autosave queue. The renderer supplies
     // its current slot, while the native side owns and validates every file path.
-    let path = voice_fit::take(
+    let path = voice_fit::take_with_duration(
         &root,
         &path,
         slot_ms,
+        exact_duration.unwrap_or(false),
         &media::binary(&app, "ffmpeg")?,
         &AtomicBool::new(false),
     )

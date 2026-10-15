@@ -6,18 +6,24 @@ export function wav(seconds=16) {
   for(let i=0;i<samples;i++){const value=Math.round(Math.sin(i/48000*440*2*Math.PI)*1000);bytes.writeInt16LE(value,44+i*4);bytes.writeInt16LE(value,46+i*4);}return bytes;
 }
 export async function nativeMock(page: Page, large = false) {
-  await page.route('**/preview.mp4',async route=>route.fulfill({status:200,contentType:'video/mp4',body:await fs.readFile('public/demo.mp4')}));
+  await page.route('**/preview.mp4',async route=>{
+    const data=await fs.readFile('public/demo.mp4'),range=route.request().headers().range?.match(/^bytes=(\d+)-(\d*)$/);
+    if(range){const start=Number(range[1]),end=Math.min(data.length-1,range[2]?Number(range[2]):data.length-1);await route.fulfill({status:206,contentType:'video/mp4',headers:{'Accept-Ranges':'bytes','Content-Range':`bytes ${start}-${end}/${data.length}`},body:data.subarray(start,end+1)});}
+    else await route.fulfill({status:200,contentType:'video/mp4',headers:{'Accept-Ranges':'bytes'},body:data});
+  });
   await page.route('**/*.wav',route=>route.fulfill({status:200,contentType:'audio/wav',body:wav(/\/(speech|music|sfx)\.wav$/.test(new URL(route.request().url()).pathname)?16:4)}));
   await page.addInitScript(({initial})=>{
     const host=window as unknown as Record<string,any>,callbacks=new Map<number,(data:any)=>void>(),listeners=new Map<string,number>();let counter=0,project=JSON.parse(localStorage.getItem('nativeMockProject')||'null')||structuredClone(initial),job:any;
     const emit=(name:string,payload:any)=>{const id=listeners.get(name);if(id)callbacks.get(id)?.({event:name,id,payload});};
     host.__calls=[];host.__downloadError=false;host.__installed=false;
+    const undoStack:any[]=[],redoStack:any[]=[];
+    host.__moveFirstDubbing=(offset:number)=>{project.formatVersion=7;project.dubbingTiming={sourcePath:project.media.path,offsetsMs:{[project.dialogues[0].id]:{fr:offset}}};project.revision++;emit('project-changed',structuredClone(project));localStorage.setItem('nativeMockProject',JSON.stringify(project));};
     host.__ttsReady=true;host.__pendingTts=null;
     host.__completeTts=(durationMs=2000)=>{
       const {lineId,options}=host.__pendingTts,line=project.dialogues.find((d:any)=>d.id===lineId),id=`take-${project.generations.filter((g:any)=>g.kind==='tts').length+1}`;
       const text=line.ttsText??project.targetCues.filter((c:any)=>line.targetCueIds.includes(c.id)).map((c:any)=>c.text).join('\n');
       const generation={id,kind:'tts',dialogueId:lineId,providerId:options.variantId?.startsWith('fish')?'fish-s2':options.variantId?.startsWith('qwen')?'qwen3-tts':'cosyvoice3',modelId:options.variantId??'cosy3-official',path:`generations/${id}.wav`,createdAt:new Date().toISOString(),sourcePath:project.media.path,startMs:line.startMs,endMs:line.endMs,text,language:project.languages.target,characterId:line.characterId,durationMs,sampleRate:24000,options,referenceTranscript:'Hello',device:options.device,deviceName:'NVIDIA RTX 5060 Ti (simulation)',peakVramMb:0,inputHash:'mock'};
-      project.generations.push(generation);project.formatVersion=5;line.selectedGenerationIds[project.languages.target]=id;line.status=durationMs>line.endMs-line.startMs?'review':'generated';project.revision++;emit('project-changed',structuredClone(project));job={...job,status:'succeeded',stage:'done',progress:1};emit('job-changed',job);localStorage.setItem('nativeMockProject',JSON.stringify(project));
+      project.generations.push(generation);project.formatVersion=Math.max(project.formatVersion,options.mood&&options.mood!=='default'?7:5);line.selectedGenerationIds[project.languages.target]=id;line.status=durationMs>line.endMs-line.startMs?'review':'generated';project.revision++;emit('project-changed',structuredClone(project));job={...job,status:'succeeded',stage:'done',progress:1};emit('job-changed',job);localStorage.setItem('nativeMockProject',JSON.stringify(project));
     };
     host.__seedReference=(transcript='',custom=false)=>{
       const references=[{id:'reference-ja',label:'Japanese voice',path:'characters/reference-ja.wav',durationMs:7000,transcript,sourceDialogueId:null}];
@@ -79,7 +85,8 @@ export async function nativeMock(page: Page, large = false) {
       if(command==='separate_audio'){job={id:'separation',projectId:project.id,kind:'separation',status:'running',stage:'separate',progress:0.3,logs:[],error:null};emit('job-changed',job);return job.id;}
       if(command==='pause_job'){job={...job,status:args.paused?'paused':'running'};emit('job-changed',job);return null;}
       if(command==='cancel_job'){job={...job,status:'cancelled'};emit('job-changed',job);return null;}
-      if(command==='replace_project'){if(args.expectedRevision!==project.revision)throw Error('STALE_REVISION');project={...structuredClone(args.project),revision:project.revision+1};localStorage.setItem('nativeMockProject',JSON.stringify(project));return structuredClone(project);}
+      if(command==='replace_project'){if(args.expectedRevision!==project.revision)throw Error('STALE_REVISION');undoStack.push(structuredClone(project));redoStack.length=0;project={...structuredClone(args.project),revision:project.revision+1};localStorage.setItem('nativeMockProject',JSON.stringify(project));return structuredClone(project);}
+      if(command==='history'){const from=args.direction==='undo'?undoStack:redoStack,to=args.direction==='undo'?redoStack:undoStack;if(from.length){to.push(structuredClone(project));project={...from.pop(),revision:project.revision+1};localStorage.setItem('nativeMockProject',JSON.stringify(project));}return structuredClone(project);}
       if(command==='plugin:event|listen'){listeners.set(args.event,args.handler);return args.handler;}
       if(command==='plugin:event|unlisten'||command==='plugin:resources|close')return null;
       if(command==='plugin:updater|check')return {rid:45,currentVersion:'0.5.0',version:'0.5.1',body:'Performance et audio',rawJson:{}};

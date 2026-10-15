@@ -92,8 +92,43 @@ export function validateProject(value: unknown): Project {
   const preferences = project.modelPreferences;
   if (preferences && !validVoiceVariant(preferences.ttsProviderId, preferences.voiceVariantId))
     throw new Error('INVALID_PROJECT');
-  if (![1, 2, 3, 4, 5, 6].includes(project.formatVersion))
+  if (![1, 2, 3, 4, 5, 6, 7].includes(project.formatVersion))
     throw new Error('UNSUPPORTED_PROJECT_VERSION');
+  if (project.dubbingTiming) {
+    const timing = project.dubbingTiming;
+    if (
+      timing.durationsMs &&
+      (typeof timing.durationsMs !== 'object' ||
+        Array.isArray(timing.durationsMs) ||
+        Object.values(timing.durationsMs).some(
+          (v) =>
+            !v ||
+            typeof v !== 'object' ||
+            Array.isArray(v) ||
+            Object.values(v).some((n) => !Number.isSafeInteger(n) || n < 1 || n > 120000),
+        ))
+    )
+      throw Error('INVALID_PROJECT');
+    if (
+      project.formatVersion < 7 ||
+      typeof timing.sourcePath !== 'string' ||
+      !timing.sourcePath ||
+      timing.sourcePath.includes(':') ||
+      timing.sourcePath.includes('\\') ||
+      timing.sourcePath.split('/').some((v) => !v || v === '.' || v === '..') ||
+      !timing.offsetsMs ||
+      typeof timing.offsetsMs !== 'object' ||
+      Array.isArray(timing.offsetsMs) ||
+      Object.values(timing.offsetsMs).some(
+        (v) =>
+          !v ||
+          typeof v !== 'object' ||
+          Array.isArray(v) ||
+          Object.values(v).some((n) => !Number.isSafeInteger(n) || Math.abs(n) > 86_400_000),
+      )
+    )
+      throw new Error('INVALID_PROJECT');
+  }
   if (
     project.subtitleDisplay &&
     !['off', 'source', 'target', 'both'].includes(project.subtitleDisplay)
@@ -219,6 +254,9 @@ export function validateProject(value: unknown): Project {
     if (generation.kind !== 'tts') continue;
     if (
       !validVoiceSettings(generation.options) ||
+      (project.formatVersion < 7 &&
+        generation.options?.mood &&
+        generation.options.mood !== 'default') ||
       !Number.isSafeInteger(generation.startMs) ||
       !Number.isSafeInteger(generation.endMs) ||
       typeof generation.startMs !== 'number' ||
@@ -252,7 +290,11 @@ export function validateProject(value: unknown): Project {
   for (const line of project.dialogues) {
     if (
       line.voiceSettings &&
-      (project.formatVersion < 5 || !validVoiceSettings(line.voiceSettings))
+      (project.formatVersion < 5 ||
+        !validVoiceSettings(line.voiceSettings) ||
+        (line.voiceSettings.mood &&
+          line.voiceSettings.mood !== 'default' &&
+          project.formatVersion < 7))
     )
       throw Error('INVALID_TTS_REQUEST');
     for (const [language, id] of Object.entries(line.selectedGenerationIds))

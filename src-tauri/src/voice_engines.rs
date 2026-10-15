@@ -351,7 +351,11 @@ pub async fn generate_gguf<R: tauri::Runtime>(
             "--threads".into(),
             "6".into(),
             "--text".into(),
-            input["text"].as_str().ok_or("TTS_TEXT_REQUIRED")?.into(),
+            input["promptText"]
+                .as_str()
+                .or_else(|| input["text"].as_str())
+                .ok_or("TTS_TEXT_REQUIRED")?
+                .into(),
             "--voice-ref".into(),
             input["referenceAudio"]
                 .as_str()

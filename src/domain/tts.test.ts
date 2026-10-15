@@ -41,6 +41,23 @@ function take(p: Project, id = 'take1', durationMs = 2000): Generation {
   };
 }
 describe('dubbing takes', () => {
+  it('roundtrips mood settings, upgrades the project and rejects moods unavailable on Qwen Base', () => {
+    const p = demoProject(),
+      changed = editVoiceSettings(p, p.dialogues[0].id, { ...defaultVoiceSettings, mood: 'angry' });
+    expect(changed.formatVersion).toBe(7);
+    expect(validateProject(JSON.parse(JSON.stringify(changed)))).toEqual(changed);
+    expect(() => validateProject({ ...changed, formatVersion: 6 })).toThrow('INVALID_TTS_REQUEST');
+    expect(
+      validVoiceSettings({
+        ...defaultVoiceSettings,
+        variantId: 'qwen3-06b-gguf-q8',
+        mood: 'angry',
+      }),
+    ).toBe(false);
+    expect(
+      validVoiceSettings({ ...defaultVoiceSettings, variantId: 'fish-s2-gguf-q8', mood: 'happy' }),
+    ).toBe(true);
+  });
   it('keeps legacy settings compatible and validates persisted phase 6 engine/device choices', () => {
     expect(validVoiceSettings(defaultVoiceSettings)).toBe(true);
     const p = demoProject();

@@ -245,7 +245,8 @@
     "MKV_EXPORT_FAILED": "L’export MKV a échoué. Consultez les logs du traitement.",
     "ASR_LANGUAGE_UNSUPPORTED": "Choisissez une langue de référence disponible ou la détection automatique.",
     "ASR_EMPTY_AUDIO": "Aucune parole exploitable n’a été reconnue. Choisissez plusieurs secondes de voix claire, sans musique ni autre locuteur, ou saisissez le texte manuellement.",
-    "ASR_FAILED": "La transcription locale a échoué. Consultez les logs, puis réessayez. Le texte précédent a été conservé."
+    "ASR_FAILED": "La transcription locale a échoué. Consultez les logs, puis réessayez. Le texte précédent a été conservé.",
+    "TTS_STYLE_UNSUPPORTED": "Cette humeur n’est pas disponible pour le moteur sélectionné."
   },
   "preparingVideo": "Préparation de la vidéo…",
   "loadingVideo": "Chargement de la vidéo…",
@@ -567,5 +568,26 @@
   "asrHint": "Whisper small multilingue · local, sur CPU · modèle de 181 Mio téléchargé au premier usage dans le dossier de modèles configuré. Aucun audio envoyé en ligne.",
   "asrReviewHint": "La transcription reste dans la langue parlée. Écoutez la référence et vérifiez le texte proposé ; corrigez les noms et les mots manquants avant le doublage.",
   "asrDubReviewHint": "Vérifiez cette transcription en écoutant la référence. Vous pouvez la corriger dans « Gérer les personnages et les références ».",
-  "asrCurrentHint": "Si le SRT original est absent, ouvrez « Gérer les personnages et les références », choisissez le personnage, puis « Extraire cette réplique » et « Transcrire automatiquement ». Utilisez ensuite cette référence pour le doublage."
+  "asrCurrentHint": "Si le SRT original est absent, ouvrez « Gérer les personnages et les références », choisissez le personnage, puis « Extraire cette réplique » et « Transcrire automatiquement ». Utilisez ensuite cette référence pour le doublage.",
+  "dubbingDragHint": "Glissez pour déplacer la voix. Maj : aimantation. Flèches : 10 ms ; Maj + flèches : 1 ms. Échap : annuler.",
+  "dubbingOffset": "Décalage du doublage (ms)",
+  "dubbingResetOffset": "Réinitialiser le calage",
+  "dubbingOffsetHint": "Négatif : voix plus tôt ; positif : plus tard. Le déplacement est appliqué à la lecture et à l’export. Les sous-titres et le WAV original gardent leurs timings.",
+  "dubbingDuration": "Durée demandée du doublage (ms)",
+  "dubbingAutoDuration": "Durée automatique",
+  "dubbingDurationHint": "Étirez le bord droit du bloc ou saisissez une durée. La voix est accélérée ou ralentie en conservant sa hauteur ; le créneau peut être réduit à la voix suivante ou à la fin de la vidéo. Vérifiez les fortes variations à l’écoute.",
+  "dubbingResizeHint": "Glissez ce bord pour allonger ou raccourcir la voix, sans changer sa hauteur.",
+  "ttsMood": "Humeur / interprétation",
+  "ttsMoodHint": "Consigne d’interprétation envoyée au moteur. Son intensité dépend du modèle et de la référence ; comparez les essais. Le texte des sous-titres reste identique.",
+  "ttsMoodUnsupported": "Les variantes Qwen3-TTS Base intégrées ne proposent pas de contrôle d’humeur. Utilisez Fish S2 ou CosyVoice3 pour ce réglage.",
+  "ttsCosyMoodHint": "L’humeur utilise le mode d’instructions de CosyVoice3 avec votre référence vocale, sans transcription de référence.",
+  "moods": {
+    "default": "Par défaut",
+    "angry": "En colère",
+    "happy": "Joyeux",
+    "sad": "Triste",
+    "calm": "Calme",
+    "surprised": "Surpris",
+    "whisper": "Chuchoté"
+  }
 }

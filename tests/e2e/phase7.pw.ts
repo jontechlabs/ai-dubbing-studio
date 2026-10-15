@@ -9,7 +9,29 @@ async function measure(page:Page){await page.addInitScript(()=>{
 });}
 async function setup(page:Page){await nativeMock(page);await measure(page);await page.goto('/');await expect(page.getByRole('button',{name:'Lecture',exact:true})).toBeEnabled();await page.evaluate(()=>(window as any).__seedDubbing());await page.locator('.player-mode').getByRole('button',{name:'Préparer le mix de doublage'}).click();}
 const rms=(page:Page)=>page.evaluate(()=>(window as any).__rms());
+test('moving a voice while playing cancels its old onset and plays it only at the new position',async({page})=>{
+  await setup(page); await expect(page.locator('.save-indicator')).toHaveText('Sauvegardé'); await position(page,1.0);
+  await page.getByRole('button',{name:'Lecture',exact:true}).click(); await expect.poll(()=>rms(page)).toBeGreaterThan(0.01);
+  await page.evaluate(()=>(window as any).__moveFirstDubbing(1000));
+  await expect.poll(()=>rms(page)).toBeLessThan(0.000001);
+  const ruler=page.locator('.ruler'); const width=(await ruler.boundingBox())!.width;
+  await ruler.click({position:{x:width*2/16,y:5}}); await expect.poll(()=>rms(page)).toBeGreaterThan(0.01);
+  await page.getByRole('button',{name:'Pause',exact:true}).click();
+  await expect(page.locator('.save-indicator')).toHaveText('Sauvegardé');
+});
 async function position(page:Page,time:number){await page.locator('video').evaluate((video:HTMLVideoElement,t)=>{video.playbackRate=0.25;video.currentTime=t;},time);}
+
+test('manual voice duration requests exact fitting and limits the audible interval',async({page})=>{
+  await setup(page);await page.locator('.dialogue-card').first().getByRole('button',{name:'Régénérer',exact:true}).click();const panel=page.getByRole('dialog',{name:'Doublage'});
+  await panel.getByRole('spinbutton',{name:'Durée demandée du doublage (ms)'}).fill('500');await page.getByRole('button',{name:'Fermer',exact:true}).click();await expect(page.locator('.save-indicator')).toHaveText('Sauvegardé');
+  await position(page,1);await page.getByRole('button',{name:'Lecture',exact:true}).click();await expect.poll(()=>rms(page)).toBeGreaterThan(.01);
+  expect(await page.evaluate(()=>(window as any).__calls.some((c:any)=>c.command==='dubbing_path'&&c.args.id==='take-1'&&c.args.slotMs===500&&c.args.exactDuration===true))).toBe(true);
+  await position(page,1.4);await expect.poll(()=>rms(page)).toBeLessThan(.000001);await page.getByRole('button',{name:'Pause',exact:true}).click();
+  await page.locator('.dialogue-card').first().getByRole('button',{name:'Régénérer',exact:true}).click();await panel.getByRole('spinbutton',{name:'Durée demandée du doublage (ms)'}).fill('3000');await page.getByRole('button',{name:'Fermer',exact:true}).click();await expect(page.locator('.save-indicator')).toHaveText('Sauvegardé');
+  await position(page,3.2);await page.getByRole('button',{name:'Lecture',exact:true}).click();await expect.poll(()=>rms(page)).toBeGreaterThan(.01);
+  expect(await page.evaluate(()=>(window as any).__calls.some((c:any)=>c.command==='dubbing_path'&&c.args.id==='take-1'&&c.args.slotMs===3000&&c.args.exactDuration===true))).toBe(true);
+  await page.getByRole('button',{name:'Pause',exact:true}).click();
+});
 
 test('automatic fitting uses current slots and invalidates decoded audio after timing edits',async({page})=>{
   await setup(page);

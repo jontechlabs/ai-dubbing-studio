@@ -92,7 +92,7 @@ def synthesize(request, reference, directory, execution_device, metadata_device,
     decoder = load_model('modded_dac_vq', str(directory/'codec.pth'), device=execution_device)
     engine = TTSInferenceEngine(queue, decoder, torch.bfloat16, False)
     report(stage='ttsGenerate', progress=None, deviceName=name)
-    options = ServeTTSRequest(text=request['text'], references=[ServeReferenceAudio(audio=reference.read_bytes(), text=request['referenceTranscript'])], seed=int(request.get('seed', 0)), streaming=False, max_new_tokens=max_new_tokens)
+    options = ServeTTSRequest(text=request.get('promptText', request['text']), references=[ServeReferenceAudio(audio=reference.read_bytes(), text=request['referenceTranscript'])], seed=int(request.get('seed', 0)), streaming=False, max_new_tokens=max_new_tokens)
     final = None
     for result in engine.inference(options):
         if result.code == 'error': raise RuntimeError(f'TTS_ENGINE_FAILED: {result.error}')

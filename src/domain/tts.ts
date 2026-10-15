@@ -5,6 +5,9 @@ export function validVoiceSettings(value: unknown): value is VoiceSettings {
   if (!value || typeof value !== 'object') return false;
   const s = value as VoiceSettings;
   return (
+    (s.mood == null ||
+      ['default', 'angry', 'happy', 'sad', 'calm', 'surprised', 'whisper'].includes(s.mood)) &&
+    (!s.variantId?.startsWith('qwen3') || !s.mood || s.mood === 'default') &&
     (s.variantId == null || !!voiceVariant(s.variantId)) &&
     ['character', 'current', 'custom'].includes(s.referenceMode) &&
     ['zeroShot', 'crossLingual'].includes(s.mode) &&
@@ -22,6 +25,7 @@ export function voiceGenerations(project: Project): Generation[] {
   return project.generations.filter((g): g is Generation => g.kind === 'tts');
 }
 export const defaultVoiceSettings: VoiceSettings = {
+  mood: 'default',
   device: 'auto',
   referenceMode: 'character',
   referenceId: null,
@@ -121,6 +125,9 @@ export function editVoiceSettings(
   const line = next.dialogues.find((line) => line.id === lineId);
   if (!line) throw Error('NO_DIALOGUES');
   line.voiceSettings = settings;
-  next.formatVersion = Math.max(5, next.formatVersion);
+  next.formatVersion = Math.max(
+    settings.mood && settings.mood !== 'default' ? 7 : 5,
+    next.formatVersion,
+  );
   return next;
 }

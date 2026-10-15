@@ -4,7 +4,7 @@
 
 The development toolchain used Node.js 24.19.0, pnpm 11.25.0 and Rust stable. JavaScript/Rust dependency resolutions are committed in both lockfiles. Install [Tauri's platform prerequisites](https://v2.tauri.app/start/prerequisites/), including MSVC C++ build tools, Windows SDK and WebView2 on Windows.
 
-Reference transcription also compiles whisper.cpp using CMake (3.14 or newer) and the C++ toolchain. `.cargo/config.toml` selects the pinned crate's bundled bindings, disables CPU-specific native tuning, and requires no CUDA SDK, LLVM binding generator or Python ASR environment. Run Cargo from the repository root so this configuration applies. The Windows workflow executes the packaged headless worker on Japanese speech with automatic and explicit Japanese language selection, including Unicode/extended-length model paths.
+Reference transcription also compiles whisper.cpp using CMake (3.14 or newer), the C++ toolchain and LLVM/libclang for platform-specific bindings. On Windows set `LIBCLANG_PATH` to your LLVM `bin` directory (the workflow uses `C:\Program Files\LLVM\bin`). Do not set `WHISPER_DONT_GENERATE_BINDINGS`: the pinned crate's pregenerated Linux bindings are incompatible with Windows. `.cargo/config.toml` disables CPU-specific native tuning. No CUDA SDK or Python ASR environment is required. Run Cargo from the repository root so this configuration applies. The Windows workflow executes the packaged headless worker on Japanese speech with automatic and explicit Japanese language selection, including Unicode/extended-length model paths. End users only need the packaged application and downloaded model.
 
 ```powershell
 pnpm install --frozen-lockfile

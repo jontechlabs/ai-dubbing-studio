@@ -4,7 +4,9 @@ A local desktop workspace for preparing video dubbing: review bilingual subtitle
 
 Built with **Tauri 2, React, TypeScript and Rust**. English and French interface. Dark and light themes.
 
-**v0.7.3 — Automatic voice-reference transcription and accurate Fish help.** Transcribe Japanese, French and other supported reference languages locally with Whisper small Q5_1. Results remain editable and are saved with each character reference. First-use model download (181 MiB), progress, cancellation and retry; CPU inference leaves TTS GPU memory available. [Reference transcription guide (French)](docs/REFERENCE-TRANSCRIPTION.md).
+**v0.7.3 — Voice placement, duration and mood.** Drag dubbing clips, resize their right edge to speed up or slow down speech while preserving pitch, or enter an exact offset and duration. Playback and MKV export share these settings; original WAVs and both SRTs stay intact. Choose a mood with CosyVoice3 and Fish S2 FP8/GGUF. [Placement and duration](docs/DUBBING-PLACEMENT.md) · [Mood controls](docs/VOICE-MOODS.md).
+
+**Local reference transcription and corrected Fish help.** Whisper small Q5_1 transcribes Japanese, French and the other available languages. The editable transcript is saved with the character reference. The 181 MiB model downloads on first use and runs on CPU to leave VRAM for dubbing. [Reference guide](docs/REFERENCE-TRANSCRIPTION.md).
 
 CosyVoice3, Fish S2 FP8/GGUF and Qwen3-TTS GGUF remain available. [Models and GPU profiles](docs/PHASE-6.md) · [Validation and limits](VALIDATION.md).
 
@@ -164,13 +166,13 @@ See [architecture and persistence](docs/ARCHITECTURE.md).
 | 4 | Characters, voice references, local AI speaker grouping and dialogue assignment | Implemented; proposals require review |
 | 5 | First TTS provider, per-line generation, multiple takes and review | Implemented; CosyVoice3 CPU inference validated |
 | 6 | Additional TTS providers and model manager | Implemented; Fish/Qwen GGUF and Fish FP8, RTX validation pending |
-| 7 | Final mix export, MKV packaging and multiple languages | Planned |
+| 7 | Final mix export and MKV packaging | Implemented; simultaneous multi-target editing remains outside the current scope |
 
-Local model installation/repair, storage migration, voice cloning and per-line speech generation are implemented. One phase remains: final scene mixing, MKV export and multiple languages.
+Local model installation/repair, storage migration, voice cloning and per-line speech generation are implemented. Synchronized mixing and MKV export are implemented. Placement, manual duration and mood settings use project format 7, readable with v0.7.3 or later. Simultaneous editing of several target languages remains to be integrated.
 
 ## Validation
 
-The suites contain **42 TypeScript tests, 50 Rust/Linux tests (49 Windows), 35 Chrome scenarios and 18 Python worker tests**: 145 locally, 144 on Windows. The frontend build, ESLint, Prettier, Rust formatting and Clippy are also checked. Real Windows inference covers CosyVoice3, Qwen GGUF, Fish GGUF and a limited-token Fish FP8 core run on CPU. Browser scenarios simulate native IPC; actual RTX generation and the full native GUI workflow remain unqualified here. See [VALIDATION.md](VALIDATION.md) for evidence and limits.
+The suites contain **47 TypeScript tests, 59 Rust/Linux tests (58 Windows), 44 Chrome scenarios and 25 Python worker tests**: 175 locally, 174 on Windows. The frontend build, ESLint, Prettier, Rust formatting and Clippy are also checked. Real Windows inference covers CosyVoice3, Qwen GGUF, Fish GGUF and a limited-token Fish FP8 core run on CPU. Browser scenarios simulate native IPC; actual RTX generation and the full native GUI workflow remain unqualified here. See [VALIDATION.md](VALIDATION.md) for evidence and limits.
 
 The earlier [v0.1.1 clean Windows run](https://github.com/jontechlabs/ai-dubbing-studio/actions/runs/38362204358) passed its checks and packaging. Current runs are available under [Actions](https://github.com/jontechlabs/ai-dubbing-studio/actions).
 

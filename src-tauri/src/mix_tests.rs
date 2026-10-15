@@ -324,11 +324,122 @@ async fn silence_export_and_cancel_keep_sources_and_existing_destinations() {
     request.options.allow_incomplete = true;
     validate(&p, &request.options).unwrap();
 }
+
+#[tokio::test]
+async fn moved_dubbing_changes_mkv_onset_without_changing_subtitles_or_original_take() {
+    let (_temporary, root, mut p) = fixture().await;
+    let before =
+        serde_json::to_value((&p.source_cues, &p.target_cues, &p.dialogues, &p.generations))
+            .unwrap();
+    let voice = fs::read(root.join("generations/voice.wav")).unwrap();
+    p.format_version = 7;
+    p.dubbing_timing = Some(crate::domain::DubbingTiming {
+        durations_ms: Default::default(),
+        source_path: "media/source.mkv".into(),
+        offsets_ms: [("line".into(), [("fr".into(), 500)].into_iter().collect())]
+            .into_iter()
+            .collect(),
+    });
+    for track in &mut p.tracks {
+        track.mute = track.kind != "dubbing";
+        if track.kind == "dubbing" {
+            track.regions.clear();
+            track.gain = 1.0;
+        }
+    }
+    assert_eq!(clips(&p)[0].start, 1500 * 24);
+    assert_eq!(clips(&p)[0].slot_ms, 2000);
+    let app = tauri::test::mock_app();
+    let app = app.handle().clone();
+    let core = core(&root, p.clone());
+    let request = Request {
+        root: root.clone(),
+        project_id: p.id.clone(),
+        revision: p.revision,
+        output: root.join("exports/shifted.mkv"),
+        options: Options {
+            include_original: false,
+            source_subtitles: true,
+            target_subtitles: true,
+            codec: "flac".into(),
+            allow_incomplete: false,
+        },
+    };
+    let key = jobs::create(&core, &app, "mkvExport", p.id.clone(), None);
+    export(
+        &core,
+        &app,
+        &key,
+        &request,
+        &p,
+        &Arc::new(AtomicBool::new(false)),
+    )
+    .await
+    .unwrap();
+    let samples = pcm(&request.output, "0:a:0").await;
+    let level = |ms: usize| {
+        samples[ms * 96..(ms + 10) * 96]
+            .iter()
+            .copied()
+            .sum::<f32>()
+            / 960.0
+    };
+    assert!(level(1100).abs() < 0.0001);
+    assert!((level(1700) - 0.2).abs() < 0.001);
+    assert!(level(3200).abs() < 0.0001);
+    assert_eq!(
+        serde_json::to_value((&p.source_cues, &p.target_cues, &p.dialogues, &p.generations))
+            .unwrap(),
+        before
+    );
+    assert_eq!(fs::read(root.join("generations/voice.wav")).unwrap(), voice);
+    project::save(&root, &p).unwrap();
+    assert_eq!(clips(&project::load(&root).unwrap())[0].start, 1500 * 24);
+    let mut invalid = p.clone();
+    invalid.format_version = 6;
+    assert_eq!(invalid.validate().unwrap_err(), "INVALID_PROJECT");
+    p.dubbing_timing
+        .as_mut()
+        .unwrap()
+        .offsets_ms
+        .get_mut("line")
+        .unwrap()
+        .insert("fr".into(), -500);
+    assert_eq!(clips(&p)[0].start, 500 * 24);
+    p.dubbing_timing
+        .as_mut()
+        .unwrap()
+        .durations_ms
+        .insert("line".into(), [("fr".into(), 2500)].into_iter().collect());
+    let extended = clips(&p);
+    assert!(extended[0].exact_duration);
+    assert_eq!(extended[0].frames, 2500 * 24);
+    let fitted = crate::voice_fit::take_with_duration(
+        &root,
+        &extended[0].path,
+        extended[0].slot_ms,
+        extended[0].exact_duration,
+        &tool("ffmpeg"),
+        &AtomicBool::new(false),
+    )
+    .await
+    .unwrap();
+    assert_eq!(
+        audio_files::pcm_frames(&fitted, 1, 24000, "test").unwrap(),
+        2500 * 24
+    );
+    project::save(&root, &p).unwrap();
+    assert_eq!(clips(&project::load(&root).unwrap())[0].frames, 2500 * 24);
+    p.dubbing_timing.as_mut().unwrap().source_path = "media/replaced.mkv".into();
+    assert_eq!(clips(&p)[0].start, 1000 * 24);
+    assert!(!clips(&p)[0].exact_duration);
+}
 #[tokio::test]
 async fn assembly_adds_overlapping_takes_at_current_dialogue_start_and_rejects_missing_files() {
     let (_temporary, root, p) = fixture().await;
     let mut selected = clips(&p);
     selected.push(Clip {
+        exact_duration: false,
         start: 36000,
         ..selected[0].clone()
     });
@@ -437,7 +548,42 @@ async fn fitted_voice_preserves_pitch_tail_original_and_exact_slot_length() {
         .unwrap_err(),
         "CANCELLED"
     );
-    assert_eq!(fs::read(source).unwrap(), original);
+    assert_eq!(fs::read(&source).unwrap(), original);
+
+    let stretched = crate::voice_fit::take_with_duration(
+        &root,
+        "generations/tones.wav",
+        3000,
+        true,
+        &tool("ffmpeg"),
+        &flag,
+    )
+    .await
+    .unwrap();
+    assert_eq!(
+        audio_files::pcm_frames(&stretched, 1, 24000, "test").unwrap(),
+        72000
+    );
+    let extended = pcm(&stretched, "0:a:0").await;
+    let frequency = |start: usize, end: usize| {
+        let mono: Vec<_> = extended[start * 96..end * 96]
+            .iter()
+            .step_by(2)
+            .copied()
+            .collect();
+        mono.windows(2)
+            .filter(|v| v[0] <= 0.0 && v[1] > 0.0)
+            .count() as f64
+            * 1000.0
+            / (end - start) as f64
+    };
+    assert!((frequency(300, 1800) - 440.0).abs() < 8.0);
+    assert!(
+        (frequency(2600, 2800) - 880.0).abs() < 25.0,
+        "stretched tail {}",
+        frequency(2600, 2800)
+    );
+    assert_ne!(stretched, source.canonicalize().unwrap());
 }
 
 #[tokio::test]

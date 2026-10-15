@@ -4,6 +4,7 @@ use std::{collections::HashMap, sync::Mutex};
 
 fn options() -> Options {
     Options {
+        mood: None,
         variant_id: None,
         device: "cpu".into(),
         reference_mode: "character".into(),
@@ -12,6 +13,18 @@ fn options() -> Options {
         speed: 1.0,
         seed: 7,
     }
+}
+#[test]
+fn mood_presets_are_supported_for_cosy_and_fish_but_not_qwen_base() {
+    let mut value = options();
+    value.mood = Some("angry".into());
+    assert!(value.validate().is_ok());
+    value.variant_id = Some("fish-s2-fp8".into());
+    assert!(value.validate().is_ok());
+    value.variant_id = Some("qwen3-06b-gguf-q8".into());
+    assert_eq!(value.validate().unwrap_err(), "TTS_STYLE_UNSUPPORTED");
+    value.mood = Some("default".into());
+    assert!(value.validate().is_ok());
 }
 
 #[tokio::test]

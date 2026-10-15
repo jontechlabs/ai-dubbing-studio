@@ -40,6 +40,7 @@ pub(crate) struct Clip {
     pub id: String,
     pub path: String,
     pub slot_ms: u64,
+    exact_duration: bool,
     start: u64,
     frames: u64,
     end_ms: u64,
@@ -68,15 +69,37 @@ pub(crate) fn clips(p: &Project) -> Vec<Clip> {
             {
                 return None;
             }
+            let offset = p
+                .dubbing_timing
+                .as_ref()
+                .filter(|t| t.source_path == media.path)
+                .and_then(|t| t.offsets_ms.get(&line.id))
+                .and_then(|v| v.get(&p.languages.target))
+                .copied()
+                .unwrap_or(0);
+            let start_ms = line
+                .start_ms
+                .saturating_add_signed(offset)
+                .min(media.info.duration_ms.saturating_sub(1));
+            let duration = p
+                .dubbing_timing
+                .as_ref()
+                .filter(|t| t.source_path == media.path)
+                .and_then(|t| t.durations_ms.get(&line.id))
+                .and_then(|v| v.get(&p.languages.target))
+                .copied();
             Some(Clip {
                 id: id.clone(),
                 path: g["path"].as_str()?.into(),
                 slot_ms: 0,
-                end_ms: line.end_ms.min(media.info.duration_ms),
-                start: line.start_ms * 24,
+                exact_duration: duration.is_some(),
+                end_ms: start_ms
+                    .saturating_add(duration.unwrap_or(line.end_ms - line.start_ms))
+                    .min(media.info.duration_ms),
+                start: start_ms * 24,
                 frames: g["durationMs"]
                     .as_u64()?
-                    .min(media.info.duration_ms - line.start_ms)
+                    .min(media.info.duration_ms - start_ms)
                     * 24,
             })
         })
@@ -91,7 +114,11 @@ pub(crate) fn clips(p: &Project) -> Vec<Clip> {
         } else {
             (clip.end_ms * 24).min(next).saturating_sub(clip.start) / 24
         };
-        clip.frames = clip.frames.min(clip.slot_ms * 24);
+        clip.frames = if clip.exact_duration {
+            clip.slot_ms * 24
+        } else {
+            clip.frames.min(clip.slot_ms * 24)
+        };
     }
     clips
 }
@@ -407,8 +434,15 @@ async fn export<R: tauri::Runtime>(
         });
         let total = selected.len().max(1);
         for (index, clip) in selected.iter_mut().enumerate() {
-            let fitted =
-                crate::voice_fit::take(&root, &clip.path, clip.slot_ms, &executable, flag).await?;
+            let fitted = crate::voice_fit::take_with_duration(
+                &root,
+                &clip.path,
+                clip.slot_ms,
+                clip.exact_duration,
+                &executable,
+                flag,
+            )
+            .await?;
             clip.path = fitted
                 .strip_prefix(&root)
                 .map_err(io_error)?

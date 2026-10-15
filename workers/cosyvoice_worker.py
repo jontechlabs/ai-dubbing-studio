@@ -83,6 +83,8 @@ def verify_model(directory):
 
 
 def validate_request(request):
+    if (request.get('mood') or 'default') not in ['default','angry','happy','sad','calm','surprised','whisper']:
+        raise ValueError('TTS_STYLE_UNSUPPORTED')
     if not isinstance(request.get('text'), str) or not request['text'].strip() or len(request['text']) > 1000:
         raise ValueError('TTS_TEXT_REQUIRED')
     if request.get('language') not in ['zh', 'en', 'ja', 'ko', 'de', 'es', 'fr', 'it', 'ru']:
@@ -91,7 +93,7 @@ def validate_request(request):
         raise ValueError('INVALID_TTS_REQUEST')
     if request.get('mode') not in ['zeroShot', 'crossLingual']:
         raise ValueError('INVALID_TTS_REQUEST')
-    if request['mode'] == 'zeroShot' and not request.get('referenceTranscript', '').strip():
+    if request['mode'] == 'zeroShot' and (request.get('mood') or 'default') == 'default' and not request.get('referenceTranscript', '').strip():
         raise ValueError('TTS_TRANSCRIPT_REQUIRED')
     device = request.get('device', 'auto')
     if device not in ['cpu', 'auto'] and not re.fullmatch(r'cuda:\d{1,2}', device):
@@ -183,13 +185,9 @@ def generate_normalized(request):
             report(stage='ttsGenerate', progress=None)
             return result
         setattr(model.frontend, method, tracked)
-    prefix = 'You are a helpful assistant.<|endofprompt|>'
     options = {'stream': False, 'speed': request['speed'], 'text_frontend': False}
     with torch.inference_mode():
-        if request['mode'] == 'zeroShot':
-            generated = model.inference_zero_shot(request['text'], prefix + request['referenceTranscript'], str(reference), **options)
-        else:
-            generated = model.inference_cross_lingual(prefix + request['text'], str(reference), **options)
+        generated = synthesis_stream(model, request, str(reference), options)
         chunks = [part['tts_speech'].float().cpu() for part in generated]
     if not chunks:
         raise ValueError('TTS_EMPTY_AUDIO')
@@ -204,6 +202,19 @@ def generate_normalized(request):
                 'peakVramMb': round(torch.cuda.max_memory_allocated() / 1024**2) if device.startswith('cuda:') else 0}
     Path(request['resultPath']).write_text(json.dumps(metadata), encoding='utf-8')
     report(stage='done', progress=1, **metadata)
+
+
+def synthesis_stream(model, request, reference, options):
+    mood = request.get('mood') or 'default'
+    instructions = {'angry':'请用愤怒的语气说话。','happy':'请用开心的语气说话。','sad':'请用悲伤的语气说话。','calm':'请用平静的语气说话。','surprised':'请用惊讶的语气说话。','whisper':'请用低声耳语说话。'}
+    prefix = 'You are a helpful assistant.'
+    if mood != 'default':
+        instruction = prefix + instructions[mood] + '<|endofprompt|>'
+        return model.inference_instruct2(request['text'], instruction, reference, **options)
+    prefix += '<|endofprompt|>'
+    if request['mode'] == 'zeroShot':
+        return model.inference_zero_shot(request['text'], prefix + request['referenceTranscript'], reference, **options)
+    return model.inference_cross_lingual(prefix + request['text'], reference, **options)
 
 
 def main():

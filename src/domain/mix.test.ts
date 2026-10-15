@@ -8,7 +8,7 @@ import {
   paintAudioRegion,
   setAllAudio,
 } from './audio';
-import { dubbingClips, mixReport } from './mix';
+import { dubbingClips, mixReport, moveDubbing, dubbingOffset, resizeDubbing } from './mix';
 import { defaultVoiceSettings, spokenText } from './tts';
 import { rebaseProject } from './rebase';
 import type { Generation, Project } from './types';
@@ -44,6 +44,57 @@ function fixture() {
   return p;
 }
 describe('synchronized mix', () => {
+  it('stores an exact duration independently of voice onset and keeps the next voice protected', () => {
+    const p = fixture(),
+      line = p.dialogues[0];
+    const short = resizeDubbing(p, line.id, 500),
+      clip = dubbingClips(short)[0];
+    expect(clip.endMs - clip.startMs).toBe(500);
+    expect(clip.exactDuration).toBe(true);
+    const long = resizeDubbing(p, line.id, 3000),
+      extended = dubbingClips(long)[0];
+    expect(extended.endMs).toBeLessThanOrEqual(dubbingClips(long)[1].startMs);
+    expect(validateProject(JSON.parse(JSON.stringify(long)))).toEqual(long);
+    expect(dubbingClips(resizeDubbing(long, line.id, null))[0].exactDuration).toBe(false);
+    expect(() => resizeDubbing(p, line.id, 0)).toThrow('INVALID_PROJECT');
+  });
+  it('moves only the chosen language voice, preserves subtitles and takes, and roundtrips safely', () => {
+    const p = fixture(),
+      before = JSON.stringify([p.sourceCues, p.targetCues, p.dialogues, p.generations]);
+    const moved = moveDubbing(p, p.dialogues[0].id, 250);
+    expect(dubbingClips(moved)[0].startMs).toBe(1000);
+    expect(dubbingClips(moved)[0].cacheKey).not.toBe(dubbingClips(p)[0].cacheKey);
+    expect(
+      JSON.stringify([moved.sourceCues, moved.targetCues, moved.dialogues, moved.generations]),
+    ).toBe(before);
+    expect(validateProject(JSON.parse(JSON.stringify(moved)))).toEqual(moved);
+    expect(() => validateProject({ ...moved, formatVersion: 6 })).toThrow('INVALID_PROJECT');
+    expect(dubbingOffset(moveDubbing(moved, p.dialogues[0].id, -9999), p.dialogues[0].id)).toBe(
+      -750,
+    );
+    expect(dubbingOffset(moveDubbing(moved, p.dialogues[0].id, 0), p.dialogues[0].id)).toBe(0);
+    const incoming = structuredClone(p);
+    incoming.revision++;
+    expect(dubbingOffset(rebaseProject(p, moved, incoming), p.dialogues[0].id)).toBe(250);
+    moved.languages.target = 'en';
+    expect(dubbingOffset(moved, p.dialogues[0].id)).toBe(0);
+    moved.languages.target = 'fr';
+    moved.media!.path = 'media/replaced.mkv';
+    expect(dubbingOffset(moved, p.dialogues[0].id)).toBe(0);
+  });
+  it('reorders moved voices and fits them to the next actual onset', () => {
+    const p = fixture(),
+      id = p.dialogues[0].id;
+    const moved = moveDubbing(p, id, 3600),
+      clips = dubbingClips(moved),
+      clip = clips.find((c) => c.line.id === id)!;
+    expect(clip.startMs).toBe(4350);
+    expect(clip.slotMs).toBeLessThanOrEqual(p.dialogues[0].endMs - p.dialogues[0].startMs);
+    expect(clips.every((c, i) => i === 0 || clips[i - 1].endMs <= c.startMs)).toBe(true);
+    const invalid = structuredClone(moved);
+    invalid.dubbingTiming!.offsetsMs[id].fr = NaN;
+    expect(() => validateProject(invalid)).toThrow('INVALID_PROJECT');
+  });
   it('fits long takes to their current slot and next selected start without stretching short takes', () => {
     const p = fixture();
     p.dialogues[0].endMs = 4500;

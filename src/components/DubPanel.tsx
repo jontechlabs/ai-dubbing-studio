@@ -16,6 +16,13 @@ import {
 import * as bridge from '../services/bridge';
 import { installedVoiceVariants, voiceVariant } from '../domain/voiceEngines';
 import { ReferenceTranscription } from './ReferenceTranscription';
+import {
+  dubbingOffset,
+  moveDubbing,
+  dubbingClips,
+  dubbingDuration,
+  resizeDubbing,
+} from '../domain/mix';
 
 export function CosyModel({
   jobs,
@@ -183,7 +190,10 @@ export function DubPanel({
     variantId: line.voiceSettings?.variantId ?? preferred?.id ?? 'cosy3-official',
   };
   const variant = voiceVariant(settings.variantId)!;
-  const mode = variant.providerId === 'fish-s2' ? 'zeroShot' : settings.mode;
+  const mood = settings.mood ?? 'default';
+  const instructedMood = variant.providerId === 'cosyvoice3' && mood !== 'default';
+  const mode =
+    variant.providerId === 'fish-s2' ? 'zeroShot' : instructedMood ? 'crossLingual' : settings.mode;
   const ready =
     variant.id === 'cosy3-official'
       ? status?.installed
@@ -222,6 +232,63 @@ export function DubPanel({
   return (
     <div className="panel-body dub-panel">
       <h3>{variant.name}</h3>
+      {chosen && project.media && (
+        <div className="settings-section">
+          <label className="field">
+            <span>{t('dubbingOffset')}</span>
+            <input
+              type="number"
+              step="10"
+              min={-line.startMs}
+              max={project.media.durationMs - 1 - line.startMs}
+              value={dubbingOffset(project, line.id)}
+              disabled={busy}
+              onChange={(event) => {
+                if (event.target.value !== '')
+                  onEdit((p) => moveDubbing(p, line.id, Number(event.target.value)));
+              }}
+            />
+          </label>
+          <button
+            className="text-button"
+            disabled={busy || dubbingOffset(project, line.id) === 0}
+            onClick={() => onEdit((p) => moveDubbing(p, line.id, 0))}
+          >
+            {t('dubbingResetOffset')}
+          </button>
+          <p className="panel-description">{t('dubbingOffsetHint')}</p>
+          <label className="field">
+            <span>{t('dubbingDuration')}</span>
+            <input
+              type="number"
+              min="1"
+              max="120000"
+              step="10"
+              disabled={busy}
+              value={
+                dubbingDuration(project, line.id) ??
+                (() => {
+                  const clip = dubbingClips(project).find((c) => c.line.id === line.id);
+                  return clip ? clip.endMs - clip.startMs : undefined;
+                })() ??
+                chosen.durationMs
+              }
+              onChange={(event) => {
+                const value = Number(event.target.value);
+                if (value >= 1 && value <= 120000) onEdit((p) => resizeDubbing(p, line.id, value));
+              }}
+            />
+          </label>
+          <button
+            className="text-button"
+            disabled={busy || dubbingDuration(project, line.id) === undefined}
+            onClick={() => onEdit((p) => resizeDubbing(p, line.id, null))}
+          >
+            {t('dubbingAutoDuration')}
+          </button>
+          <p className="panel-description">{t('dubbingDurationHint')}</p>
+        </div>
+      )}
       <label className="field">
         <span>{t('phase6Engine')}</span>
         <select
@@ -233,6 +300,7 @@ export function DubPanel({
             edit({
               variantId: next.id,
               device: 'auto',
+              mood: next.providerId === 'qwen3-tts' ? 'default' : mood,
               mode: next.providerId === 'fish-s2' ? 'zeroShot' : settings.mode,
             });
           }}
@@ -346,7 +414,7 @@ export function DubPanel({
         <span>{t('ttsCloneMode')}</span>
         <select
           value={mode}
-          disabled={busy}
+          disabled={busy || instructedMood}
           onChange={(e) => edit({ mode: e.target.value as typeof settings.mode })}
         >
           <option value="crossLingual" disabled={variant.providerId === 'fish-s2'}>
@@ -357,12 +425,33 @@ export function DubPanel({
       </label>
       <p className="panel-description">
         {t(
-          variant.providerId === 'fish-s2'
-            ? 'ttsFishHint'
-            : mode === 'crossLingual'
-              ? 'ttsCrossHint'
-              : 'ttsZeroHint',
+          instructedMood
+            ? 'ttsCosyMoodHint'
+            : variant.providerId === 'fish-s2'
+              ? 'ttsFishHint'
+              : mode === 'crossLingual'
+                ? 'ttsCrossHint'
+                : 'ttsZeroHint',
         )}
+      </p>
+      <label className="field">
+        <span>{t('ttsMood')}</span>
+        <select
+          value={variant.providerId === 'qwen3-tts' ? 'default' : mood}
+          disabled={busy || variant.providerId === 'qwen3-tts'}
+          onChange={(event) => edit({ mood: event.target.value as typeof settings.mood })}
+        >
+          {(['default', 'angry', 'happy', 'sad', 'calm', 'surprised', 'whisper'] as const).map(
+            (value) => (
+              <option key={value} value={value}>
+                {t(`moods.${value}`)}
+              </option>
+            ),
+          )}
+        </select>
+      </label>
+      <p className="panel-description">
+        {t(variant.providerId === 'qwen3-tts' ? 'ttsMoodUnsupported' : 'ttsMoodHint')}
       </p>
       <label className="field">
         <span>
@@ -494,6 +583,9 @@ export function DubPanel({
               {voiceVariant(generation.options.variantId)?.name ?? generation.modelId} ·{' '}
               {generation.deviceName} · {generation.options.speed.toFixed(2)}× · {t('ttsSeed')}{' '}
               {generation.options.seed}
+              {generation.options.mood && generation.options.mood !== 'default'
+                ? ` · ${t(`moods.${generation.options.mood}`)}`
+                : ''}
             </small>
             {generation.peakVramMb > 0 && (
               <small>{t('ttsPeakVram', { mb: generation.peakVramMb })}</small>

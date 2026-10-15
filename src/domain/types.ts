@@ -40,6 +40,7 @@ export interface Dialogue {
   voiceSettings?: VoiceSettings;
 }
 export interface VoiceSettings {
+  mood?: 'default' | 'angry' | 'happy' | 'sad' | 'calm' | 'surprised' | 'whisper';
   variantId?: string | null;
   device: string;
   referenceMode: 'character' | 'current' | 'custom';
@@ -135,6 +136,11 @@ export interface SpeakerAnalysis {
   }[];
 }
 export interface Project {
+  dubbingTiming?: {
+    sourcePath: string;
+    offsetsMs: Record<string, Record<string, number>>;
+    durationsMs?: Record<string, Record<string, number>>;
+  };
   formatVersion: number;
   appVersion: string;
   id: string;

@@ -86,3 +86,7 @@ Consultez le [guide du stockage, des pistes et des profils GGUF/FP8](MODELS-AND-
 ## Audio regions (0.4.2)
 
 Shift-drag on an audio timeline track to edit a range, or open Audio → Audio regions. Track and region volumes are independent. Quick commands can silence everything or bypass regions temporarily. See the [illustrated audio guide](AUDIO-REGIONS.md). Model storage shows the sum of file sizes; Refresh recalculates it without blocking the interface.
+
+## Voice placement, duration and delivery (0.7.3)
+
+Drag a selected dubbing clip to align its onset. Resize its right edge to lengthen or shorten it while preserving pitch. The Dubbing panel also provides numeric offset/duration controls and reset buttons. Before generating a new take, choose its mood on CosyVoice3 or Fish S2. See [placement and duration](DUBBING-PLACEMENT.md) and [moods](VOICE-MOODS.md). Both edits use project format 7.

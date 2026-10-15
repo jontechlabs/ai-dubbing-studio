@@ -9,10 +9,21 @@ use std::{
 use tokio::io::AsyncReadExt;
 static FIT_GATE: tokio::sync::Semaphore = tokio::sync::Semaphore::const_new(2);
 
+#[cfg(test)]
 pub(crate) async fn take(
     root: &Path,
     path: &str,
     slot_ms: u64,
+    ffmpeg: &Path,
+    flag: &AtomicBool,
+) -> Result<PathBuf, String> {
+    take_with_duration(root, path, slot_ms, false, ffmpeg, flag).await
+}
+pub(crate) async fn take_with_duration(
+    root: &Path,
+    path: &str,
+    slot_ms: u64,
+    exact: bool,
     ffmpeg: &Path,
     flag: &AtomicBool,
 ) -> Result<PathBuf, String> {
@@ -28,7 +39,7 @@ pub(crate) async fn take(
         return Err("INVALID_GENERATION".into());
     }
     let target = slot_ms.checked_mul(24).ok_or("INVALID_GENERATION")?;
-    if frames <= target {
+    if frames == target || (!exact && frames <= target) {
         return Ok(source);
     }
     let mut hash = Sha256::new();
@@ -60,6 +71,10 @@ pub(crate) async fn take(
     while ratio > 100.0 {
         filters.push("rubberband=tempo=100:pitch=1".to_string());
         ratio /= 100.0;
+    }
+    while ratio < 0.01 {
+        filters.push("rubberband=tempo=0.01:pitch=1".to_string());
+        ratio /= 0.01;
     }
     filters.push(format!("rubberband=tempo={ratio:.12}:pitch=1"));
     filters.push(format!(

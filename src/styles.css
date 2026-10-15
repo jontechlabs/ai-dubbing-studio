@@ -1151,6 +1151,25 @@ h3 {
 .reference-transcription .panel-description {
   margin: 0;
 }
+.dubbing-block {
+  cursor: grab;
+  touch-action: none;
+}
+.dubbing-block.moving {
+  cursor: grabbing;
+  z-index: 4;
+  box-shadow: 0 0 0 1px var(--accent);
+}
+.dubbing-resize {
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 8px;
+  cursor: ew-resize;
+  background: color-mix(in srgb, var(--accent) 60%, transparent);
+  border-left: 1px solid var(--accent);
+}
 .voice-reference audio {
   width: 100%;
   height: 34px;

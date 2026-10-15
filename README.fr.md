@@ -4,7 +4,9 @@
 
 Studio desktop local de travail texte, voix et vidéo. Tauri 2, React, TypeScript strict et Rust.
 
-**v0.7.3 — Transcription automatique des références vocales et aide Fish corrigée.** Transcrivez le japonais, le français et les autres langues proposées avec Whisper small Q5_1, en local. Le texte reste modifiable et est sauvegardé avec la référence du personnage. Modèle de 181 Mio téléchargé au premier usage, progression, annulation et relance ; traitement sur CPU pour laisser la VRAM disponible au doublage. [Guide des références](docs/REFERENCE-TRANSCRIPTION.md).
+**v0.7.3 — Calage des voix, durée et humeur.** Déplacez les blocs de doublage, étirez leur bord droit pour accélérer ou ralentir la voix en conservant sa hauteur, ou saisissez un décalage et une durée précis. La lecture et l’export MKV partagent ces réglages ; les WAV originaux et les SRT restent intacts. Choisissez une humeur avec CosyVoice3 et Fish S2 FP8/GGUF. [Calage et durée](docs/DUBBING-PLACEMENT.md) · [Humeurs](docs/VOICE-MOODS.md).
+
+**Références vocales : transcription automatique locale et aide Fish corrigée.** Whisper small Q5_1 transcrit le japonais, le français et les autres langues proposées. Le texte reste modifiable et sauvegardé avec le personnage. Modèle de 181 Mio téléchargé au premier usage ; traitement sur CPU pour laisser la VRAM au doublage. [Guide des références](docs/REFERENCE-TRANSCRIPTION.md).
 
 CosyVoice3, Fish S2 FP8/GGUF et Qwen3-TTS GGUF restent disponibles. Pour 16 Go, commencez par Qwen 0.6B GGUF ; les performances réelles sur RTX 5060 Ti restent à mesurer sur votre matériel. [Modèles et GPU](docs/PHASE-6.md) · [Tests et limites](VALIDATION.md).
 
@@ -34,7 +36,7 @@ L'exemple fourni utilise une vidéo et un son synthétiques. Il ne contient pas 
 
 Installez le modèle de locuteurs depuis Modèles, lancez l’identification depuis Personnages, puis appliquez et corrigez les groupes proposés. Le bouton Ajouter une traduction ouvre l’éditeur même sans sous-titre cible. SRT traduit permet d’importer un fichier ou une piste MKV et propose le calage automatique. Le haut-parleur active ou coupe une piste, S l’isole et l’œil affiche/masque les sous-titres. **Doubler** ouvre le choix du moteur, du GPU et de la référence vocale.
 
-Les références et préférences utilisent le format de projet 3, les zones audio le format 4 et les essais vocaux le format 5. Les anciennes versions refusent les formats plus récents. Fish FP8 et les profils Fish/Qwen GGUF Q8_0 sont intégrés. Il reste une phase : mix final, export MKV et langues multiples.
+Les références et préférences utilisent le format de projet 3, les zones audio le format 4 et les essais vocaux le format 5. Les anciennes versions refusent les formats plus récents. Fish FP8 et les profils Fish/Qwen GGUF Q8_0 sont intégrés. Le mix synchronisé et l’export MKV sont disponibles en phase 7. Le déplacement, la durée et les humeurs utilisent le format 7, lisible par v0.7.3 ou ultérieure. L’édition simultanée de plusieurs langues cibles reste à intégrer.
 
 ## Fonctions présentes
 

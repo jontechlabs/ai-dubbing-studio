@@ -245,7 +245,8 @@
     "MKV_EXPORT_FAILED": "MKV export failed. See the processing logs.",
     "ASR_LANGUAGE_UNSUPPORTED": "Choose an available reference language or automatic detection.",
     "ASR_EMPTY_AUDIO": "No usable speech was recognized. Choose several seconds of clear speech without music or other speakers, or enter the transcript manually.",
-    "ASR_FAILED": "Local transcription failed. Check the logs and retry. The previous text was preserved."
+    "ASR_FAILED": "Local transcription failed. Check the logs and retry. The previous text was preserved.",
+    "TTS_STYLE_UNSUPPORTED": "This mood is unavailable for the selected engine."
   },
   "preparingVideo": "Preparing video…",
   "loadingVideo": "Loading video…",
@@ -567,5 +568,26 @@
   "asrHint": "Whisper small multilingual · local CPU inference · 181 MiB model downloaded on first use into your configured model folder. No audio is uploaded.",
   "asrReviewHint": "The transcript stays in the spoken language. Listen to the reference and check the proposed text; correct names and missing words before dubbing.",
   "asrDubReviewHint": "Check this transcript while listening to the reference. You can edit it in “Manage characters and references”.",
-  "asrCurrentHint": "If the original SRT is missing, open “Manage characters and references”, select the character, then “Extract this line” and “Transcribe automatically”. Use that reference for dubbing."
+  "asrCurrentHint": "If the original SRT is missing, open “Manage characters and references”, select the character, then “Extract this line” and “Transcribe automatically”. Use that reference for dubbing.",
+  "dubbingDragHint": "Drag to move the voice. Shift: snap. Arrow keys: 10 ms; Shift + arrows: 1 ms. Escape: cancel.",
+  "dubbingOffset": "Dubbing offset (ms)",
+  "dubbingResetOffset": "Reset alignment",
+  "dubbingOffsetHint": "Negative: earlier voice; positive: later. Placement applies to playback and export. Subtitles and the original WAV keep their timings.",
+  "dubbingDuration": "Requested dubbing duration (ms)",
+  "dubbingAutoDuration": "Automatic duration",
+  "dubbingDurationHint": "Drag the right edge or enter a duration. The voice speeds up or slows down while preserving pitch; the slot may be reduced at the next voice or video end. Listen to large changes.",
+  "dubbingResizeHint": "Drag this edge to lengthen or shorten the voice while preserving pitch.",
+  "ttsMood": "Mood / delivery",
+  "ttsMoodHint": "Delivery guidance is sent to the engine. Its strength depends on the model and reference; compare takes. Subtitle text stays the same.",
+  "ttsMoodUnsupported": "The integrated Qwen3-TTS Base variants do not expose mood control. Use Fish S2 or CosyVoice3 for this setting.",
+  "ttsCosyMoodHint": "Mood uses CosyVoice3 instruction mode with your reference audio, without a reference transcript.",
+  "moods": {
+    "default": "Default",
+    "angry": "Angry",
+    "happy": "Happy",
+    "sad": "Sad",
+    "calm": "Calm",
+    "surprised": "Surprised",
+    "whisper": "Whispered"
+  }
 }

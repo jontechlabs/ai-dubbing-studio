@@ -23,7 +23,7 @@ import { Waveform } from './Waveform';
 import { formatTime } from '../domain/time';
 import { audioTracks, editTrack } from '../domain/audio';
 import { subtitleDisplay, toggleSubtitles } from '../domain/subtitleDisplay';
-import { dubbingClips } from '../domain/mix';
+import { dubbingClips, dubbingOffset, moveDubbing, resizeDubbing } from '../domain/mix';
 
 export const Timeline = memo(function Timeline({
   project,
@@ -79,6 +79,16 @@ export const Timeline = memo(function Timeline({
     endMs: number;
     edge: string;
   } | null>(null);
+  const [dubbingDrag, setDubbingDrag] = useState<{
+    lineId: string;
+    x: number;
+    origin: number;
+    offset: number;
+    edge: 'move' | 'end';
+    originDuration: number;
+    duration: number;
+  } | null>(null);
+  const suppressDubbingClick = useRef(false);
   const duration = Math.max(
     project?.media?.durationMs ?? 0,
     ...(project?.dialogues.map((d) => d.endMs) ?? []),
@@ -382,24 +392,156 @@ export const Timeline = memo(function Timeline({
                 onPointerCancel={() => setAudioDrag(null)}
               >
                 {track?.kind === 'dubbing' && project ? (
-                  dubbingClips(project)
+                  dubbingClips(
+                    dubbingDrag
+                      ? dubbingDrag.edge === 'end'
+                        ? resizeDubbing(project, dubbingDrag.lineId, dubbingDrag.duration)
+                        : moveDubbing(project, dubbingDrag.lineId, dubbingDrag.offset)
+                      : project,
+                  )
                     .filter(
                       (c) =>
-                        c.endMs * scale >= scrollLeft && c.startMs * scale <= scrollLeft + viewport,
+                        c.line.id === dubbingDrag?.lineId ||
+                        (c.endMs * scale >= scrollLeft &&
+                          c.startMs * scale <= scrollLeft + viewport),
+                    )
+                    .sort(
+                      (a, b) =>
+                        (associations.numbers.get(a.line.id) ?? 0) -
+                        (associations.numbers.get(b.line.id) ?? 0),
                     )
                     .map((clip) => (
                       <button
                         key={clip.generation.id}
-                        className={`subtitle-block dubbing-block ${selected?.id === clip.line.id ? 'selected' : ''}`}
+                        className={`subtitle-block dubbing-block ${selected?.id === clip.line.id ? 'selected' : ''} ${dubbingDrag?.lineId === clip.line.id ? 'moving' : ''}`}
                         style={{
                           left: clip.startMs * scale,
                           width: Math.max(3, (clip.endMs - clip.startMs) * scale),
                         }}
-                        title={`${clip.generation.text}\n${formatTime(clip.startMs)} → ${formatTime(clip.endMs)}`}
+                        title={`${clip.generation.text}\n${formatTime(clip.startMs)} → ${formatTime(clip.endMs)}\n${t('dubbingDragHint')}`}
                         aria-label={`${t('dubbingTrack')} ${associations.numbers.get(clip.line.id)}`}
-                        onClick={() => onSelect(clip.line)}
+                        disabled={busy}
+                        onPointerDown={(event) => {
+                          if (audioTool || event.button !== 0) return;
+                          event.preventDefault();
+                          event.stopPropagation();
+                          event.currentTarget.setPointerCapture(event.pointerId);
+                          suppressDubbingClick.current = false;
+                          const offset = dubbingOffset(project, clip.line.id);
+                          setDubbingDrag({
+                            lineId: clip.line.id,
+                            x: event.clientX,
+                            origin: offset,
+                            offset,
+                            edge: (event.target as HTMLElement).closest('.dubbing-resize')
+                              ? 'end'
+                              : 'move',
+                            originDuration: Math.max(1, clip.endMs - clip.startMs),
+                            duration: Math.max(1, clip.endMs - clip.startMs),
+                          });
+                        }}
+                        onPointerMove={(event) => {
+                          if (
+                            !dubbingDrag ||
+                            dubbingDrag.lineId !== clip.line.id ||
+                            !event.currentTarget.hasPointerCapture(event.pointerId)
+                          )
+                            return;
+                          event.stopPropagation();
+                          if (Math.abs(event.clientX - dubbingDrag.x) > 3)
+                            suppressDubbingClick.current = true;
+                          if (dubbingDrag.edge === 'end') {
+                            setDubbingDrag({
+                              ...dubbingDrag,
+                              duration: Math.max(
+                                1,
+                                Math.min(
+                                  120000,
+                                  project.media!.durationMs - clip.startMs,
+                                  dubbingDrag.originDuration +
+                                    Math.round((event.clientX - dubbingDrag.x) / scale),
+                                ),
+                              ),
+                            });
+                            return;
+                          }
+                          let start =
+                            clip.line.startMs +
+                            dubbingDrag.origin +
+                            Math.round((event.clientX - dubbingDrag.x) / scale);
+                          if (event.shiftKey) {
+                            const points = [
+                              0,
+                              timeRef.current,
+                              clip.line.startMs,
+                              ...dubbingClips(project)
+                                .filter((other) => other.line.id !== clip.line.id)
+                                .flatMap((c) => [c.startMs, c.endMs]),
+                            ];
+                            const closest = points.reduce((best, point) =>
+                              Math.abs(point - start) < Math.abs(best - start) ? point : best,
+                            );
+                            if (Math.abs(closest - start) * scale <= 10) start = closest;
+                          }
+                          const offset = Math.max(
+                            -clip.line.startMs,
+                            Math.min(
+                              project.media!.durationMs - 1 - clip.line.startMs,
+                              start - clip.line.startMs,
+                            ),
+                          );
+                          setDubbingDrag({ ...dubbingDrag, offset });
+                        }}
+                        onPointerUp={(event) => {
+                          if (!dubbingDrag || dubbingDrag.lineId !== clip.line.id) return;
+                          event.stopPropagation();
+                          if (
+                            (dubbingDrag.offset !== dubbingDrag.origin ||
+                              dubbingDrag.duration !== dubbingDrag.originDuration) &&
+                            suppressDubbingClick.current
+                          )
+                            onEdit((p) =>
+                              dubbingDrag.edge === 'end'
+                                ? resizeDubbing(p, clip.line.id, dubbingDrag.duration)
+                                : moveDubbing(p, clip.line.id, dubbingDrag.offset),
+                            );
+                          setDubbingDrag(null);
+                          if (event.currentTarget.hasPointerCapture(event.pointerId))
+                            event.currentTarget.releasePointerCapture(event.pointerId);
+                        }}
+                        onPointerCancel={() => {
+                          setDubbingDrag(null);
+                          suppressDubbingClick.current = true;
+                        }}
+                        onKeyDown={(event) => {
+                          if (event.key === 'Escape' && dubbingDrag) {
+                            event.stopPropagation();
+                            setDubbingDrag(null);
+                            suppressDubbingClick.current = true;
+                          }
+                          if (['ArrowLeft', 'ArrowRight'].includes(event.key)) {
+                            event.preventDefault();
+                            event.stopPropagation();
+                            onEdit((p) =>
+                              moveDubbing(
+                                p,
+                                clip.line.id,
+                                dubbingOffset(p, clip.line.id) +
+                                  (event.key === 'ArrowLeft' ? -1 : 1) * (event.shiftKey ? 1 : 10),
+                              ),
+                            );
+                          }
+                        }}
+                        onClick={() => {
+                          if (!suppressDubbingClick.current) {
+                            onSelect(clip.line);
+                            onSeek(clip.startMs);
+                          }
+                          suppressDubbingClick.current = false;
+                        }}
                       >
                         {associations.numbers.get(clip.line.id)}
+                        <span className="dubbing-resize" title={t('dubbingResizeHint')} />
                       </button>
                     ))
                 ) : style === 'video' || style === 'audio' ? (

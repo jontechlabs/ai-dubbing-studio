@@ -156,6 +156,8 @@ pub struct SpeakerAnalysis {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Project {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub dubbing_timing: Option<DubbingTiming>,
     pub format_version: u32,
     pub app_version: String,
     pub id: String,
@@ -179,9 +181,18 @@ pub struct Project {
     pub generations: Vec<serde_json::Value>,
     pub pronunciation: HashMap<String, String>,
 }
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DubbingTiming {
+    pub source_path: String,
+    pub offsets_ms: HashMap<String, HashMap<String, i64>>,
+    #[serde(default)]
+    pub durations_ms: HashMap<String, HashMap<String, u64>>,
+}
 impl Project {
     pub fn new(name: String, source: String, target: String) -> Self {
         Self {
+            dubbing_timing: None,
             format_version: 1,
             app_version: env!("CARGO_PKG_VERSION").into(),
             id: id(),
@@ -204,8 +215,28 @@ impl Project {
         }
     }
     pub fn validate(&self) -> Result<(), String> {
-        if ![1, 2, 3, 4, 5, 6].contains(&self.format_version) {
+        if ![1, 2, 3, 4, 5, 6, 7].contains(&self.format_version) {
             return Err("UNSUPPORTED_PROJECT_VERSION".into());
+        }
+        if let Some(timing) = &self.dubbing_timing {
+            if timing
+                .durations_ms
+                .values()
+                .flat_map(|v| v.values())
+                .any(|duration| !(1..=120000).contains(duration))
+            {
+                return Err("INVALID_PROJECT".into());
+            }
+            if self.format_version < 7
+                || timing
+                    .offsets_ms
+                    .values()
+                    .flat_map(|v| v.values())
+                    .any(|offset| offset.unsigned_abs() > 86_400_000)
+            {
+                return Err("INVALID_PROJECT".into());
+            }
+            valid_relative(&timing.source_path)?;
         }
         if self.id.is_empty() || self.name.trim().is_empty() {
             return Err("INVALID_PROJECT".into());

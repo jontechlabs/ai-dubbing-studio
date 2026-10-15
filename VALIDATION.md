@@ -1,16 +1,22 @@
 # Validation - Phase 7, 15 October 2026
 
-## v0.7.3 reference transcription and Fish help
+## v0.7.3 voice timing, duration, mood and reference transcription
 
 Windows workflow evidence will be recorded before publication.
 
-Local suites cover 43 TypeScript tests, 57 Rust/Linux tests (56 Windows), 39 Chrome scenarios and 23 Python tests. One additional Rust inference test is intentionally opt-in because it requires externally downloaded model weights and a speech fixture. It was run locally using the real multilingual small Q5_1 weights (190085487 bytes, SHA-256 `ae85e4a935d7a567bd102fe55afc16bb595bdb618e11b2fc7591bc08120411bb`) and the Japanese `ja.wav` fixture from the sherpa-onnx maintainer (SHA-256 `460bd8dccb0d2a5f4e29c628f837be4082d13defc64c3fc21dd1b6bb0e119095`). Automatic detection produced Japanese text containing `中学`, without translation. One homophone was incorrect; transcripts must remain reviewable and editable.
+Local suites cover 47 TypeScript tests, 59 Rust/Linux tests (58 Windows), 44 Chrome scenarios and 25 Python tests. One additional Rust inference test is intentionally opt-in because it requires externally downloaded model weights and a speech fixture. It was run locally using the real multilingual small Q5_1 weights (190085487 bytes, SHA-256 `ae85e4a935d7a567bd102fe55afc16bb595bdb618e11b2fc7591bc08120411bb`) and the Japanese `ja.wav` fixture from the sherpa-onnx maintainer (SHA-256 `460bd8dccb0d2a5f4e29c628f837be4082d13defc64c3fc21dd1b6bb0e119095`). Automatic detection produced Japanese text containing `中学`, without translation. One homophone was incorrect; transcripts must remain reviewable and editable.
 
 The Windows workflow additionally calls the final release executable's isolated `--transcribe-reference` worker, on real Japanese speech, for both automatic detection and explicit Japanese. It verifies structured progress, UTF-8 JSON output, a model path containing spaces, French/Japanese characters and the extended Windows prefix, and records the inference results in its artifacts. It does not open the native GUI. CPU inference is selected explicitly in the native context, independently of TTS CUDA selection; no Python ASR runtime is required.
 
 Browser scenarios exercise old Fish cross-language settings, correct help, explicit Japanese/automatic language selection, default/custom reference IDs, generation becoming available after transcription, unchanged CUDA selection, manual text corrections, persistence after reload, cancellation and failure preserving previous text. Native tests reject stale manual corrections/replaced/deleted references, invalid languages and empty/silent results. The model migration test now includes the Whisper directory. Download verification/cancellation continues to use the existing tested SHA-256 downloader.
 
 The UI screenshots use real React/Chrome with simulated native IPC/results. The native inference test uses a different public Japanese reference. Native GUI/installer interaction and RTX performance retain the limits documented below. Full-video ASR is outside this change; a current line without source text must first be extracted as a character reference.
+
+Placement/duration tests roundtrip project format 7, scope edits to the media and target language, preserve cues and original takes, cap slots at the next actual onset, and check rebase/undo/reset/reload. Chrome drags and resizes real timeline elements, exercises 10 ms / 1 ms nudges, and measures Web Audio output after a placement change. Real FFmpeg tests decode a shifted MKV, verify onset and untouched SRT/project takes, and measure exact output frames, original-file immutability, first-tone pitch and retained final tone when both compressing and stretching with Rubber Band.
+
+Mood selection tests cover CosyVoice and both Fish variants, persisted options, default compatibility and unavailable Qwen Base controls. Python dispatch checks use the actual adapter with a fake model to distinguish instruct2/zero-shot/cross-language calls. A separate real Windows/CPU CosyVoice inference, using the full pinned weights and the French sentence `Il était une fois un assassin légendaire.`, produced a nonempty 3.12-second mono PCM16 WAV at 24 kHz with the happy instruction and no reference transcript. This proves the generation path, not subjective emotion strength or RTX performance. Fish prompt integration is exercised without a neural Fish run on this host.
+
+Windows generates Whisper FFI bindings with LLVM/libclang for its native MSVC ABI. The earlier attempt with the crate’s pre-generated Linux bindings was rejected by compile-time structure size checks; it was never published. No LLVM installation is required for the packaged app.
 
 ## v0.7.2 accented worker logs and explicit CPU placement
 
