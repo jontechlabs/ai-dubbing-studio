@@ -1,11 +1,11 @@
 {
-  "version": "0.4.2",
-  "notes": "Zones audio silencieuses ou audibles, volumes par piste et par zone, commandes rapides pour tout rendre silencieux ou audible, export WAV avec zones et taille du dossier des modèles dans les paramètres.",
-  "pub_date": "2026-10-15T05:32:02Z",
+  "version": "0.5.0",
+  "notes": "Doublage par réplique avec CosyVoice3 0.5B RL, installation CUDA 12.8, références vocales, essais conservés et comparaison A/B, sélection, validation et export WAV individuel.",
+  "pub_date": "2026-10-15T07:56:38Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSdFFyMUJGTFp3Nk1JeHJTUlJXUUlYT2I0dnMzUkpVT0xtajZvVlF5NUFUWGQ2YzIrcm1mVTMrNzN0TFFnRU9OaEZReTJBZDFMaUVNZlp5bVE1bFRiczI2NzZ2MDNxOHc4PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkyMDQyMTUxCWZpbGU6QUkgRHViYmluZyBTdHVkaW9fMC40LjJfeDY0LXNldHVwLmV4ZQl2ZXJzaW9uOjAuNC4yCmg4MTVKUzZOdkFkbGhIM2NDZ0JmM3d5d0w2OC80Rmk3Vis0Qm1zQW5XakJpMHB0RnltRm9McDYvTW04U05lVWpWQXZsN21jV1EyMDF1N0xjRTR1NERBPT0K",
-      "url": "https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.4.2/AI-Dubbing-Studio-0.4.2-Setup.exe"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSdFFyMUJGTFp3NkZTUEJDSkxOcG9MZ0FxNmpvWUFEQ1VCRlVIMklTYldvYWxuV3gyZzVBWXN6am9iT01jRW5TZ3MzUEszb3VNQjAvdEI2eklNVkhzZUh2TWNOWHpKZ0FjPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkyMDUwODY0CWZpbGU6QUkgRHViYmluZyBTdHVkaW9fMC41LjBfeDY0LXNldHVwLmV4ZQl2ZXJzaW9uOjAuNS4wCmtvY2MwVC9QZ3VIRDZYR3ovUEpBNlFFdWN6MjhjSXI3WkZEUWpKMEdUWWhzaUxTd2hSdWFLQU9JZVZtWnN1aUhRVGxtcm1yTGxRL0xVRnk2Y0dQeUJBPT0K",
+      "url": "https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.5.0/AI-Dubbing-Studio-0.5.0-Setup.exe"
     }
   }
 }
