@@ -2,7 +2,7 @@
 
 ## v0.7.1 automatic fitting and CosyVoice diagnostics
 
-Local checks cover **43 TypeScript tests, 53 Rust/Linux tests (52 Windows), 36 Chrome scenarios and 21 Python tests**. The signed Windows package workflow is checked before publication; its final run and build commit will be recorded here.
+Windows checks and signed-update package production passed in [run 38741920410](https://github.com/jontechlabs/ai-dubbing-studio/actions/runs/38741920410), built from `bbaa30f1e026f80ef6c43ad47a1b99bbeecf3ab6`. Suites cover **43 TypeScript tests, 53 Rust/Linux tests (52 Windows), 36 Chrome scenarios and 21 Python tests**: **152 tests on Windows**, 153 across the local suites. The setup and portable archive are copied unchanged from that workflow output. The final release metadata commit only updates this evidence and the verified updater feed.
 
 New real-FFmpeg tests compress a two-tone voice to an exact 24,000-frame slot, measure its unchanged pitch and retained final tone, check cache reuse and invalidation, preserve the original WAV, and leave short takes unchanged. A full FLAC MKV test measures voice levels before and after the next selected take, verifying no overlap. Duplicate starts require review. Existing mix, mute/solo/region, AAC, cancellation and source-stream preservation checks remain in place. Chrome measures audible/silent output around the adjusted boundary and verifies new native fitting requests after timecode edits; its IPC is simulated.
 
