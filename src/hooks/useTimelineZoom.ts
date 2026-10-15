@@ -9,6 +9,7 @@ export function useTimelineZoom(
 ) {
   const [zoom, setZoom] = useState(1);
   const current = useRef(1);
+  const committed = useRef(1);
   const pending = useRef<{ time: number; pixel: number } | null>(null);
   // Keep the browser canvas bounded while allowing sub-second detail on long films.
   const maxZoom = Math.max(1, Math.min(duration / 500, 8_000_000 / viewport));
@@ -25,17 +26,21 @@ export function useTimelineZoom(
       pending.current = { time: time ?? (left + anchor) / oldScale, pixel: anchor };
       const next = Math.max(1, Math.min(maxZoom, value));
       current.current = next;
-      if (next === zoom) {
+      if (next === committed.current) {
         element.scrollLeft = Math.max(
           0,
           (pending.current.time * viewport * next) / duration - anchor,
         );
         pending.current = null;
-      } else setZoom(next);
+      }
+      // A shortcut may arrive before passive effects from the last zoom render.
+      // Always enqueue it, even when its closure still sees an older zoom value.
+      setZoom(next);
     },
-    [duration, maxZoom, scroll, timeRef, viewport, zoom],
+    [duration, maxZoom, scroll, timeRef, viewport],
   );
   useLayoutEffect(() => {
+    committed.current = zoom;
     if (scroll.current && pending.current) {
       scroll.current.scrollLeft = Math.max(
         0,

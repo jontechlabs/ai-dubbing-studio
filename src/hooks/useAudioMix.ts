@@ -121,7 +121,7 @@ export function useAudioMix(
     };
     attached.sync = () => {
       attached.dubbing.tick(current.current.project, video, current.current.volume);
-      for (const node of attached.nodes.values()) {
+      for (const [id, node] of attached.nodes) {
         if (node.audio === video) continue;
         if (node.audio.muted || video.paused || video.seeking || video.readyState < 3) {
           node.audio.pause();
@@ -130,7 +130,20 @@ export function useAudioMix(
         if (Math.abs(node.audio.currentTime - video.currentTime) > 0.08)
           node.audio.currentTime = video.currentTime;
         node.audio.playbackRate = video.playbackRate;
-        if (node.audio.paused) void node.audio.play().catch(() => onError('AUDIO_PLAYBACK_FAILED'));
+        if (node.audio.paused)
+          void node.audio.play().catch((error: unknown) => {
+            // Seeking, pausing and replacing a source can cancel a pending play.
+            if (
+              !(error instanceof DOMException && error.name === 'AbortError') &&
+              !attached.released &&
+              graph.current === attached &&
+              attached.nodes.get(id) === node &&
+              !video.paused &&
+              !video.seeking &&
+              !node.audio.muted
+            )
+              onError('AUDIO_PLAYBACK_FAILED');
+          });
       }
     };
     const play = () => {

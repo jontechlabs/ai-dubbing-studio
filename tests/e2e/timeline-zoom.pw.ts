@@ -11,6 +11,9 @@ test('CapCut-style keyboard and wheel zoom preserve the playhead and pointer tim
   const time=()=>scroll.evaluate((element,pixel)=>{const body=element.querySelector('.timeline-content')!;return(element.scrollLeft+pixel)/body.getBoundingClientRect().width*16000;},pixel);
   const before=await time();await page.mouse.move(box.x+pixel,box.y+15);await page.keyboard.down('Control');await page.mouse.wheel(0,-180);await page.keyboard.up('Control');await expect(zoom(page)).not.toHaveText('100%');expect(Math.abs(await time()-before)).toBeLessThan(20);expect(await page.evaluate(()=>window.innerWidth)).toBe(1440);
   await page.keyboard.press('Shift+Z');await expect(zoom(page)).toHaveText('100%');await expect.poll(()=>scroll.evaluate((element)=>element.scrollLeft)).toBe(0);
+  // Dispatch before React's next passive effect: fit must supersede pending zoom.
+  await scroll.evaluate(element=>{element.dispatchEvent(new WheelEvent('wheel',{bubbles:true,cancelable:true,ctrlKey:true,deltaY:-180,clientX:element.getBoundingClientRect().left+100}));document.body.dispatchEvent(new KeyboardEvent('keydown',{bubbles:true,cancelable:true,shiftKey:true,key:'Z',code:'KeyZ'}));});
+  await expect(zoom(page)).toHaveText('100%');await expect.poll(()=>scroll.evaluate(element=>element.scrollLeft)).toBe(0);
   await page.getByPlaceholder('Rechercher une réplique…').focus();await page.keyboard.press('Control+Equal');await expect(zoom(page)).toHaveText('100%');
 });
 test('long films zoom to a voice beyond one hour with visible millisecond ruler ticks and draggable edges',async({page})=>{

@@ -14,6 +14,8 @@ Zoom scenarios check Ctrl+plus/minus, Shift+Z, mouse-centered Ctrl+wheel with in
 
 No new model/runtime download or GPU inference is introduced by visual analysis. The user's RTX 5060 Ti performance is not measured here. LTX/H3/WanGP/MuseTalk feasibility is documented from primary upstream material; no generative video engine is installed, advertised as integrated or tested on this hardware. Native GUI/installer qualification retains the execution-policy limitation described below.
 
+The zoom regression also dispatches wheel zoom and fit within the same event turn, before React passive effects can update. Audio playback checks simulate a pending stem play interrupted by seeking, verify recovery and actual output, and reject spurious playback alerts. Native window checks include an end time not divisible by 40 ms, ensuring the last decoded frame cannot extend a proposal beyond its window.
+
 ## v0.7.3 voice timing, duration, mood and reference transcription
 
 Windows checks and signed-update package production passed in [run 38776290823](https://github.com/jontechlabs/ai-dubbing-studio/actions/runs/38776290823), built from `717adc46d516a2b332e67d28106ed35a0708999e`. All 174 Windows suite checks passed (47 TypeScript, 58 Rust, 44 Chrome, 25 Python), plus two real Japanese ASR checks using the final Windows release executable. The setup and portable archive are copied unchanged from this workflow. Final metadata only records this evidence and the verified update feed.

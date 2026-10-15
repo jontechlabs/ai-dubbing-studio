@@ -229,6 +229,7 @@ test('audio regions schedule real silence and independent gain through playback,
   await page.locator('.audio-regions-editor').evaluate(element=>element.scrollIntoView({block:'start'}));
   await page.screenshot({path:'test-results/screenshots/studio-audio-regions.png'});
   await page.getByRole('button',{name:'Fermer',exact:true}).click();await expect(page.locator('.audio-region')).toHaveCount(2);
+  await page.evaluate(()=>{const play=HTMLMediaElement.prototype.play;let interrupted=false;HTMLMediaElement.prototype.play=function(){if(this instanceof HTMLAudioElement&&!interrupted){interrupted=true;return Promise.reject(new DOMException('Interrupted by a seek','AbortError'));}return play.call(this);};});
   await page.locator('video').evaluate((video:HTMLVideoElement)=>{video.currentTime=0.1;});await page.getByRole('button',{name:'Lecture',exact:true}).click();
   await expect.poll(()=>page.evaluate(()=>(window as any).__rms())).toBeGreaterThan(0.007);
   await expect.poll(()=>page.locator('video').evaluate((video:HTMLVideoElement)=>video.currentTime)).toBeGreaterThan(1.25);
@@ -242,6 +243,7 @@ test('audio regions schedule real silence and independent gain through playback,
   await page.getByRole('button',{name:'Tout rendre audible',exact:true}).click();
   await page.getByRole('button',{name:'Audio',exact:true}).click();await page.getByRole('combobox',{name:'Piste à modifier'}).selectOption('speech');await expect(page.getByRole('checkbox',{name:'Appliquer les zones de cette piste'})).not.toBeChecked();
   await panel.getByRole('button',{name:'Réappliquer les zones',exact:true}).click();await expect(page.getByRole('checkbox',{name:'Appliquer les zones de cette piste'})).toBeChecked();
+  await expect(page.getByRole('alert')).toHaveCount(0);
   await page.getByRole('button',{name:'Exporter cette piste avec les zones',exact:true}).click();await expect(page.getByRole('dialog',{name:'Traitements'})).toBeVisible();
   expect(await page.evaluate(()=>(window as any).__calls.some((call:any)=>call.command==='export_audio_track'&&call.args.edited===true))).toBe(true);
   await page.getByRole('button',{name:'Annuler',exact:true}).click();await page.getByRole('button',{name:'Fermer',exact:true}).click();await expect(page.locator('.save-indicator')).toHaveText('Sauvegardé');
