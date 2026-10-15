@@ -233,8 +233,9 @@ mod tests {
         let mut p = crate::domain::Project::new("Audio edit".into(), "en".into(), "fr".into());
         p.format_version = 4;
         p.tracks.push(track);
-        project::save(temporary.path(), &p).unwrap();
-        let saved = project::load(temporary.path()).unwrap();
+        let root = temporary.path().canonicalize().unwrap();
+        project::save(&root, &p).unwrap();
+        let saved = project::load(&root).unwrap();
         assert_eq!(saved.tracks[0].regions[1].gain, 0.25);
         let mut invalid = saved.clone();
         invalid.tracks[0].regions[1].start_ms = 800;
