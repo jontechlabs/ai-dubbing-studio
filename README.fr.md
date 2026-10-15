@@ -1,10 +1,10 @@
 # AI Dubbing Studio — phases 1–7
 
-[Version anglaise et captures de l’interface](README.md) · [Téléchargements Windows](https://github.com/jontechlabs/ai-dubbing-studio/releases/tag/v0.7.3)
+[Version anglaise et captures de l’interface](README.md) · [Téléchargements Windows](https://github.com/jontechlabs/ai-dubbing-studio/releases/tag/v0.8.0)
 
 Studio desktop local de travail texte, voix et vidéo. Tauri 2, React, TypeScript strict et Rust.
 
-**v0.7.3 — Calage des voix, durée et humeur.** Déplacez les blocs de doublage, étirez leur bord droit pour accélérer ou ralentir la voix en conservant sa hauteur, ou saisissez un décalage et une durée précis. La lecture et l’export MKV partagent ces réglages ; les WAV originaux et les SRT restent intacts. Choisissez une humeur avec CosyVoice3 et Fish S2 FP8/GGUF. [Calage et durée](docs/DUBBING-PLACEMENT.md) · [Humeurs](docs/VOICE-MOODS.md).
+**v0.8.0 — Calage visuel des voix et zoom précis.** Désignez la zone de bouche, analysez son activité en local, écoutez le départ et la durée proposés avec la vidéo, puis appliquez ou corrigez manuellement. C’est un calage assisté, sans reconnaissance de phonèmes ni génération de nouvelles images de bouche. Ctrl + molette, Ctrl + +/−, Maj + Z, curseur de zoom et règle en millisecondes facilitent le montage dans les vidéos longues. [Calage et pistes pour la retouche vidéo](docs/LIP-ALIGNMENT.md) · [Zoom de la timeline](docs/TIMELINE-ZOOM.md).
 
 **Références vocales : transcription automatique locale et aide Fish corrigée.** Whisper small Q5_1 transcrit le japonais, le français et les autres langues proposées. Le texte reste modifiable et sauvegardé avec le personnage. Modèle de 181 Mio téléchargé au premier usage ; traitement sur CPU pour laisser la VRAM au doublage. [Guide des références](docs/REFERENCE-TRANSCRIPTION.md).
 

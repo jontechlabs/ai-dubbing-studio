@@ -1,6 +1,6 @@
 {
   "brand": "Dubbing Studio",
-  "local": "LOCAL · PHASE 07",
+  "local": "LOCAL · PHASE 08",
   "import": "Importer",
   "analyse": "Analyser",
   "audio": "Audio",
@@ -158,7 +158,8 @@
     "asrModel": "Préparation du modèle de transcription",
     "asrPrepare": "Préparation de l’audio de référence",
     "asrLoad": "Chargement de Whisper",
-    "asrTranscribe": "Transcription de la référence vocale"
+    "asrTranscribe": "Transcription de la référence vocale",
+    "lipsDecode": "Analyse de la zone de bouche et de la voix"
   },
   "shortcuts": "Espace : lecture · J/K/L : transport · O : original · Ctrl+S : sauvegarde · Ctrl+Z/Y : annuler/rétablir",
   "errors": {
@@ -246,7 +247,12 @@
     "ASR_LANGUAGE_UNSUPPORTED": "Choisissez une langue de référence disponible ou la détection automatique.",
     "ASR_EMPTY_AUDIO": "Aucune parole exploitable n’a été reconnue. Choisissez plusieurs secondes de voix claire, sans musique ni autre locuteur, ou saisissez le texte manuellement.",
     "ASR_FAILED": "La transcription locale a échoué. Consultez les logs, puis réessayez. Le texte précédent a été conservé.",
-    "TTS_STYLE_UNSUPPORTED": "Cette humeur n’est pas disponible pour le moteur sélectionné."
+    "TTS_STYLE_UNSUPPORTED": "Cette humeur n’est pas disponible pour le moteur sélectionné.",
+    "LIPS_REGION_REQUIRED": "Dessinez une zone de bouche valide à l’intérieur de l’image.",
+    "LIPS_WINDOW_INVALID": "Choisissez une fenêtre de 1 à 30 secondes dans la vidéo, assez longue pour la voix.",
+    "LIPS_TAKE_TOO_LONG": "Cette première analyse traite des essais de 20 secondes au maximum.",
+    "LIPS_ANALYSIS_FAILED": "L’analyse visuelle a échoué. Vérifiez la vidéo et la zone, puis relancez.",
+    "LIPS_VOICE_SILENT": "L’essai ne contient pas de voix audible à analyser."
   },
   "preparingVideo": "Préparation de la vidéo…",
   "loadingVideo": "Chargement de la vidéo…",
@@ -589,5 +595,40 @@
     "calm": "Calme",
     "surprised": "Surpris",
     "whisper": "Chuchoté"
-  }
+  },
+  "timelineZoom": "Zoom de la timeline",
+  "timelineZoomHint": "Ctrl + molette : zoom sous le pointeur · Ctrl + + / − : zoom à la tête de lecture · Maj + Z : tout afficher",
+  "lips": "Calage visuel des voix",
+  "lipsAnalyze": "Analyser les lèvres",
+  "lipsHint": "Calage assisté par l’activité visuelle de la bouche, en local sur CPU. Choisissez un plan court où la bouche est visible. L’analyse propose un départ et une durée ; vérifiez puis appliquez le résultat.",
+  "lipsNeedsTake": "Générez puis choisissez un essai de doublage pour cette réplique.",
+  "lipsRegionSelection": "Zone de la bouche",
+  "lipsFrame": "Image à examiner",
+  "lipsSelectHint": "Faites glisser un rectangle autour de la bouche, avec une petite marge de peau autour. Évitez les yeux et les sous-titres. Ajustez les coordonnées si nécessaire. Pour un personnage qui se déplace ou un changement de plan, utilisez une fenêtre plus courte.",
+  "lipsRegion": {
+    "x": "Gauche",
+    "y": "Haut",
+    "width": "Largeur",
+    "height": "Hauteur"
+  },
+  "lipsWindowStart": "Début de la fenêtre d’analyse",
+  "lipsWindowEnd": "Fin de la fenêtre d’analyse",
+  "lipsProposal": "Calage proposé",
+  "lipsChart": "Activité de la bouche et créneau de voix proposé",
+  "lipsProposedTimes": "Départ : {{start}} · durée : {{duration}} s",
+  "lipsScore": "Correspondance visuelle : {{before}} → {{after}} / 100. Ce score est un indicateur, pas une probabilité de justesse.",
+  "lipsLowActivity": "Peu de mouvement visible dans la zone choisie. Vérifiez qu’elle contient bien la bouche.",
+  "lipsUnstableShot": "La zone bouge beaucoup : changement de plan, tête en mouvement ou rectangle trop serré. Raccourcissez la fenêtre et vérifiez le résultat.",
+  "lipsAmbiguous": "Plusieurs calages se ressemblent. Vérifiez la proposition à la lecture.",
+  "lipsWeakMatch": "Correspondance faible entre l’activité visible et la voix. Une correction manuelle peut être préférable.",
+  "lipsAcceptWeak": "J’ai vérifié le calage et souhaite appliquer cette proposition incertaine.",
+  "lipsStale": "Le projet ou la prise a changé. Relancez l’analyse avant d’appliquer.",
+  "lipsApply": "Appliquer ce calage",
+  "lipsApplied": "Calage appliqué",
+  "lipsManualHint": "Le décalage et la durée restent modifiables sur la timeline. Ctrl+Z annule l’application. La lecture vidéo et l’export MKV utilisent le même réglage.",
+  "lipsVideoEdit": "Retouche générative de la vidéo",
+  "lipsVideoEditHint": "Le calage ajuste l’audio. La génération de nouvelles images de bouche nécessite un moteur vidéo distinct ; cette fonction n’est pas encore intégrée. Voir le guide Calage des lèvres dans le dépôt GitHub.",
+  "lipsAudition": "Écouter la proposition avec la vidéo",
+  "lipsPreviewVolume": "Volume d’écoute du calage",
+  "lipsChartLegend": "Vert : activité de la bouche · Violet : voix et créneau proposés"
 }

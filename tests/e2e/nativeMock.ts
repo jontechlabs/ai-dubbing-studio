@@ -16,6 +16,10 @@ export async function nativeMock(page: Page, large = false) {
     const host=window as unknown as Record<string,any>,callbacks=new Map<number,(data:any)=>void>(),listeners=new Map<string,number>();let counter=0,project=JSON.parse(localStorage.getItem('nativeMockProject')||'null')||structuredClone(initial),job:any;
     const emit=(name:string,payload:any)=>{const id=listeners.get(name);if(id)callbacks.get(id)?.({event:name,id,payload});};
     host.__calls=[];host.__downloadError=false;host.__installed=false;
+    let lips:any=null;
+    host.__longFilm=()=>{project.media.durationMs=7200000;for(const item of [...project.sourceCues,...project.targetCues,...project.dialogues]){item.startMs+=3600000;item.endMs+=3600000;}project.revision++;emit('project-changed',structuredClone(project));localStorage.setItem('nativeMockProject',JSON.stringify(project));};
+    host.__completeLips=(reliable=true)=>{if(job.status==='cancelled')return;lips.result={projectId:project.id,revision:lips.revision,sourcePath:project.media.path,language:project.languages.target,options:lips.options,startMs:1000,durationMs:2500,score:.9,currentScore:.52,reliable,warnings:reliable?[]:['lipsAmbiguous'],stepMs:40,mouth:Array.from({length:100},(_,i)=>i>20&&i<80?.4+(i%6)/10:0),voice:Array.from({length:50},(_,i)=>i%6<4?1:0)};job={...job,status:'succeeded',stage:'done',progress:1};emit('job-changed',job);};
+    host.__changeDuringLips=()=>{project.dialogues[0].ttsText='Correction manuelle';project.revision++;emit('project-changed',structuredClone(project));localStorage.setItem('nativeMockProject',JSON.stringify(project));};
     const undoStack:any[]=[],redoStack:any[]=[];
     host.__moveFirstDubbing=(offset:number)=>{project.formatVersion=7;project.dubbingTiming={sourcePath:project.media.path,offsetsMs:{[project.dialogues[0].id]:{fr:offset}}};project.revision++;emit('project-changed',structuredClone(project));localStorage.setItem('nativeMockProject',JSON.stringify(project));};
     host.__ttsReady=true;host.__pendingTts=null;
@@ -54,6 +58,9 @@ export async function nativeMock(page: Page, large = false) {
     host.__TAURI_INTERNALS__={metadata:{currentWindow:{label:'main'}},convertFileSrc:(path:string)=>path.endsWith('.wav')?`/audio/${path.split('/').at(-1)}`:'/preview.mp4',transformCallback:(fn:(data:any)=>void)=>{const id=++counter;callbacks.set(id,fn);return id;},unregisterCallback:(id:number)=>callbacks.delete(id),invoke:async(command:string,args:any={})=>{
       host.__calls.push({command,args:JSON.parse(JSON.stringify(args))});
       if(command==='restore_project')return structuredClone(project);
+      if(command==='latest_lip_analysis')return lips?.options.lineId===args.lineId&&lips?.options.generationId===args.generationId?'lips-job':null;
+      if(command==='analyze_lips'){lips={options:structuredClone(args.options),revision:project.revision,result:null};job={id:'lips-job',projectId:project.id,kind:'lipAnalysis',status:'running',stage:'lipsDecode',progress:.3,logs:[],error:null};emit('job-changed',job);return job.id;}
+      if(command==='lip_analysis_result')return lips?.result??null;
       if(command==='voice_status')return {variants:Object.entries({'fish-s2-gguf-q8':6317911232,'qwen3-06b-gguf-q8':1991211136,'qwen3-17b-gguf-q8':2695175104,'fish-s2-fp8':8047624252}).map(([id,sizeBytes])=>({id,installed:true,sizeBytes})),devices:[{id:'vulkan:0',name:'Ryzen iGPU (simulation)'},{id:'vulkan:1',name:'RTX 5060 Ti (simulation)',discrete:true},{id:'cpu',name:'CPU'}],cudaDevices:[{id:'cuda:0',name:'RTX 5060 Ti (simulation)'}]};
         if(command==='install_voice_runtime')return 'install-voice';
         if(command==='tts_status')return {installed:host.__ttsReady,installing:false,sizeBytes:5427042285,inventory:{devices:[{id:'cpu',name:'CPU'},{id:'cuda:0',name:'NVIDIA RTX 5060 Ti (simulation)'}],cudaVersion:'12.8'}};

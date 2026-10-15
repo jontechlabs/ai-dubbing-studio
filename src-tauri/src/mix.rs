@@ -45,6 +45,14 @@ pub(crate) struct Clip {
     frames: u64,
     end_ms: u64,
 }
+impl Clip {
+    pub(crate) fn start_ms(&self) -> u64 {
+        self.start / 24
+    }
+    pub(crate) fn duration_ms(&self) -> u64 {
+        self.frames / 24
+    }
+}
 
 pub(crate) fn clips(p: &Project) -> Vec<Clip> {
     let Some(media) = &p.media else {

@@ -29,6 +29,7 @@ export type Panel =
   | 'subtitles'
   | 'alignment'
   | 'dub'
+  | 'lips'
   | null;
 export function Header({
   project,

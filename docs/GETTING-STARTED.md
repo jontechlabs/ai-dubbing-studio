@@ -90,3 +90,7 @@ Shift-drag on an audio timeline track to edit a range, or open Audio → Audio r
 ## Voice placement, duration and delivery (0.7.3)
 
 Drag a selected dubbing clip to align its onset. Resize its right edge to lengthen or shorten it while preserving pitch. The Dubbing panel also provides numeric offset/duration controls and reset buttons. Before generating a new take, choose its mood on CosyVoice3 or Fish S2. See [placement and duration](DUBBING-PLACEMENT.md) and [moods](VOICE-MOODS.md). Both edits use project format 7.
+
+## Visual timing and detailed zoom (0.8.0)
+
+Generate/select a take, then Dubbing → Analyze lips. Select its mouth region, choose a short shot, analyze and audition the proposed timing with the video before applying it. Manual edits and undo remain available. Ctrl+wheel and Ctrl+plus/minus zoom the timeline, Shift+Z fits it. See [visual alignment and generative feasibility](LIP-ALIGNMENT.md) and [zoom controls](TIMELINE-ZOOM.md). Generative video inpainting is not integrated in this release.

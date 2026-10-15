@@ -1,4 +1,18 @@
-# Validation - Phase 7, 15 October 2026
+# Validation - 15 October 2026
+
+## v0.8.0 visual timing proposals and timeline zoom
+
+Windows workflow evidence will be recorded before publication.
+
+Suites cover **49 TypeScript tests, 62 Rust/Linux tests (61 Windows), 49 Chrome scenarios and 25 Python tests**: 185 local suite checks, 184 Windows checks. The opt-in Whisper test remains separate; the release workflow also repeats its two real Japanese checks using the final executable.
+
+A new native FFmpeg regression creates an original animation of a mouth opening in two intervals and a PCM voice with known speech/pause windows. The production video crop/gray-frame decoder and audio-envelope decoder infer the onset and stretched duration within 120 ms of the known transform, produce a match score above 0.8 and leave source video/WAV bytes unchanged. This is a controlled geometric fixture, not an evaluation corpus of films/animes. Other tests reject invalid regions, flag repeated ambiguous intervals and static regions, and honor cancellation. Output is sampled every 40 ms. The fit searches uniform duration changes around the original voice; it does not recognize phonemes, track a face across shots or generate video frames.
+
+TypeScript tests preserve both SRTs, dialogues and take metadata, roundtrip format 7, and reject stale revision/source/language/take selections or invalid proposals. Browser scenarios select a region, preview a proposal without saving it, measure nonzero Web Audio output during the video audition, verify no original-audio leak, apply/undo/redo and correct the offset manually. Weak proposals require acknowledgment; a stale project or a cancelled job cannot apply a result. These scenarios simulate native IPC and analysis data. Job progress, retry and cached result lookup use the existing native project-owned job/cache infrastructure.
+
+Zoom scenarios check Ctrl+plus/minus, Shift+Z, mouse-centered Ctrl+wheel with invariant pointer time and viewport width, keyboard suppression during typing, selection framing beyond one hour, higher-than-100× zoom and virtualized millisecond ruler ticks. The existing large-project playback and manual voice-placement/resizing checks remain in the suite. New screenshots are actual React/Chrome with synthetic video and simulated native data, not a native Windows GUI capture.
+
+No new model/runtime download or GPU inference is introduced by visual analysis. The user's RTX 5060 Ti performance is not measured here. LTX/H3/WanGP/MuseTalk feasibility is documented from primary upstream material; no generative video engine is installed, advertised as integrated or tested on this hardware. Native GUI/installer qualification retains the execution-policy limitation described below.
 
 ## v0.7.3 voice timing, duration, mood and reference transcription
 

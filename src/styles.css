@@ -1219,6 +1219,72 @@ h3 {
   position: relative;
   background: var(--panel);
 }
+.timeline-zoom-slider {
+  width: 80px;
+  accent-color: var(--accent);
+}
+.timeline-heading .zoom-value {
+  min-width: 58px;
+  text-align: center;
+}
+.mouth-stage {
+  position: relative;
+  width: 100%;
+  background: #08080c;
+}
+.mouth-stage video {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+.mouth-selector {
+  position: absolute;
+  inset: 0;
+  cursor: crosshair;
+  touch-action: none;
+}
+.mouth-region {
+  position: absolute;
+  border: 2px solid var(--accent);
+  background: color-mix(in srgb, var(--accent) 15%, transparent);
+  box-shadow: 0 0 0 1px #111;
+}
+.lips-transport {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin: 8px 0;
+}
+.lips-transport input {
+  flex: 1;
+  min-width: 60px;
+}
+.lips-transport span {
+  font:
+    10px Consolas,
+    monospace;
+}
+.mouth-coordinates {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+.lips-window {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.lips-chart {
+  width: 100%;
+  background: var(--input);
+  border: 1px solid var(--line);
+  border-radius: 7px;
+}
+.lips-result {
+  border-top: 1px solid var(--line);
+  margin-top: 18px;
+  padding-top: 12px;
+}
 .ruler > span {
   position: absolute;
   top: 8px;

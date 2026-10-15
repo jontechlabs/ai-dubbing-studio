@@ -25,6 +25,7 @@ import { ModelsPanel } from './ModelsPanel';
 import { DubPanel } from './DubPanel';
 import { ModelStorageSettings } from './ModelStorageSettings';
 import { MkvExportPanel } from './MkvExportPanel';
+import { LipAnalysisPanel } from './LipAnalysisPanel';
 import * as bridge from '../services/bridge';
 import { downloadText } from '../services/browserStore';
 
@@ -107,7 +108,7 @@ export function Panels({
       }}
     >
       <aside
-        className={`context-panel ${panel === 'alignment' ? 'wide-panel' : ''}`}
+        className={`context-panel ${panel === 'alignment' || panel === 'lips' ? 'wide-panel' : ''}`}
         role="dialog"
         aria-modal="true"
         aria-label={t(title)}
@@ -132,9 +133,20 @@ export function Panels({
             onError={onError}
             onModels={() => onPanel('models')}
             onCharacters={() => onPanel('characters')}
+            onLips={() => onPanel('lips')}
             onOriginal={onOriginal}
             onPlay={onPlayGeneration}
             activeGenerationId={activeGenerationId}
+          />
+        )}
+        {panel === 'lips' && project && (
+          <LipAnalysisPanel
+            project={project}
+            line={project.dialogues.find((d) => d.id === selectedId)}
+            jobs={jobs}
+            snapshot={snapshot}
+            applySnapshot={applySnapshot}
+            onError={onError}
           />
         )}
         {panel === 'alignment' && project && (
@@ -407,6 +419,7 @@ function JobsPanel({ jobs, onError }: { jobs: Job[]; onError: (s: string) => voi
             'tts',
             'mkvExport',
             'referenceTranscription',
+            'lipAnalysis',
           ].includes(job.kind) &&
             ['failed', 'cancelled', 'interrupted'].includes(job.status) && (
               <button

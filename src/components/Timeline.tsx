@@ -24,6 +24,7 @@ import { formatTime } from '../domain/time';
 import { audioTracks, editTrack } from '../domain/audio';
 import { subtitleDisplay, toggleSubtitles } from '../domain/subtitleDisplay';
 import { dubbingClips, dubbingOffset, moveDubbing, resizeDubbing } from '../domain/mix';
+import { useTimelineZoom } from '../hooks/useTimelineZoom';
 
 export const Timeline = memo(function Timeline({
   project,
@@ -65,7 +66,6 @@ export const Timeline = memo(function Timeline({
     return { source, target, numbers };
   }, [project]);
   const [viewport, setViewport] = useState(800);
-  const [zoom, setZoom] = useState(1);
   const [rowHeight, setRowHeight] = useState(37);
   const [scrollLeft, setScrollLeft] = useState(0);
   const [scrollTop, setScrollTop] = useState(0);
@@ -94,6 +94,8 @@ export const Timeline = memo(function Timeline({
     ...(project?.dialogues.map((d) => d.endMs) ?? []),
     1000,
   );
+  const view = useTimelineZoom(scroll, duration, viewport, timeRef, project?.id);
+  const { zoom } = view;
   useEffect(() => {
     if (!scroll.current) return;
     const observer = new ResizeObserver(([entry]) => setViewport(entry.contentRect.width));
@@ -117,20 +119,18 @@ export const Timeline = memo(function Timeline({
   }, [scale, timeRef]);
   const width = Math.max(viewport, duration * scale);
   const interval =
-    [1000, 2000, 5000, 10000, 30000, 60000, 120000, 300000].find((n) => n * scale >= 85) ?? 600000;
+    [10, 20, 40, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 30000, 60000, 120000, 300000].find(
+      (n) => n * scale >= 100,
+    ) ?? 600000;
+  const firstTick = Math.max(0, Math.floor(scrollLeft / scale / interval) * interval);
   const ticks = Array.from(
-    { length: Math.min(3000, Math.ceil(duration / interval) + 1) },
-    (_, index) => index * interval,
-  );
+    { length: Math.min(100, Math.ceil(viewport / scale / interval) + 3) },
+    (_, index) => firstTick + index * interval,
+  ).filter((tick) => tick <= duration);
   const selectionZoom = () => {
     if (!selected) return;
-    const value = Math.min(100, duration / Math.max(4000, (selected.endMs - selected.startMs) * 3));
-    setZoom(value);
-    requestAnimationFrame(() =>
-      scroll.current?.scrollTo({
-        left: Math.max(0, ((selected.startMs - 1000) * viewport * value) / duration),
-      }),
-    );
+    const clip = project && dubbingClips(project).find((c) => c.line.id === selected.id);
+    view.focus(clip ? clip.startMs : selected.startMs, clip ? clip.endMs : selected.endMs);
   };
   const seek = (event: React.PointerEvent<HTMLDivElement>) => {
     const bounds = event.currentTarget.getBoundingClientRect();
@@ -211,24 +211,38 @@ export const Timeline = memo(function Timeline({
           </span>
         </div>
         <div>
-          <IconButton label={t('zoomOut')} onClick={() => setZoom(Math.max(1, zoom / 1.5))}>
+          <IconButton
+            label={`${t('zoomOut')} (Ctrl+−)`}
+            onClick={() => view.change(zoom / 1.5)}
+            disabled={zoom === 1}
+          >
             <Minus size={15} />
           </IconButton>
-          <span className="zoom-value">{Math.round(zoom * 100)}%</span>
-          <IconButton label={t('zoomIn')} onClick={() => setZoom(Math.min(100, zoom * 1.5))}>
+          <input
+            className="timeline-zoom-slider"
+            type="range"
+            min="0"
+            max="100"
+            step="1"
+            aria-label={t('timelineZoom')}
+            value={view.maxZoom === 1 ? 0 : (Math.log(zoom) / Math.log(view.maxZoom)) * 100}
+            onChange={(event) => view.change(view.maxZoom ** (Number(event.target.value) / 100))}
+          />
+          <span className="zoom-value" title={t('timelineZoomHint')}>
+            {Math.round(zoom * 100)}%
+          </span>
+          <IconButton
+            label={`${t('zoomIn')} (Ctrl++)`}
+            onClick={() => view.change(zoom * 1.5)}
+            disabled={zoom >= view.maxZoom}
+          >
             <Plus size={15} />
           </IconButton>
           <span className="controls-divider" />
           <IconButton label={t('zoomSelection')} disabled={!selected} onClick={selectionZoom}>
             <ScanLine size={15} />
           </IconButton>
-          <IconButton
-            label={t('fit')}
-            onClick={() => {
-              setZoom(1);
-              scroll.current?.scrollTo({ left: 0 });
-            }}
-          >
+          <IconButton label={`${t('fit')} (Maj+Z)`} onClick={view.fit}>
             <Maximize size={15} />
           </IconButton>
         </div>
@@ -322,13 +336,10 @@ export const Timeline = memo(function Timeline({
             <div className="ruler">
               {ticks.map((tick) => (
                 <span key={tick} style={{ left: timeToX(tick, 0, scale) }}>
-                  {Math.floor(tick / 60000)
-                    .toString()
-                    .padStart(2, '0')}
-                  :
-                  {Math.floor((tick / 1000) % 60)
-                    .toString()
-                    .padStart(2, '0')}
+                  {formatTime(tick).slice(
+                    duration >= 3_600_000 ? 0 : 3,
+                    interval < 1000 ? undefined : -4,
+                  )}
                 </span>
               ))}
             </div>
@@ -565,104 +576,111 @@ export const Timeline = memo(function Timeline({
                     )}
                   </div>
                 ) : (
-                  (style === 'source' ? project?.sourceCues : project?.targetCues)?.map((cue) => {
-                    const role = style as SubtitleRole;
-                    const line = associations[role].get(cue.id);
-                    const range = drag?.id === cue.id && drag.role === role ? drag : cue;
-                    if (!line) return null;
-                    return (
-                      <button
-                        title={`${cue.text}\n${formatTime(range.startMs)} → ${formatTime(range.endMs)}\n${t('dragHint')}`}
-                        aria-label={`${t(role === 'source' ? 'original' : 'displayedText')} ${associations.numbers.get(line.id)}`}
-                        key={cue.id}
-                        disabled={busy}
-                        className={`subtitle-block ${selected?.id === line.id ? 'selected' : ''}`}
-                        style={{
-                          left: range.startMs * scale,
-                          width: Math.max(3, (range.endMs - range.startMs) * scale),
-                        }}
-                        onPointerDown={(event) => {
-                          event.stopPropagation();
-                          event.currentTarget.setPointerCapture(event.pointerId);
-                          onSelect(line);
-                          setDrag({
-                            id: cue.id,
-                            role,
-                            x: event.clientX,
-                            start: cue.startMs,
-                            end: cue.endMs,
-                            startMs: cue.startMs,
-                            endMs: cue.endMs,
-                            edge: (event.target as HTMLElement).dataset.edge ?? 'move',
-                          });
-                        }}
-                        onPointerMove={(event) => {
-                          if (
-                            !drag ||
-                            drag.id !== cue.id ||
-                            !event.currentTarget.hasPointerCapture(event.pointerId)
-                          )
-                            return;
-                          event.stopPropagation();
-                          let delta = Math.round((event.clientX - drag.x) / scale);
-                          const snap = (ms: number) => {
-                            if (!event.shiftKey) return ms;
-                            const edges = [
-                              timeRef.current,
-                              ...[...project!.sourceCues, ...project!.targetCues]
-                                .filter((c) => c.id !== cue.id)
-                                .flatMap((c) => [c.startMs, c.endMs]),
-                            ];
-                            const nearest = edges.sort(
-                              (a, b) => Math.abs(a - ms) - Math.abs(b - ms),
-                            )[0];
-                            return Math.abs(nearest - ms) <= 120 ? nearest : ms;
-                          };
-                          let startMs = drag.start,
-                            endMs = drag.end;
-                          if (drag.edge === 'start')
-                            startMs = Math.max(
-                              0,
-                              Math.min(drag.end - 100, snap(drag.start + delta)),
+                  (style === 'source' ? project?.sourceCues : project?.targetCues)
+                    ?.filter(
+                      (cue) =>
+                        (drag?.id === cue.id && drag.role === style) ||
+                        (cue.endMs * scale >= scrollLeft &&
+                          cue.startMs * scale <= scrollLeft + viewport),
+                    )
+                    .map((cue) => {
+                      const role = style as SubtitleRole;
+                      const line = associations[role].get(cue.id);
+                      const range = drag?.id === cue.id && drag.role === role ? drag : cue;
+                      if (!line) return null;
+                      return (
+                        <button
+                          title={`${cue.text}\n${formatTime(range.startMs)} → ${formatTime(range.endMs)}\n${t('dragHint')}`}
+                          aria-label={`${t(role === 'source' ? 'original' : 'displayedText')} ${associations.numbers.get(line.id)}`}
+                          key={cue.id}
+                          disabled={busy}
+                          className={`subtitle-block ${selected?.id === line.id ? 'selected' : ''}`}
+                          style={{
+                            left: range.startMs * scale,
+                            width: Math.max(3, (range.endMs - range.startMs) * scale),
+                          }}
+                          onPointerDown={(event) => {
+                            event.stopPropagation();
+                            event.currentTarget.setPointerCapture(event.pointerId);
+                            onSelect(line);
+                            setDrag({
+                              id: cue.id,
+                              role,
+                              x: event.clientX,
+                              start: cue.startMs,
+                              end: cue.endMs,
+                              startMs: cue.startMs,
+                              endMs: cue.endMs,
+                              edge: (event.target as HTMLElement).dataset.edge ?? 'move',
+                            });
+                          }}
+                          onPointerMove={(event) => {
+                            if (
+                              !drag ||
+                              drag.id !== cue.id ||
+                              !event.currentTarget.hasPointerCapture(event.pointerId)
+                            )
+                              return;
+                            event.stopPropagation();
+                            let delta = Math.round((event.clientX - drag.x) / scale);
+                            const snap = (ms: number) => {
+                              if (!event.shiftKey) return ms;
+                              const edges = [
+                                timeRef.current,
+                                ...[...project!.sourceCues, ...project!.targetCues]
+                                  .filter((c) => c.id !== cue.id)
+                                  .flatMap((c) => [c.startMs, c.endMs]),
+                              ];
+                              const nearest = edges.sort(
+                                (a, b) => Math.abs(a - ms) - Math.abs(b - ms),
+                              )[0];
+                              return Math.abs(nearest - ms) <= 120 ? nearest : ms;
+                            };
+                            let startMs = drag.start,
+                              endMs = drag.end;
+                            if (drag.edge === 'start')
+                              startMs = Math.max(
+                                0,
+                                Math.min(drag.end - 100, snap(drag.start + delta)),
+                              );
+                            else if (drag.edge === 'end')
+                              endMs = Math.max(drag.start + 100, snap(drag.end + delta));
+                            else {
+                              delta = snap(drag.start + delta) - drag.start;
+                              startMs = Math.max(0, drag.start + delta);
+                              endMs = startMs + drag.end - drag.start;
+                            }
+                            setDrag({ ...drag, startMs, endMs });
+                          }}
+                          onPointerUp={(event) => {
+                            event.stopPropagation();
+                            if (drag && (drag.startMs !== cue.startMs || drag.endMs !== cue.endMs))
+                              onEdit((p) => moveCue(p, role, cue.id, drag.startMs, drag.endMs));
+                            setDrag(null);
+                            if (event.currentTarget.hasPointerCapture(event.pointerId))
+                              event.currentTarget.releasePointerCapture(event.pointerId);
+                          }}
+                          onPointerCancel={() => setDrag(null)}
+                          onClick={() => {
+                            if (!drag) onSelect(line);
+                          }}
+                          onKeyDown={(event) => {
+                            if (!['ArrowLeft', 'ArrowRight'].includes(event.key)) return;
+                            event.preventDefault();
+                            const delta =
+                              (event.key === 'ArrowLeft' ? -1 : 1) * (event.shiftKey ? 1000 : 100);
+                            const start = Math.max(0, cue.startMs + delta);
+                            onEdit((p) =>
+                              moveCue(p, role, cue.id, start, start + cue.endMs - cue.startMs),
                             );
-                          else if (drag.edge === 'end')
-                            endMs = Math.max(drag.start + 100, snap(drag.end + delta));
-                          else {
-                            delta = snap(drag.start + delta) - drag.start;
-                            startMs = Math.max(0, drag.start + delta);
-                            endMs = startMs + drag.end - drag.start;
-                          }
-                          setDrag({ ...drag, startMs, endMs });
-                        }}
-                        onPointerUp={(event) => {
-                          event.stopPropagation();
-                          if (drag && (drag.startMs !== cue.startMs || drag.endMs !== cue.endMs))
-                            onEdit((p) => moveCue(p, role, cue.id, drag.startMs, drag.endMs));
-                          setDrag(null);
-                          if (event.currentTarget.hasPointerCapture(event.pointerId))
-                            event.currentTarget.releasePointerCapture(event.pointerId);
-                        }}
-                        onPointerCancel={() => setDrag(null)}
-                        onClick={() => {
-                          if (!drag) onSelect(line);
-                        }}
-                        onKeyDown={(event) => {
-                          if (!['ArrowLeft', 'ArrowRight'].includes(event.key)) return;
-                          event.preventDefault();
-                          const delta =
-                            (event.key === 'ArrowLeft' ? -1 : 1) * (event.shiftKey ? 1000 : 100);
-                          const start = Math.max(0, cue.startMs + delta);
-                          onEdit((p) =>
-                            moveCue(p, role, cue.id, start, start + cue.endMs - cue.startMs),
-                          );
-                        }}
-                      >
-                        <span data-edge="start" className="cue-handle start" />
-                        {associations.numbers.get(line.id)}
-                        <span data-edge="end" className="cue-handle end" />
-                      </button>
-                    );
-                  })
+                          }}
+                        >
+                          <span data-edge="start" className="cue-handle start" />
+                          {associations.numbers.get(line.id)}
+                          <span data-edge="end" className="cue-handle end" />
+                        </button>
+                      );
+                    })
                 )}
                 {track &&
                   (track.regions ?? [])

@@ -7,6 +7,7 @@ mod graphics;
 #[cfg(test)]
 mod integration_tests;
 mod jobs;
+mod lips;
 mod media;
 mod mix;
 mod model_storage;
@@ -53,6 +54,29 @@ pub struct Core {
     model_dir: Mutex<PathBuf>,
 }
 type Shared = Arc<Core>;
+#[tauri::command]
+fn analyze_lips(
+    app: tauri::AppHandle,
+    core: State<'_, Shared>,
+    options: lips::Options,
+) -> Result<String, String> {
+    lips::enqueue(core.inner().clone(), app, options)
+}
+#[tauri::command]
+fn lip_analysis_result(
+    core: State<'_, Shared>,
+    id: String,
+) -> Result<Option<lips::Analysis>, String> {
+    lips::result(&core, &id)
+}
+#[tauri::command]
+fn latest_lip_analysis(
+    core: State<'_, Shared>,
+    line_id: String,
+    generation_id: String,
+) -> Result<Option<String>, String> {
+    lips::latest(&core, &line_id, &generation_id)
+}
 #[tauri::command]
 fn export_mkv(
     app: tauri::AppHandle,
@@ -822,6 +846,18 @@ fn retry_job(app: tauri::AppHandle, core: State<'_, Shared>, id: String) -> Resu
             request.language,
         );
     }
+    if let Some(request) = record.lips {
+        let session = core.session.lock().map_err(io_error)?;
+        let s = session.as_ref().ok_or("NO_PROJECT")?;
+        if s.root != request.root
+            || s.project.id != request.project_id
+            || s.project.revision != request.revision
+        {
+            return Err("STALE_REVISION".into());
+        }
+        drop(session);
+        return lips::enqueue(core.inner().clone(), app, request.options);
+    }
     if let Some(cuda) = record.tts_install {
         return tts::install(core.inner().clone(), app, cuda);
     }
@@ -976,6 +1012,9 @@ pub fn run() {
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
+            analyze_lips,
+            lip_analysis_result,
+            latest_lip_analysis,
             tts_status,
             voice_status,
             install_voice_runtime,

@@ -8,6 +8,15 @@ import { browserStore, downloadText, pickBrowserFile } from './browserStore';
 import { audioPeaks, type Waveform } from '../domain/waveform';
 
 export const native = isTauri();
+export function analyzeLips(options: import('../domain/lips').LipOptions) {
+  return invoke<string>('analyze_lips', { options });
+}
+export function lipAnalysisResult(id: string) {
+  return invoke<import('../domain/lips').LipAnalysis | null>('lip_analysis_result', { id });
+}
+export function latestLipAnalysis(lineId: string, generationId: string) {
+  return invoke<string | null>('latest_lip_analysis', { lineId, generationId });
+}
 export interface VoiceStatus {
   variants: { id: string; installed: boolean; sizeBytes: number }[];
   devices: { id: string; name: string; discrete?: boolean }[];

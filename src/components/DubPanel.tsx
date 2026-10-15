@@ -130,6 +130,7 @@ export function DubPanel({
   onError,
   onModels,
   onCharacters,
+  onLips,
   onOriginal,
   onPlay,
   activeGenerationId,
@@ -143,6 +144,7 @@ export function DubPanel({
   onError: (error: string) => void;
   onModels: () => void;
   onCharacters: () => void;
+  onLips: () => void;
   onOriginal: (line: Dialogue) => void;
   onPlay: (generation: Generation) => void;
   activeGenerationId: string | null;
@@ -234,6 +236,9 @@ export function DubPanel({
       <h3>{variant.name}</h3>
       {chosen && project.media && (
         <div className="settings-section">
+          <button className="button accent wide" onClick={onLips} disabled={busy}>
+            {t('lipsAnalyze')}
+          </button>
           <label className="field">
             <span>{t('dubbingOffset')}</span>
             <input

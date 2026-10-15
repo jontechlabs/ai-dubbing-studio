@@ -38,6 +38,8 @@ pub struct ImportRequest {
 }
 #[derive(Clone, Serialize, Deserialize)]
 pub struct PersistedJob {
+    #[serde(default)]
+    pub lips: Option<crate::lips::Request>,
     pub record: Job,
     pub request: Option<ImportRequest>,
     #[serde(default)]
@@ -96,6 +98,7 @@ pub fn create<R: tauri::Runtime>(
             key.clone(),
             Control {
                 saved: PersistedJob {
+                    lips: None,
                     record: record.clone(),
                     request,
                     separation: None,

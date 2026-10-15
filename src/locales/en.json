@@ -1,6 +1,6 @@
 {
   "brand": "Dubbing Studio",
-  "local": "LOCAL · PHASE 07",
+  "local": "LOCAL · PHASE 08",
   "import": "Import",
   "analyse": "Analyze",
   "audio": "Audio",
@@ -158,7 +158,8 @@
     "asrModel": "Preparing the transcription model",
     "asrPrepare": "Preparing reference audio",
     "asrLoad": "Loading Whisper",
-    "asrTranscribe": "Transcribing the voice reference"
+    "asrTranscribe": "Transcribing the voice reference",
+    "lipsDecode": "Analyzing mouth region and voice"
   },
   "shortcuts": "Space: play · J/K/L: transport · O: original · Ctrl+S: save · Ctrl+Z/Y: undo/redo",
   "errors": {
@@ -246,7 +247,12 @@
     "ASR_LANGUAGE_UNSUPPORTED": "Choose an available reference language or automatic detection.",
     "ASR_EMPTY_AUDIO": "No usable speech was recognized. Choose several seconds of clear speech without music or other speakers, or enter the transcript manually.",
     "ASR_FAILED": "Local transcription failed. Check the logs and retry. The previous text was preserved.",
-    "TTS_STYLE_UNSUPPORTED": "This mood is unavailable for the selected engine."
+    "TTS_STYLE_UNSUPPORTED": "This mood is unavailable for the selected engine.",
+    "LIPS_REGION_REQUIRED": "Draw a valid mouth region inside the image.",
+    "LIPS_WINDOW_INVALID": "Choose 1–30 seconds inside the video, long enough for the voice.",
+    "LIPS_TAKE_TOO_LONG": "This initial analysis handles takes up to 20 seconds.",
+    "LIPS_ANALYSIS_FAILED": "Visual analysis failed. Check the video and region, then retry.",
+    "LIPS_VOICE_SILENT": "The selected take has no audible voice to analyze."
   },
   "preparingVideo": "Preparing video…",
   "loadingVideo": "Loading video…",
@@ -589,5 +595,40 @@
     "calm": "Calm",
     "surprised": "Surprised",
     "whisper": "Whispered"
-  }
+  },
+  "timelineZoom": "Timeline zoom",
+  "timelineZoomHint": "Ctrl + wheel: zoom at pointer · Ctrl + + / −: zoom at playhead · Shift + Z: fit timeline",
+  "lips": "Visual voice alignment",
+  "lipsAnalyze": "Analyze lips",
+  "lipsHint": "Local CPU analysis of visible mouth activity. Choose a short shot with a visible mouth. Review the proposed voice start and duration before applying.",
+  "lipsNeedsTake": "Generate and select a dubbing take for this line first.",
+  "lipsRegionSelection": "Mouth region",
+  "lipsFrame": "Frame to inspect",
+  "lipsSelectHint": "Drag a rectangle around the mouth with a small skin margin. Exclude eyes and subtitles. Adjust coordinates if needed. For a moving head or shot change, use a shorter analysis window.",
+  "lipsRegion": {
+    "x": "Left",
+    "y": "Top",
+    "width": "Width",
+    "height": "Height"
+  },
+  "lipsWindowStart": "Analysis window start",
+  "lipsWindowEnd": "Analysis window end",
+  "lipsProposal": "Proposed alignment",
+  "lipsChart": "Mouth activity and proposed voice slot",
+  "lipsProposedTimes": "Start: {{start}} · duration: {{duration}} s",
+  "lipsScore": "Visual match: {{before}} → {{after}} / 100. This is a matching indicator, not a calibrated probability.",
+  "lipsLowActivity": "Little visible movement in the selected region. Check that it contains the mouth.",
+  "lipsUnstableShot": "The region changes strongly: shot cut, moving head or a tight rectangle. Shorten the window and review the result.",
+  "lipsAmbiguous": "Several alignments have similar scores. Review the proposal in playback.",
+  "lipsWeakMatch": "Weak correspondence between visible activity and voice. Manual alignment may work better.",
+  "lipsAcceptWeak": "I reviewed this uncertain alignment and want to apply it.",
+  "lipsStale": "The project or take changed. Analyze again before applying.",
+  "lipsApply": "Apply alignment",
+  "lipsApplied": "Alignment applied",
+  "lipsManualHint": "Offset and duration remain editable on the timeline. Ctrl+Z undoes the application. Playback and MKV export share the adjustment.",
+  "lipsVideoEdit": "Generative video editing",
+  "lipsVideoEditHint": "Alignment adjusts the audio. Generating new mouth images requires a separate video engine; it is not integrated yet. See the Lip alignment guide in the GitHub repository.",
+  "lipsAudition": "Audition proposal with video",
+  "lipsPreviewVolume": "Alignment preview volume",
+  "lipsChartLegend": "Green: mouth activity · Purple: proposed voice and slot"
 }
