@@ -1,11 +1,11 @@
 {
-  "version": "0.7.1",
-  "notes": "Calage automatique des voix au créneau sans changer leur hauteur, dans le lecteur et le MKV. Nouveau chargement des références CosyVoice, reprise GPU compatible et diagnostics détaillés. Modèles conservés, aucun nouveau téléchargement des poids requis.",
-  "pub_date": "2026-10-15T13:41:19Z",
+  "version": "0.7.2",
+  "notes": "Correction de l’arrêt CosyVoice provoqué par les accents dans les logs Windows. Le choix CPU est désormais respecté même si CUDA est disponible. Le texte signalé, en mode transcription exacte, produit un WAV réel validé sur Windows/CPU. Aucun téléchargement supplémentaire des modèles requis.",
+  "pub_date": "2026-10-15T14:33:04Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSdFFyMUJGTFp3Nk1SenJuWXVLNjZKSmh0WENFMEZkVDQzVHV6OGFRYXAvVC9LdTVUemJDYkZudkM5RkwyYkhkMTZlZ2ZRYkIzVWJwb1VkeTZ5TnZXaWlLTDZwbGZENEFVPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkyMDcxNTg4CWZpbGU6QUkgRHViYmluZyBTdHVkaW9fMC43LjFfeDY0LXNldHVwLmV4ZQl2ZXJzaW9uOjAuNy4xClRqYVMvQTM3cHJjcFVxYUQrTlAyLzdjZENKcHVVZmJ4SWpqdGhZemJaYjBBazdKNmUwZkhsNkw0c1Zpd3A2R01MOVNvcmZreVZvWmN4dFNWZmwzbEJBPT0K",
-      "url": "https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.7.1/AI-Dubbing-Studio-0.7.1-Setup.exe"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSdFFyMUJGTFp3Nk9rRFFvci90dUJjcUwyZlNORDlkTEd4N2xBMjg4VitjS1VRa2pSWitmK1JzMnBTR2ZIKzVMTW9yVWsra05LdVFWZml0SHM3YTBKT2VHTEl1ZXl1VkFNPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkyMDc0NDM2CWZpbGU6QUkgRHViYmluZyBTdHVkaW9fMC43LjJfeDY0LXNldHVwLmV4ZQl2ZXJzaW9uOjAuNy4yCnRMQWNMZkg0bnhvZ3NjaUFTbUNFSDBHRHA3OWp5MWpaYjY4emdKMng3YmFrdG1EV2k0Y1M5WUpXdVlldG53Q3J1TW5HL2lxUGdCaFdmdmtCMTEwRkRBPT0K",
+      "url": "https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.7.2/AI-Dubbing-Studio-0.7.2-Setup.exe"
     }
   }
 }

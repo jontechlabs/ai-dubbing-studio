@@ -2,7 +2,7 @@
 
 ## v0.7.2 accented worker logs and explicit CPU placement
 
-Suites cover **43 TypeScript tests, 54 Rust/Linux tests (53 Windows), 36 Chrome scenarios and 23 Python tests**: 155 on Windows, 156 across the local suites. The successful Windows package workflow and build commit will be recorded before publication.
+Windows checks and signed-update package production passed in [run 38748912680](https://github.com/jontechlabs/ai-dubbing-studio/actions/runs/38748912680), built from `7f239c0408f971628bc806be73d5fae3b1066e97`. Suites cover **43 TypeScript tests, 54 Rust/Linux tests (53 Windows), 36 Chrome scenarios and 23 Python tests**: **155 tests on Windows**, 156 across the local suites. The setup and portable archive are copied unchanged from that workflow output. The final metadata commit only records this evidence and the verified updater feed.
 
 The reported exit-code-1 failure was reproduced with **real CosyVoice weights on native Windows**, zero-shot mode, the exact target sentence `Il était une fois un assassin légendaire.`, and a synthetic speech reference with its exact English transcript. A parent implementing the old strict UTF-8 stderr reader closed its pipe on the first Windows-1252 accented log line; the real child exited **1** and produced no WAV. The target text occurs in an upstream warning or the synthesis log, depending on reference transcript length. This establishes a concrete software failure independent of GPU kernels, rather than treating the preceding SDPA warning as the fatal cause.
 
