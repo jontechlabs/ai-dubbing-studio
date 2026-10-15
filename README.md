@@ -4,15 +4,15 @@ A local desktop workspace for preparing video dubbing: review bilingual subtitle
 
 Built with **Tauri 2, React, TypeScript and Rust**. English and French interface. Dark and light themes.
 
-**v0.5.0 — Phase 5 development preview.** Generate individual dubbing lines with official **CosyVoice3 0.5B RL**. Includes verified local installation, NVIDIA CUDA 12.8, character/current-line voice references, preserved alternative takes, A/B listening, selection, review and individual WAV export. [Dubbing guide (French)](docs/PHASE-5.md).
+**v0.6.0 — Phase 6 development preview.** Install and generate with **Fish S2 Pro FP8**, **Fish S2 GGUF Q8_0**, and **Qwen3-TTS Base 0.6B / 1.7B GGUF Q8_0**, alongside CosyVoice3. Select the engine and GPU for each line, preserve alternative takes and export individual WAV files. [Phase 6 guide (French)](docs/PHASE-6.md).
 
-Install from **Models**, then choose **Dub** on a dialogue. For Japanese reference speech and French output, use cross-language cloning without a reference transcript. Model files total 5.05 GiB; runtime dependencies are additional. CUDA devices execute a kernel and FP16 matrix multiplication before being offered. GPU generation on an RTX 5060 Ti remains to be confirmed on that hardware; real Windows inference validation is documented in [VALIDATION](VALIDATION.md).
+Start with Qwen 0.6B GGUF for a 16 GB GPU. GGUF uses the Windows portable Vulkan engine; Fish FP8 uses an isolated CUDA 12.8 environment and requires at least 12 GiB free VRAM. Actual memory use and RTX 5060 Ti generation remain to be qualified on that hardware. CosyVoice3 now automatically converts diarization references from 16 kHz to 24 kHz, fixing `INVALID_REFERENCE_AUDIO` for valid references. [Validation and limits](VALIDATION.md).
 
-![Dubbing takes, A/B comparison and review](docs/screenshots/dubbing-line.png)
+![Dubbing takes, A/B comparison and review](docs/screenshots/phase6-dubbing.png)
 
 *Actual React browser UI with simulated native results/devices. These are not RTX performance measurements. WAV take listening is independent from video playback in this phase.*
 
-[Windows downloads](https://github.com/jontechlabs/ai-dubbing-studio/releases/tag/v0.5.0) · [User guide](docs/GETTING-STARTED.md) · [Build instructions](docs/BUILDING.md) · [Français](README.fr.md)
+[Windows downloads](https://github.com/jontechlabs/ai-dubbing-studio/releases/tag/v0.6.0) · [User guide](docs/GETTING-STARTED.md) · [Build instructions](docs/BUILDING.md) · [Français](README.fr.md)
 
 ![Studio with bilingual dialogue, video preview, text editor and timeline](docs/screenshots/studio.png)
 
@@ -26,9 +26,9 @@ Audio regions with independent silence and volume, timeline range selection, fas
 
 | Package | Purpose |
 | --- | --- |
-| [Windows x64 setup](https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.5.0/AI-Dubbing-Studio-0.5.0-Setup.exe) | NSIS installer for the current user, with English/French installer interface |
-| [Portable ZIP](https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.5.0/AI-Dubbing-Studio-Windows-Portable.zip) | Extract the whole folder and launch `AI Dubbing Studio.exe` |
-| [SHA-256 checksums](https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.5.0/SHA256SUMS.txt) | Verify the setup and ZIP downloads |
+| [Windows x64 setup](https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.6.0/AI-Dubbing-Studio-0.6.0-Setup.exe) | NSIS installer for the current user, with English/French installer interface |
+| [Portable ZIP](https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.6.0/AI-Dubbing-Studio-Windows-Portable.zip) | Extract the whole folder and launch `AI Dubbing Studio.exe` |
+| [SHA-256 checksums](https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.6.0/SHA256SUMS.txt) | Verify the setup and ZIP downloads |
 
 Target: **Windows 10/11 x64**, with **Microsoft Edge WebView2 Runtime**. FFmpeg and FFprobe are included. Python, CUDA and AI model downloads are not required for editing and playback. Installation may need Internet access if WebView2 is missing; local project editing does not require a cloud account.
 

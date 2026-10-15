@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next';
 import { useState } from 'react';
 import type { Project } from '../domain/types';
 import { variantsFor } from '../domain/modelVariants';
+import { voiceVariant } from '../domain/voiceEngines';
 
 export function VoiceVariantSettings({
   project,
@@ -56,7 +57,7 @@ export function VoiceVariantSettings({
             {t('variantEngine')}: {selected.engine}
           </small>
           <p className="panel-description">
-            {t(selected.id === 'cosy3-official' ? 'ttsVariantReady' : 'variantNotIntegrated')}
+            {t(voiceVariant(selected.id) ? 'ttsVariantReady' : 'variantNotIntegrated')}
           </p>
           {selected.reportedVramGb && (
             <p className={selected.reportedVramGb > 16 ? 'warning' : 'panel-description'}>

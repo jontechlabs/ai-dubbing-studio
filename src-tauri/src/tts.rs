@@ -20,6 +20,8 @@ mod tests;
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Options {
+    #[serde(default)]
+    pub variant_id: Option<String>,
     pub device: String,
     pub reference_mode: String,
     pub reference_id: Option<String>,
@@ -28,11 +30,20 @@ pub struct Options {
     pub seed: u32,
 }
 impl Options {
+    pub fn variant(&self) -> &str {
+        self.variant_id.as_deref().unwrap_or("cosy3-official")
+    }
     pub fn validate(&self) -> Result<(), String> {
+        if self.variant() != "cosy3-official"
+            && !crate::voice_engines::IDS.contains(&self.variant())
+        {
+            return Err("INVALID_TTS_REQUEST".into());
+        }
         if !["auto", "cpu"].contains(&self.device.as_str())
             && !self
                 .device
                 .strip_prefix("cuda:")
+                .or_else(|| self.device.strip_prefix("vulkan:"))
                 .is_some_and(|index| index.parse::<u8>().is_ok())
         {
             return Err("DEVICE_UNAVAILABLE".into());
@@ -111,7 +122,7 @@ fn installed(core: &Core) -> bool {
         .iter()
         .all(|name| folder.join("model").join(name).is_file())
 }
-fn busy(core: &Core) -> bool {
+pub(crate) fn busy(core: &Core) -> bool {
     core.jobs.lock().is_ok_and(|jobs| {
         jobs.values()
             .any(|job| ["queued", "running", "paused"].contains(&job.saved.record.status.as_str()))
@@ -159,7 +170,7 @@ fn copy_cancelled(
         writer.write_all(&buffer[..size]).map_err(io_error)?;
     }
 }
-fn extract(archive: &Path, destination: &Path, flag: &AtomicBool) -> Result<(), String> {
+pub(crate) fn extract(archive: &Path, destination: &Path, flag: &AtomicBool) -> Result<(), String> {
     let mut archive =
         zip::ZipArchive::new(std::fs::File::open(archive).map_err(io_error)?).map_err(io_error)?;
     for index in 0..archive.len() {
@@ -295,7 +306,11 @@ pub fn enqueue<R: tauri::Runtime>(
     if busy(&core) {
         return Err("BUSY".into());
     }
-    if !installed(&core) {
+    if !(if options.variant() == "cosy3-official" {
+        installed(&core)
+    } else {
+        crate::voice_engines::installed(&core, options.variant())
+    }) {
         return Err("TTS_RUNTIME_REQUIRED".into());
     }
     let request = {
@@ -342,6 +357,9 @@ fn validate_input(p: &Project, line_id: &str, options: &Options) -> Result<(), S
     {
         return Err("TTS_LANGUAGE_UNSUPPORTED".into());
     }
+    if options.variant().starts_with("fish-s2") && options.mode != "zeroShot" {
+        return Err("TTS_TRANSCRIPT_REQUIRED".into());
+    }
     if options.reference_mode != "current" {
         let reference = reference(p, line, options)?;
         if reference.duration_ms < 1000 {
@@ -383,10 +401,18 @@ async fn execute<R: tauri::Runtime>(
     request: &Request,
     flag: &AtomicBool,
 ) -> Result<(), String> {
-    let launch = WorkerLaunch {
-        python: separation::python(&root(core)),
-        script: separation::resources(app).join("cosyvoice_worker.py"),
-        model: root(core).join("model"),
+    let launch = if request.options.variant() == "cosy3-official" {
+        WorkerLaunch {
+            python: separation::python(&root(core)),
+            script: separation::resources(app).join("cosyvoice_worker.py"),
+            model: root(core).join("model"),
+        }
+    } else {
+        WorkerLaunch {
+            python: separation::python(&crate::voice_engines::root(core).join("fish-runtime")),
+            script: separation::resources(app).join("fish_worker.py"),
+            model: crate::voice_engines::root(core).join(request.options.variant()),
+        }
     };
     execute_with_launch(core, app, key, request, flag, &launch).await
 }
@@ -423,6 +449,7 @@ async fn execute_with_launch<R: tauri::Runtime>(
     let generation_id = id();
     let destination = directory.join(format!("{generation_id}.wav"));
     let ref_temp = directory.join(format!("{generation_id}-reference.wav"));
+    let ref_prepared = directory.join(format!("{generation_id}-normalized.wav"));
     let (reference_audio, transcript) = if request.options.reference_mode == "current" {
         let (source, index) = crate::speakers::audio_source(&p, &request.root)?;
         let args = vec![
@@ -475,10 +502,12 @@ async fn execute_with_launch<R: tauri::Runtime>(
     }
     let input = directory.join(format!("{generation_id}.request.json"));
     let result_path = directory.join(format!("{generation_id}.result.json"));
-    let input_value = serde_json::json!({"text":text(&p,line),"language":p.languages.target,"referenceAudio":reference_audio,"referenceTranscript":transcript,"modelDir":launch.model,"outputPath":destination,"resultPath":result_path,"device":request.options.device,"speed":request.options.speed,"mode":request.options.mode,"seed":request.options.seed});
+    let input_value = serde_json::json!({"preparedReferenceAudio":ref_prepared,"variantId":request.options.variant(),"text":text(&p,line),"language":p.languages.target,"referenceAudio":reference_audio,"referenceTranscript":transcript,"modelDir":launch.model,"outputPath":destination,"resultPath":result_path,"device":request.options.device,"speed":request.options.speed,"mode":request.options.mode,"seed":request.options.seed});
     project::atomic_write(&input, &serde_json::to_vec(&input_value).map_err(io_error)?)?;
-    let result = tokio::time::timeout(
-        Duration::from_secs(900),
+    let result = tokio::time::timeout(Duration::from_secs(900), async {
+        if request.options.variant().contains("gguf") {
+            return crate::voice_engines::generate_gguf(core, app, key, &input_value, flag).await;
+        }
         separation::process(
             core,
             app,
@@ -490,13 +519,15 @@ async fn execute_with_launch<R: tauri::Runtime>(
                 input.to_string_lossy().into_owned(),
             ],
             flag,
-        ),
-    )
+        )
+        .await
+    })
     .await
     .map_err(|_| "TTS_TIMEOUT".to_owned())
     .and_then(|result| result);
     let _ = std::fs::remove_file(&input);
     let _ = std::fs::remove_file(&ref_temp);
+    let _ = std::fs::remove_file(&ref_prepared);
     if let Err(error) = result {
         let _ = std::fs::remove_file(&destination);
         let _ = std::fs::remove_file(&result_path);
@@ -517,7 +548,7 @@ async fn execute_with_launch<R: tauri::Runtime>(
         }
         .into());
     }
-    let generation = serde_json::json!({"id":generation_id,"kind":"tts","dialogueId":line.id,"providerId":"cosyvoice3","modelId":"cosyvoice3-05b-rl","path":format!("generations/{generation_id}.wav"),"createdAt":now(),"sourcePath":p.media.as_ref().map(|m|&m.path),"startMs":line.start_ms,"endMs":line.end_ms,"text":text(&p,line),"language":p.languages.target,"characterId":line.character_id,"durationMs":duration,"sampleRate":24000,"options":request.options,"referenceTranscript":transcript,"referenceId":if request.options.reference_mode=="current"{None}else{reference(&p,line,&request.options).ok().map(|r|&r.id)},"device":metadata["device"],"deviceName":metadata["deviceName"],"peakVramMb":metadata["peakVramMb"],"inputHash":request.fingerprint});
+    let generation = serde_json::json!({"id":generation_id,"kind":"tts","dialogueId":line.id,"providerId":if request.options.variant()=="cosy3-official"{"cosyvoice3"}else if request.options.variant().starts_with("fish"){"fish-s2"}else{"qwen3-tts"},"modelId":request.options.variant(),"path":format!("generations/{generation_id}.wav"),"createdAt":now(),"sourcePath":p.media.as_ref().map(|m|&m.path),"startMs":line.start_ms,"endMs":line.end_ms,"text":text(&p,line),"language":p.languages.target,"characterId":line.character_id,"durationMs":duration,"sampleRate":24000,"options":request.options,"referenceTranscript":transcript,"referenceId":if request.options.reference_mode=="current"{None}else{reference(&p,line,&request.options).ok().map(|r|&r.id)},"device":metadata["device"],"deviceName":metadata["deviceName"],"peakVramMb":metadata["peakVramMb"],"inputHash":request.fingerprint});
     let mut session = core.session.lock().map_err(io_error)?;
     let s = session.as_mut().ok_or("NO_PROJECT")?;
     if s.root != request.root || s.project.id != request.project_id {

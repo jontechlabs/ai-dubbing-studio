@@ -6,6 +6,7 @@ import * as bridge from '../services/bridge';
 import { futureVoiceProviders } from '../domain/providers';
 import { VoiceVariantSettings } from './VoiceVariantSettings';
 import { CosyModel } from './DubPanel';
+import { VoiceEngineModels } from './VoiceEngineModels';
 export function ModelsPanel({
   project,
   jobs,
@@ -62,6 +63,7 @@ export function ModelsPanel({
     <div className="panel-body models-panel">
       <p className="panel-description">{t('modelsHint')}</p>
       <CosyModel jobs={jobs} onError={onError} onStarted={showJobs} />
+      <VoiceEngineModels jobs={jobs} onError={onError} onStarted={showJobs} />
       <div className="model-card">
         <h3>
           <AudioLines size={16} />
@@ -127,8 +129,7 @@ export function ModelsPanel({
             <option value="">{t('modelNoPreference')}</option>
             {futureVoiceProviders.map((provider) => (
               <option key={provider.id} value={provider.id}>
-                {provider.name} ·{' '}
-                {t(provider.id === 'cosyvoice3' ? 'ttsAvailable' : `modelPhase${provider.phase}`)}
+                {provider.name} · {t('ttsAvailable')}
               </option>
             ))}
           </select>

@@ -1,0 +1,5 @@
+{
+  "source": "https://github.com/Saganaki22/ComfyUI-FishAudioS2",
+  "revision": "521f33fe79c081da314dc905ce399c62edb24749",
+  "notes": "Inference fork with pure PyTorch FP8Linear. No ComfyUI runtime used. Whitespace-only cleanup in base.yaml and text2semantic_finetune.yaml."
+}

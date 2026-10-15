@@ -99,6 +99,13 @@ def validate_request(request):
 
 
 def generate(request):
+    validate_request(request)
+    from voice_reference import prepare_reference
+    with prepare_reference(request['referenceAudio'], report, request.get('preparedReferenceAudio')) as reference:
+        generate_normalized(dict(request, referenceAudio=str(reference)))
+
+
+def generate_normalized(request):
     requested = validate_request(request)
     if requested == 'cpu':
         os.environ['CUDA_VISIBLE_DEVICES'] = ''

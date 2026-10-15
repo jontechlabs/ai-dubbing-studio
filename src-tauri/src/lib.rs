@@ -15,6 +15,7 @@ mod smoke;
 mod speakers;
 mod subtitles;
 mod tts;
+mod voice_engines;
 mod waveform;
 pub fn smoke_test(path: &std::path::Path) -> Result<(), String> {
     smoke::run(path)
@@ -41,6 +42,22 @@ pub struct Core {
     model_dir: Mutex<PathBuf>,
 }
 type Shared = Arc<Core>;
+#[tauri::command]
+async fn voice_status(
+    app: tauri::AppHandle,
+    core: State<'_, Shared>,
+    include_cuda: Option<bool>,
+) -> Result<serde_json::Value, String> {
+    voice_engines::status(core.inner().clone(), app, include_cuda.unwrap_or(false)).await
+}
+#[tauri::command]
+fn install_voice_runtime(
+    app: tauri::AppHandle,
+    core: State<'_, Shared>,
+    variant_id: String,
+) -> Result<String, String> {
+    voice_engines::install(core.inner().clone(), app, variant_id)
+}
 #[tauri::command]
 async fn tts_status(app: tauri::AppHandle, core: State<'_, Shared>) -> Result<tts::Status, String> {
     tts::status(core.inner().clone(), app).await
@@ -678,6 +695,9 @@ fn retry_job(app: tauri::AppHandle, core: State<'_, Shared>, id: String) -> Resu
     if let Some(cuda) = record.tts_install {
         return tts::install(core.inner().clone(), app, cuda);
     }
+    if let Some(id) = record.voice_install {
+        return voice_engines::install(core.inner().clone(), app, id);
+    }
     if let Some(request) = record.tts_request {
         let session = core.session.lock().map_err(io_error)?;
         let s = session.as_ref().ok_or("NO_PROJECT")?;
@@ -827,6 +847,8 @@ pub fn run() {
         })
         .invoke_handler(tauri::generate_handler![
             tts_status,
+            voice_status,
+            install_voice_runtime,
             install_tts_runtime,
             generate_line,
             generation_path,

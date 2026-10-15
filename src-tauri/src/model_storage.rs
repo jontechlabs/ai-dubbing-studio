@@ -12,7 +12,12 @@ use std::{
 };
 
 // Only application-owned model installations belong here. Project assets stay in projects.
-const INSTALLATIONS: &[&str] = &["bandit-runtime", "speaker-runtime"];
+const INSTALLATIONS: &[&str] = &[
+    "bandit-runtime",
+    "speaker-runtime",
+    "cosyvoice3-runtime",
+    "voice-engines",
+];
 const CONFIG: &str = "model-storage.json";
 type FileEntry = (PathBuf, u64, Option<std::time::SystemTime>);
 
@@ -485,6 +490,10 @@ mod tests {
     #[test]
     fn moves_all_installations_and_reloads_durable_path() {
         let (_temp, data, source, dest) = fixture();
+        for name in ["cosyvoice3-runtime", "voice-engines"] {
+            fs::create_dir_all(source.join(name)).unwrap();
+            fs::write(source.join(name).join("model.bin"), b"voice model").unwrap();
+        }
         let mut progress_values = vec![];
         let warnings = migrate(
             &data,
@@ -507,6 +516,13 @@ mod tests {
         );
         assert!(!source.join("bandit-runtime").exists());
         assert!(!source.join("speaker-runtime").exists());
+        for name in ["cosyvoice3-runtime", "voice-engines"] {
+            assert_eq!(
+                fs::read(dest.join(name).join("model.bin")).unwrap(),
+                b"voice model"
+            );
+            assert!(!source.join(name).exists());
+        }
         assert_eq!(progress_values.last(), Some(&1.0));
         assert!(progress_values.windows(2).all(|v| v[0] <= v[1]));
     }

@@ -35,7 +35,11 @@ async fn cancelled(flag: &AtomicBool) {
         tokio::time::sleep(Duration::from_millis(50)).await;
     }
 }
-async fn cached(path: &Path, spec: &Spec<'_>, flag: &AtomicBool) -> Result<bool, String> {
+pub(crate) async fn cached(
+    path: &Path,
+    spec: &Spec<'_>,
+    flag: &AtomicBool,
+) -> Result<bool, String> {
     if flag.load(Ordering::Relaxed) {
         return Err("CANCELLED".into());
     }

@@ -10,6 +10,7 @@ import {
   selectedGeneration,
   spokenText,
   staleGeneration,
+  validVoiceSettings,
 } from './tts';
 import { rebaseProject } from './rebase';
 
@@ -40,6 +41,20 @@ function take(p: Project, id = 'take1', durationMs = 2000): Generation {
   };
 }
 describe('dubbing takes', () => {
+  it('keeps legacy settings compatible and validates persisted phase 6 engine/device choices', () => {
+    expect(validVoiceSettings(defaultVoiceSettings)).toBe(true);
+    const p = demoProject();
+    p.formatVersion = 5;
+    p.modelPreferences = { ttsProviderId: 'qwen3-tts', voiceVariantId: 'qwen3-06b-gguf-q8' };
+    p.dialogues[0].voiceSettings = {
+      ...defaultVoiceSettings,
+      variantId: 'qwen3-06b-gguf-q8',
+      device: 'vulkan:1',
+    };
+    expect(validateProject(p)).toEqual(p);
+    expect(validVoiceSettings({ ...defaultVoiceSettings, variantId: 'unknown' })).toBe(false);
+    expect(validVoiceSettings({ ...defaultVoiceSettings, device: 'vulkan:-1' })).toBe(false);
+  });
   it('uses pronunciation separately and strips subtitle tags', () => {
     const p = demoProject();
     p.targetCues[0].text = '<i>Sakamoto</i>';

@@ -197,7 +197,7 @@ test('GGUF and FP8 profiles expose engine requirements and persist the intended 
   await nativeMock(page);await page.goto('/');await page.getByRole('button',{name:'Modèles',exact:true}).click();
   const provider=page.getByRole('combobox',{name:'Moteur préféré pour le projet'});await provider.selectOption('fish-s2');
   const variant=page.getByRole('combobox',{name:'Variante préférée'});await variant.selectOption('fish-s2-fp8');
-  await expect(page.getByText('VRAM annoncée par la source : environ 12 Go.')).toBeVisible();await expect(page.getByText('Moteur et variante pas encore intégrés dans le studio.')).toBeVisible();
+  await expect(page.getByText('VRAM annoncée par la source : environ 12 Go.')).toBeVisible();await expect(page.getByText('Variante intégrée : installation dans Modèles, sélection dans Doublage.')).toBeVisible();
   await page.locator('.panel-body').evaluate(element=>{element.scrollTop=element.scrollHeight;});await page.screenshot({path:'test-results/screenshots/studio-model-variants.png'});
   await expect(page.locator('.save-indicator')).toHaveText('Sauvegardé');await page.reload();await page.getByRole('button',{name:'Modèles',exact:true}).click();await expect(variant).toHaveValue('fish-s2-fp8');
   await variant.selectOption('fish-s2-bf16');await expect(page.getByText(/Dépasse la capacité/)).toBeVisible();

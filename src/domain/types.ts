@@ -40,6 +40,7 @@ export interface Dialogue {
   voiceSettings?: VoiceSettings;
 }
 export interface VoiceSettings {
+  variantId?: string | null;
   device: string;
   referenceMode: 'character' | 'current' | 'custom';
   referenceId: string | null;

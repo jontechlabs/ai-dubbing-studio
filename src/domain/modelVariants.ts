@@ -12,7 +12,21 @@ export interface VoiceVariant {
   suggested16Gb: boolean;
   reportedVramGb?: number;
 }
+import { installedVoiceVariants } from './voiceEngines';
 export const voiceVariants: VoiceVariant[] = [
+  ...installedVoiceVariants
+    .filter((v) => v.backend === 'vulkan')
+    .map((v) => ({
+      id: v.id,
+      providerId: v.providerId,
+      name: v.name,
+      format: 'GGUF Q8_0',
+      origin: 'community' as const,
+      engine: 'audio.cpp 0.9.1 · Vulkan / CPU',
+      source: 'https://huggingface.co/audio-cpp/audio.cpp-gguf',
+      detailKey: 'phase6Gguf',
+      suggested16Gb: true,
+    })),
   {
     id: 'cosy3-official',
     providerId: 'cosyvoice3',

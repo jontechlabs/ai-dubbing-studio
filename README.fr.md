@@ -1,14 +1,14 @@
-# AI Dubbing Studio — phases 1–5
+# AI Dubbing Studio — phases 1–6
 
-[Version anglaise et captures de l’interface](README.md) · [Téléchargements Windows](https://github.com/jontechlabs/ai-dubbing-studio/releases/tag/v0.5.0)
+[Version anglaise et captures de l’interface](README.md) · [Téléchargements Windows](https://github.com/jontechlabs/ai-dubbing-studio/releases/tag/v0.6.0)
 
 Studio desktop local de travail texte, voix et vidéo. Tauri 2, React, TypeScript strict et Rust.
 
-**v0.5.0** ajoute le doublage par réplique avec **CosyVoice3 0.5B RL** : installation locale vérifiée, profil CUDA 12.8 pour NVIDIA RTX, références vocales, plusieurs essais conservés, comparaison A/B, sélection, validation et export WAV individuel. [Guide de la phase 5](docs/PHASE-5.md).
+**v0.6.0 — phase 6.** Le doublage accueille **Fish S2 Pro FP8**, **Fish S2 GGUF Q8_0** et **Qwen3-TTS Base 0.6B / 1.7B GGUF Q8_0**, en complément de CosyVoice3. Installation depuis Modèles, choix du moteur et du GPU par réplique, essais conservés, comparaison et export WAV. [Guide de la phase 6](docs/PHASE-6.md).
 
-Installez CosyVoice3 depuis **Modèles**, puis cliquez sur **Doubler** dans une réplique. Pour une référence japonaise et une traduction française, utilisez le mode **Entre langues**, sans transcription de la référence. Les poids prennent environ 5,05 GiB sur disque ; Python et les dépendances s'ajoutent. Le calcul FP16 CUDA est contrôlé avant de proposer un GPU. La génération sur une RTX 5060 Ti reste à confirmer sur le matériel de l'utilisateur.
+Pour 16 Go, commencez par Qwen 0.6B GGUF. GGUF utilise Vulkan ; Fish FP8 utilise CUDA 12.8 et exige au moins 12 Gio de VRAM libre. La génération et la mémoire réelle sur RTX 5060 Ti restent à qualifier sur ce matériel. Le rejet CosyVoice3 `INVALID_REFERENCE_AUDIO` des références de locuteurs à 16 kHz est corrigé par conversion automatique vers 24 kHz, sans modifier les originaux. [Tests et limites](VALIDATION.md).
 
-![Essais de doublage et comparaison](docs/screenshots/dubbing-line.png)
+![Essais de doublage et comparaison](docs/screenshots/phase6-dubbing.png)
 
 Capture de l'interface React réelle avec résultats et périphériques simulés. Les tests d'inférence Windows réels sont décrits dans [VALIDATION](VALIDATION.md).
 

@@ -224,13 +224,20 @@ impl Project {
                         .contains(&preferences["voiceVariantId"].as_str().unwrap_or("")),
                     Some("fish-s2") => [
                         "fish-s2-fp8",
+                        "fish-s2-gguf-q8",
                         "fish-s2-gguf-q6",
                         "fish-s2-gguf-q4",
                         "fish-s2-bf16",
                     ]
                     .contains(&preferences["voiceVariantId"].as_str().unwrap_or("")),
-                    Some("qwen3-tts") => ["qwen3-06b-bf16", "qwen3-17b-bf16", "qwen3-17b-gguf-q5"]
-                        .contains(&preferences["voiceVariantId"].as_str().unwrap_or("")),
+                    Some("qwen3-tts") => [
+                        "qwen3-06b-bf16",
+                        "qwen3-17b-bf16",
+                        "qwen3-17b-gguf-q5",
+                        "qwen3-06b-gguf-q8",
+                        "qwen3-17b-gguf-q8",
+                    ]
+                    .contains(&preferences["voiceVariantId"].as_str().unwrap_or("")),
                     _ => false,
                 };
                 if !valid {

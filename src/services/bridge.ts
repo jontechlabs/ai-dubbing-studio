@@ -8,6 +8,17 @@ import { browserStore, downloadText, pickBrowserFile } from './browserStore';
 import { audioPeaks, type Waveform } from '../domain/waveform';
 
 export const native = isTauri();
+export interface VoiceStatus {
+  variants: { id: string; installed: boolean; sizeBytes: number }[];
+  devices: { id: string; name: string; discrete?: boolean }[];
+  cudaDevices: { id: string; name: string }[];
+}
+export function voiceStatus(includeCuda = false) {
+  return invoke<VoiceStatus>('voice_status', { includeCuda });
+}
+export function installVoiceRuntime(variantId: string) {
+  return invoke<string>('install_voice_runtime', { variantId });
+}
 export interface TtsStatus {
   installed: boolean;
   installing: boolean;

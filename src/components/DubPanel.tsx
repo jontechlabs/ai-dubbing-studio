@@ -14,6 +14,7 @@ import {
   voiceGenerations,
 } from '../domain/tts';
 import * as bridge from '../services/bridge';
+import { installedVoiceVariants, voiceVariant } from '../domain/voiceEngines';
 
 export function CosyModel({
   jobs,
@@ -141,6 +142,11 @@ export function DubPanel({
   const { t } = useTranslation();
   const [status, setStatus] = useState<bridge.TtsStatus | null>(null),
     [working, setWorking] = useState(false);
+  const [engines, setEngines] = useState<bridge.VoiceStatus | null>(null);
+  const variantId =
+    line?.voiceSettings?.variantId ??
+    voiceVariant(project.modelPreferences?.voiceVariantId)?.id ??
+    'cosy3-official';
   const [compareA, setCompareA] = useState(''),
     [compareB, setCompareB] = useState('');
   const completion = jobs
@@ -154,20 +160,39 @@ export function DubPanel({
   useEffect(() => {
     let disposed = false;
     if (bridge.native)
-      void bridge
-        .ttsStatus()
-        .then((s) => {
-          if (!disposed) setStatus(s);
-        })
-        .catch((e) => {
-          if (!disposed) onError(String(e));
-        });
+      void (
+        variantId === 'cosy3-official'
+          ? bridge.ttsStatus().then((s) => {
+              if (!disposed) setStatus(s);
+            })
+          : bridge.voiceStatus(variantId === 'fish-s2-fp8').then((s) => {
+              if (!disposed) setEngines(s);
+            })
+      ).catch((e) => {
+        if (!disposed) onError(String(e));
+      });
     return () => {
       disposed = true;
     };
-  }, [completion, onError]);
+  }, [completion, onError, variantId]);
   if (!line) return <div className="panel-body">{t('selectLine')}</div>;
-  const settings = line.voiceSettings ?? defaultVoiceSettings;
+  const preferred = voiceVariant(project.modelPreferences?.voiceVariantId);
+  const settings = {
+    ...(line.voiceSettings ?? defaultVoiceSettings),
+    variantId: line.voiceSettings?.variantId ?? preferred?.id ?? 'cosy3-official',
+  };
+  const variant = voiceVariant(settings.variantId)!;
+  const ready =
+    variant.id === 'cosy3-official'
+      ? status?.installed
+      : engines?.variants.some((v) => v.id === variant.id && v.installed);
+  const checking = variant.id === 'cosy3-official' ? status === null : engines === null;
+  const devices =
+    variant.id === 'cosy3-official'
+      ? status?.inventory.devices
+      : variant.backend === 'vulkan'
+        ? engines?.devices
+        : engines?.cudaDevices.filter((d) => d.id.startsWith('cuda:'));
   const character = project.characters.find((c) => c.id === line.characterId);
   const reference = character?.references.find(
     (r) =>
@@ -182,7 +207,7 @@ export function DubPanel({
   const inputText = spokenText(project, line);
   const referenceMissing = settings.referenceMode !== 'current' && !reference;
   const transcriptMissing =
-    settings.mode === 'zeroShot' &&
+    (settings.mode === 'zeroShot' || variant.providerId === 'fish-s2') &&
     (settings.referenceMode === 'current'
       ? !project.sourceCues.some((c) => line.sourceCueIds.includes(c.id) && c.text.trim())
       : !reference?.transcript.trim());
@@ -194,11 +219,44 @@ export function DubPanel({
     onEdit((p) => editVoiceSettings(p, line.id, { ...settings, ...change }));
   return (
     <div className="panel-body dub-panel">
-      <h3>CosyVoice3 0.5B RL</h3>
+      <h3>{variant.name}</h3>
+      <label className="field">
+        <span>{t('phase6Engine')}</span>
+        <select
+          aria-label={t('phase6Engine')}
+          value={variant.id}
+          disabled={busy}
+          onChange={(e) => {
+            const next = voiceVariant(e.target.value)!;
+            edit({
+              variantId: next.id,
+              device: 'auto',
+              mode: next.providerId === 'fish-s2' ? 'zeroShot' : settings.mode,
+            });
+          }}
+        >
+          {installedVoiceVariants.map((v) => (
+            <option key={v.id} value={v.id}>
+              {v.name}
+            </option>
+          ))}
+        </select>
+      </label>
+      {variant.id !== 'cosy3-official' && (
+        <p className="panel-description">
+          {t(
+            variant.backend === 'vulkan'
+              ? 'phase6Gguf'
+              : variant.id === 'fish-s2-fp8'
+                ? 'phase6Fp8'
+                : 'ttsLocalHint',
+          )}
+        </p>
+      )}
       <p className="panel-description">{t('ttsLocalHint')}</p>
-      {!status?.installed && (
+      {!ready && (
         <div className="tts-not-ready">
-          <p>{t('ttsNeedsInstallation')}</p>
+          <p>{t(checking ? 'phase6Checking' : 'ttsNeedsInstallation')}</p>
           <button className="button accent" onClick={onModels}>
             {t('models')}
           </button>
@@ -212,12 +270,12 @@ export function DubPanel({
           onChange={(e) => edit({ device: e.target.value })}
         >
           <option value="auto">{t('ttsDeviceAuto')}</option>
-          {(status?.inventory.devices ?? []).map((d) => (
+          {(devices ?? []).map((d) => (
             <option key={d.id} value={d.id}>
               {d.name}
             </option>
           ))}
-          {!status?.inventory.devices.some((d) => d.id === 'cpu') && (
+          {variant.id !== 'fish-s2-fp8' && !devices?.some((d) => d.id === 'cpu') && (
             <option value="cpu">CPU</option>
           )}
         </select>
@@ -264,11 +322,13 @@ export function DubPanel({
       <label className="field">
         <span>{t('ttsCloneMode')}</span>
         <select
-          value={settings.mode}
+          value={variant.providerId === 'fish-s2' ? 'zeroShot' : settings.mode}
           disabled={busy}
           onChange={(e) => edit({ mode: e.target.value as typeof settings.mode })}
         >
-          <option value="crossLingual">{t('ttsCrossLingual')}</option>
+          <option value="crossLingual" disabled={variant.providerId === 'fish-s2'}>
+            {t('ttsCrossLingual')}
+          </option>
           <option value="zeroShot">{t('ttsZeroShot')}</option>
         </select>
       </label>
@@ -323,7 +383,7 @@ export function DubPanel({
         disabled={
           !bridge.native ||
           busy ||
-          !status?.installed ||
+          !ready ||
           referenceMissing ||
           transcriptMissing ||
           shortReference ||
@@ -334,10 +394,15 @@ export function DubPanel({
           setWorking(true);
           onEdit((p) => ({
             ...editVoiceSettings(p, line.id, settings),
-            modelPreferences: { ttsProviderId: 'cosyvoice3', voiceVariantId: 'cosy3-official' },
+            modelPreferences: { ttsProviderId: variant.providerId, voiceVariantId: variant.id },
           }));
           void snapshot()
-            .then(() => bridge.generateLine(line.id, settings))
+            .then(() =>
+              bridge.generateLine(line.id, {
+                ...settings,
+                mode: variant.providerId === 'fish-s2' ? 'zeroShot' : settings.mode,
+              }),
+            )
             .then(onStarted)
             .catch((e) => onError(String(e)))
             .finally(() => setWorking(false));
@@ -395,6 +460,7 @@ export function DubPanel({
               {(generation.durationMs / 1000).toFixed(2)} s {active && <Check size={13} />}
             </strong>
             <small>
+              {voiceVariant(generation.options.variantId)?.name ?? generation.modelId} ·{' '}
               {generation.deviceName} · {generation.options.speed.toFixed(2)}× · {t('ttsSeed')}{' '}
               {generation.options.seed}
             </small>

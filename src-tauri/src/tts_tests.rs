@@ -4,6 +4,7 @@ use std::{collections::HashMap, sync::Mutex};
 
 fn options() -> Options {
     Options {
+        variant_id: None,
         device: "cpu".into(),
         reference_mode: "character".into(),
         reference_id: None,
@@ -110,6 +111,42 @@ fn tts_snapshot_and_reference_validation() {
     );
 }
 
+#[test]
+fn phase6_variants_survive_project_validation_and_fish_requires_transcript_mode() {
+    let mut p = fixture();
+    p.format_version = 5;
+    let mut settings = options();
+    for (id, provider) in [
+        ("qwen3-06b-gguf-q8", "qwen3-tts"),
+        ("qwen3-17b-gguf-q8", "qwen3-tts"),
+        ("fish-s2-gguf-q8", "fish-s2"),
+        ("fish-s2-fp8", "fish-s2"),
+    ] {
+        settings.variant_id = Some(id.into());
+        settings.device = if id.contains("gguf") {
+            "vulkan:1"
+        } else {
+            "cuda:0"
+        }
+        .into();
+        settings.mode = "zeroShot".into();
+        p.characters[0].references[0].transcript = "Hello".into();
+        p.dialogues[0].voice_settings = Some(settings.clone());
+        p.model_preferences =
+            Some(serde_json::json!({"ttsProviderId":provider,"voiceVariantId":id}));
+        assert!(settings.validate().is_ok());
+        assert!(p.validate().is_ok());
+        assert!(validate_input(&p, &p.dialogues[0].id, &settings).is_ok());
+    }
+    settings.mode = "crossLingual".into();
+    assert_eq!(
+        validate_input(&p, &p.dialogues[0].id, &settings).unwrap_err(),
+        "TTS_TRANSCRIPT_REQUIRED"
+    );
+    settings.variant_id = Some("unknown-engine".into());
+    assert!(settings.validate().is_err());
+}
+
 #[tokio::test]
 async fn tts_refuses_missing_runtime_without_job_or_project_changes() {
     let temp = tempfile::tempdir().unwrap();
@@ -151,6 +188,7 @@ async fn generation_job_keeps_takes_and_cancellation_preserves_previous_audio() 
     let script = temp.path().join("worker.py");
     std::fs::write(&script,r#"import json,sys,wave,struct,time
 r=json.load(open(sys.argv[-1],encoding='utf-8'))
+open(r['preparedReferenceAudio'],'wb').write(b'normalized reference fixture')
 if r['seed']==99:
     open(r['outputPath'],'wb').write(b'partial')
     print(json.dumps({'stage':'ttsGenerate','progress':None}),flush=True)
@@ -211,6 +249,13 @@ json.dump({'device':'cpu','deviceName':'Protocol test','peakVramMb':0},open(r['r
     );
     assert_eq!(project::load(&root).unwrap().generations.len(), 2);
     assert_eq!(std::fs::read(first).unwrap(), bytes);
+    assert!(!std::fs::read_dir(root.join("generations"))
+        .unwrap()
+        .any(|entry| entry
+            .unwrap()
+            .file_name()
+            .to_string_lossy()
+            .ends_with("-normalized.wav")));
     let mut invalid = loaded.clone();
     invalid.format_version = 4;
     assert_eq!(invalid.validate().unwrap_err(), "INVALID_GENERATION");

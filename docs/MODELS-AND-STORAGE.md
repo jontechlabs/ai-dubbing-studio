@@ -1,12 +1,12 @@
 # Modèles, stockage et GPU de 16 Go — v0.5.0
 
-**CosyVoice3 0.5B RL officiel est maintenant installable et utilisable.** Voir le [guide de la phase 5](PHASE-5.md) pour le profil CUDA 12.8, la génération et les références. Son environnement est inclus dans le déplacement du stockage et dans le compteur de taille. Les autres moteurs et les conversions GGUF ci-dessous restent préparatoires.
+**CosyVoice3 0.5B RL officiel est maintenant installable et utilisable.** Voir le [guide de la phase 5](PHASE-5.md) pour le profil CUDA 12.8, la génération et les références. Son environnement est inclus dans le déplacement du stockage et dans le compteur de taille. Les profils Fish FP8, Fish GGUF Q8_0 et Qwen GGUF Q8_0 sont intégrés en [phase 6](PHASE-6.md). Les autres conversions du catalogue restent préparatoires.
 
 ## Changer le dossier des modèles
 
 Dans **Paramètres → Stockage des modèles**, choisissez un dossier ou saisissez un chemin absolu, puis cliquez sur **Appliquer et déplacer**. Un dossier absent est créé. Le réglage est global et conservé après redémarrage.
 
-Le studio déplace les installations **Bandit** et **locuteurs**, avec leurs poids, téléchargements en cache, Python et dépendances. Les nouveaux téléchargements utilisent le dossier actif. Les vidéos, projets, références vocales et pistes séparées restent dans leurs dossiers de projet.
+Le studio déplace les installations **Bandit**, **locuteurs**, **CosyVoice3** et **Fish/Qwen**, avec leurs poids, téléchargements en cache, Python et dépendances. Les nouveaux téléchargements utilisent le dossier actif. Les vidéos, projets, références vocales et pistes séparées restent dans leurs dossiers de projet.
 
 Le déplacement utilise une copie par blocs, puis une vérification SHA-256 de chaque fichier. Il fonctionne entre disques différents. Prévoyez la place nécessaire pour une copie complète sur le disque cible. La progression et l’annulation restent visibles dans Paramètres et Traitements. Le dossier actif change seulement après vérification ; les anciens dossiers sont ensuite supprimés. Le studio attend la fin des installations et analyses utilisant les modèles.
 
@@ -26,7 +26,7 @@ Cette commande remplace M, dont l’état actif signifiait auparavant « mute »
 
 ## Variantes adaptées à une carte de 16 Go
 
-Dans **Modèles**, choisissez le **Moteur préféré pour le projet** puis la **Variante préférée**. La variante officielle CosyVoice3 RL est utilisable. **Fish, Qwen et les conversions GGUF restent préparatoires pour la phase 6.** Le choix seul ne télécharge pas un futur moteur.
+Dans **Modèles**, choisissez le **Moteur préféré pour le projet** puis la **Variante préférée**. La variante officielle CosyVoice3 RL est utilisable. **Fish FP8, Fish GGUF Q8_0 et Qwen GGUF Q8_0 sont installables depuis leurs cartes.** Les autres formats restent préparatoires. Le choix de préférence seul ne déclenche pas un téléchargement.
 
 | Moteur | Variante proposée | Source et conditions |
 | --- | --- | --- |

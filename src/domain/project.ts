@@ -2,7 +2,7 @@ import type { Project } from './types';
 import { alignCues } from './subtitles';
 import { validVoiceVariant } from './modelVariants';
 import { validVoiceSettings } from './tts';
-export const APP_VERSION = '0.5.0';
+export const APP_VERSION = '0.6.0';
 
 export function blankProject(name = 'Untitled', source = 'ja', target = 'fr'): Project {
   const now = new Date().toISOString();
@@ -247,16 +247,7 @@ export function validateProject(value: unknown): Project {
   for (const line of project.dialogues) {
     if (
       line.voiceSettings &&
-      (project.formatVersion < 5 ||
-        !['character', 'current', 'custom'].includes(line.voiceSettings.referenceMode) ||
-        !['zeroShot', 'crossLingual'].includes(line.voiceSettings.mode) ||
-        !Number.isFinite(line.voiceSettings.speed) ||
-        line.voiceSettings.speed < 0.5 ||
-        line.voiceSettings.speed > 2 ||
-        !Number.isInteger(line.voiceSettings.seed) ||
-        line.voiceSettings.seed < 0 ||
-        line.voiceSettings.seed > 4294967295 ||
-        !/^(auto|cpu|cuda:\d{1,2})$/.test(line.voiceSettings.device))
+      (project.formatVersion < 5 || !validVoiceSettings(line.voiceSettings))
     )
       throw Error('INVALID_TTS_REQUEST');
     for (const [language, id] of Object.entries(line.selectedGenerationIds))

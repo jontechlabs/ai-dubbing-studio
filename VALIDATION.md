@@ -1,4 +1,18 @@
-# Validation - Phase 5, 15 October 2026
+# Validation - Phase 6, 15 October 2026
+
+## v0.6.0 Fish S2 / Qwen3-TTS and reference repair
+
+Suites contain 39 TypeScript tests, 46 Rust/Linux tests (45 Windows), 30 Chrome scenarios and 17 Python tests: 132 locally, 131 on Windows. The native Windows workflow is the authority for Windows checks and package production.
+
+Real Windows inference with the pinned audio.cpp 0.9.1 portable Vulkan executable produced French WAVs using Qwen3-TTS Base 0.6B GGUF Q8_0 on CPU and on the development host's AMD Radeon 860M through Vulkan, and Qwen3-TTS Base 1.7B GGUF Q8_0 on CPU. The Qwen native engine requires language names such as `French`, rather than `fr`; the adapter maps supported language codes and tests that mapping. These validate engine integration and output structure, without establishing subjective voice quality or RTX performance.
+
+The reported CosyVoice3 failure was reproduced at its format boundary: automatic speaker references are 16 kHz mono while the previous worker required 24 kHz. The production worker now validates and normalizes legacy/imported references. Real CosyVoice3 Windows inference with a 16 kHz speech reference successfully produced a 2.96-second mono PCM16 24 kHz WAV. Python tests cover 16/24/44.1/48 kHz, stereo downmixing, duration boundaries, silence, corruption, temporary-file cleanup and unchanged source hashes.
+
+Fish FP8 uses a pinned inference fork with FP8Linear (FP8 weights, BF16 activations), an isolated Python 3.12.10/CUDA 12.8 environment and a manifest containing 132 hash-locked wheels. Runtime imports, distribution versions and Torch/Torchaudio 2.8.0+cu128 pass on Windows. The worker requires CUDA/BF16 and at least 12 GiB free VRAM; model-card estimates are not GPU benchmarks. All model files, including codec and tokenizer assets, use pinned revisions, exact sizes and SHA-256. Weights and engines are downloaded only on request.
+
+Additional tests cover persisted variants, distinct CUDA/Vulkan indices, transcript requirements, selection and saved takes, installation IPC, and moving CosyVoice3 plus the new engine/model directories. Browser screenshots use the real React UI with simulated native device/results data; no RTX measurements are simulated or claimed. Native GUI installation/update interaction and actual Fish FP8 generation on an RTX 5060 Ti remain to be qualified on that hardware. WAV take playback remains independent from video playback; final mixing is Phase 7.
+
+Real Fish S2 Pro GGUF Q8_0 inference on Windows/CPU also produced a WAV from a synthetic speech reference with its exact transcript. Native CLI checks caught and fixed a version-specific argument difference (`--max-tokens` in the pinned executable). Model/codec loading, reference encoding, autoregressive generation and audio decoding all completed. Actual RTX generation remains unqualified here.
 
 ## v0.5.0 CosyVoice3
 

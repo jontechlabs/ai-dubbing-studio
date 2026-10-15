@@ -1,0 +1,118 @@
+{
+  "engine": {
+    "name": "audio-v0.9.1-bin-windows-x64-vulkan-portable.zip",
+    "url": "https://github.com/0xShug0/audio.cpp/releases/download/v0.9.1/audio-v0.9.1-bin-windows-x64-vulkan-portable.zip",
+    "size": 61728860,
+    "sha256": "423226fa8a0fd09de8534a6bc146ea8758801c8937e406dafa6bffb6bfb22f73"
+  },
+  "variants": [
+    {
+      "id": "fish-s2-gguf-q8",
+      "providerId": "fish-s2",
+      "name": "Fish S2 Pro \u00b7 GGUF Q8_0",
+      "engine": "audiocpp",
+      "revision": "f861648c0c1f4da9f18e9a0ce5e217b0679bb2f5",
+      "files": [
+        {
+          "name": "model.gguf",
+          "url": "https://huggingface.co/audio-cpp/audio.cpp-gguf/resolve/f861648c0c1f4da9f18e9a0ce5e217b0679bb2f5/Fish-Audio-S2-Pro-GGUF/fish-audio-s2-pro-q8_0.gguf?download=true",
+          "size": 6317911232,
+          "sha256": "4ffc169447b7a26df8bf49e8637adb4000bfa763a22c018b6c03968564259d0b"
+        }
+      ]
+    },
+    {
+      "id": "qwen3-06b-gguf-q8",
+      "providerId": "qwen3-tts",
+      "name": "Qwen3-TTS Base 0.6B \u00b7 GGUF Q8_0",
+      "engine": "audiocpp",
+      "revision": "f861648c0c1f4da9f18e9a0ce5e217b0679bb2f5",
+      "files": [
+        {
+          "name": "model.gguf",
+          "url": "https://huggingface.co/audio-cpp/audio.cpp-gguf/resolve/f861648c0c1f4da9f18e9a0ce5e217b0679bb2f5/Qwen3-TTS-12Hz-0.6B-Base-GGUF/qwen3-tts-12hz-0.6b-base-q8_0.gguf?download=true",
+          "size": 1991211136,
+          "sha256": "771420bd20ff5f35407b4fa9cf9c5461e153800d3d772ef51c9febc0a520855d"
+        }
+      ]
+    },
+    {
+      "id": "qwen3-17b-gguf-q8",
+      "providerId": "qwen3-tts",
+      "name": "Qwen3-TTS Base 1.7B \u00b7 GGUF Q8_0",
+      "engine": "audiocpp",
+      "revision": "f861648c0c1f4da9f18e9a0ce5e217b0679bb2f5",
+      "files": [
+        {
+          "name": "model.gguf",
+          "url": "https://huggingface.co/audio-cpp/audio.cpp-gguf/resolve/f861648c0c1f4da9f18e9a0ce5e217b0679bb2f5/Qwen3-TTS-12Hz-1.7B-Base-GGUF/qwen3-tts-12hz-1.7b-base-q8_0_v2.gguf?download=true",
+          "size": 2695175104,
+          "sha256": "b55e06c7890d43c208d15aed8b4ed3f18215f295e47d5960e061b15bff338ab0"
+        }
+      ]
+    },
+    {
+      "id": "fish-s2-fp8",
+      "providerId": "fish-s2",
+      "name": "Fish S2 Pro \u00b7 FP8 E4M3",
+      "engine": "fish-fp8",
+      "revision": "f4639232dd9081b8f9327fca20af73c272a207c7",
+      "files": [
+        {
+          "name": "model.safetensors",
+          "url": "https://huggingface.co/drbaph/s2-pro-fp8/resolve/f4639232dd9081b8f9327fca20af73c272a207c7/model.safetensors?download=true",
+          "size": 6163326632,
+          "sha256": "9b07bb7973109f59a013708858e2bec613582e77452f1cf451384f63ddcc1621"
+        },
+        {
+          "name": "codec.pth",
+          "url": "https://huggingface.co/drbaph/s2-pro-fp8/resolve/f4639232dd9081b8f9327fca20af73c272a207c7/codec.pth?download=true",
+          "size": 1871099728,
+          "sha256": "74fc41c5a7151c6f350af8bd7e5d6e3accfcc7f3dfbfac23afd35af07052bb2f"
+        },
+        {
+          "name": "config.json",
+          "url": "https://huggingface.co/drbaph/s2-pro-fp8/resolve/f4639232dd9081b8f9327fca20af73c272a207c7/config.json?download=true",
+          "size": 1863,
+          "sha256": "261b519a2a9576710fc8533a77297fae007f0e7b3aa28a217f8352b7f32fe993"
+        },
+        {
+          "name": "tokenizer.json",
+          "url": "https://huggingface.co/drbaph/s2-pro-fp8/resolve/f4639232dd9081b8f9327fca20af73c272a207c7/tokenizer.json?download=true",
+          "size": 12217872,
+          "sha256": "f24e08099d45a8adf3f52f5f0b03276e433bb9d689bb15fcbcc48ce58744588b"
+        },
+        {
+          "name": "tokenizer_config.json",
+          "url": "https://huggingface.co/drbaph/s2-pro-fp8/resolve/f4639232dd9081b8f9327fca20af73c272a207c7/tokenizer_config.json?download=true",
+          "size": 860832,
+          "sha256": "b8d149343ae425b0da67e6708686aceb51be7815d9792f265fc12ff04d5e9856"
+        },
+        {
+          "name": "special_tokens_map.json",
+          "url": "https://huggingface.co/drbaph/s2-pro-fp8/resolve/f4639232dd9081b8f9327fca20af73c272a207c7/special_tokens_map.json?download=true",
+          "size": 101864,
+          "sha256": "c2ff18fde6e43b7408435bc8ed079af74531befba549358a97cbc59ce606bc6b"
+        },
+        {
+          "name": "chat_template.jinja",
+          "url": "https://huggingface.co/drbaph/s2-pro-fp8/resolve/f4639232dd9081b8f9327fca20af73c272a207c7/chat_template.jinja?download=true",
+          "size": 4116,
+          "sha256": "87a2728cb8dc9fe424d624542f6060ec05a1d285ebbec578bb078900e33396b5"
+        },
+        {
+          "name": "quantization_info.json",
+          "url": "https://huggingface.co/drbaph/s2-pro-fp8/resolve/f4639232dd9081b8f9327fca20af73c272a207c7/quantization_info.json?download=true",
+          "size": 985,
+          "sha256": "a92ff43d8b73dfc1d1723ae3ba4dd98745d4e03f49dc36f21570427871e738b2"
+        },
+        {
+          "name": "LICENSE.md",
+          "url": "https://huggingface.co/drbaph/s2-pro-fp8/resolve/f4639232dd9081b8f9327fca20af73c272a207c7/LICENSE.md?download=true",
+          "size": 10360,
+          "sha256": "aa7d9206e9d710590987a3636934f643529c00cd490323594e6206aaa0c32d80"
+        }
+      ]
+    }
+  ]
+}

@@ -1,9 +1,11 @@
 import type { Dialogue, Generation, Project, VoiceSettings } from './types';
 import { dialogueText } from './subtitles';
+import { voiceVariant } from './voiceEngines';
 export function validVoiceSettings(value: unknown): value is VoiceSettings {
   if (!value || typeof value !== 'object') return false;
   const s = value as VoiceSettings;
   return (
+    (s.variantId == null || !!voiceVariant(s.variantId)) &&
     ['character', 'current', 'custom'].includes(s.referenceMode) &&
     ['zeroShot', 'crossLingual'].includes(s.mode) &&
     Number.isFinite(s.speed) &&
@@ -13,7 +15,7 @@ export function validVoiceSettings(value: unknown): value is VoiceSettings {
     s.seed >= 0 &&
     s.seed <= 4294967295 &&
     typeof s.device === 'string' &&
-    /^(auto|cpu|cuda:\d{1,2})$/.test(s.device)
+    /^(auto|cpu|cuda:\d{1,2}|vulkan:\d{1,2})$/.test(s.device)
   );
 }
 export function voiceGenerations(project: Project): Generation[] {

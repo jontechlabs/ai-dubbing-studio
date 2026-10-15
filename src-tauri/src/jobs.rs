@@ -51,6 +51,8 @@ pub struct PersistedJob {
     #[serde(default)]
     pub tts_install: Option<bool>,
     #[serde(default)]
+    pub voice_install: Option<String>,
+    #[serde(default)]
     pub tts_request: Option<crate::tts::Request>,
 }
 #[derive(Clone, Serialize, Deserialize)]
@@ -97,6 +99,7 @@ pub fn create<R: tauri::Runtime>(
                     speaker_install: false,
                     speaker_request: None,
                     tts_install: None,
+                    voice_install: None,
                     tts_request: None,
                 },
                 cancel: Arc::new(AtomicBool::new(false)),
