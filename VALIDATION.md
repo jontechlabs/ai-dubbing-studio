@@ -2,6 +2,8 @@
 
 ## v0.7.0 synchronized mix, MKV and Windows model paths
 
+Windows checks and signed-update package production passed in [run 38734427967](https://github.com/jontechlabs/ai-dubbing-studio/actions/runs/38734427967), built from `9ede6c21f4fbec0a4ccf17684c9a543f4ab776ee`. The installer and portable archive are copied unchanged from that workflow output.
+
 The suites contain **42 TypeScript tests, 50 Rust/Linux tests (49 Windows), 35 Chrome scenarios and 18 Python tests**: 145 locally, 144 on Windows. The Windows workflow remains the authority for native Windows checks and setup/portable production.
 
 New native FFmpeg tests create actual MKV containers and decode their output to check dialogue onset, natural duration, gaps, overlapping takes, independent music/voice gain, silent regions and reduced-volume regions. FLAC samples are measured against expected amplitudes. SHA-256 stream hashes verify unchanged copied video and optional original audio. Stream kinds and language tags verify both subtitle tracks. A separate job test exports AAC while project gains change, checks the captured revision and proves that the completed file uses the original snapshot. All-muted export is silent; cancellation preserves the previous destination and source WAV. Missing input files and project-source overwrite attempts are rejected. An initial AAC channel-layout failure was reproduced and fixed with explicit stereo layout after expression filters.

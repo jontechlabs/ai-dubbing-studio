@@ -1,11 +1,11 @@
 {
-  "version": "0.6.0",
-  "notes": "Phase 6 : Fish S2 Pro FP8 et GGUF, Qwen3-TTS 0.6B/1.7B GGUF, choix du moteur et du GPU par réplique. Correction des références vocales 16 kHz rejetées par CosyVoice3 et déplacement de tous les modèles.",
-  "pub_date": "2026-10-15T10:34:42Z",
+  "version": "0.7.0",
+  "notes": "Phase 7 : doublage synchronisé avec la vidéo, mix voix/musique/effets et export MKV AAC ou FLAC avec piste originale et SRT optionnels. Correction du chargement CosyVoice3 sur les chemins Windows étendus.",
+  "pub_date": "2026-10-15T12:50:21Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSdFFyMUJGTFp3NkN1eExMek9nc29FSmpHNUpiVXhwWXdGSHcwbVE3ZGxHVy9icDJOSEFPV0daUTBqS09aeGF3K0tUZUw4SGJNV1JzNlVXS1pKQkxwa3lZWFdySFlOVHdzPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkyMDYwMjI5CWZpbGU6QUkgRHViYmluZyBTdHVkaW9fMC42LjBfeDY0LXNldHVwLmV4ZQl2ZXJzaW9uOjAuNi4wCjJLcXAySnFIM1J0aGdQRHlhdnVVYm5BS2IzaDFPY29UcTVYcDVzMDlQMktKekxnZk55U00yQTY1VnlpM2JaUkpnYjZwNEZPSDNBNG00cEFwWGNKbUFRPT0K",
-      "url": "https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.6.0/AI-Dubbing-Studio-0.6.0-Setup.exe"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSdFFyMUJGTFp3NkVNcWtHWS8walVvaTFZTnA4cEVBNFZqczVJUCtTWG9FREdxb2VOSnpuamJ0VkVXbklIdnR4U0tyWVloazd2Qmo1U1ErUWZxbVJFa204RFZGdHJXSFFrPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkyMDY4NTE5CWZpbGU6QUkgRHViYmluZyBTdHVkaW9fMC43LjBfeDY0LXNldHVwLmV4ZQl2ZXJzaW9uOjAuNy4wCm9sRDd3ZHJ1V2Y0WjJNUnZqZ29BNk1FbVIySDI1YnF6cUVhZ1l3U0x2RG53MlVGdFBmNVBZWTVNOUZOZk9VdjBoMUMvVWd1NFEydTd0VnpKZDlCc0FBPT0K",
+      "url": "https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.7.0/AI-Dubbing-Studio-0.7.0-Setup.exe"
     }
   }
 }
