@@ -537,7 +537,7 @@ fn arguments(
         }
     }
     args.extend([
-        "-filter_complex_script".into(),
+        "-/filter_complex".into(),
         graph.to_string_lossy().into_owned(),
         "-map".into(),
         "0:v:0".into(),
