@@ -2,7 +2,9 @@
 
 ## v0.7.3 voice timing, duration, mood and reference transcription
 
-Windows workflow evidence will be recorded before publication.
+Windows checks and signed-update package production passed in [run 38776290823](https://github.com/jontechlabs/ai-dubbing-studio/actions/runs/38776290823), built from `717adc46d516a2b332e67d28106ed35a0708999e`. All 174 Windows suite checks passed (47 TypeScript, 58 Rust, 44 Chrome, 25 Python), plus two real Japanese ASR checks using the final Windows release executable. The setup and portable archive are copied unchanged from this workflow. Final metadata only records this evidence and the verified update feed.
+
+Packaged Windows worker timings for the 7.2-second Japanese fixture: auto: 106.94 s, ja: 54.74 s. These are CI CPU measurements, not performance estimates for the user’s PC.
 
 Local suites cover 47 TypeScript tests, 59 Rust/Linux tests (58 Windows), 44 Chrome scenarios and 25 Python tests. One additional Rust inference test is intentionally opt-in because it requires externally downloaded model weights and a speech fixture. It was run locally using the real multilingual small Q5_1 weights (190085487 bytes, SHA-256 `ae85e4a935d7a567bd102fe55afc16bb595bdb618e11b2fc7591bc08120411bb`) and the Japanese `ja.wav` fixture from the sherpa-onnx maintainer (SHA-256 `460bd8dccb0d2a5f4e29c628f837be4082d13defc64c3fc21dd1b6bb0e119095`). Automatic detection produced Japanese text containing `中学`, without translation. One homophone was incorrect; transcripts must remain reviewable and editable.
 

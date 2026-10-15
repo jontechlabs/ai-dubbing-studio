@@ -1,11 +1,11 @@
 {
-  "version": "0.7.2",
-  "notes": "Correction de l’arrêt CosyVoice provoqué par les accents dans les logs Windows. Le choix CPU est désormais respecté même si CUDA est disponible. Le texte signalé, en mode transcription exacte, produit un WAV réel validé sur Windows/CPU. Aucun téléchargement supplémentaire des modèles requis.",
-  "pub_date": "2026-10-15T14:33:04Z",
+  "version": "0.7.3",
+  "notes": "Déplacement et durée des doublages sur la timeline, étirement avec conservation de hauteur, lecture/export synchronisés. Humeurs pour CosyVoice3 et Fish S2 FP8/GGUF. Format de projet 7. Transcription automatique des références vocales, en japonais, français et autres langues proposées, avec Whisper small Q5_1 en local sur CPU. Texte modifiable, progression, annulation et relance. Aide Fish FP8/GGUF corrigée. Modèle de transcription de 181 Mio téléchargé au premier usage dans votre dossier de modèles ; aucun audio envoyé en ligne.",
+  "pub_date": "2026-10-15T17:37:17Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSdFFyMUJGTFp3Nk9rRFFvci90dUJjcUwyZlNORDlkTEd4N2xBMjg4VitjS1VRa2pSWitmK1JzMnBTR2ZIKzVMTW9yVWsra05LdVFWZml0SHM3YTBKT2VHTEl1ZXl1VkFNPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkyMDc0NDM2CWZpbGU6QUkgRHViYmluZyBTdHVkaW9fMC43LjJfeDY0LXNldHVwLmV4ZQl2ZXJzaW9uOjAuNy4yCnRMQWNMZkg0bnhvZ3NjaUFTbUNFSDBHRHA3OWp5MWpaYjY4emdKMng3YmFrdG1EV2k0Y1M5WUpXdVlldG53Q3J1TW5HL2lxUGdCaFdmdmtCMTEwRkRBPT0K",
-      "url": "https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.7.2/AI-Dubbing-Studio-0.7.2-Setup.exe"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSdFFyMUJGTFp3NkRiQ2h5bHliMzFiYW1KaloxUUc1NUhlOVVpWm1XRnh1bmNXZ2toY2hZQk1YaVA4WksvVFV2VUJ6Y0VCd1JLVldjeUFHaVFSV0o5TWZLbGNDYUpTbUEwPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkyMDg1NTc5CWZpbGU6QUkgRHViYmluZyBTdHVkaW9fMC43LjNfeDY0LXNldHVwLmV4ZQl2ZXJzaW9uOjAuNy4zCkJScU1NcCtMQVVOUWhIb0xSOXhpNTA4UnlsbkZBWVU0aUlMeFJ1Uno3cDdjVXhlSTlORE01cW9sYzA1emtLYWFQdXlrTWgyRXk3Q3Q4UllyZUJrYUFnPT0K",
+      "url": "https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.7.3/AI-Dubbing-Studio-0.7.3-Setup.exe"
     }
   }
 }
