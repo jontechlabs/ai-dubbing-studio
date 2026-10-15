@@ -46,7 +46,7 @@ export function VoiceEngineModels({
           return (
             <div className="model-card" key={variant.id}>
               <h3>{variant.name}</h3>
-              <p>{t(state?.installed ? 'installed' : 'ttsNotInstalled')}</p>
+            <p>{t(state?.installed ? 'modelInstalled' : 'ttsNotInstalled')}</p>
               <p className="panel-description">
                 {t(variant.backend === 'vulkan' ? 'phase6Gguf' : 'phase6Fp8')}
               </p>

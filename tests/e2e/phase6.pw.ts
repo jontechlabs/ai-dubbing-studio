@@ -40,9 +40,9 @@ test('models expose installable GGUF and FP8 variants with sizes and license inf
   await nativeMock(page); await page.goto('/'); await page.getByRole('button', { name: 'Modèles', exact: true }).click();
   const panel = page.getByRole('dialog', { name: 'Modèles' });
   const card = panel.locator('.model-card').filter({ has: page.getByRole('heading', { name: 'Fish S2 Pro · FP8 E4M3', exact: true }) });
-  await expect(card.getByText(/1.85 GiB/)).toBeVisible();
+  await expect(card.getByText(/7.49 GiB/)).toBeVisible();
   await expect(card.getByText(/Fish Audio Research License/)).toBeVisible();
-  await panel.locator('.panel-body').evaluate((element) => { element.scrollTop = 380; });
+  await card.scrollIntoViewIfNeeded();
   await page.screenshot({ path: 'docs/screenshots/phase6-models.png' });
   await card.getByRole('button', { name: 'Vérifier / réparer cette variante' }).click();
   expect(await page.evaluate(() => (window as any).__calls.some((c: any) => c.command === 'install_voice_runtime' && c.args.variantId === 'fish-s2-fp8'))).toBe(true);

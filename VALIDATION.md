@@ -14,6 +14,8 @@ Additional tests cover persisted variants, distinct CUDA/Vulkan indices, transcr
 
 Real Fish S2 Pro GGUF Q8_0 inference on Windows/CPU also produced a WAV from a synthetic speech reference with its exact transcript. Native CLI checks caught and fixed a version-specific argument difference (`--max-tokens` in the pinned executable). Model/codec loading, reference encoding, autoregressive generation and audio decoding all completed. Actual RTX generation remains unqualified here.
 
+The production Fish FP8 synthesis core also completed a limited 8-token Windows/CPU run with the real pinned FP8 checkpoint and codec: reference encoding, FP8Linear inference, codec decoding, resampling and PCM16 output produced a 325 ms / 24 kHz WAV. This is a short pipeline integration check, not full-sentence quality validation or a CUDA/RTX benchmark. The application deliberately exposes this FP8 profile through CUDA only.
+
 ## v0.5.0 CosyVoice3
 
 Suites contain 38 TypeScript tests, 43 Rust/Linux tests (42 Windows), 27 Chrome scenarios and 13 Python tests: 121 locally, 120 on Windows. See the Windows workflow for the build commit result.
