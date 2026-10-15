@@ -237,9 +237,9 @@ class CosyVoiceModel:
             self.mel_overlap_dict.pop(this_uuid)
             self.hift_cache_dict.pop(this_uuid)
             self.flow_cache_dict.pop(this_uuid)
-        if torch.cuda.is_available():
+        if self.device.type == 'cuda':
             torch.cuda.empty_cache()
-            torch.cuda.current_stream().synchronize()
+            torch.cuda.current_stream(self.device).synchronize()
 
 
 class CosyVoice2Model(CosyVoiceModel):
@@ -389,9 +389,9 @@ class CosyVoice2Model(CosyVoiceModel):
             self.tts_speech_token_dict.pop(this_uuid)
             self.llm_end_dict.pop(this_uuid)
             self.hift_cache_dict.pop(this_uuid)
-        if torch.cuda.is_available():
+        if self.device.type == 'cuda':
             torch.cuda.empty_cache()
-            torch.cuda.current_stream().synchronize()
+            torch.cuda.current_stream(self.device).synchronize()
 
 
 class CosyVoice3Model(CosyVoice2Model):
@@ -400,12 +400,13 @@ class CosyVoice3Model(CosyVoice2Model):
                  llm: torch.nn.Module,
                  flow: torch.nn.Module,
                  hift: torch.nn.Module,
-                 fp16: bool = False):
-        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+                 fp16: bool = False,
+                 device=None):
+        self.device = torch.device(device if device is not None else ('cuda' if torch.cuda.is_available() else 'cpu'))
         self.llm = llm
         self.flow = flow
         self.hift = hift
-        self.fp16 = fp16
+        self.fp16 = fp16 and self.device.type == 'cuda'
         # NOTE must matching training static_chunk_size
         self.token_hop_len = 25
         # NOTE increase token_hop_len incrementally to avoid duplicate inference
@@ -413,7 +414,7 @@ class CosyVoice3Model(CosyVoice2Model):
         self.stream_scale_factor = 2
         assert self.stream_scale_factor >= 1, 'stream_scale_factor should be greater than 1, change it according to your actual rtf'
         # rtf and decoding related
-        self.llm_context = torch.cuda.stream(torch.cuda.Stream(self.device)) if torch.cuda.is_available() else nullcontext()
+        self.llm_context = torch.cuda.stream(torch.cuda.Stream(self.device)) if self.device.type == 'cuda' else nullcontext()
         self.lock = threading.Lock()
         # dict used to store session related variable
         self.tts_speech_token_dict = {}

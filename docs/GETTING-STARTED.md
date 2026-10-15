@@ -2,7 +2,7 @@
 
 ## Install or extract
 
-Get the Windows x64 setup or portable ZIP from [v0.7.1 releases](https://github.com/jontechlabs/ai-dubbing-studio/releases/tag/v0.7.1). These are development builds without Authenticode; updater signatures are checked separately. The final native GUI is not fully qualified. See [validation](../VALIDATION.md).
+Get the Windows x64 setup or portable ZIP from [v0.7.2 releases](https://github.com/jontechlabs/ai-dubbing-studio/releases/tag/v0.7.2). These are development builds without Authenticode; updater signatures are checked separately. The final native GUI is not fully qualified. See [validation](../VALIDATION.md).
 
 - **Setup:** run the NSIS installer. It installs for the current user and provides French/English language selection.
 - **Portable:** extract the entire ZIP, then run `AI Dubbing Studio.exe` inside the extracted folder. Keep `binaries/` and `demo/` beside the executable. The app uses local application data for job records; “portable” describes the executable package, not a zero-footprint mode.

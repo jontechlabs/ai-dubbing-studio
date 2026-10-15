@@ -5,6 +5,8 @@ import tempfile
 from types import SimpleNamespace
 import unittest
 import os
+from contextlib import nullcontext
+import threading
 import numpy as np
 import soundfile as sf
 
@@ -17,6 +19,24 @@ def function(file, name, cls=None):
 
 
 class ReferenceCompatibility(unittest.TestCase):
+    def test_model_honors_explicit_cpu_even_when_cuda_is_available(self):
+        streams = []
+        def device(value): return SimpleNamespace(type=value.split(':')[0], name=value)
+        def stream(value): streams.append(value.name); return nullcontext()
+        torch = SimpleNamespace(nn=SimpleNamespace(Module=object), device=device,
+                                cuda=SimpleNamespace(is_available=lambda: True, Stream=stream, stream=lambda context: context))
+        namespace = {'torch':torch, 'nullcontext':nullcontext, 'threading':threading}
+        exec(function('cli/model.py', '__init__', 'CosyVoice3Model'), namespace)
+        model = SimpleNamespace()
+        namespace['__init__'](model, None, None, None, fp16=True, device='cpu')
+        self.assertEqual(model.device.name, 'cpu')
+        self.assertFalse(model.fp16)
+        self.assertEqual(streams, [])
+        namespace['__init__'](model, None, None, None, fp16=True, device='cuda:2')
+        self.assertEqual(model.device.name, 'cuda:2')
+        self.assertTrue(model.fp16)
+        self.assertEqual(streams, ['cuda:2'])
+
     def test_loader_decodes_and_resamples_extended_windows_paths_without_torchaudio(self):
         class Tensor:
             def __init__(self, array): self.array = array

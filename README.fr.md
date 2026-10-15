@@ -1,10 +1,10 @@
 # AI Dubbing Studio — phases 1–7
 
-[Version anglaise et captures de l’interface](README.md) · [Téléchargements Windows](https://github.com/jontechlabs/ai-dubbing-studio/releases/tag/v0.7.1)
+[Version anglaise et captures de l’interface](README.md) · [Téléchargements Windows](https://github.com/jontechlabs/ai-dubbing-studio/releases/tag/v0.7.2)
 
 Studio desktop local de travail texte, voix et vidéo. Tauri 2, React, TypeScript strict et Rust.
 
-**v0.7.1 — Calage automatique des voix et fiabilité CosyVoice.** Les voix trop longues sont ajustées au créneau et à la prise suivante sans changer leur hauteur, dans le lecteur et l’export MKV. Les WAV originaux restent conservés. Analyse des références avec SoundFile/SciPy et ONNX CPU ; reprise GPU compatible après un arrêt inattendu, avec étapes et codes de sortie explicites. La validation sur RTX reste à faire sur ce matériel. [Guide phase 7](docs/PHASE-7.md).
+**v0.7.2 — Correction du doublage avec accents et du choix CPU.** Le décalage Windows-1252/UTF-8 des logs pouvait fermer le canal du moteur et interrompre la génération avec le code 1. Le CPU est désormais respecté même si CUDA est disponible. La phrase signalée, en mode transcription exacte, produit un WAV réel de 3,08 s dans le test Windows/CPU. Calage automatique, lecture synchronisée et export MKV restent disponibles. [Guide phase 7](docs/PHASE-7.md).
 
 CosyVoice3, Fish S2 FP8/GGUF et Qwen3-TTS GGUF restent disponibles. Pour 16 Go, commencez par Qwen 0.6B GGUF ; les performances réelles sur RTX 5060 Ti restent à mesurer sur votre matériel. [Modèles et GPU](docs/PHASE-6.md) · [Tests et limites](VALIDATION.md).
 

@@ -30,7 +30,7 @@ class WindowsModelPaths(unittest.TestCase):
                 seen.append(Path(path).name)
 
             class Model:
-                def __init__(self, *args):
+                def __init__(self, *args, **kwargs):
                     pass
 
                 def load(self, *paths):
@@ -45,7 +45,7 @@ class WindowsModelPaths(unittest.TestCase):
                 check(stream.name)
                 return dict.fromkeys(['get_tokenizer', 'feat_extractor', 'allowed_special', 'sample_rate', 'llm', 'flow', 'hift'])
 
-            namespace = dict(os=os, torch=SimpleNamespace(cuda=SimpleNamespace(is_available=lambda: False)),
+            namespace = dict(os=os, torch=SimpleNamespace(device=lambda value: SimpleNamespace(type=value.split(':')[0]), cuda=SimpleNamespace(is_available=lambda: False)),
                              load_hyperpyyaml=yaml, get_model_type=lambda _: Model,
                              CosyVoice3Model=Model, CosyVoiceFrontEnd=frontend)
             exec(compile(ast.Module(body=[constructor], type_ignores=[]), str(source), 'exec'), namespace)

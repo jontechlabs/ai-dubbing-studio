@@ -2,11 +2,20 @@ import hashlib
 import json
 from pathlib import Path
 import unittest
-from cosyvoice_worker import validate_request, compatibility_profile
+from cosyvoice_worker import validate_request, compatibility_profile, inference_device
+from unittest.mock import patch
 from types import SimpleNamespace
 
 
 class CosyVoiceTests(unittest.TestCase):
+    def test_explicit_cpu_skips_cuda_inventory_and_gpu_indices_are_not_remapped(self):
+        with patch('cosyvoice_worker.device_info', side_effect=AssertionError('CPU must not probe CUDA')):
+            self.assertEqual(inference_device('cpu'), 'cpu')
+        inventory = {'devices': [{'id':'cpu'}, {'id':'cuda:0'}, {'id':'cuda:2'}]}
+        with patch('cosyvoice_worker.device_info', return_value=inventory):
+            self.assertEqual(inference_device('cuda:2'), 'cuda:2')
+            self.assertEqual(inference_device('auto'), 'cuda:0')
+
     def test_compatibility_retry_keeps_cuda_and_disables_only_acceleration_backends(self):
         calls = []
         cudnn = SimpleNamespace(enabled=True)

@@ -1,6 +1,6 @@
 # Phase 7 — écoute synchronisée, mix et export MKV
 
-La version **0.7.1** ajoute le calage automatique des voix à la piste **Doublage** introduite en phase 7. Elle lit les essais sélectionnés pour la langue cible du projet avec la vidéo, puis exporte le montage dans un conteneur Matroska.
+La version **0.7.2** corrige la génération CosyVoice avec accents sous Windows et le choix explicite du CPU. Elle conserve le calage automatique des voix de 0.7.1, la lecture synchronisée et l’export Matroska.
 
 ## Écouter le doublage
 
@@ -40,9 +40,21 @@ Chaque projet garde une paire de langues source/cible. Ce MKV peut contenir le m
 
 ## Correction CosyVoice3 sur un stockage personnalisé
 
+### Accents dans les logs et choix CPU (0.7.2)
+
+L’arrêt avec **code 1** a été reproduit sur le moteur réel avec **« Il était une fois un assassin légendaire. »**, dans le mode **Avec transcription exacte de la référence**. Sous Windows, Python pouvait écrire les accents en Windows-1252 alors que le lecteur de logs Rust exigeait de l’UTF-8. La première ligne contenant `était` ou `légendaire` faisait sortir ce lecteur et fermer le canal d’erreur. Le moteur échouait ensuite en essayant d’écrire ses logs, sans pouvoir transmettre son exception : `TTS_ENGINE_FAILED` était alors le seul résultat visible. Cela pouvait aussi interrompre la reprise GPU compatible.
+
+Le studio impose désormais **UTF-8 aux processus Python** et continue à lire les logs si une bibliothèque native écrit malgré tout des octets d’un autre encodage. Ces octets sont affichés avec remplacement ; ils ne ferment plus le canal. Accents français et texte japonais sont conservés lorsqu’ils sont émis en UTF-8.
+
+Le défaut CPU était distinct : le worker refusait `CPU` si Torch voyait encore CUDA. Le CPU est désormais passé explicitement jusqu’au modèle et à ses poids, sans inventaire CUDA, création de flux CUDA ou nettoyage GPU lors de cette génération. Le masque CPU est appliqué avant les dépendances ; le placement explicite assure le choix même si CUDA reste détecté. Les indices CUDA sélectionnés ne sont plus remappés artificiellement sur `cuda:0`.
+
+Avec les corrections, le même texte français et le mode transcription exacte ont produit un **WAV mono PCM16 de 3,08 s à 24 kHz** sur Windows/CPU, avec les vrais poids. Ce test signale artificiellement CUDA comme disponible et interdit les appels GPU : il vérifie que le choix CPU est respecté. La machine de test n’a pas de RTX ; ce résultat n’est pas une mesure CUDA.
+
+Installez **0.7.2**, redémarrez et relancez une réplique. Vos réglages de la capture sont utilisables. Pour le mode transcription exacte, le SRT original doit correspondre aux paroles de l’extrait, dans leur langue d’origine. **Les modèles et les environnements restent compatibles : aucun retéléchargement des poids n’est requis.**
+
 ### Arrêt du moteur après le chargement (0.7.1)
 
-L’ancien code `SEPARATION_FAILED` provenait d’un lanceur partagé : il pouvait désigner un arrêt du moteur vocal sans exception Python. Les avertissements `sdpa`, `CUDAExecutionProvider` absent et TorchAudio, à eux seuls, n’indiquent pas la cause fatale. Le log communiqué ne contient pas de code de sortie permettant de confirmer le composant fautif sur la RTX.
+L’ancien code `SEPARATION_FAILED` provenait d’un lanceur partagé : il pouvait désigner un arrêt du moteur vocal sans exception Python. Les avertissements `sdpa`, `CUDAExecutionProvider` absent et TorchAudio, à eux seuls, n’indiquaient pas la cause fatale. Les nouveaux logs de 0.7.1 ont permis d’isoler et de reproduire le défaut d’encodage corrigé en 0.7.2 ci-dessus.
 
 La référence est désormais décodée directement par **SoundFile**, rééchantillonnée par **SciPy**, puis analysée sur CPU avec les deux sessions **ONNX** explicitement en mode CPU. Cela évite le répartiteur natif de TorchAudio à cet endroit et la demande d’un fournisseur CUDA absent de l’environnement ONNX installé. La synthèse neuronale reste sur le GPU sélectionné ; installer ONNX Runtime GPU séparément n’est pas nécessaire.
 
@@ -50,7 +62,7 @@ En cas d’arrêt inattendu du moteur CosyVoice sur GPU, le studio réessaie **u
 
 Si l’échec persiste, **Traitements → Logs** indique maintenant la dernière étape (caractéristiques, tokens ou empreinte du locuteur), le code de sortie Windows en décimal et hexadécimal, et une pile native lorsque Python peut la capturer. Le message distingue moteur vocal, crash natif et mémoire système. Transmettez la fin de ces logs pour localiser le défaut restant.
 
-Installez **0.7.1**, redémarrez puis relancez une réplique avec la RTX sélectionnée. **Les modèles n’ont pas changé : aucun nouveau téléchargement des poids n’est requis.** Une génération complète a été vérifiée sur Windows/CPU ; le profil CUDA et l’échec signalé doivent encore être confirmés sur la RTX 5060 Ti de l’utilisateur.
+La préparation de référence et la reprise compatible introduites en 0.7.1 sont conservées. Utilisez **0.7.2** pour bénéficier aussi des corrections d’encodage et de placement CPU décrites ci-dessus.
 
 ### Chemins étendus (correctif 0.7.0 conservé)
 

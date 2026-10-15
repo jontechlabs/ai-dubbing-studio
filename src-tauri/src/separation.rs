@@ -205,6 +205,8 @@ pub(crate) async fn process<R: tauri::Runtime>(
     let mut child = media::command(executable)
         .args(args)
         .env("PYTHONUNBUFFERED", "1")
+        .env("PYTHONIOENCODING", "utf-8:backslashreplace")
+        .env("PYTHONUTF8", "1")
         .env("PIP_DISABLE_PIP_VERSION_CHECK", "1")
         .stdin(std::process::Stdio::piped())
         .stdout(std::process::Stdio::piped())
@@ -227,9 +229,29 @@ pub(crate) async fn process<R: tauri::Runtime>(
     let stderr = child.stderr.take().ok_or("PROCESS_FAILED")?;
     let (log_core, log_app, log_key) = (core.clone(), app.clone(), key.to_owned());
     let logger = tauri::async_runtime::spawn(async move {
-        let mut errors = BufReader::new(stderr).lines();
-        while let Ok(Some(line)) = errors.next_line().await {
-            jobs::update(&log_core, &log_app, &log_key, |job| job.logs.push(line));
+        // A native library can still write non-UTF-8 bytes despite Python's
+        // encoding setting. Keep draining: closing stderr kills the worker on
+        // its next log write and conceals the original exception.
+        let mut errors = BufReader::new(stderr);
+        let mut bytes = Vec::new();
+        loop {
+            bytes.clear();
+            match errors.read_until(b'\n', &mut bytes).await {
+                Ok(0) => break,
+                Ok(_) => {
+                    let line = String::from_utf8_lossy(&bytes)
+                        .trim_end_matches(['\r', '\n'])
+                        .to_owned();
+                    jobs::update(&log_core, &log_app, &log_key, |job| job.logs.push(line));
+                }
+                Err(error) => {
+                    jobs::update(&log_core, &log_app, &log_key, |job| {
+                        job.logs
+                            .push(format!("Could not read worker stderr: {error}"))
+                    });
+                    break;
+                }
+            }
         }
     });
     loop {

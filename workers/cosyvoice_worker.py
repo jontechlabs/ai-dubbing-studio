@@ -113,28 +113,31 @@ def compatibility_profile(torch, device, enabled):
 
 
 def generate(request):
-    validate_request(request)
+    requested = validate_request(request)
+    # Before NumPy/SciPy or any other dependency has a chance to import Torch.
+    # Explicit model placement below also works if a driver ignores this mask.
+    if requested == 'cpu':
+        os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
     from voice_reference import prepare_reference
     with prepare_reference(request['referenceAudio'], report, request.get('preparedReferenceAudio')) as reference:
         generate_normalized(dict(request, referenceAudio=str(reference)))
 
 
+def inference_device(requested):
+    if requested == 'cpu':
+        return 'cpu'  # A CPU request must never initialize/probe CUDA.
+    from bandit_worker import select_device
+    return select_device(requested, device_info()['devices'])
+
+
 def generate_normalized(request):
     requested = validate_request(request)
-    if requested == 'cpu':
-        os.environ['CUDA_VISIBLE_DEVICES'] = ''
-    elif requested.startswith('cuda:'):
-        os.environ['CUDA_VISIBLE_DEVICES'] = requested.split(':')[1]
     import numpy as np
     import soundfile as sf
     import torch
-    from bandit_worker import select_device
     from cosyvoice.cli.cosyvoice import CosyVoice3
     torch.set_num_threads(min(6, max(1, (os.cpu_count() or 2) // 2)))
-    local = 'cuda:0' if requested.startswith('cuda:') else requested
-    device = select_device(local, device_info()['devices'])
-    if device == 'cpu' and torch.cuda.is_available():
-        raise ValueError('DEVICE_UNAVAILABLE')
+    device = inference_device(requested)
     name = torch.cuda.get_device_name(device) if device.startswith('cuda:') else 'CPU'
     if device.startswith('cuda:'):
         torch.cuda.set_device(device)
@@ -153,16 +156,18 @@ def generate_normalized(request):
     seed = int(request.get('seed', 0))
     random.seed(seed)
     np.random.seed(seed)
-    torch.manual_seed(seed)
     if device.startswith('cuda:'):
+        torch.manual_seed(seed)
         torch.cuda.manual_seed_all(seed)
+    else:
+        torch.random.default_generator.manual_seed(seed)
     report(stage='ttsLoad', progress=None, device=requested, deviceName=name)
     import cosyvoice.cli.cosyvoice as official
     from cosyvoice_adapter import inference_yaml
     original_loader = official.load_hyperpyyaml
     official.load_hyperpyyaml = inference_yaml
     try:
-        model = CosyVoice3(str(directory), fp16=fp16, load_trt=False, load_vllm=False)
+        model = CosyVoice3(str(directory), fp16=fp16, load_trt=False, load_vllm=False, device=device)
     finally:
         official.load_hyperpyyaml = original_loader
     # The official Windows ONNX wheel runs reference tokenization on CPU.

@@ -12,6 +12,7 @@
     "workers/cosyvoice_adapter.py filters the pinned YAML to inference keys before the official HyperPyYAML loader; training objects and YAML seed resets are excluded.",
     "cosyvoice/cli/cosyvoice.py: use os.path.join for model files, including Windows extended-length paths. Inference and weights are unchanged.",
     "cosyvoice/utils/file_utils.py: decode reference audio with SoundFile and resample with SciPy, avoiding TorchAudio native backend dispatch on Windows.",
-    "cosyvoice/cli/frontend.py: explicitly use CPU for reference tensors and both ONNX sessions. Neural inference still uses the selected CUDA device."
+    "cosyvoice/cli/frontend.py: explicitly use CPU for reference tensors and both ONNX sessions. Neural inference still uses the selected CUDA device.",
+    "cosyvoice/cli/cosyvoice.py and cli/model.py: explicitly pass the requested device through CosyVoice3 and its model. CPU construction disables CUDA-only acceleration, creates no CUDA stream and skips CUDA cleanup. Checkpoints and neural synthesis algorithms are unchanged."
   ]
 }

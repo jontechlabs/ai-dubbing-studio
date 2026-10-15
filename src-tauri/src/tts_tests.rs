@@ -15,6 +15,56 @@ fn options() -> Options {
 }
 
 #[tokio::test]
+async fn worker_logs_keep_pipes_open_after_invalid_native_bytes_and_preserve_unicode() {
+    let temporary = tempfile::tempdir().unwrap();
+    let core = Arc::new(Core {
+        session: Mutex::new(None),
+        jobs: Mutex::new(HashMap::new()),
+        gate: Arc::new(tokio::sync::Semaphore::new(1)),
+        data_dir: temporary.path().into(),
+        model_dir: Mutex::new(temporary.path().into()),
+    });
+    let app = tauri::test::mock_app();
+    let script = temporary.path().join("unicode.py");
+    std::fs::write(&script, r#"import sys,json,time
+print(json.dumps({'stage':'ttsGenerate','progress':None}),flush=True)
+if sys.argv[-1]=='legacy':
+    sys.stderr.buffer.write(b'native warning: \xe9\xff\n');sys.stderr.buffer.flush()
+    time.sleep(0.15)
+else:
+    assert sys.stdout.encoding.lower().replace('-','')=='utf8'
+    assert sys.stderr.encoding.lower().replace('-','')=='utf8'
+print('synthesis text Il \u00e9tait une fois un assassin l\u00e9gendaire. \u65e5\u672c\u8a9e',file=sys.stderr,flush=True)
+print('log after invalid bytes',file=sys.stderr,flush=True)
+print(json.dumps({'stage':'done','progress':1}),flush=True)
+"#).unwrap();
+    for mode in ["legacy", "unicode"] {
+        let key = jobs::create(&core, app.handle(), "tts", "test".into(), None);
+        separation::process(
+            &core,
+            app.handle(),
+            &key,
+            &PathBuf::from(if cfg!(windows) { "python" } else { "python3" }),
+            &[script.to_string_lossy().into_owned(), mode.into()],
+            &AtomicBool::new(false),
+        )
+        .await
+        .unwrap();
+        let jobs = core.jobs.lock().unwrap();
+        let job = &jobs.get(&key).unwrap().saved.record;
+        assert_eq!(job.stage, "done");
+        assert!(job
+            .logs
+            .iter()
+            .any(|l| l.contains("log after invalid bytes")));
+        assert!(job
+            .logs
+            .iter()
+            .any(|l| l.contains("Il était une fois un assassin légendaire. 日本語")));
+    }
+}
+
+#[tokio::test]
 async fn engine_exit_keeps_last_stage_stderr_exit_status_and_protocol_error() {
     let temporary = tempfile::tempdir().unwrap();
     let core = Arc::new(Core {

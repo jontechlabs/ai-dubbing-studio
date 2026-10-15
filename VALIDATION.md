@@ -1,5 +1,17 @@
 # Validation - Phase 7, 15 October 2026
 
+## v0.7.2 accented worker logs and explicit CPU placement
+
+Suites cover **43 TypeScript tests, 54 Rust/Linux tests (53 Windows), 36 Chrome scenarios and 23 Python tests**: 155 on Windows, 156 across the local suites. The successful Windows package workflow and build commit will be recorded before publication.
+
+The reported exit-code-1 failure was reproduced with **real CosyVoice weights on native Windows**, zero-shot mode, the exact target sentence `Il était une fois un assassin légendaire.`, and a synthetic speech reference with its exact English transcript. A parent implementing the old strict UTF-8 stderr reader closed its pipe on the first Windows-1252 accented log line; the real child exited **1** and produced no WAV. The target text occurs in an upstream warning or the synthesis log, depending on reference transcript length. This establishes a concrete software failure independent of GPU kernels, rather than treating the preceding SDPA warning as the fatal cause.
+
+With UTF-8 Python streams and the corrected device path, the same real zero-shot inference completes and produces **73,920 frames / 3.08 seconds, mono PCM16 at 24 kHz**, nonempty peak **0.6709**. The parent keeps stdin open as the app does and decodes all log lines as UTF-8 without an error. CUDA availability is deliberately reported as true while CUDA inventory, stream creation, device selection and cleanup calls are forbidden, proving that an explicit CPU request remains on CPU even in that condition. Computation actually runs on the development host's CPU; no RTX inference or performance is claimed.
+
+A new Rust regression failed with `TTS_ENGINE_FAILED` before the fix and passes afterwards. It feeds an invalid native stderr byte sequence, then French and Japanese logging, checks that the child can continue writing, preserves progress completion and Unicode, and verifies Python stream encodings. The shared launcher now supplies `PYTHONIOENCODING=utf-8:backslashreplace` and `PYTHONUTF8=1`, and its stderr reader consumes bytes with replacement for invalid native sequences instead of dropping the pipe. Existing protocol error, crash exit code, cancellation, compatibility retry and real FFmpeg checks remain in place.
+
+Python tests verify CPU skips CUDA inventory, explicit CUDA indices are retained, and the actual CosyVoice3 model constructor selects CPU without a CUDA stream even when CUDA is reported available. The production CosyVoice3 constructor passes the selected device into its model and disables CUDA-only acceleration for CPU; inherited generation cleanup only touches CUDA for a CUDA model. The CPU mask is set before reference preparation; no GPU-index remapping is used for explicit CUDA selection. Model files and pinned dependency versions are unchanged. Native GUI/installer interaction and actual RTX testing retain the limits documented below.
+
 ## v0.7.1 automatic fitting and CosyVoice diagnostics
 
 Windows checks and signed-update package production passed in [run 38741920410](https://github.com/jontechlabs/ai-dubbing-studio/actions/runs/38741920410), built from `bbaa30f1e026f80ef6c43ad47a1b99bbeecf3ab6`. Suites cover **43 TypeScript tests, 53 Rust/Linux tests (52 Windows), 36 Chrome scenarios and 21 Python tests**: **152 tests on Windows**, 153 across the local suites. The setup and portable archive are copied unchanged from that workflow output. The final release metadata commit only updates this evidence and the verified updater feed.
