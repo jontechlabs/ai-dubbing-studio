@@ -11,8 +11,20 @@ fn tool(name: &str) -> PathBuf {
 }
 async fn ffmpeg(args: &[&str], output: &Path) {
     let result = media::command(&tool("ffmpeg"))
-        .args(["-hide_banner", "-v", "error", "-y"])
+        .args([
+            "-hide_banner",
+            "-v",
+            "error",
+            "-y",
+            "-threads",
+            "1",
+            "-filter_threads",
+            "1",
+            "-filter_complex_threads",
+            "1",
+        ])
         .args(args)
+        .args(["-threads", "1"])
         .arg(output)
         .output()
         .await

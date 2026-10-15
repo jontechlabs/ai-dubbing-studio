@@ -493,7 +493,9 @@ mod tests {
             &executable,
             &args,
             &AtomicBool::new(false),
-            Duration::from_secs(10),
+            // Windows PowerShell can start slowly while media integration tests run.
+            // Deadline/cancellation behavior has a separate, intentionally short test.
+            Duration::from_secs(30),
         )
         .await
         .unwrap()
