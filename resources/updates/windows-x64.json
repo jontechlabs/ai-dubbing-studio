@@ -1,11 +1,11 @@
 {
-  "version": "0.5.0",
-  "notes": "Doublage par réplique avec CosyVoice3 0.5B RL, installation CUDA 12.8, références vocales, essais conservés et comparaison A/B, sélection, validation et export WAV individuel.",
-  "pub_date": "2026-10-15T07:56:38Z",
+  "version": "0.6.0",
+  "notes": "Phase 6 : Fish S2 Pro FP8 et GGUF, Qwen3-TTS 0.6B/1.7B GGUF, choix du moteur et du GPU par réplique. Correction des références vocales 16 kHz rejetées par CosyVoice3 et déplacement de tous les modèles.",
+  "pub_date": "2026-10-15T10:34:42Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSdFFyMUJGTFp3NkZTUEJDSkxOcG9MZ0FxNmpvWUFEQ1VCRlVIMklTYldvYWxuV3gyZzVBWXN6am9iT01jRW5TZ3MzUEszb3VNQjAvdEI2eklNVkhzZUh2TWNOWHpKZ0FjPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkyMDUwODY0CWZpbGU6QUkgRHViYmluZyBTdHVkaW9fMC41LjBfeDY0LXNldHVwLmV4ZQl2ZXJzaW9uOjAuNS4wCmtvY2MwVC9QZ3VIRDZYR3ovUEpBNlFFdWN6MjhjSXI3WkZEUWpKMEdUWWhzaUxTd2hSdWFLQU9JZVZtWnN1aUhRVGxtcm1yTGxRL0xVRnk2Y0dQeUJBPT0K",
-      "url": "https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.5.0/AI-Dubbing-Studio-0.5.0-Setup.exe"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSdFFyMUJGTFp3NkN1eExMek9nc29FSmpHNUpiVXhwWXdGSHcwbVE3ZGxHVy9icDJOSEFPV0daUTBqS09aeGF3K0tUZUw4SGJNV1JzNlVXS1pKQkxwa3lZWFdySFlOVHdzPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkyMDYwMjI5CWZpbGU6QUkgRHViYmluZyBTdHVkaW9fMC42LjBfeDY0LXNldHVwLmV4ZQl2ZXJzaW9uOjAuNi4wCjJLcXAySnFIM1J0aGdQRHlhdnVVYm5BS2IzaDFPY29UcTVYcDVzMDlQMktKekxnZk55U00yQTY1VnlpM2JaUkpnYjZwNEZPSDNBNG00cEFwWGNKbUFRPT0K",
+      "url": "https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.6.0/AI-Dubbing-Studio-0.6.0-Setup.exe"
     }
   }
 }
