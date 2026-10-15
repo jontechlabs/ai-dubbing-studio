@@ -54,7 +54,7 @@ The dialogue list is virtualized. The player uses the browser/WebView media elem
 
 ## Future engines
 
-`src/domain/providers.ts` defines reserved provider capabilities, model metadata and TTS requests/results. `schemas/worker-protocol.schema.json` and `schemas/model-manifest.schema.json` are preliminary contracts. The model catalogue includes the pinned Bandit checkpoint. TTS workers, general model management and additional inference backends remain future work; Bandit has the dedicated runtime described below.
+`src/domain/providers.ts` defines reserved provider capabilities, model metadata and TTS requests/results. `schemas/worker-protocol.schema.json` and `schemas/model-manifest.schema.json` are preliminary contracts. The model catalogue includes the pinned Bandit checkpoint. CosyVoice3, Fish S2 and Qwen3-TTS now have native installation and generation adapters; unintegrated catalogue variants remain future work. Their runtimes are described in the Phase 5–7 guides; Bandit has the dedicated runtime described below.
 
 ## Phase 2 timing and waveform
 

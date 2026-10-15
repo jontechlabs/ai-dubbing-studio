@@ -7,7 +7,7 @@ import { Header, type Panel } from './components/Header';
 import { Panels } from './components/Panels';
 import { Player } from './components/Player';
 import { Timeline } from './components/Timeline';
-import type { AudioSelection, Dialogue, Generation } from './domain/types';
+import type { AudioSelection, Dialogue, Generation, Project } from './domain/types';
 import { selectedGeneration, reviewGeneration } from './domain/tts';
 import { useGenerationAudio } from './hooks/useGenerationAudio';
 import { useProject } from './hooks/useProject';
@@ -52,6 +52,15 @@ export default function App() {
         ['import', 'subtitles'].includes(job.kind) && ['queued', 'running'].includes(job.status),
     );
   const transport = useTransport(studio.project, selected, padding, studio.setError);
+  const { endOriginal } = transport;
+  const { edit: editProject } = studio;
+  const edit = useCallback(
+    (update: (project: Project) => Project) => {
+      endOriginal();
+      editProject(update);
+    },
+    [endOriginal, editProject],
+  );
   const generationAudio = useGenerationAudio(
     transport.videoRef,
     transport.url ?? undefined,
@@ -212,7 +221,7 @@ export default function App() {
             onSelect={select}
             onPlay={transport.playOriginalLine}
             onImport={importSubtitles}
-            onEdit={studio.edit}
+            onEdit={edit}
             onCharacters={showCharacters}
             onDub={openDub}
             onPlayDub={playDub}
@@ -259,12 +268,12 @@ export default function App() {
                   ['queued', 'running'].includes(job.status),
               )}
               onJobs={showJobs}
-              onEdit={studio.edit}
+              onEdit={edit}
             />
             <Editor
               project={studio.project}
               selected={selected}
-              onEdit={studio.edit}
+              onEdit={edit}
               onPlay={transport.playOriginalLine}
               busy={busy}
               time={transport.time}
@@ -305,7 +314,7 @@ export default function App() {
             timeRef={transport.timeRef}
             onSeek={transport.seek}
             onSelect={select}
-            onEdit={studio.edit}
+            onEdit={edit}
             busy={busy}
           />
         </div>
@@ -355,7 +364,7 @@ export default function App() {
         snapshot={studio.snapshot}
         applySnapshot={studio.applySnapshot}
         updater={updater}
-        onEdit={studio.edit}
+        onEdit={edit}
         videoRef={transport.videoRef}
         busy={busy}
         selectedId={selectedId}

@@ -170,7 +170,7 @@ Local model installation/repair, storage migration, voice cloning and per-line s
 
 ## Validation
 
-The suites contain **39 TypeScript tests, 46 Rust/Linux tests (45 Windows), 30 Chrome scenarios and 17 Python worker tests**: 132 locally, 131 on Windows. The frontend build, ESLint, Prettier, Rust formatting and Clippy are also checked. Real Windows inference covers CosyVoice3, Qwen GGUF, Fish GGUF and a limited-token Fish FP8 core run on CPU. Browser scenarios simulate native IPC; actual RTX generation and the full native GUI workflow remain unqualified here. See [VALIDATION.md](VALIDATION.md) for evidence and limits.
+The suites contain **42 TypeScript tests, 50 Rust/Linux tests (49 Windows), 35 Chrome scenarios and 18 Python worker tests**: 145 locally, 144 on Windows. The frontend build, ESLint, Prettier, Rust formatting and Clippy are also checked. Real Windows inference covers CosyVoice3, Qwen GGUF, Fish GGUF and a limited-token Fish FP8 core run on CPU. Browser scenarios simulate native IPC; actual RTX generation and the full native GUI workflow remain unqualified here. See [VALIDATION.md](VALIDATION.md) for evidence and limits.
 
 The earlier [v0.1.1 clean Windows run](https://github.com/jontechlabs/ai-dubbing-studio/actions/runs/38362204358) passed its checks and packaging. Current runs are available under [Actions](https://github.com/jontechlabs/ai-dubbing-studio/actions).
 

@@ -12,7 +12,7 @@ La version **0.7.0** ajoute la piste **Doublage** à la timeline et au mixeur. E
 
 Les prises gardent leur durée naturelle. Une prise trop longue peut déborder sur la suivante ; les voix qui se chevauchent sont additionnées. L’application ne fait pas de raccourcissement ou de time-stretch automatique en phase 7 : corrigez le texte, la vitesse de génération ou les repères si nécessaire. Le son est coupé à la fin du média.
 
-L’écoute A/B d’un essai WAV reste indépendante et met la vidéo en pause. **Original / O** permet une écoute temporaire de l’audio original sans modifier les réglages enregistrés du mix. **Lecture** revient au mix. À vitesse accélérée, les prises Web Audio changent aussi de hauteur ; évaluez la voix à vitesse normale.
+L’écoute A/B d’un essai WAV reste indépendante et met la vidéo en pause. **Original / O** permet une écoute temporaire de l’audio original sans modifier les réglages enregistrés du mix. **Lecture**, une modification du mix ou **Tout rendre silencieux** termine cette écoute temporaire. À vitesse accélérée, les prises Web Audio changent aussi de hauteur ; évaluez la voix à vitesse normale.
 
 ## Exporter le MKV
 

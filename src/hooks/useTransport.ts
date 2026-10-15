@@ -27,6 +27,8 @@ export function useTransport(
   const stopAt = useRef<{ start: number; end: number } | null>(null);
   const pendingSeek = useRef(0);
   const mediaId = project?.media?.id;
+  const mixerKey = useMemo(() => JSON.stringify(project ? audioTracks(project) : []), [project]);
+  useEffect(() => setOriginalOnly(false), [mixerKey]);
   const url = resource?.id === mediaId ? (resource?.url ?? null) : null;
   const ready = !!url && readyId === mediaId;
   const failed = !!mediaId && failedId === mediaId;
@@ -38,6 +40,7 @@ export function useTransport(
     timeRef.current = 0;
     stopAt.current = null;
     setResource(null);
+    setOriginalOnly(false);
     setReadyId(null);
     setFailedId(null);
     setBuffering(false);
@@ -149,6 +152,7 @@ export function useTransport(
     },
     [padding, project?.media?.durationMs, seek, queueStart],
   );
+  const endOriginal = useCallback(() => setOriginalOnly(false), []);
   useEffect(() => {
     let frame = 0;
     let lastUpdate = 0;
@@ -201,6 +205,7 @@ export function useTransport(
     playLine,
     playOriginalLine,
     originalOnly,
+    endOriginal,
     pause: () => {
       ++playToken.current;
       setPreparingDub(false);

@@ -45,6 +45,10 @@ test('dubbing regions mute real output and original audition restores the saved 
   await position(page,1.2);await page.getByRole('button',{name:'Lecture',exact:true}).click();await expect.poll(()=>rms(page)).toBeLessThan(0.000001);
   await position(page,2.1);await expect.poll(()=>rms(page)).toBeGreaterThan(0.01);
   await page.keyboard.press('o');await expect(page.locator('video')).toHaveJSProperty('muted',false);
+  await page.getByRole('button',{name:'Tout rendre silencieux',exact:true}).click();await expect(page.locator('video')).toHaveJSProperty('muted',true);await expect.poll(()=>rms(page)).toBeLessThan(0.000001);
+  await page.keyboard.press('o');await expect(page.locator('video')).toHaveJSProperty('muted',false);
+  await page.getByRole('button',{name:'Tout rendre silencieux',exact:true}).click();await expect(page.locator('video')).toHaveJSProperty('muted',true);await expect.poll(()=>rms(page)).toBeLessThan(0.000001);
+  await page.locator('.player-mode').getByRole('button',{name:'Préparer le mix de doublage'}).click();await position(page,2.1);await page.getByRole('button',{name:'Lecture',exact:true}).click();await expect.poll(()=>rms(page)).toBeGreaterThan(0.01);
   await page.keyboard.press('k');await page.getByRole('button',{name:'Lecture',exact:true}).click();await expect(page.locator('video')).toHaveJSProperty('muted',true);
   await page.getByRole('button',{name:'Pause',exact:true}).click();await expect(page.locator('video')).toHaveJSProperty('paused',true);await expect(page.locator('.save-indicator')).toHaveText('Sauvegardé');
   await page.screenshot({path:'docs/screenshots/phase7-mix.png'});
