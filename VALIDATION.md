@@ -2,7 +2,9 @@
 
 ## v0.8.0 visual timing proposals and timeline zoom
 
-Windows workflow evidence will be recorded before publication.
+Windows checks and signed-update package production passed in [run 38788867704](https://github.com/jontechlabs/ai-dubbing-studio/actions/runs/38788867704), built from `9e90332cdb8890522c1ef24e4ff3f2478d9be9a9`. All 184 Windows suite checks passed (49 TypeScript, 61 Rust, 49 Chrome, 25 Python), plus two real Japanese ASR checks using the final Windows release executable. The setup and portable archive are copied unchanged from this workflow. Final metadata only records this evidence and the verified update feed.
+
+Packaged Windows worker timings for the 7.2-second Japanese fixture: auto: 176.21 s, ja: 90.49 s. These are CI CPU measurements, not performance estimates for the user’s PC.
 
 Suites cover **49 TypeScript tests, 62 Rust/Linux tests (61 Windows), 49 Chrome scenarios and 25 Python tests**: 185 local suite checks, 184 Windows checks. The opt-in Whisper test remains separate; the release workflow also repeats its two real Japanese checks using the final executable.
 

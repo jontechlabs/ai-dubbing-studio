@@ -1,11 +1,11 @@
 {
-  "version": "0.7.3",
-  "notes": "Déplacement et durée des doublages sur la timeline, étirement avec conservation de hauteur, lecture/export synchronisés. Humeurs pour CosyVoice3 et Fish S2 FP8/GGUF. Format de projet 7. Transcription automatique des références vocales, en japonais, français et autres langues proposées, avec Whisper small Q5_1 en local sur CPU. Texte modifiable, progression, annulation et relance. Aide Fish FP8/GGUF corrigée. Modèle de transcription de 181 Mio téléchargé au premier usage dans votre dossier de modèles ; aucun audio envoyé en ligne.",
-  "pub_date": "2026-10-15T17:37:17Z",
+  "version": "0.8.0",
+  "notes": "Calage visuel assisté : sélectionnez une zone de bouche puis analysez localement son activité pour proposer le départ et la durée de la voix. Écoute avec la vidéo avant application, propositions à vérifier, annulation et corrections manuelles conservées. Aucun nouveau modèle à télécharger. Zoom de timeline avec Ctrl+molette, Ctrl+plus/moins, Maj+Z, curseur et règle détaillée sur les films longs. La retouche générative des lèvres par un modèle vidéo n’est pas intégrée dans cette version. Format de projet 7 conservé.",
+  "pub_date": "2026-10-15T19:18:58Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSdFFyMUJGTFp3NkRiQ2h5bHliMzFiYW1KaloxUUc1NUhlOVVpWm1XRnh1bmNXZ2toY2hZQk1YaVA4WksvVFV2VUJ6Y0VCd1JLVldjeUFHaVFSV0o5TWZLbGNDYUpTbUEwPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkyMDg1NTc5CWZpbGU6QUkgRHViYmluZyBTdHVkaW9fMC43LjNfeDY0LXNldHVwLmV4ZQl2ZXJzaW9uOjAuNy4zCkJScU1NcCtMQVVOUWhIb0xSOXhpNTA4UnlsbkZBWVU0aUlMeFJ1Uno3cDdjVXhlSTlORE01cW9sYzA1emtLYWFQdXlrTWgyRXk3Q3Q4UllyZUJrYUFnPT0K",
-      "url": "https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.7.3/AI-Dubbing-Studio-0.7.3-Setup.exe"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSdFFyMUJGTFp3Nkd2MUMyeHVsRGdlOWlDUFV5NkVGN2lKOFRJZzh0MWxINkc5bGFVOFdySS84dmZkSHNkVGdvTjdGS3FpbDI1RkxISERiMWlQV0tneWJJU2JTK0hiRFE0PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkyMDkxNTQ3CWZpbGU6QUkgRHViYmluZyBTdHVkaW9fMC44LjBfeDY0LXNldHVwLmV4ZQl2ZXJzaW9uOjAuOC4wCjJVZ0kxWHFzSU5RbGM2bmNxNXMvd2oyRXFXTnBMUGh5b3VyQ25TL2ZFSzcvbVE0Vk5YTW54K2xTV3R1QWpSZUN1cW14cmZlbWtueVRHZklLdnF1akJBPT0K",
+      "url": "https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.8.0/AI-Dubbing-Studio-0.8.0-Setup.exe"
     }
   }
 }
