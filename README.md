@@ -4,15 +4,15 @@ A local desktop workspace for preparing video dubbing: review bilingual subtitle
 
 Built with **Tauri 2, React, TypeScript and Rust**. English and French interface. Dark and light themes.
 
-**v0.7.2 — Fix CosyVoice generation with accented text and CPU selection.** Reproduces and fixes a Windows-1252/UTF-8 logging mismatch that closed the worker pipe and aborted inference with exit code 1. Explicit CPU requests now remain on CPU even when CUDA is available. Real zero-shot inference with the reported French sentence produces a valid 3.08-second WAV. Automatic fitting, synchronized playback and MKV export remain available. [Phase 7 guide (French)](docs/PHASE-7.md).
+**v0.7.3 — Automatic voice-reference transcription and accurate Fish help.** Transcribe Japanese, French and other supported reference languages locally with Whisper small Q5_1. Results remain editable and are saved with each character reference. First-use model download (181 MiB), progress, cancellation and retry; CPU inference leaves TTS GPU memory available. [Reference transcription guide (French)](docs/REFERENCE-TRANSCRIPTION.md).
 
 CosyVoice3, Fish S2 FP8/GGUF and Qwen3-TTS GGUF remain available. [Models and GPU profiles](docs/PHASE-6.md) · [Validation and limits](VALIDATION.md).
 
-![Synchronized dubbing and MKV export](docs/screenshots/phase7-export.png)
+![Automatic reference transcription](docs/screenshots/reference-transcription.png)
 
-*Actual React browser UI with synthetic takes and simulated native results. Separate native tests create and inspect real MKV containers. These are not RTX performance measurements.*
+*Actual React browser UI with a simulated reference and transcription result. Separate native checks transcribe real Japanese speech. These are not RTX performance measurements.*
 
-[Windows downloads](https://github.com/jontechlabs/ai-dubbing-studio/releases/tag/v0.7.2) · [User guide](docs/GETTING-STARTED.md) · [Build instructions](docs/BUILDING.md) · [Français](README.fr.md)
+[Windows downloads](https://github.com/jontechlabs/ai-dubbing-studio/releases/tag/v0.7.3) · [User guide](docs/GETTING-STARTED.md) · [Build instructions](docs/BUILDING.md) · [Français](README.fr.md)
 
 ![Studio with bilingual dialogue, video preview, text editor and timeline](docs/screenshots/studio.png)
 
@@ -26,9 +26,9 @@ Audio regions with independent silence and volume, timeline range selection, fas
 
 | Package | Purpose |
 | --- | --- |
-| [Windows x64 setup](https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.7.2/AI-Dubbing-Studio-0.7.2-Setup.exe) | NSIS installer for the current user, with English/French installer interface |
-| [Portable ZIP](https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.7.2/AI-Dubbing-Studio-Windows-Portable.zip) | Extract the whole folder and launch `AI Dubbing Studio.exe` |
-| [SHA-256 checksums](https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.7.2/SHA256SUMS.txt) | Verify the setup and ZIP downloads |
+| [Windows x64 setup](https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.7.3/AI-Dubbing-Studio-0.7.3-Setup.exe) | NSIS installer for the current user, with English/French installer interface |
+| [Portable ZIP](https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.7.3/AI-Dubbing-Studio-Windows-Portable.zip) | Extract the whole folder and launch `AI Dubbing Studio.exe` |
+| [SHA-256 checksums](https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.7.3/SHA256SUMS.txt) | Verify the setup and ZIP downloads |
 
 Target: **Windows 10/11 x64**, with **Microsoft Edge WebView2 Runtime**. FFmpeg and FFprobe are included. Python, CUDA and AI model downloads are not required for editing and playback. Installation may need Internet access if WebView2 is missing; local project editing does not require a cloud account.
 

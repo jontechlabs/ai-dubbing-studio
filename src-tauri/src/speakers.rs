@@ -64,6 +64,7 @@ fn busy(core: &Core) -> bool {
                     "tts",
                     "speakers",
                     "reference",
+                    "referenceTranscription",
                     "modelMove",
                 ]
                 .contains(&job.saved.record.kind.as_str())

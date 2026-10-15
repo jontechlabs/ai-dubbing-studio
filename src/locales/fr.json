@@ -154,7 +154,11 @@
     "mixFit": "Ajustement des voix aux créneaux",
     "ttsExtract": "Extraction des composants du moteur vocal",
     "mixAssemble": "Assemblage des prises synchronisées",
-    "mixEncode": "Mixage et export MKV"
+    "mixEncode": "Mixage et export MKV",
+    "asrModel": "Préparation du modèle de transcription",
+    "asrPrepare": "Préparation de l’audio de référence",
+    "asrLoad": "Chargement de Whisper",
+    "asrTranscribe": "Transcription de la référence vocale"
   },
   "shortcuts": "Espace : lecture · J/K/L : transport · O : original · Ctrl+S : sauvegarde · Ctrl+Z/Y : annuler/rétablir",
   "errors": {
@@ -238,7 +242,10 @@
     "TTS_FP8_MEMORY_REQUIRED": "Fish FP8 nécessite au moins 12 Gio de VRAM libre. Fermez les autres moteurs IA ou choisissez Fish GGUF.",
     "INVALID_EXPORT": "Paramètres d’export invalides.",
     "MIX_REVIEW_REQUIRED": "Vérifiez les prises ou autorisez l’export incomplet.",
-    "MKV_EXPORT_FAILED": "L’export MKV a échoué. Consultez les logs du traitement."
+    "MKV_EXPORT_FAILED": "L’export MKV a échoué. Consultez les logs du traitement.",
+    "ASR_LANGUAGE_UNSUPPORTED": "Choisissez une langue de référence disponible ou la détection automatique.",
+    "ASR_EMPTY_AUDIO": "Aucune parole exploitable n’a été reconnue. Choisissez plusieurs secondes de voix claire, sans musique ni autre locuteur, ou saisissez le texte manuellement.",
+    "ASR_FAILED": "La transcription locale a échoué. Consultez les logs, puis réessayez. Le texte précédent a été conservé."
   },
   "preparingVideo": "Préparation de la vidéo…",
   "loadingVideo": "Chargement de la vidéo…",
@@ -552,5 +559,13 @@
     "includeOriginal": "Conserver aussi la piste audio originale, inchangée",
     "sourceSubtitles": "Inclure le SRT original du projet",
     "targetSubtitles": "Inclure le SRT traduit du projet"
-  }
+  },
+  "ttsFishHint": "Fish exige un audio de référence et la transcription exacte de ce qui y est dit, dans sa langue d’origine. Une référence japonaise doit avoir une transcription japonaise, même pour un doublage français. Utilisez « Transcrire automatiquement » pour la préparer.",
+  "asrLanguage": "Langue de l’audio de référence",
+  "asrLanguageAuto": "Détection automatique",
+  "asrTranscribe": "Transcrire automatiquement",
+  "asrHint": "Whisper small multilingue · local, sur CPU · modèle de 181 Mio téléchargé au premier usage dans le dossier de modèles configuré. Aucun audio envoyé en ligne.",
+  "asrReviewHint": "La transcription reste dans la langue parlée. Écoutez la référence et vérifiez le texte proposé ; corrigez les noms et les mots manquants avant le doublage.",
+  "asrDubReviewHint": "Vérifiez cette transcription en écoutant la référence. Vous pouvez la corriger dans « Gérer les personnages et les références ».",
+  "asrCurrentHint": "Si le SRT original est absent, ouvrez « Gérer les personnages et les références », choisissez le personnage, puis « Extraire cette réplique » et « Transcrire automatiquement ». Utilisez ensuite cette référence pour le doublage."
 }

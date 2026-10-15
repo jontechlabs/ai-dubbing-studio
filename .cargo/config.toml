@@ -1,0 +1,5 @@
+[env]
+# Use the bindings shipped with the pinned whisper-rs-sys crate.
+WHISPER_DONT_GENERATE_BINDINGS = "1"
+# Distribute a portable CPU build rather than targeting the CI runner's CPU.
+GGML_NATIVE = "OFF"

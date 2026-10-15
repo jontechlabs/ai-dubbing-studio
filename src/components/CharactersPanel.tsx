@@ -11,6 +11,7 @@ import {
   analysisCurrent,
 } from '../domain/characters';
 import * as bridge from '../services/bridge';
+import { ReferenceTranscription } from './ReferenceTranscription';
 
 export function CharactersPanel({
   project,
@@ -290,6 +291,14 @@ export function CharactersPanel({
                   characterId={character.id}
                   onError={onError}
                   selected={character.defaultReferenceId === reference.id}
+                  busy={active || working}
+                  onTranscribe={(language) =>
+                    run(async () => {
+                      await bridge.transcribeVoiceReference(character.id, reference.id, language);
+                      showJobs();
+                      return null;
+                    })
+                  }
                   onDefault={() =>
                     onEdit((p) =>
                       editCharacter(p, character.id, { defaultReferenceId: reference.id }),
@@ -352,6 +361,8 @@ function Reference({
   onLabel,
   onRemove,
   onError,
+  busy,
+  onTranscribe,
 }: {
   reference: VoiceReference;
   characterId: string;
@@ -361,6 +372,8 @@ function Reference({
   onLabel: (value: string) => void;
   onRemove: () => void;
   onError: (value: string) => void;
+  busy: boolean;
+  onTranscribe: (language: string) => Promise<void>;
 }) {
   const { t } = useTranslation(),
     [url, setUrl] = useState<string | null>(null);
@@ -386,6 +399,11 @@ function Reference({
         <small>{(reference.durationMs / 1000).toFixed(1)} s</small>
       </div>
       {url && <audio controls preload="metadata" src={url} />}
+      <ReferenceTranscription
+        busy={busy || reference.durationMs < 1000}
+        start={onTranscribe}
+        onError={onError}
+      />
       <label className="field">
         <span>{t('referenceLabel')}</span>
         <input
@@ -399,9 +417,11 @@ function Reference({
         <textarea
           aria-label={`${t('referenceTranscript')} ${reference.label}`}
           value={reference.transcript}
+          disabled={busy}
           onChange={(event) => onTranscript(event.target.value)}
         />
       </label>
+      <p className="panel-description">{t('asrReviewHint')}</p>
       <div>
         <button className="text-button" aria-pressed={selected} onClick={onDefault}>
           {t(selected ? 'referenceDefault' : 'referenceUseDefault')}

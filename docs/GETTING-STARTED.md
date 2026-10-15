@@ -2,7 +2,7 @@
 
 ## Install or extract
 
-Get the Windows x64 setup or portable ZIP from [v0.7.2 releases](https://github.com/jontechlabs/ai-dubbing-studio/releases/tag/v0.7.2). These are development builds without Authenticode; updater signatures are checked separately. The final native GUI is not fully qualified. See [validation](../VALIDATION.md).
+Get the Windows x64 setup or portable ZIP from [v0.7.3 releases](https://github.com/jontechlabs/ai-dubbing-studio/releases/tag/v0.7.3). These are development builds without Authenticode; updater signatures are checked separately. The final native GUI is not fully qualified. See [validation](../VALIDATION.md).
 
 - **Setup:** run the NSIS installer. It installs for the current user and provides French/English language selection.
 - **Portable:** extract the entire ZIP, then run `AI Dubbing Studio.exe` inside the extracted folder. Keep `binaries/` and `demo/` beside the executable. The app uses local application data for job records; “portable” describes the executable package, not a zero-footprint mode.
@@ -12,7 +12,7 @@ WebView2 Runtime must be available. FFmpeg/FFprobe are bundled. No AI runtime or
 To verify a download in PowerShell, compare its value with the release's `SHA256SUMS.txt`:
 
 ```powershell
-Get-FileHash .\AI-Dubbing-Studio-0.5.0-Setup.exe -Algorithm SHA256
+Get-FileHash .\AI-Dubbing-Studio-0.7.3-Setup.exe -Algorithm SHA256
 Get-FileHash .\AI-Dubbing-Studio-Windows-Portable.zip -Algorithm SHA256
 ```
 
@@ -29,6 +29,8 @@ Text tracks are extracted from the imported original video copy, converted to UT
 External files must be UTF-8 SRT; CRLF, BOM and multiline cues are accepted. Extraction can be cancelled through Processing; cancellation or conversion failure preserves existing subtitles. No automatic transcription or translation is performed.
 
 Select a dialogue to seek its scene. The **Text** tab edits the displayed source/translation. The **Pronunciation** tab stores a separate voice text override. Changing a translated subtitle does not silently change an existing override. **Dub** on each dialogue opens CosyVoice3, Fish S2 FP8/GGUF or Qwen3-TTS GGUF generation. See [Phase 6](PHASE-6.md) for model installation, GPU choice and reference requirements.
+
+For Fish, the reference audio needs a transcript in the language actually spoken. **Characters → Voice references → Transcribe automatically** prepares it locally, with automatic language detection or an explicit choice. The same action is available in **Dubbing** for a selected character reference. Review the editable transcript before generating speech. First use downloads a verified 181 MiB Whisper model to the configured model folder; inference uses CPU and does not upload audio. See the [reference guide](REFERENCE-TRANSCRIPTION.md), including the workflow for a current line without an original SRT.
 
 Use the player and timeline to review the scene. **Play this line** uses configurable padding before/after the cue. Enable looping for repeated review. Settings also contain interface language and theme.
 

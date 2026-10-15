@@ -17,6 +17,7 @@ const INSTALLATIONS: &[&str] = &[
     "speaker-runtime",
     "cosyvoice3-runtime",
     "voice-engines",
+    "whisper-reference",
 ];
 const CONFIG: &str = "model-storage.json";
 type FileEntry = (PathBuf, u64, Option<std::time::SystemTime>);
@@ -393,6 +394,7 @@ pub fn change<R: tauri::Runtime>(
                 "tts",
                 "speakers",
                 "modelMove",
+                "referenceTranscription",
             ]
             .contains(&job.saved.record.kind.as_str())
     }) {
@@ -490,7 +492,7 @@ mod tests {
     #[test]
     fn moves_all_installations_and_reloads_durable_path() {
         let (_temp, data, source, dest) = fixture();
-        for name in ["cosyvoice3-runtime", "voice-engines"] {
+        for name in ["cosyvoice3-runtime", "voice-engines", "whisper-reference"] {
             fs::create_dir_all(source.join(name)).unwrap();
             fs::write(source.join(name).join("model.bin"), b"voice model").unwrap();
         }
@@ -516,7 +518,7 @@ mod tests {
         );
         assert!(!source.join("bandit-runtime").exists());
         assert!(!source.join("speaker-runtime").exists());
-        for name in ["cosyvoice3-runtime", "voice-engines"] {
+        for name in ["cosyvoice3-runtime", "voice-engines", "whisper-reference"] {
             assert_eq!(
                 fs::read(dest.join(name).join("model.bin")).unwrap(),
                 b"voice model"

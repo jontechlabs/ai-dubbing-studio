@@ -56,6 +56,8 @@ pub struct PersistedJob {
     pub tts_request: Option<crate::tts::Request>,
     #[serde(default)]
     pub mix_request: Option<crate::mix::Request>,
+    #[serde(default)]
+    pub transcription: Option<crate::transcription::Request>,
 }
 #[derive(Clone, Serialize, Deserialize)]
 pub struct SeparationRequest {
@@ -104,6 +106,7 @@ pub fn create<R: tauri::Runtime>(
                     voice_install: None,
                     tts_request: None,
                     mix_request: None,
+                    transcription: None,
                 },
                 cancel: Arc::new(AtomicBool::new(false)),
                 paused: Arc::new(AtomicBool::new(false)),

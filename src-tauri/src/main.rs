@@ -1,6 +1,23 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 fn main() {
     let args: Vec<_> = std::env::args_os().collect();
+    if args.get(1).is_some_and(|v| v == "--transcribe-reference") {
+        let result = if args.len() == 6 {
+            dubbing_studio_lib::transcribe_reference_worker(
+                std::path::Path::new(&args[2]),
+                std::path::Path::new(&args[3]),
+                &args[4].to_string_lossy(),
+                std::path::Path::new(&args[5]),
+            )
+        } else {
+            Err("INVALID_PATH".to_owned())
+        };
+        if let Err(error) = result {
+            println!("{}", serde_json::json!({"error":error}));
+            std::process::exit(1);
+        }
+        return;
+    }
     if args.get(1).is_some_and(|v| v == "--smoke-test") {
         let result = args
             .get(2)

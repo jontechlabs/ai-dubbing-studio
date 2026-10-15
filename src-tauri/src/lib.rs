@@ -15,12 +15,21 @@ mod separation;
 mod smoke;
 mod speakers;
 mod subtitles;
+mod transcription;
 mod tts;
 mod voice_engines;
 mod voice_fit;
 mod waveform;
 pub fn smoke_test(path: &std::path::Path) -> Result<(), String> {
     smoke::run(path)
+}
+pub fn transcribe_reference_worker(
+    model: &Path,
+    audio: &Path,
+    language: &str,
+    output: &Path,
+) -> Result<(), String> {
+    transcription::worker(model, audio, language, output)
 }
 
 use domain::{io_error, MediaAsset, MediaInfo, Project};
@@ -280,6 +289,22 @@ fn voice_reference_path(
         .allow_file(&path)
         .map_err(io_error)?;
     Ok(path.to_string_lossy().into_owned())
+}
+#[tauri::command]
+fn transcribe_voice_reference(
+    app: tauri::AppHandle,
+    core: State<'_, Shared>,
+    character_id: String,
+    reference_id: String,
+    language: String,
+) -> Result<String, String> {
+    transcription::enqueue(
+        core.inner().clone(),
+        app,
+        character_id,
+        reference_id,
+        language,
+    )
 }
 fn ensure_idle(core: &Core) -> Result<(), String> {
     if jobs::active_processing(core) {
@@ -770,6 +795,31 @@ fn retry_job(app: tauri::AppHandle, core: State<'_, Shared>, id: String) -> Resu
         drop(session);
         return mix::enqueue(core.inner().clone(), app, request.output, request.options);
     }
+    if let Some(request) = record.transcription {
+        let session = core.session.lock().map_err(io_error)?;
+        let s = session.as_ref().ok_or("NO_PROJECT")?;
+        if s.root != request.root
+            || s.project.id != request.project_id
+            || s.project
+                .characters
+                .iter()
+                .find(|c| c.id == request.character_id)
+                .and_then(|c| c.references.iter().find(|r| r.id == request.reference_id))
+                .is_none_or(|r| {
+                    r.path != request.reference_path || r.transcript != request.original_transcript
+                })
+        {
+            return Err("STALE_REVISION".into());
+        }
+        drop(session);
+        return transcription::enqueue(
+            core.inner().clone(),
+            app,
+            request.character_id,
+            request.reference_id,
+            request.language,
+        );
+    }
     if let Some(cuda) = record.tts_install {
         return tts::install(core.inner().clone(), app, cuda);
     }
@@ -968,6 +1018,7 @@ pub fn run() {
             identify_speakers,
             import_voice_reference,
             voice_reference_path,
+            transcribe_voice_reference,
             load_demo
         ])
         .run(context)

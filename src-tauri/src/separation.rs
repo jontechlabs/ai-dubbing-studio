@@ -282,6 +282,9 @@ pub(crate) async fn process<R: tauri::Runtime>(
     } else {
         let mut failure = "SEPARATION_FAILED";
         jobs::update(core, app, key, |job| {
+            if job.kind == "referenceTranscription" {
+                failure = "ASR_FAILED";
+            }
             if job.kind == "tts" {
                 failure = match status.code().map(|c| c as u32) {
                     Some(0xC0000005 | 0xC0000409 | 0xC000001D) => "TTS_NATIVE_CRASH",
@@ -342,6 +345,7 @@ pub fn install<R: tauri::Runtime>(
             "ttsInstall",
             "tts",
             "speakers",
+            "referenceTranscription",
             "modelMove",
         ]
         .contains(&job.saved.record.kind.as_str())
@@ -418,6 +422,7 @@ pub fn enqueue<R: tauri::Runtime>(
             "ttsInstall",
             "tts",
             "speakers",
+            "referenceTranscription",
             "modelMove",
         ]
         .contains(&job.saved.record.kind.as_str())

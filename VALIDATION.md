@@ -1,5 +1,17 @@
 # Validation - Phase 7, 15 October 2026
 
+## v0.7.3 reference transcription and Fish help
+
+Windows workflow evidence will be recorded before publication.
+
+Local suites cover 43 TypeScript tests, 57 Rust/Linux tests (56 Windows), 39 Chrome scenarios and 23 Python tests. One additional Rust inference test is intentionally opt-in because it requires externally downloaded model weights and a speech fixture. It was run locally using the real multilingual small Q5_1 weights (190085487 bytes, SHA-256 `ae85e4a935d7a567bd102fe55afc16bb595bdb618e11b2fc7591bc08120411bb`) and the Japanese `ja.wav` fixture from the sherpa-onnx maintainer (SHA-256 `460bd8dccb0d2a5f4e29c628f837be4082d13defc64c3fc21dd1b6bb0e119095`). Automatic detection produced Japanese text containing `中学`, without translation. One homophone was incorrect; transcripts must remain reviewable and editable.
+
+The Windows workflow additionally calls the final release executable's isolated `--transcribe-reference` worker, on real Japanese speech, for both automatic detection and explicit Japanese. It verifies structured progress, UTF-8 JSON output, a model path containing spaces, French/Japanese characters and the extended Windows prefix, and records the inference results in its artifacts. It does not open the native GUI. CPU inference is selected explicitly in the native context, independently of TTS CUDA selection; no Python ASR runtime is required.
+
+Browser scenarios exercise old Fish cross-language settings, correct help, explicit Japanese/automatic language selection, default/custom reference IDs, generation becoming available after transcription, unchanged CUDA selection, manual text corrections, persistence after reload, cancellation and failure preserving previous text. Native tests reject stale manual corrections/replaced/deleted references, invalid languages and empty/silent results. The model migration test now includes the Whisper directory. Download verification/cancellation continues to use the existing tested SHA-256 downloader.
+
+The UI screenshots use real React/Chrome with simulated native IPC/results. The native inference test uses a different public Japanese reference. Native GUI/installer interaction and RTX performance retain the limits documented below. Full-video ASR is outside this change; a current line without source text must first be extracted as a character reference.
+
 ## v0.7.2 accented worker logs and explicit CPU placement
 
 Windows checks and signed-update package production passed in [run 38748912680](https://github.com/jontechlabs/ai-dubbing-studio/actions/runs/38748912680), built from `7f239c0408f971628bc806be73d5fae3b1066e97`. Suites cover **43 TypeScript tests, 54 Rust/Linux tests (53 Windows), 36 Chrome scenarios and 23 Python tests**: **155 tests on Windows**, 156 across the local suites. The setup and portable archive are copied unchanged from that workflow output. The final metadata commit only records this evidence and the verified updater feed.

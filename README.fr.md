@@ -1,16 +1,16 @@
 # AI Dubbing Studio — phases 1–7
 
-[Version anglaise et captures de l’interface](README.md) · [Téléchargements Windows](https://github.com/jontechlabs/ai-dubbing-studio/releases/tag/v0.7.2)
+[Version anglaise et captures de l’interface](README.md) · [Téléchargements Windows](https://github.com/jontechlabs/ai-dubbing-studio/releases/tag/v0.7.3)
 
 Studio desktop local de travail texte, voix et vidéo. Tauri 2, React, TypeScript strict et Rust.
 
-**v0.7.2 — Correction du doublage avec accents et du choix CPU.** Le décalage Windows-1252/UTF-8 des logs pouvait fermer le canal du moteur et interrompre la génération avec le code 1. Le CPU est désormais respecté même si CUDA est disponible. La phrase signalée, en mode transcription exacte, produit un WAV réel de 3,08 s dans le test Windows/CPU. Calage automatique, lecture synchronisée et export MKV restent disponibles. [Guide phase 7](docs/PHASE-7.md).
+**v0.7.3 — Transcription automatique des références vocales et aide Fish corrigée.** Transcrivez le japonais, le français et les autres langues proposées avec Whisper small Q5_1, en local. Le texte reste modifiable et est sauvegardé avec la référence du personnage. Modèle de 181 Mio téléchargé au premier usage, progression, annulation et relance ; traitement sur CPU pour laisser la VRAM disponible au doublage. [Guide des références](docs/REFERENCE-TRANSCRIPTION.md).
 
 CosyVoice3, Fish S2 FP8/GGUF et Qwen3-TTS GGUF restent disponibles. Pour 16 Go, commencez par Qwen 0.6B GGUF ; les performances réelles sur RTX 5060 Ti restent à mesurer sur votre matériel. [Modèles et GPU](docs/PHASE-6.md) · [Tests et limites](VALIDATION.md).
 
-![Mix de doublage et export MKV](docs/screenshots/phase7-export.png)
+![Transcription des références vocales](docs/screenshots/reference-transcription.png)
 
-Capture de l’interface React réelle avec des prises synthétiques et résultats natifs simulés. Les exports MKV et le correctif CosyVoice3 ont des vérifications natives distinctes.
+Capture de l’interface React réelle avec une référence et un résultat de transcription simulés. Des tests natifs distincts transcrivent un véritable extrait japonais.
 
 
 ## Nouveautés du correctif 0.4.2
@@ -19,7 +19,7 @@ Zones silencieuses ou audibles et volume indépendant par zone, sélection dans 
 
 ## Utiliser le studio
 
-La version Windows contient FFmpeg et FFprobe. Bandit v2 Multilingual, CosyVoice3, Fish S2 et Qwen3-TTS sont disponibles après installation optionnelle depuis l'application. La transcription automatique reste à intégrer.
+La version Windows contient FFmpeg et FFprobe. Bandit v2 Multilingual, CosyVoice3, Fish S2 et Qwen3-TTS sont disponibles après installation optionnelle depuis l'application. La transcription automatique des références vocales est disponible ; la transcription de toute la vidéo reste à intégrer.
 
 1. Importer une vidéo et choisir la langue source, la langue cible et la piste audio.
 2. Choisir le dossier parent du projet. Le studio crée un dossier `Nom.dubproject` et copie le média.
@@ -57,7 +57,7 @@ Les références et préférences utilisent le format de projet 3, les zones aud
 - Aperçu fluide 720p/30 fps, images clés rapprochées et suppression du recalcul des blocs à chaque image.
 - Préférence GPU Windows, compteurs de lecture et mises à jour signées depuis Paramètres.
 
-La phase 2 est disponible. Le calage compare les timings et refuse les propositions ambiguës ; les blocs non associés restent inchangés. Il ne recale pas encore les sous-titres sur les voix. Consultez le [guide détaillé de la phase 2](docs/PHASE-2.md). La séparation est disponible en phase 3 ; la génération CosyVoice3 est disponible en phase 5 et la transcription reste à intégrer. Le mix et l’export MKV sont disponibles en [phase 7](docs/PHASE-7.md).
+La phase 2 est disponible. Le calage compare les timings et refuse les propositions ambiguës ; les blocs non associés restent inchangés. Il ne recale pas encore les sous-titres sur les voix. Consultez le [guide détaillé de la phase 2](docs/PHASE-2.md). La séparation est disponible en phase 3 et la génération CosyVoice3 en phase 5. La transcription des références est disponible depuis 0.7.3 ; celle de toute la vidéo reste à intégrer. Le mix et l’export MKV sont disponibles en [phase 7](docs/PHASE-7.md).
 
 ![Studio de la phase 2](docs/screenshots/studio.png)
 

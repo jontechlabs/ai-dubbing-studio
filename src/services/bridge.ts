@@ -121,6 +121,13 @@ export async function importVoiceReference(
 export async function voiceReferenceUrl(characterId: string, referenceId: string): Promise<string> {
   return convertFileSrc(await invoke<string>('voice_reference_path', { characterId, referenceId }));
 }
+export function transcribeVoiceReference(
+  characterId: string,
+  referenceId: string,
+  language = 'auto',
+) {
+  return invoke<string>('transcribe_voice_reference', { characterId, referenceId, language });
+}
 export async function graphicsInfo() {
   const data = await invoke<{
     preference: string;

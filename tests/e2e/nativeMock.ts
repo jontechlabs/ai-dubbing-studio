@@ -19,6 +19,21 @@ export async function nativeMock(page: Page, large = false) {
       const generation={id,kind:'tts',dialogueId:lineId,providerId:options.variantId?.startsWith('fish')?'fish-s2':options.variantId?.startsWith('qwen')?'qwen3-tts':'cosyvoice3',modelId:options.variantId??'cosy3-official',path:`generations/${id}.wav`,createdAt:new Date().toISOString(),sourcePath:project.media.path,startMs:line.startMs,endMs:line.endMs,text,language:project.languages.target,characterId:line.characterId,durationMs,sampleRate:24000,options,referenceTranscript:'Hello',device:options.device,deviceName:'NVIDIA RTX 5060 Ti (simulation)',peakVramMb:0,inputHash:'mock'};
       project.generations.push(generation);project.formatVersion=5;line.selectedGenerationIds[project.languages.target]=id;line.status=durationMs>line.endMs-line.startMs?'review':'generated';project.revision++;emit('project-changed',structuredClone(project));job={...job,status:'succeeded',stage:'done',progress:1};emit('job-changed',job);localStorage.setItem('nativeMockProject',JSON.stringify(project));
     };
+    host.__seedReference=(transcript='',custom=false)=>{
+      const references=[{id:'reference-ja',label:'Japanese voice',path:'characters/reference-ja.wav',durationMs:7000,transcript,sourceDialogueId:null}];
+      if(custom)references.push({...references[0],id:'reference-custom',label:'Alternate voice',path:'characters/reference-custom.wav'});
+      project.characters=[{id:'speaker-ja',name:'Taro',color:'#b49ce6',references,defaultReferenceId:'reference-ja'}];project.dialogues[0].characterId='speaker-ja';
+      project.modelPreferences={ttsProviderId:'fish-s2',voiceVariantId:'fish-s2-fp8'};
+      project.dialogues[0].voiceSettings={variantId:'fish-s2-fp8',device:'cuda:0',referenceMode:custom?'custom':'character',referenceId:custom?'reference-custom':null,mode:'crossLingual',speed:1,seed:0};
+      project.formatVersion=Math.max(5,project.formatVersion);project.revision++;emit('project-changed',structuredClone(project));localStorage.setItem('nativeMockProject',JSON.stringify(project));
+    };
+    host.__completeTranscription=(text='彼の名前は坂本太郎です。')=>{
+      if(job.status==='cancelled')return;
+      const {characterId,referenceId}=host.__pendingTranscription;
+      project.characters.find((c:any)=>c.id===characterId).references.find((r:any)=>r.id===referenceId).transcript=text;
+      project.revision++;emit('project-changed',structuredClone(project));localStorage.setItem('nativeMockProject',JSON.stringify(project));job={...job,status:'succeeded',stage:'done',progress:1};emit('job-changed',job);
+    };
+    host.__failTranscription=()=>{job={...job,status:'failed',error:'ASR_EMPTY_AUDIO'};emit('job-changed',job);};
     host.__replaceMedia=()=>{project.media.id+='-replacement';project.tracks.find((track:any)=>track.kind==='original').mute=true;project.revision++;emit('project-changed',structuredClone(project));};
     host.__setFirstSlot=(endMs:number)=>{project.dialogues[0].endMs=endMs;project.revision++;emit('project-changed',structuredClone(project));};
     host.__seedDubbing=()=>{job={id:'tts-seed',projectId:project.id,kind:'tts',status:'running',stage:'ttsGenerate',progress:null,logs:[],error:null};for(const line of project.dialogues){host.__pendingTts={lineId:line.id,options:{variantId:'cosy3-official',device:'cpu',referenceMode:'current',referenceId:null,mode:'crossLingual',speed:1,seed:7}};host.__completeTts(2000);}};
@@ -59,6 +74,7 @@ export async function nativeMock(page: Page, large = false) {
       if(command==='speaker_status')return structuredClone(host.__speakerStatus);
       if(command==='identify_speakers'){job={id:'speakers',projectId:project.id,kind:'speakers',status:'running',stage:'speakerEmbeddings',progress:0.3,logs:[],error:null};emit('job-changed',job);return job.id;}
       if(command==='voice_reference_path')return `C:/Studio/characters/${args.referenceId}.wav`;
+      if(command==='transcribe_voice_reference'){host.__pendingTranscription=structuredClone(args);job={id:'asr-job',projectId:project.id,kind:'referenceTranscription',status:'running',stage:'asrTranscribe',progress:null,logs:['Local Whisper small Q5_1, CPU. No audio upload.'],error:null};emit('job-changed',job);return job.id;}
       if(command==='install_separation_runtime'){job={id:'runtime',projectId:null,kind:'runtime',status:'running',stage:'dependencies',progress:null,logs:[],error:null};emit('job-changed',job);return job.id;}
       if(command==='separate_audio'){job={id:'separation',projectId:project.id,kind:'separation',status:'running',stage:'separate',progress:0.3,logs:[],error:null};emit('job-changed',job);return job.id;}
       if(command==='pause_job'){job={...job,status:args.paused?'paused':'running'};emit('job-changed',job);return null;}

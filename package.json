@@ -1,6 +1,6 @@
 {
   "name": "ai-dubbing-studio",
-  "version": "0.7.2",
+  "version": "0.7.3",
   "private": true,
   "packageManager": "pnpm@11.25.0",
   "type": "module",

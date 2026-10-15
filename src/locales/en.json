@@ -154,7 +154,11 @@
     "mixFit": "Fitting voices to dialogue slots",
     "ttsExtract": "Extracting voice engine components",
     "mixAssemble": "Assembling synchronized takes",
-    "mixEncode": "Mixing and exporting MKV"
+    "mixEncode": "Mixing and exporting MKV",
+    "asrModel": "Preparing the transcription model",
+    "asrPrepare": "Preparing reference audio",
+    "asrLoad": "Loading Whisper",
+    "asrTranscribe": "Transcribing the voice reference"
   },
   "shortcuts": "Space: play · J/K/L: transport · O: original · Ctrl+S: save · Ctrl+Z/Y: undo/redo",
   "errors": {
@@ -238,7 +242,10 @@
     "TTS_FP8_MEMORY_REQUIRED": "Fish FP8 needs at least 12 GiB free VRAM. Close other AI engines or choose Fish GGUF.",
     "INVALID_EXPORT": "Invalid export settings.",
     "MIX_REVIEW_REQUIRED": "Review takes or allow an incomplete export.",
-    "MKV_EXPORT_FAILED": "MKV export failed. See the processing logs."
+    "MKV_EXPORT_FAILED": "MKV export failed. See the processing logs.",
+    "ASR_LANGUAGE_UNSUPPORTED": "Choose an available reference language or automatic detection.",
+    "ASR_EMPTY_AUDIO": "No usable speech was recognized. Choose several seconds of clear speech without music or other speakers, or enter the transcript manually.",
+    "ASR_FAILED": "Local transcription failed. Check the logs and retry. The previous text was preserved."
   },
   "preparingVideo": "Preparing video…",
   "loadingVideo": "Loading video…",
@@ -552,5 +559,13 @@
     "includeOriginal": "Also keep the original audio track unchanged",
     "sourceSubtitles": "Include the project’s original SRT",
     "targetSubtitles": "Include the project’s translated SRT"
-  }
+  },
+  "ttsFishHint": "Fish requires reference audio and an exact transcript of the words spoken in it, in the original language. Japanese audio needs Japanese text, even for French dubbing. Use “Transcribe automatically” to prepare it.",
+  "asrLanguage": "Reference audio language",
+  "asrLanguageAuto": "Detect automatically",
+  "asrTranscribe": "Transcribe automatically",
+  "asrHint": "Whisper small multilingual · local CPU inference · 181 MiB model downloaded on first use into your configured model folder. No audio is uploaded.",
+  "asrReviewHint": "The transcript stays in the spoken language. Listen to the reference and check the proposed text; correct names and missing words before dubbing.",
+  "asrDubReviewHint": "Check this transcript while listening to the reference. You can edit it in “Manage characters and references”.",
+  "asrCurrentHint": "If the original SRT is missing, open “Manage characters and references”, select the character, then “Extract this line” and “Transcribe automatically”. Use that reference for dubbing."
 }

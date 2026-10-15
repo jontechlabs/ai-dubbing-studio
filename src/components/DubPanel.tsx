@@ -15,6 +15,7 @@ import {
 } from '../domain/tts';
 import * as bridge from '../services/bridge';
 import { installedVoiceVariants, voiceVariant } from '../domain/voiceEngines';
+import { ReferenceTranscription } from './ReferenceTranscription';
 
 export function CosyModel({
   jobs,
@@ -182,6 +183,7 @@ export function DubPanel({
     variantId: line.voiceSettings?.variantId ?? preferred?.id ?? 'cosy3-official',
   };
   const variant = voiceVariant(settings.variantId)!;
+  const mode = variant.providerId === 'fish-s2' ? 'zeroShot' : settings.mode;
   const ready =
     variant.id === 'cosy3-official'
       ? status?.installed
@@ -207,7 +209,7 @@ export function DubPanel({
   const inputText = spokenText(project, line);
   const referenceMissing = settings.referenceMode !== 'current' && !reference;
   const transcriptMissing =
-    (settings.mode === 'zeroShot' || variant.providerId === 'fish-s2') &&
+    mode === 'zeroShot' &&
     (settings.referenceMode === 'current'
       ? !project.sourceCues.some((c) => line.sourceCueIds.includes(c.id) && c.text.trim())
       : !reference?.transcript.trim());
@@ -216,7 +218,7 @@ export function DubPanel({
       ? line.endMs - line.startMs < 1000
       : !!reference && reference.durationMs < 1000;
   const edit = (change: Partial<typeof settings>) =>
-    onEdit((p) => editVoiceSettings(p, line.id, { ...settings, ...change }));
+    onEdit((p) => editVoiceSettings(p, line.id, { ...settings, mode, ...change }));
   return (
     <div className="panel-body dub-panel">
       <h3>{variant.name}</h3>
@@ -319,10 +321,31 @@ export function DubPanel({
       <button className="text-button" onClick={onCharacters}>
         {t('ttsManageReferences')}
       </button>
+      {settings.referenceMode !== 'current' && character && reference && (
+        <>
+          <ReferenceTranscription
+            busy={busy || shortReference}
+            onError={onError}
+            start={async (language) => {
+              await snapshot();
+              await bridge.transcribeVoiceReference(character.id, reference.id, language);
+              onStarted();
+            }}
+          />
+          <label className="field">
+            <span>{t('referenceTranscript')}</span>
+            <textarea value={reference.transcript} readOnly rows={3} />
+          </label>
+          <p className="panel-description">{t('asrDubReviewHint')}</p>
+        </>
+      )}
+      {settings.referenceMode === 'current' && transcriptMissing && (
+        <p className="panel-description">{t('asrCurrentHint')}</p>
+      )}
       <label className="field">
         <span>{t('ttsCloneMode')}</span>
         <select
-          value={variant.providerId === 'fish-s2' ? 'zeroShot' : settings.mode}
+          value={mode}
           disabled={busy}
           onChange={(e) => edit({ mode: e.target.value as typeof settings.mode })}
         >
@@ -333,7 +356,13 @@ export function DubPanel({
         </select>
       </label>
       <p className="panel-description">
-        {t(settings.mode === 'crossLingual' ? 'ttsCrossHint' : 'ttsZeroHint')}
+        {t(
+          variant.providerId === 'fish-s2'
+            ? 'ttsFishHint'
+            : mode === 'crossLingual'
+              ? 'ttsCrossHint'
+              : 'ttsZeroHint',
+        )}
       </p>
       <label className="field">
         <span>
@@ -367,14 +396,16 @@ export function DubPanel({
         <textarea value={inputText} readOnly rows={3} />
       </label>
       <p className="panel-description">{t('ttsEditPronunciationHint')}</p>
-      {(transcriptMissing || shortReference || !inputText) && (
+      {(referenceMissing || transcriptMissing || shortReference || !inputText) && (
         <p className="warning" role="status">
           {t(
-            transcriptMissing
-              ? 'errors.TTS_TRANSCRIPT_REQUIRED'
-              : shortReference
-                ? 'ttsReferenceTooShort'
-                : 'errors.TTS_TEXT_REQUIRED',
+            referenceMissing
+              ? 'errors.TTS_REFERENCE_REQUIRED'
+              : transcriptMissing
+                ? 'errors.TTS_TRANSCRIPT_REQUIRED'
+                : shortReference
+                  ? 'ttsReferenceTooShort'
+                  : 'errors.TTS_TEXT_REQUIRED',
           )}
         </p>
       )}
@@ -393,14 +424,14 @@ export function DubPanel({
         onClick={() => {
           setWorking(true);
           onEdit((p) => ({
-            ...editVoiceSettings(p, line.id, settings),
+            ...editVoiceSettings(p, line.id, { ...settings, mode }),
             modelPreferences: { ttsProviderId: variant.providerId, voiceVariantId: variant.id },
           }));
           void snapshot()
             .then(() =>
               bridge.generateLine(line.id, {
                 ...settings,
-                mode: variant.providerId === 'fish-s2' ? 'zeroShot' : settings.mode,
+                mode,
               }),
             )
             .then(onStarted)
