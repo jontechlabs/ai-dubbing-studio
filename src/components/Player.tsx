@@ -19,6 +19,7 @@ import { formatTime } from '../domain/time';
 import { IconButton } from './IconButton';
 import { useMemo } from 'react';
 import { cueIndex } from '../domain/cueIndex';
+import { audioTracks, dubbingMix } from '../domain/audio';
 import {
   setSubtitleDisplay,
   subtitleDisplay,
@@ -71,7 +72,23 @@ export function Player({
         </div>
         <span className="player-mode">
           <AudioLines size={12} />
-          {t(project?.tracks.some((track) => track.kind === 'audio') ? 'audioMix' : 'original')}
+          {project && audioTracks(project).some((t) => t.kind === 'dubbing') && (
+            <button
+              className="text-button"
+              onClick={() => {
+                transport.pause();
+                onEdit(dubbingMix);
+              }}
+            >
+              {t('prepareDubbingMix')}
+            </button>
+          )}
+          {t(
+            !transport.originalOnly &&
+              project?.tracks.some((track) => track.kind === 'audio' || track.kind === 'dubbing')
+              ? 'audioMix'
+              : 'original',
+          )}
         </span>
       </div>
       <div className={`video-stage ${transport.url ? 'has-video' : ''}`} aria-busy={loading}>

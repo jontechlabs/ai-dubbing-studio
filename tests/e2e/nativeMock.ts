@@ -20,6 +20,7 @@ export async function nativeMock(page: Page, large = false) {
       project.generations.push(generation);project.formatVersion=5;line.selectedGenerationIds[project.languages.target]=id;line.status=durationMs>line.endMs-line.startMs?'review':'generated';project.revision++;emit('project-changed',structuredClone(project));job={...job,status:'succeeded',stage:'done',progress:1};emit('job-changed',job);localStorage.setItem('nativeMockProject',JSON.stringify(project));
     };
     host.__replaceMedia=()=>{project.media.id+='-replacement';project.tracks.find((track:any)=>track.kind==='original').mute=true;project.revision++;emit('project-changed',structuredClone(project));};
+    host.__seedDubbing=()=>{job={id:'tts-seed',projectId:project.id,kind:'tts',status:'running',stage:'ttsGenerate',progress:null,logs:[],error:null};for(const line of project.dialogues){host.__pendingTts={lineId:line.id,options:{variantId:'cosy3-official',device:'cpu',referenceMode:'current',referenceId:null,mode:'crossLingual',speed:1,seed:7}};host.__completeTts(2000);}};
     host.__completeModelMove=()=>{host.__modelFolder=host.__pendingModelFolder;job={...job,status:'succeeded',stage:'done',progress:1};emit('job-changed',job);};
     host.__speakerStatus={installed:true,installing:false,sizeBytes:72500000};
     host.__completeSpeakerAnalysis=()=>{project.formatVersion=Math.max(3,project.formatVersion);project.speakerAnalysis={id:'speakers',sourcePath:project.media.path,lines:project.dialogues.map(({id,startMs,endMs}:any)=>({id,startMs,endMs})),assignments:project.dialogues.map((line:any,index:number)=>({dialogueId:line.id,speaker:index%2,similarity:0.95,reason:'identified'})),clusters:[0,1].map((speaker)=>({speaker,referencePath:`characters/reference-${speaker}.wav`,durationMs:4000,referenceDialogueId:project.dialogues[speaker].id}))};project.revision++;emit('project-changed',structuredClone(project));job={...job,status:'succeeded',stage:'done',progress:1};emit('job-changed',job);};
@@ -44,7 +45,8 @@ export async function nativeMock(page: Page, large = false) {
       if(command==='audio_paths')return Object.fromEntries(project.tracks.filter((track:any)=>track.kind==='audio').map((track:any)=>[track.id,track.path]));
       if(command==='model_storage_info')return {path:host.__modelFolder||'C:/Studio/models',defaultPath:'C:/Studio/models',moving:job?.kind==='modelMove'&&job.status==='running'};
       if(command==='model_storage_size'){if(host.__sizeError)throw Error('disk unavailable');return {path:host.__modelFolder||'C:/Studio/models',bytes:host.__modelBytes??4831838208,files:974,skipped:0,partial:false};}
-      if(command==='plugin:dialog|save')return 'C:/Exports/speech-montage.wav';
+      if(command==='plugin:dialog|save')return args.options?.defaultPath?.endsWith('.mkv')?'C:/Exports/dubbed.mkv':'C:/Exports/speech-montage.wav';
+      if(command==='export_mkv'){job={id:'mkv-export',projectId:project.id,kind:'mkvExport',status:'running',stage:'mixEncode',progress:0.2,logs:[],error:null};emit('job-changed',job);return job.id;}
       if(command==='export_audio_track'){job={id:'export',projectId:project.id,kind:'audioExport',status:'running',stage:'audioRender',progress:0.5,logs:[],error:null};emit('job-changed',job);return job.id;}
       if(command==='plugin:dialog|open')return 'D:/AI Models';
       if(command==='change_model_storage'){host.__pendingModelFolder=args.path;job={id:'modelMove',projectId:'',kind:'modelMove',status:'running',stage:'modelMove',progress:0.4,logs:[],error:null};emit('job-changed',job);return job.id;}

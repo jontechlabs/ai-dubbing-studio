@@ -75,3 +75,12 @@ Format 1 remains supported. A project gains format 2 when audio track asset refe
 Windows rendering preference is scoped to the current application executable in UserGpuPreferences, preserving unrelated fields. The effective WebView2/decoder adapter remains controlled by Windows and drivers. The UI links to Windows graphics settings and distinguishes renderer preference from Python CUDA device choice.
 
 Tauri’s updater uses an embedded public key and HTTPS static manifest. It verifies artifact signatures before exposing installation, flushes project edits, and restarts through the NSIS updater. The signing private key is kept outside Git and provided to release builds through an Actions secret. It is separate from Windows Authenticode signing.
+
+
+## Phase 7 playback and MKV
+
+Project format 6 introduces a virtual `dubbing` bus, persisted only on first edit. Older project formats still load. Selected takes match dialogue, target language and imported source, and are placed at the current dialogue start with natural duration, clipped only to the video's end. The Web Audio bus lazily decodes nearby WAVs, bounds its retained cache, schedules sources against the video clock and corrects drift. Pause, seeking, rate changes and edits stop/recreate affected sources. Gains and region boundaries are scheduled on AudioParams. Original audition temporarily overrides monitoring without changing saved mixer state.
+
+The MKV job captures the saved project and persists its retry identity. Rust assembles 24 kHz mono float voices in bounded chunks, opening only active takes. FFmpeg then resamples/mixes the small set of buses at 48 kHz stereo, applies sample-based region expressions and clips peaks. A filter script avoids shell quoting and command-line length limits. Muted and non-solo buses are omitted. The original video is stream-copied, the mix is AAC/FLAC, and optional original audio is stream-copied with project SRT tracks. Language tags, chapters and metadata are mapped explicitly. Temporary files live beside the destination; only successful, probed output is atomically published. Cancellation kills and waits for FFmpeg. Export never uses the playback proxy or monitor gain.
+
+CosyVoice's vendored constructor uses `os.path.join` for model assets instead of slash concatenation, preserving Windows extended paths. A constructor regression checks all inference file paths without Torch; separate real Windows inference validates the model end to end.

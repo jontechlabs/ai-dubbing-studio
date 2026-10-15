@@ -5,7 +5,8 @@ import type { AudioSelection, Dialogue, Job, Project } from '../domain/types';
 import type { RefObject } from 'react';
 import { AudioQuickControls } from './AudioQuickControls';
 import { AudioRegionsEditor } from './AudioRegionsEditor';
-import { audioTracks, editTrack } from '../domain/audio';
+import { audioTracks, editTrack, trackLabel, dubbingMix } from '../domain/audio';
+import { mixReport } from '../domain/mix';
 import * as bridge from '../services/bridge';
 export function AudioPanel({
   project,
@@ -184,18 +185,32 @@ export function AudioPanel({
       {!!tracks.length && (
         <>
           <h3>{t('audioMixer')}</h3>
+          {!!project && !!mixReport(project).clips.length && (
+            <>
+              <button
+                className="button accent wide"
+                onClick={() => {
+                  videoRef.current?.pause();
+                  onEdit(dubbingMix);
+                }}
+              >
+                {t('prepareDubbingMix')}
+              </button>
+              <p className="panel-description">{t('dubbingMixHint')}</p>
+            </>
+          )}
           <p className="panel-description">{t('mixerHint')}</p>
           <AudioQuickControls project={project!} onEdit={onEdit} />
           <p className="panel-description">{t('quickAudioHint')}</p>
           <div className="audio-mixer">
             {tracks.map((track) => (
               <div className="mixer-row" key={track.id}>
-                <strong>{t(track.kind === 'original' ? 'original' : `stem.${track.role}`)}</strong>
+                <strong>{t(trackLabel(track))}</strong>
                 <button
                   className={`mixer-toggle ${!track.mute ? 'active' : ''}`}
                   aria-pressed={!track.mute}
                   aria-label={t(track.mute ? 'enableTrack' : 'muteTrack', {
-                    name: t(track.kind === 'original' ? 'original' : `stem.${track.role}`),
+                    name: t(trackLabel(track)),
                   })}
                   onClick={() => onEdit((p) => editTrack(p, track.id, { mute: !track.mute }))}
                 >
@@ -204,13 +219,13 @@ export function AudioPanel({
                 <button
                   className={`mixer-toggle ${track.solo ? 'active' : ''}`}
                   aria-pressed={track.solo}
-                  aria-label={`${t('solo')} ${t(track.kind === 'original' ? 'original' : `stem.${track.role}`)}`}
+                  aria-label={`${t('solo')} ${t(trackLabel(track))}`}
                   onClick={() => onEdit((p) => editTrack(p, track.id, { solo: !track.solo }))}
                 >
                   S
                 </button>
                 <input
-                  aria-label={`${t('trackGain')} ${t(track.kind === 'original' ? 'original' : `stem.${track.role}`)}`}
+                  aria-label={`${t('trackGain')} ${t(trackLabel(track))}`}
                   type="range"
                   min="0"
                   max="2"

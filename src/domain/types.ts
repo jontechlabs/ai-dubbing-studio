@@ -88,7 +88,7 @@ export interface AudioSelection {
 }
 export interface Track {
   id: string;
-  kind: 'video' | 'original' | 'subtitle' | 'audio';
+  kind: 'video' | 'original' | 'subtitle' | 'audio' | 'dubbing';
   role?: 'speech' | 'music' | 'sfx';
   path?: string;
   durationMs?: number;

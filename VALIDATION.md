@@ -1,4 +1,18 @@
-# Validation - Phase 6, 15 October 2026
+# Validation - Phase 7, 15 October 2026
+
+## v0.7.0 synchronized mix, MKV and Windows model paths
+
+The suites contain **42 TypeScript tests, 50 Rust/Linux tests (49 Windows), 35 Chrome scenarios and 18 Python tests**: 145 locally, 144 on Windows. The Windows workflow remains the authority for native Windows checks and setup/portable production.
+
+New native FFmpeg tests create actual MKV containers and decode their output to check dialogue onset, natural duration, gaps, overlapping takes, independent music/voice gain, silent regions and reduced-volume regions. FLAC samples are measured against expected amplitudes. SHA-256 stream hashes verify unchanged copied video and optional original audio. Stream kinds and language tags verify both subtitle tracks. A separate job test exports AAC while project gains change, checks the captured revision and proves that the completed file uses the original snapshot. All-muted export is silent; cancellation preserves the previous destination and source WAV. Missing input files and project-source overwrite attempts are rejected. An initial AAC channel-layout failure was reproduced and fixed with explicit stereo layout after expression filters.
+
+Chrome scenarios measure actual Web Audio RMS output, rather than only mock command arguments: dubbing starts/stops with the video, seeking selects the correct time range, track gain changes amplitude, regions silence the selected interval, original audition temporarily overrides monitoring, normal playback restores the saved mix, and a paused pending decode cannot restart playback. Browser IPC results and model/GPU names are simulated. The MKV option test verifies save-before-export, original audio, codec and subtitle choices; incomplete projects require an explicit acknowledgment.
+
+The reported CosyVoice failure was reproduced on **native Windows Python**: `os.path.exists(extended_path + '/cosyvoice3.yaml')` is false while the native joined path exists. The vendored constructors now join model paths with `os.path.join`, retaining extended-length support. A native Windows inference with the full verified CosyVoice3 model and a `\\?\` model directory produced **1.52 seconds of nonempty 24 kHz PCM16 audio**. The constructor regression also opens all model assets from a path with spaces, an accented component and more than 260 characters. This tests the constructor at that length, not every third-party dependency with arbitrarily long paths.
+
+The development host has an AMD Radeon 860M, not the user's RTX 5060 Ti. Cosy inference above ran on CPU; no RTX performance or VRAM claim follows from it. Native Windows GUI/installer interaction is still not fully qualified because Smart App Control blocked an earlier app executable on this host; that policy was not bypassed. The new screenshots are real React UI captures using synthetic takes and simulated native IPC.
+
+Playback keeps natural take duration; there is no automatic speech fitting, loudness normalization or multi-target-language editing in one project. Overlaps are summed and peaks are clipped at the output. Accelerated Web Audio take playback also shifts pitch. Export copies the source video and uses saved track/region levels, excluding monitor volume. It temporarily needs about 346 MB/hour for the float voice bus, plus the MKV being written. Historical engine checks and limitations are retained below.
 
 ## v0.6.0 Fish S2 / Qwen3-TTS and reference repair
 

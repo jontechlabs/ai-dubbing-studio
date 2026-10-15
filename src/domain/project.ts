@@ -2,7 +2,7 @@ import type { Project } from './types';
 import { alignCues } from './subtitles';
 import { validVoiceVariant } from './modelVariants';
 import { validVoiceSettings } from './tts';
-export const APP_VERSION = '0.6.0';
+export const APP_VERSION = '0.7.0';
 
 export function blankProject(name = 'Untitled', source = 'ja', target = 'fr'): Project {
   const now = new Date().toISOString();
@@ -92,7 +92,7 @@ export function validateProject(value: unknown): Project {
   const preferences = project.modelPreferences;
   if (preferences && !validVoiceVariant(preferences.ttsProviderId, preferences.voiceVariantId))
     throw new Error('INVALID_PROJECT');
-  if (![1, 2, 3, 4, 5].includes(project.formatVersion))
+  if (![1, 2, 3, 4, 5, 6].includes(project.formatVersion))
     throw new Error('UNSUPPORTED_PROJECT_VERSION');
   if (
     project.subtitleDisplay &&
@@ -129,12 +129,17 @@ export function validateProject(value: unknown): Project {
       throw new Error('INVALID_CUE_RANGE');
   }
   for (const track of project.tracks) {
+    if (
+      track.kind === 'dubbing' &&
+      (project.formatVersion < 6 || track.id !== 'dubbing' || track.path !== undefined)
+    )
+      throw new Error('INVALID_PROJECT');
     if (!Number.isFinite(track.gain) || track.gain < 0 || track.gain > 2)
       throw new Error('INVALID_PROJECT');
     if (track.regions !== undefined || track.regionsEnabled !== undefined) {
       if (
         project.formatVersion < 4 ||
-        !['original', 'audio'].includes(track.kind) ||
+        !['original', 'audio', 'dubbing'].includes(track.kind) ||
         (track.regionsEnabled !== undefined && typeof track.regionsEnabled !== 'boolean') ||
         (track.regions !== undefined && !Array.isArray(track.regions)) ||
         (track.regions?.length ?? 0) > 10000

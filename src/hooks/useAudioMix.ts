@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState, type RefObject } from 're
 import type { Project } from '../domain/types';
 import { audioTracks, effectiveGain, gainChanges, regionGain } from '../domain/audio';
 import { audioUrls } from '../services/bridge';
+import { DubbingBus } from '../services/dubbingBus';
 
 type Node = { gain: GainNode; audio: HTMLMediaElement; source: MediaElementAudioSourceNode };
 type Graph = {
@@ -10,6 +11,7 @@ type Graph = {
   released: boolean;
   sync: () => void;
   schedule: () => void;
+  dubbing: DubbingBus;
 };
 // One source node per media element, including React's effect replay.
 const graphs = new WeakMap<HTMLVideoElement, Graph>();
@@ -67,6 +69,7 @@ export function useAudioMix(
             released: false,
             sync: () => {},
             schedule: () => {},
+            dubbing: new DubbingBus(context, onError),
           };
           graphs.set(video, active);
         } catch (error) {
@@ -117,6 +120,7 @@ export function useAudioMix(
         .catch(() => onError('AUDIO_PLAYBACK_FAILED'));
     };
     attached.sync = () => {
+      attached.dubbing.tick(current.current.project, video, current.current.volume);
       for (const node of attached.nodes.values()) {
         if (node.audio === video) continue;
         if (node.audio.muted || video.paused || video.seeking || video.readyState < 3) {
@@ -142,7 +146,7 @@ export function useAudioMix(
     video.addEventListener('play', play);
     document.addEventListener('pointerdown', resume, true);
     document.addEventListener('keydown', resume, true);
-    const timer = setInterval(reschedule, 200);
+    const timer = setInterval(reschedule, 100);
     applyRef.current(attached);
     setInitialized(key);
     return () => {
@@ -178,6 +182,7 @@ export function useAudioMix(
       attached.released = true;
       queueMicrotask(() => {
         if (attached.released) {
+          attached.dubbing.dispose();
           graphs.delete(video);
           void attached.context.close();
         }
@@ -241,6 +246,12 @@ export function useAudioMix(
   }, [project, volume]);
   const tracks = project ? audioTracks(project) : [];
   return {
+    prepare: async (time: number) => {
+      if (graph.current) {
+        await graph.current.context.resume();
+        await graph.current.dubbing.prepare(current.current.project, time, current.current.volume);
+      }
+    },
     originalMuted:
       !key || initialized !== key || !tracks[0] || effectiveGain(tracks[0], tracks, volume) === 0,
   };

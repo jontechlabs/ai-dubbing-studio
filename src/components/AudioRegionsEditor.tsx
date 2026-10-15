@@ -2,7 +2,13 @@ import { useRef, useState, useEffect, type RefObject } from 'react';
 import { Volume2, VolumeX, Trash2, Save, Download } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { AudioRegion, AudioSelection, Dialogue, Project } from '../domain/types';
-import { audioTracks, paintAudioRegion, setAudioRegions, setAllAudio } from '../domain/audio';
+import {
+  audioTracks,
+  paintAudioRegion,
+  setAudioRegions,
+  setAllAudio,
+  trackLabel,
+} from '../domain/audio';
 import { formatTime, parseTime } from '../domain/time';
 
 export function AudioRegionsEditor({
@@ -103,7 +109,7 @@ export function AudioRegionsEditor({
         >
           {tracks.map((track) => (
             <option key={track.id} value={track.id}>
-              {t(track.kind === 'original' ? 'originalTrack' : `stem.${track.role}`)}
+              {t(trackLabel(track))}
             </option>
           ))}
         </select>

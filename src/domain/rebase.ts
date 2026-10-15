@@ -80,11 +80,13 @@ export function rebaseProject(base: Project, local: Project, incoming: Project):
     if (!server) {
       if (
         !before ||
-        (localTrack.kind === 'original' && !base.tracks.some((track) => track.id === localTrack.id))
+        (['original', 'dubbing'].includes(localTrack.kind) &&
+          !base.tracks.some((track) => track.id === localTrack.id))
       )
         next.tracks.push(
           structuredClone(
-            localTrack.kind === 'original' && incoming.media?.path !== base.media?.path
+            ['original', 'dubbing'].includes(localTrack.kind) &&
+              incoming.media?.path !== base.media?.path
               ? { ...localTrack, regions: undefined, regionsEnabled: undefined }
               : localTrack,
           ),
@@ -93,7 +95,7 @@ export function rebaseProject(base: Project, local: Project, incoming: Project):
     }
     for (const key of ['mute', 'solo', 'gain', 'regions', 'regionsEnabled'] as const)
       if (
-        localTrack.kind === 'original' &&
+        ['original', 'dubbing'].includes(localTrack.kind) &&
         (key === 'regions' || key === 'regionsEnabled') &&
         incoming.media?.path !== base.media?.path
       )

@@ -1,6 +1,6 @@
 {
   "brand": "Dubbing Studio",
-  "local": "LOCAL · PHASE 06",
+  "local": "LOCAL · PHASE 07",
   "import": "Import",
   "analyse": "Analyze",
   "audio": "Audio",
@@ -108,7 +108,7 @@
   "exportSource": "Export original SRT",
   "exportTarget": "Export translated SRT",
   "exportProject": "Export project.json",
-  "exportHint": "Export individual WAV takes from Dubbing. Final mix and MKV arrive in Phase 7.",
+  "exportHint": "You can also export SRT files separately below, or individual WAV takes from Dubbing.",
   "audioHint": "Bandit v2 Multilingual extracts speech, music and effects from the track selected at import. Processing stays on this device.",
   "mediaInfo": "Media information",
   "jobs": "Jobs",
@@ -146,7 +146,9 @@
     "ttsReference": "Preparing voice reference",
     "ttsLoad": "Loading the voice model",
     "ttsGenerate": "Generating speech",
-    "ttsExtract": "Extracting voice engine components"
+    "ttsExtract": "Extracting voice engine components",
+    "mixAssemble": "Assembling synchronized takes",
+    "mixEncode": "Mixing and exporting MKV"
   },
   "shortcuts": "Space: play · J/K/L: transport · O: original · Ctrl+S: save · Ctrl+Z/Y: undo/redo",
   "errors": {
@@ -222,7 +224,10 @@
     "INVALID_TTS_REQUEST": "Invalid generation settings.",
     "INVALID_GENERATION": "Generation metadata is invalid.",
     "TTS_FP8_CUDA_REQUIRED": "Fish FP8 requires an NVIDIA CUDA GPU with BF16 support. Select your RTX or a GGUF variant.",
-    "TTS_FP8_MEMORY_REQUIRED": "Fish FP8 needs at least 12 GiB free VRAM. Close other AI engines or choose Fish GGUF."
+    "TTS_FP8_MEMORY_REQUIRED": "Fish FP8 needs at least 12 GiB free VRAM. Close other AI engines or choose Fish GGUF.",
+    "INVALID_EXPORT": "Invalid export settings.",
+    "MIX_REVIEW_REQUIRED": "Review takes or allow an incomplete export.",
+    "MKV_EXPORT_FAILED": "MKV export failed. See the processing logs."
   },
   "preparingVideo": "Preparing video…",
   "loadingVideo": "Loading video…",
@@ -513,5 +518,26 @@
   "ttsNotInstalled": "Not installed",
   "phase6Repair": "Verify / repair this variant",
   "phase6Install": "Install this variant",
-  "phase6Checking": "Checking engine and devices…"
+  "phase6Checking": "Checking engine and devices…",
+  "dubbingTrack": "Dubbing",
+  "prepareDubbingMix": "Prepare dubbing mix",
+  "dubbingMixHint": "Enables dubbing, music and effects; mutes the original voices. Press Play next. Track levels and regions remain editable.",
+  "exportMkvTitle": "Dubbed video · MKV",
+  "exportMkv": "Export MKV",
+  "exportMkvHint": "Copies the original video without re-encoding. The studio mix becomes the default audio track; subtitles remain selectable in your player.",
+  "mixSummary": "{{count}} selected take",
+  "mixSummary_other": "{{count}} selected takes",
+  "mixAudible": "Mix tracks",
+  "mixNaturalLength": "Takes start at their dialogue’s start and keep their natural duration. Overlaps are mixed together; audio ends with the video.",
+  "mixReview": "Review: {{missing}} lines without voices, {{stale}} takes changed since generation, {{long}} takes exceeding their dialogue.",
+  "mixAcceptReview": "Export this edit despite missing or unreviewed lines",
+  "mixOriginalWarning": "Original voices are audible in the mix. Use “Prepare dubbing mix” to mute them.",
+  "mixNoStems": "To keep music and effects without the original voices, run separation in Audio first.",
+  "mixExportLevels": "Export uses the mixer’s mutes, solos, gains and regions. Player monitoring volume does not affect export. Peaks above 0 dB are clipped: lower levels if needed.",
+  "exportAudioCodec": "Mix codec",
+  "mkv": {
+    "includeOriginal": "Also keep the original audio track unchanged",
+    "sourceSubtitles": "Include the project’s original SRT",
+    "targetSubtitles": "Include the project’s translated SRT"
+  }
 }

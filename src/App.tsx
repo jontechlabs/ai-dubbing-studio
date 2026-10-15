@@ -95,8 +95,7 @@ export default function App() {
   };
   const original = () => {
     generationAudio.stop();
-    if (selected) transport.playLine(selected);
-    else transport.toggle();
+    transport.playOriginalLine(selected);
   };
   const openDub = (line: Dialogue) => {
     select(line);
@@ -141,7 +140,7 @@ export default function App() {
       transport.videoRef.current?.pause();
       transport.seek(transport.time - 2000);
     },
-    pause: () => transport.videoRef.current?.pause(),
+    pause: transport.pause,
     forward: () => {
       if (transport.videoRef.current?.paused) transport.toggle();
       else if (transport.videoRef.current)
@@ -182,7 +181,11 @@ export default function App() {
         onOpen={() => {
           void studio.run(bridge.openProject);
         }}
-        onPreview={original}
+        onPreview={() => {
+          generationAudio.stop();
+          if (selected) transport.playLine(selected);
+          else transport.toggle();
+        }}
         onSave={() => {
           void studio.save();
         }}
@@ -207,7 +210,7 @@ export default function App() {
             project={studio.project}
             selectedId={selectedId}
             onSelect={select}
-            onPlay={transport.playLine}
+            onPlay={transport.playOriginalLine}
             onImport={importSubtitles}
             onEdit={studio.edit}
             onCharacters={showCharacters}
@@ -262,7 +265,7 @@ export default function App() {
               project={studio.project}
               selected={selected}
               onEdit={studio.edit}
-              onPlay={transport.playLine}
+              onPlay={transport.playOriginalLine}
               busy={busy}
               time={transport.time}
               translationFocus={translationFocus}
@@ -333,7 +336,7 @@ export default function App() {
         onPlayGeneration={playGeneration}
         onOriginal={(line) => {
           generationAudio.stop();
-          transport.playLine(line);
+          transport.playOriginalLine(line);
         }}
         audioSelection={audioSelection}
         panel={panel}

@@ -14,6 +14,19 @@ export function audioTracks(project: Project): Track[] {
       (track) =>
         track.kind === 'audio' && (!track.sourcePath || track.sourcePath === project.media?.path),
     ),
+    ...(project.generations.some((g) => g.kind === 'tts') ||
+    project.tracks.some((t) => t.kind === 'dubbing')
+      ? [
+          project.tracks.find((t) => t.kind === 'dubbing') ?? {
+            id: 'dubbing',
+            kind: 'dubbing' as const,
+            language: project.languages.target,
+            mute: true,
+            solo: false,
+            gain: 1,
+          },
+        ]
+      : []),
   ];
 }
 export function effectiveGain(track: Track, tracks: Track[], master: number, timeMs?: number) {
@@ -114,7 +127,8 @@ export function paintAudioRegion(
   return setAudioRegions(project, trackId, regions);
 }
 export function setAllAudio(project: Project, audible: boolean, trackId?: string) {
-  const next = editTrack(project, audioTracks(project)[0].id, {});
+  let next = project;
+  for (const track of audioTracks(project)) next = editTrack(next, track.id, {});
   const ids = new Set(
     audioTracks(next)
       .filter((track) => !trackId || track.id === trackId)
@@ -147,8 +161,27 @@ export function editTrack(
   change: Partial<Pick<Track, 'mute' | 'solo' | 'gain'>>,
 ) {
   const next = structuredClone(project);
-  if (!next.tracks.some((track) => track.id === id) && id === 'original')
-    next.tracks.push(audioTracks(project)[0]);
+  if (!next.tracks.some((track) => track.id === id)) {
+    const track = audioTracks(project).find((track) => track.id === id);
+    if (track) next.tracks.push(track);
+  }
+  if (next.tracks.some((t) => t.kind === 'dubbing'))
+    next.formatVersion = Math.max(6, next.formatVersion);
   next.tracks = next.tracks.map((track) => (track.id === id ? { ...track, ...change } : track));
   return next;
+}
+export function dubbingMix(project: Project) {
+  let next = editTrack(project, 'dubbing', { mute: false, solo: false });
+  next = editTrack(next, 'original', { mute: true, solo: false });
+  next.tracks = next.tracks.map((t) =>
+    t.kind === 'audio' ? { ...t, mute: t.role === 'speech', solo: false } : t,
+  );
+  return next;
+}
+export function trackLabel(track: Track) {
+  return track.kind === 'original'
+    ? 'original'
+    : track.kind === 'dubbing'
+      ? 'dubbingTrack'
+      : `stem.${track.role}`;
 }

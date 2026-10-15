@@ -1,6 +1,6 @@
 {
   "brand": "Dubbing Studio",
-  "local": "LOCAL · PHASE 06",
+  "local": "LOCAL · PHASE 07",
   "import": "Importer",
   "analyse": "Analyser",
   "audio": "Audio",
@@ -108,7 +108,7 @@
   "exportSource": "Exporter le SRT original",
   "exportTarget": "Exporter le SRT traduit",
   "exportProject": "Exporter project.json",
-  "exportHint": "Exportez un essai WAV depuis Doublage. Le mix final et le MKV arriveront en phase 7.",
+  "exportHint": "Vous pouvez aussi exporter les SRT séparément ci-dessous, ou un essai WAV depuis Doublage.",
   "audioHint": "Bandit v2 Multilingual extrait les voix, la musique et les effets de la piste choisie à l’import. Le calcul reste sur cet appareil.",
   "mediaInfo": "Informations du média",
   "jobs": "Traitements",
@@ -146,7 +146,9 @@
     "ttsReference": "Préparation de la référence vocale",
     "ttsLoad": "Chargement du modèle vocal",
     "ttsGenerate": "Génération de la voix",
-    "ttsExtract": "Extraction des composants du moteur vocal"
+    "ttsExtract": "Extraction des composants du moteur vocal",
+    "mixAssemble": "Assemblage des prises synchronisées",
+    "mixEncode": "Mixage et export MKV"
   },
   "shortcuts": "Espace : lecture · J/K/L : transport · O : original · Ctrl+S : sauvegarde · Ctrl+Z/Y : annuler/rétablir",
   "errors": {
@@ -222,7 +224,10 @@
     "INVALID_TTS_REQUEST": "Réglages de génération invalides.",
     "INVALID_GENERATION": "Les informations de génération sont invalides.",
     "TTS_FP8_CUDA_REQUIRED": "Fish FP8 nécessite un GPU NVIDIA CUDA compatible BF16. Sélectionnez votre RTX ou une variante GGUF.",
-    "TTS_FP8_MEMORY_REQUIRED": "Fish FP8 nécessite au moins 12 Gio de VRAM libre. Fermez les autres moteurs IA ou choisissez Fish GGUF."
+    "TTS_FP8_MEMORY_REQUIRED": "Fish FP8 nécessite au moins 12 Gio de VRAM libre. Fermez les autres moteurs IA ou choisissez Fish GGUF.",
+    "INVALID_EXPORT": "Paramètres d’export invalides.",
+    "MIX_REVIEW_REQUIRED": "Vérifiez les prises ou autorisez l’export incomplet.",
+    "MKV_EXPORT_FAILED": "L’export MKV a échoué. Consultez les logs du traitement."
   },
   "preparingVideo": "Préparation de la vidéo…",
   "loadingVideo": "Chargement de la vidéo…",
@@ -513,5 +518,26 @@
   "ttsNotInstalled": "À installer",
   "phase6Repair": "Vérifier / réparer cette variante",
   "phase6Install": "Installer cette variante",
-  "phase6Checking": "Vérification du moteur et des périphériques…"
+  "phase6Checking": "Vérification du moteur et des périphériques…",
+  "dubbingTrack": "Doublage",
+  "prepareDubbingMix": "Préparer le mix de doublage",
+  "dubbingMixHint": "Active le doublage, la musique et les effets ; coupe les voix originales. Appuyez ensuite sur Lecture. Les volumes et les zones restent modifiables.",
+  "exportMkvTitle": "Vidéo doublée · MKV",
+  "exportMkv": "Exporter le MKV",
+  "exportMkvHint": "Vidéo originale conservée sans réencodage. Le mix du studio devient la piste audio par défaut ; les sous-titres restent activables dans le lecteur.",
+  "mixSummary": "{{count}} prise sélectionnée",
+  "mixSummary_other": "{{count}} prises sélectionnées",
+  "mixAudible": "Pistes du mix",
+  "mixNaturalLength": "Les prises commencent au début de leur réplique et gardent leur durée naturelle. Les chevauchements sont additionnés ; la fin est limitée à celle de la vidéo.",
+  "mixReview": "À vérifier : {{missing}} répliques sans voix, {{stale}} prises modifiées depuis leur génération, {{long}} prises dépassant leur réplique.",
+  "mixAcceptReview": "Exporter ce montage malgré les répliques manquantes ou à vérifier",
+  "mixOriginalWarning": "Des voix originales sont audibles dans le mix. Utilisez « Préparer le mix de doublage » pour les couper.",
+  "mixNoStems": "Pour conserver la musique et les effets sans les voix originales, effectuez d’abord la séparation dans Audio.",
+  "mixExportLevels": "L’export applique les silences, solos, volumes et zones du mixeur. Le volume d’écoute du lecteur ne change pas l’export. Les sommets au-delà de 0 dB sont écrêtés : réduisez les volumes si nécessaire.",
+  "exportAudioCodec": "Codec du mix",
+  "mkv": {
+    "includeOriginal": "Conserver aussi la piste audio originale, inchangée",
+    "sourceSubtitles": "Inclure le SRT original du projet",
+    "targetSubtitles": "Inclure le SRT traduit du projet"
+  }
 }

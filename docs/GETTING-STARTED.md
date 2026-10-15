@@ -62,7 +62,7 @@ Changes autosave; watch the save indicator. If saving fails, keep the project op
 
 Back up or move the **whole folder**, including `media/`, `cache/` and `recovery/`. `project.json` alone does not contain the video. Recovery snapshots allow an interrupted save to be restored; undo history belongs to the current session.
 
-The export dialog provides source/translated SRT and diagnostics. A finished dubbed soundtrack, mix or MKV is not available in this phase.
+Use **Prepare dubbing mix**, then Play to listen to selected takes with the video. Audio controls dubbing/music/effects volumes, mutes, solos and regions. **Export → Export MKV** copies the original video and writes the current mix, with optional original audio and selectable source/translated SRT tracks. The player monitoring volume does not affect export. See the [Phase 7 guide](PHASE-7.md).
 
 ## Troubleshooting
 

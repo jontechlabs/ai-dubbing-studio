@@ -23,6 +23,7 @@ import { Waveform } from './Waveform';
 import { formatTime } from '../domain/time';
 import { audioTracks, editTrack } from '../domain/audio';
 import { subtitleDisplay, toggleSubtitles } from '../domain/subtitleDisplay';
+import { dubbingClips } from '../domain/mix';
 
 export const Timeline = memo(function Timeline({
   project,
@@ -158,6 +159,19 @@ export const Timeline = memo(function Timeline({
         exists: true,
         track,
       })),
+    )
+    .concat(
+      project
+        ? audioTracks(project)
+            .filter((t) => t.kind === 'dubbing')
+            .map((track) => ({
+              key: 'dubbingTrack',
+              icon: AudioLines,
+              style: 'audio',
+              exists: true,
+              track,
+            }))
+        : [],
     )
     .filter((track) => track.exists);
   return (
@@ -367,7 +381,28 @@ export const Timeline = memo(function Timeline({
                 }}
                 onPointerCancel={() => setAudioDrag(null)}
               >
-                {style === 'video' || style === 'audio' ? (
+                {track?.kind === 'dubbing' && project ? (
+                  dubbingClips(project)
+                    .filter(
+                      (c) =>
+                        c.endMs * scale >= scrollLeft && c.startMs * scale <= scrollLeft + viewport,
+                    )
+                    .map((clip) => (
+                      <button
+                        key={clip.generation.id}
+                        className={`subtitle-block dubbing-block ${selected?.id === clip.line.id ? 'selected' : ''}`}
+                        style={{
+                          left: clip.startMs * scale,
+                          width: Math.max(3, (clip.endMs - clip.startMs) * scale),
+                        }}
+                        title={`${clip.generation.text}\n${formatTime(clip.startMs)} → ${formatTime(clip.endMs)}`}
+                        aria-label={`${t('dubbingTrack')} ${associations.numbers.get(clip.line.id)}`}
+                        onClick={() => onSelect(clip.line)}
+                      >
+                        {associations.numbers.get(clip.line.id)}
+                      </button>
+                    ))
+                ) : style === 'video' || style === 'audio' ? (
                   <div
                     className="media-strip"
                     style={{

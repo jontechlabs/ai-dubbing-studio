@@ -50,6 +50,21 @@ export async function exportGeneration(id: string) {
   });
   if (path) await invoke('export_generation', { id, path });
 }
+export interface MkvOptions {
+  includeOriginal: boolean;
+  sourceSubtitles: boolean;
+  targetSubtitles: boolean;
+  codec: 'aac' | 'flac';
+  allowIncomplete: boolean;
+}
+export async function exportMkv(project: Project, options: MkvOptions) {
+  const path = await save({
+    defaultPath: `${project.name.replace(/[<>:"/\\|?*]/g, '_')}-dub.mkv`,
+    filters: [{ name: 'Matroska', extensions: ['mkv'] }],
+  });
+  if (!path) return null;
+  return invoke<string>('export_mkv', { path, options });
+}
 export interface ModelStorageInfo {
   path: string;
   defaultPath: string;

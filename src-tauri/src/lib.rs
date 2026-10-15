@@ -8,6 +8,7 @@ mod graphics;
 mod integration_tests;
 mod jobs;
 mod media;
+mod mix;
 mod model_storage;
 mod project;
 mod separation;
@@ -42,6 +43,15 @@ pub struct Core {
     model_dir: Mutex<PathBuf>,
 }
 type Shared = Arc<Core>;
+#[tauri::command]
+fn export_mkv(
+    app: tauri::AppHandle,
+    core: State<'_, Shared>,
+    path: String,
+    options: mix::Options,
+) -> Result<String, String> {
+    mix::enqueue(core.inner().clone(), app, PathBuf::from(path), options)
+}
 #[tauri::command]
 async fn voice_status(
     app: tauri::AppHandle,
@@ -554,7 +564,15 @@ fn audio_paths(
     s.project
         .tracks
         .iter()
-        .filter(|track| track.kind == "audio")
+        .filter(|track| {
+            track.kind == "audio"
+                && track.source_path.as_ref().is_none_or(|path| {
+                    s.project
+                        .media
+                        .as_ref()
+                        .is_some_and(|media| path == &media.path)
+                })
+        })
         .map(|track| {
             Ok((
                 track.id.clone(),
@@ -691,6 +709,18 @@ fn retry_job(app: tauri::AppHandle, core: State<'_, Shared>, id: String) -> Resu
         .clone();
     if record.speaker_install {
         return speakers::install(core.inner().clone(), app);
+    }
+    if let Some(request) = record.mix_request {
+        let session = core.session.lock().map_err(io_error)?;
+        let s = session.as_ref().ok_or("NO_PROJECT")?;
+        if s.root != request.root
+            || s.project.id != request.project_id
+            || s.project.revision != request.revision
+        {
+            return Err("STALE_REVISION".into());
+        }
+        drop(session);
+        return mix::enqueue(core.inner().clone(), app, request.output, request.options);
     }
     if let Some(cuda) = record.tts_install {
         return tts::install(core.inner().clone(), app, cuda);
@@ -879,6 +909,7 @@ pub fn run() {
             separate_audio,
             audio_paths,
             export_audio_track,
+            export_mkv,
             list_jobs,
             cancel_job,
             pause_job,

@@ -204,7 +204,7 @@ impl Project {
         }
     }
     pub fn validate(&self) -> Result<(), String> {
-        if ![1, 2, 3, 4, 5].contains(&self.format_version) {
+        if ![1, 2, 3, 4, 5, 6].contains(&self.format_version) {
             return Err("UNSUPPORTED_PROJECT_VERSION".into());
         }
         if self.id.is_empty() || self.name.trim().is_empty() {
@@ -300,6 +300,11 @@ impl Project {
             return Err("INVALID_PROJECT".into());
         }
         for track in &self.tracks {
+            if track.kind == "dubbing"
+                && (self.format_version < 6 || track.id != "dubbing" || track.path.is_some())
+            {
+                return Err("INVALID_PROJECT".into());
+            }
             if !track.regions.is_empty() || track.regions_enabled.is_some() {
                 let limit = track
                     .duration_ms
@@ -308,7 +313,7 @@ impl Project {
                 let mut ids = std::collections::HashSet::new();
                 let mut previous_end = 0;
                 if self.format_version < 4
-                    || !["audio", "original"].contains(&track.kind.as_str())
+                    || !["audio", "original", "dubbing"].contains(&track.kind.as_str())
                     || track.regions.len() > 10000
                 {
                     return Err("INVALID_AUDIO_REGION".into());

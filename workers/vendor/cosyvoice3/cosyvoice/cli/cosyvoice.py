@@ -31,7 +31,7 @@ class CosyVoice:
         self.fp16 = fp16
         if not os.path.exists(model_dir):
             model_dir = snapshot_download(model_dir)
-        hyper_yaml_path = '{}/cosyvoice.yaml'.format(model_dir)
+        hyper_yaml_path = os.path.join(model_dir, 'cosyvoice.yaml')
         if not os.path.exists(hyper_yaml_path):
             raise ValueError('{} not found!'.format(hyper_yaml_path))
         with open(hyper_yaml_path, 'r') as f:
@@ -39,25 +39,25 @@ class CosyVoice:
         assert get_model_type(configs) == CosyVoiceModel, 'do not use {} for CosyVoice initialization!'.format(model_dir)
         self.frontend = CosyVoiceFrontEnd(configs['get_tokenizer'],
                                           configs['feat_extractor'],
-                                          '{}/campplus.onnx'.format(model_dir),
-                                          '{}/speech_tokenizer_v1.onnx'.format(model_dir),
-                                          '{}/spk2info.pt'.format(model_dir),
+                                          os.path.join(model_dir, 'campplus.onnx'),
+                                          os.path.join(model_dir, 'speech_tokenizer_v1.onnx'),
+                                          os.path.join(model_dir, 'spk2info.pt'),
                                           configs['allowed_special'])
         self.sample_rate = configs['sample_rate']
         if torch.cuda.is_available() is False and (load_jit is True or load_trt is True or fp16 is True):
             load_jit, load_trt, fp16 = False, False, False
             logging.warning('no cuda device, set load_jit/load_trt/fp16 to False')
         self.model = CosyVoiceModel(configs['llm'], configs['flow'], configs['hift'], fp16)
-        self.model.load('{}/llm.pt'.format(model_dir),
-                        '{}/flow.pt'.format(model_dir),
-                        '{}/hift.pt'.format(model_dir))
+        self.model.load(os.path.join(model_dir, 'llm.pt'),
+                        os.path.join(model_dir, 'flow.pt'),
+                        os.path.join(model_dir, 'hift.pt'))
         if load_jit:
-            self.model.load_jit('{}/llm.text_encoder.{}.zip'.format(model_dir, 'fp16' if self.fp16 is True else 'fp32'),
-                                '{}/llm.llm.{}.zip'.format(model_dir, 'fp16' if self.fp16 is True else 'fp32'),
-                                '{}/flow.encoder.{}.zip'.format(model_dir, 'fp16' if self.fp16 is True else 'fp32'))
+            self.model.load_jit(os.path.join(model_dir, 'llm.text_encoder.{}.zip'.format('fp16' if self.fp16 is True else 'fp32')),
+                                os.path.join(model_dir, 'llm.llm.{}.zip'.format('fp16' if self.fp16 is True else 'fp32')),
+                                os.path.join(model_dir, 'flow.encoder.{}.zip'.format('fp16' if self.fp16 is True else 'fp32')))
         if load_trt:
-            self.model.load_trt('{}/flow.decoder.estimator.{}.mygpu.plan'.format(model_dir, 'fp16' if self.fp16 is True else 'fp32'),
-                                '{}/flow.decoder.estimator.fp32.onnx'.format(model_dir),
+            self.model.load_trt(os.path.join(model_dir, 'flow.decoder.estimator.{}.mygpu.plan'.format('fp16' if self.fp16 is True else 'fp32')),
+                                os.path.join(model_dir, 'flow.decoder.estimator.fp32.onnx'),
                                 trt_concurrent,
                                 self.fp16)
         del configs
@@ -75,7 +75,7 @@ class CosyVoice:
         return True
 
     def save_spkinfo(self):
-        torch.save(self.frontend.spk2info, '{}/spk2info.pt'.format(self.model_dir))
+        torch.save(self.frontend.spk2info, os.path.join(self.model_dir, 'spk2info.pt'))
 
     def inference_sft(self, tts_text, spk_id, stream=False, speed=1.0, text_frontend=True):
         for i in tqdm(self.frontend.text_normalize(tts_text, split=True, text_frontend=text_frontend)):
@@ -143,7 +143,7 @@ class CosyVoice2(CosyVoice):
         self.fp16 = fp16
         if not os.path.exists(model_dir):
             model_dir = snapshot_download(model_dir)
-        hyper_yaml_path = '{}/cosyvoice2.yaml'.format(model_dir)
+        hyper_yaml_path = os.path.join(model_dir, 'cosyvoice2.yaml')
         if not os.path.exists(hyper_yaml_path):
             raise ValueError('{} not found!'.format(hyper_yaml_path))
         with open(hyper_yaml_path, 'r') as f:
@@ -151,25 +151,25 @@ class CosyVoice2(CosyVoice):
         assert get_model_type(configs) == CosyVoice2Model, 'do not use {} for CosyVoice2 initialization!'.format(model_dir)
         self.frontend = CosyVoiceFrontEnd(configs['get_tokenizer'],
                                           configs['feat_extractor'],
-                                          '{}/campplus.onnx'.format(model_dir),
-                                          '{}/speech_tokenizer_v2.onnx'.format(model_dir),
-                                          '{}/spk2info.pt'.format(model_dir),
+                                          os.path.join(model_dir, 'campplus.onnx'),
+                                          os.path.join(model_dir, 'speech_tokenizer_v2.onnx'),
+                                          os.path.join(model_dir, 'spk2info.pt'),
                                           configs['allowed_special'])
         self.sample_rate = configs['sample_rate']
         if torch.cuda.is_available() is False and (load_jit is True or load_trt is True or load_vllm is True or fp16 is True):
             load_jit, load_trt, load_vllm, fp16 = False, False, False, False
             logging.warning('no cuda device, set load_jit/load_trt/load_vllm/fp16 to False')
         self.model = CosyVoice2Model(configs['llm'], configs['flow'], configs['hift'], fp16)
-        self.model.load('{}/llm.pt'.format(model_dir),
-                        '{}/flow.pt'.format(model_dir),
-                        '{}/hift.pt'.format(model_dir))
+        self.model.load(os.path.join(model_dir, 'llm.pt'),
+                        os.path.join(model_dir, 'flow.pt'),
+                        os.path.join(model_dir, 'hift.pt'))
         if load_vllm:
-            self.model.load_vllm('{}/vllm'.format(model_dir))
+            self.model.load_vllm(os.path.join(model_dir, 'vllm'))
         if load_jit:
-            self.model.load_jit('{}/flow.encoder.{}.zip'.format(model_dir, 'fp16' if self.fp16 is True else 'fp32'))
+            self.model.load_jit(os.path.join(model_dir, 'flow.encoder.{}.zip'.format('fp16' if self.fp16 is True else 'fp32')))
         if load_trt:
-            self.model.load_trt('{}/flow.decoder.estimator.{}.mygpu.plan'.format(model_dir, 'fp16' if self.fp16 is True else 'fp32'),
-                                '{}/flow.decoder.estimator.fp32.onnx'.format(model_dir),
+            self.model.load_trt(os.path.join(model_dir, 'flow.decoder.estimator.{}.mygpu.plan'.format('fp16' if self.fp16 is True else 'fp32')),
+                                os.path.join(model_dir, 'flow.decoder.estimator.fp32.onnx'),
                                 trt_concurrent,
                                 self.fp16)
         del configs
@@ -193,7 +193,8 @@ class CosyVoice3(CosyVoice2):
         self.fp16 = fp16
         if not os.path.exists(model_dir):
             model_dir = snapshot_download(model_dir)
-        hyper_yaml_path = '{}/cosyvoice3.yaml'.format(model_dir)
+        # Extended Windows paths (\\?\) require native separators throughout.
+        hyper_yaml_path = os.path.join(model_dir, 'cosyvoice3.yaml')
         if not os.path.exists(hyper_yaml_path):
             raise ValueError('{} not found!'.format(hyper_yaml_path))
         with open(hyper_yaml_path, 'r') as f:
@@ -201,25 +202,25 @@ class CosyVoice3(CosyVoice2):
         assert get_model_type(configs) == CosyVoice3Model, 'do not use {} for CosyVoice3 initialization!'.format(model_dir)
         self.frontend = CosyVoiceFrontEnd(configs['get_tokenizer'],
                                           configs['feat_extractor'],
-                                          '{}/campplus.onnx'.format(model_dir),
-                                          '{}/speech_tokenizer_v3.onnx'.format(model_dir),
-                                          '{}/spk2info.pt'.format(model_dir),
+                                          os.path.join(model_dir, 'campplus.onnx'),
+                                          os.path.join(model_dir, 'speech_tokenizer_v3.onnx'),
+                                          os.path.join(model_dir, 'spk2info.pt'),
                                           configs['allowed_special'])
         self.sample_rate = configs['sample_rate']
         if torch.cuda.is_available() is False and (load_trt is True or fp16 is True):
             load_trt, fp16 = False, False
             logging.warning('no cuda device, set load_trt/fp16 to False')
         self.model = CosyVoice3Model(configs['llm'], configs['flow'], configs['hift'], fp16)
-        self.model.load('{}/llm.pt'.format(model_dir),
-                        '{}/flow.pt'.format(model_dir),
-                        '{}/hift.pt'.format(model_dir))
+        self.model.load(os.path.join(model_dir, 'llm.pt'),
+                        os.path.join(model_dir, 'flow.pt'),
+                        os.path.join(model_dir, 'hift.pt'))
         if load_vllm:
-            self.model.load_vllm('{}/vllm'.format(model_dir))
+            self.model.load_vllm(os.path.join(model_dir, 'vllm'))
         if load_trt:
             if self.fp16 is True:
                 logging.warning('DiT tensorRT fp16 engine have some performance issue, use at caution!')
-            self.model.load_trt('{}/flow.decoder.estimator.{}.mygpu.plan'.format(model_dir, 'fp16' if self.fp16 is True else 'fp32'),
-                                '{}/flow.decoder.estimator.fp32.onnx'.format(model_dir),
+            self.model.load_trt(os.path.join(model_dir, 'flow.decoder.estimator.{}.mygpu.plan'.format('fp16' if self.fp16 is True else 'fp32')),
+                                os.path.join(model_dir, 'flow.decoder.estimator.fp32.onnx'),
                                 trt_concurrent,
                                 self.fp16)
         del configs
@@ -228,11 +229,11 @@ class CosyVoice3(CosyVoice2):
 def AutoModel(**kwargs):
     if not os.path.exists(kwargs['model_dir']):
         kwargs['model_dir'] = snapshot_download(kwargs['model_dir'])
-    if os.path.exists('{}/cosyvoice.yaml'.format(kwargs['model_dir'])):
+    if os.path.exists(os.path.join(kwargs['model_dir'], 'cosyvoice.yaml')):
         return CosyVoice(**kwargs)
-    elif os.path.exists('{}/cosyvoice2.yaml'.format(kwargs['model_dir'])):
+    elif os.path.exists(os.path.join(kwargs['model_dir'], 'cosyvoice2.yaml')):
         return CosyVoice2(**kwargs)
-    elif os.path.exists('{}/cosyvoice3.yaml'.format(kwargs['model_dir'])):
+    elif os.path.exists(os.path.join(kwargs['model_dir'], 'cosyvoice3.yaml')):
         return CosyVoice3(**kwargs)
     else:
         raise TypeError('No valid model type found!')

@@ -54,6 +54,8 @@ pub struct PersistedJob {
     pub voice_install: Option<String>,
     #[serde(default)]
     pub tts_request: Option<crate::tts::Request>,
+    #[serde(default)]
+    pub mix_request: Option<crate::mix::Request>,
 }
 #[derive(Clone, Serialize, Deserialize)]
 pub struct SeparationRequest {
@@ -101,6 +103,7 @@ pub fn create<R: tauri::Runtime>(
                     tts_install: None,
                     voice_install: None,
                     tts_request: None,
+                    mix_request: None,
                 },
                 cancel: Arc::new(AtomicBool::new(false)),
                 paused: Arc::new(AtomicBool::new(false)),
@@ -479,7 +482,7 @@ async fn execute<R: tauri::Runtime>(
     let mut next = s.project.clone();
     if request.reuse.is_none() {
         for track in &mut next.tracks {
-            if track.kind == "original" {
+            if ["original", "dubbing"].contains(&track.kind.as_str()) {
                 track.regions.clear();
                 track.regions_enabled = None;
             }

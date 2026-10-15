@@ -24,6 +24,7 @@ import { CharactersPanel } from './CharactersPanel';
 import { ModelsPanel } from './ModelsPanel';
 import { DubPanel } from './DubPanel';
 import { ModelStorageSettings } from './ModelStorageSettings';
+import { MkvExportPanel } from './MkvExportPanel';
 import * as bridge from '../services/bridge';
 import { downloadText } from '../services/browserStore';
 
@@ -202,6 +203,14 @@ export function Panels({
         )}
         {panel === 'export' && project && (
           <div className="panel-body">
+            <MkvExportPanel
+              project={project}
+              snapshot={snapshot}
+              onEdit={onEdit}
+              onError={onError}
+              showJobs={showJobs}
+              busy={busy || jobs.some((j) => ['queued', 'running', 'paused'].includes(j.status))}
+            />
             <p className="panel-description">{t('exportHint')}</p>
             {(['source', 'target'] as const).map((role) => (
               <button
@@ -396,6 +405,7 @@ function JobsPanel({ jobs, onError }: { jobs: Job[]; onError: (s: string) => voi
             'speakers',
             'ttsInstall',
             'tts',
+            'mkvExport',
           ].includes(job.kind) &&
             ['failed', 'cancelled', 'interrupted'].includes(job.status) && (
               <button

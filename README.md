@@ -4,15 +4,15 @@ A local desktop workspace for preparing video dubbing: review bilingual subtitle
 
 Built with **Tauri 2, React, TypeScript and Rust**. English and French interface. Dark and light themes.
 
-**v0.6.0 — Phase 6 development preview.** Install and generate with **Fish S2 Pro FP8**, **Fish S2 GGUF Q8_0**, and **Qwen3-TTS Base 0.6B / 1.7B GGUF Q8_0**, alongside CosyVoice3. Select the engine and GPU for each line, preserve alternative takes and export individual WAV files. [Phase 6 guide (French)](docs/PHASE-6.md).
+**v0.7.0 — Phase 7 development preview.** Play selected takes with the video, mix dubbed voices with music and effects, and export an **MKV** with the original video, AAC/FLAC mix, optional original audio and selectable SRT tracks. Fixes CosyVoice3 loading from Windows extended model paths. [Phase 7 guide (French)](docs/PHASE-7.md).
 
-Start with Qwen 0.6B GGUF for a 16 GB GPU. GGUF uses the Windows portable Vulkan engine; Fish FP8 uses an isolated CUDA 12.8 environment and requires at least 12 GiB free VRAM. Actual memory use and RTX 5060 Ti generation remain to be qualified on that hardware. CosyVoice3 now automatically converts diarization references from 16 kHz to 24 kHz, fixing `INVALID_REFERENCE_AUDIO` for valid references. [Validation and limits](VALIDATION.md).
+CosyVoice3, Fish S2 FP8/GGUF and Qwen3-TTS GGUF remain available. [Models and GPU profiles](docs/PHASE-6.md) · [Validation and limits](VALIDATION.md).
 
-![Dubbing takes, A/B comparison and review](docs/screenshots/phase6-dubbing.png)
+![Synchronized dubbing and MKV export](docs/screenshots/phase7-export.png)
 
-*Actual React browser UI with simulated native results/devices. These are not RTX performance measurements. WAV take listening is independent from video playback in this phase.*
+*Actual React browser UI with synthetic takes and simulated native results. Separate native tests create and inspect real MKV containers. These are not RTX performance measurements.*
 
-[Windows downloads](https://github.com/jontechlabs/ai-dubbing-studio/releases/tag/v0.6.0) · [User guide](docs/GETTING-STARTED.md) · [Build instructions](docs/BUILDING.md) · [Français](README.fr.md)
+[Windows downloads](https://github.com/jontechlabs/ai-dubbing-studio/releases/tag/v0.7.0) · [User guide](docs/GETTING-STARTED.md) · [Build instructions](docs/BUILDING.md) · [Français](README.fr.md)
 
 ![Studio with bilingual dialogue, video preview, text editor and timeline](docs/screenshots/studio.png)
 
@@ -26,15 +26,15 @@ Audio regions with independent silence and volume, timeline range selection, fas
 
 | Package | Purpose |
 | --- | --- |
-| [Windows x64 setup](https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.6.0/AI-Dubbing-Studio-0.6.0-Setup.exe) | NSIS installer for the current user, with English/French installer interface |
-| [Portable ZIP](https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.6.0/AI-Dubbing-Studio-Windows-Portable.zip) | Extract the whole folder and launch `AI Dubbing Studio.exe` |
-| [SHA-256 checksums](https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.6.0/SHA256SUMS.txt) | Verify the setup and ZIP downloads |
+| [Windows x64 setup](https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.7.0/AI-Dubbing-Studio-0.7.0-Setup.exe) | NSIS installer for the current user, with English/French installer interface |
+| [Portable ZIP](https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.7.0/AI-Dubbing-Studio-Windows-Portable.zip) | Extract the whole folder and launch `AI Dubbing Studio.exe` |
+| [SHA-256 checksums](https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.7.0/SHA256SUMS.txt) | Verify the setup and ZIP downloads |
 
 Target: **Windows 10/11 x64**, with **Microsoft Edge WebView2 Runtime**. FFmpeg and FFprobe are included. Python, CUDA and AI model downloads are not required for editing and playback. Installation may need Internet access if WebView2 is missing; local project editing does not require a cloud account.
 
 These are **unsigned development builds**. Smart App Control blocked an earlier Phase 1 executable on the development machine. The current Windows GUI and installation workflow are **not fully qualified**. This release is a prerelease. See [validation evidence and limits](VALIDATION.md).
 
-## Available in Phases 1–4
+## Available in Phases 1–7
 
 - Import MKV, MP4, MOV, AVI and WebM; inspect streams with FFprobe and choose an audio track.
 - Copy the original into a portable project folder; create an H.264/AAC preview proxy when required.
@@ -50,7 +50,7 @@ These are **unsigned development builds**. Smart App Control blocked an earlier 
 - Toggle audio mute/solo and subtitle visibility directly from the timeline; preserve player subtitle preferences.
 - Optionally synchronize an imported SRT against the other SRT automatically; ambiguous matches preserve the imported file.
 - Separate speech/music/effects locally using Bandit v2 Multilingual; install an isolated Python runtime and verified model from Audio. Choose CPU or a detected NVIDIA CUDA device.
-- Mix original/stem tracks with persistent mute, solo and gain, synchronized video playback and individual WAV export. Pause/resume/cancel and retry separation jobs.
+- Mix original, dubbed voices and stem tracks with persistent mute, solo, gain and regions; listen with the video and export MKV or individual WAV takes. Pause/resume/cancel and retry separation jobs.
 - Prepare a 720p/30 fps preview with frequent keyframes, without upscaling low-resolution media. Subtitle timeline blocks stay stable during playback, including the 6,000-dialogue test.
 - Set a Windows GPU rendering preference and inspect playback resolution/dropped-frame counters.
 - Check for updates automatically or manually, download a signature-verified package, then install/restart from Settings.
@@ -61,7 +61,7 @@ These are **unsigned development builds**. Smart App Control blocked an earlier 
 - Track real import jobs, progress and logs; cancel, retry and identify interrupted jobs after a restart. Creation opens Processing automatically, and the player keeps a loading animation until the import and first-frame preparation finish.
 - Switch French/English and dark/light themes; export local diagnostic information.
 
-Automatic synchronization compares timing patterns; it does not perform speech recognition or semantic translation matching. Unmatched cues keep their original timings. Different video edits may need manual correction. See the [Phase 2 guide](docs/PHASE-2.md). Final dubbed audio and MKV/video export are planned.
+Automatic synchronization compares timing patterns; it does not perform speech recognition or semantic translation matching. Unmatched cues keep their original timings. Different video edits may need manual correction. See the [Phase 2 guide](docs/PHASE-2.md). Synchronized dubbing and MKV export are available in [Phase 7](docs/PHASE-7.md).
 
 ![Automatic bilingual subtitle synchronization preview](docs/screenshots/alignment.png)
 
@@ -114,7 +114,7 @@ Use **Explore the example** to try the bundled synthetic video. See the [user gu
 
 Media processing uses local FFmpeg/FFprobe processes. This version has no cloud provider, account system or telemetry implementation. Original input files are preserved; imported copies and proxies stay inside the project directory.
 
-Projects use JSON, stable IDs, relative asset paths and integer millisecond timings. Existing format 1 projects open normally. Adding separated audio tracks upgrades that project to format 2; older app versions refuse format 2. Unknown formats are rejected without rewriting the file. Autosave uses atomic writes and recovery snapshots. Editing one project simultaneously in multiple app instances is not supported.
+Projects use JSON, stable IDs, relative asset paths and integer millisecond timings. Existing format 1 projects open normally. Adding separated audio tracks upgrades that project to format 2; older app versions refuse format 2. The dubbing bus upgrades projects to format 6; formats 1–5 remain readable. Older versions reject format 6. Unknown formats are rejected without rewriting the file. Autosave uses atomic writes and recovery snapshots. Editing one project simultaneously in multiple app instances is not supported.
 
 The browser preview uses IndexedDB to store projects and video blobs on the current device. It does not run FFprobe or create native portable project folders. Browser JSON export does not include the video blob. Diagnostics may contain local paths and FFmpeg arguments; review an exported report before sharing it.
 
