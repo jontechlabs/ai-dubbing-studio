@@ -145,7 +145,8 @@
     "ttsModel": "Téléchargement de CosyVoice3",
     "ttsReference": "Préparation de la référence vocale",
     "ttsLoad": "Chargement de CosyVoice3",
-    "ttsGenerate": "Génération de la voix"
+    "ttsGenerate": "Génération de la voix",
+    "ttsExtract": "Installation des composants CosyVoice3"
   },
   "shortcuts": "Espace : lecture · J/K/L : transport · O : original · Ctrl+S : sauvegarde · Ctrl+Z/Y : annuler/rétablir",
   "errors": {

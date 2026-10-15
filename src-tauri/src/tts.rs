@@ -206,6 +206,7 @@ pub fn install<R: tauri::Runtime>(
                     jobs::update(&core,&app,&key,|j|{j.stage="dependencies".into();j.progress=Some(0.0);j.logs.push(format!("Installing verified wheel: {}",file.name));});
                     let archive=if let Some(path)=file.bundled_path {crate::domain::valid_relative(&path)?;let archive=separation::resources(&app).join(path);let bytes=std::fs::read(&archive).map_err(io_error)?;if bytes.len() as u64!=file.size || format!("{:x}",Sha256::digest(&bytes))!=file.sha256{return Err("MODEL_CHECKSUM_FAILED".into());}archive}
                     else {let archive=folder.join("wheels").join(&file.name);separation::fetch(&core,&app,&key,&[file.url],&archive,(&file.sha256,file.size),&flag).await?;archive};
+                    jobs::update(&core,&app,&key,|j|{j.stage="ttsExtract".into();j.progress=None;});
                     let destination=folder.join("python/Lib/site-packages");tauri::async_runtime::spawn_blocking(move||extract(&archive,&destination)).await.map_err(io_error)??;
                     if flag.load(Ordering::Relaxed){return Err("CANCELLED".into());}
                 }

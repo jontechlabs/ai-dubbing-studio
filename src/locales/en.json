@@ -145,7 +145,8 @@
     "ttsModel": "Downloading CosyVoice3",
     "ttsReference": "Preparing voice reference",
     "ttsLoad": "Loading CosyVoice3",
-    "ttsGenerate": "Generating speech"
+    "ttsGenerate": "Generating speech",
+    "ttsExtract": "Installing CosyVoice3 components"
   },
   "shortcuts": "Space: play · J/K/L: transport · O: original · Ctrl+S: save · Ctrl+Z/Y: undo/redo",
   "errors": {
