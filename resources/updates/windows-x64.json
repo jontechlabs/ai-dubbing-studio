@@ -1,11 +1,11 @@
 {
-  "version": "0.4.1",
+  "version": "0.4.2",
+  "notes": "Zones audio silencieuses ou audibles, volumes par piste et par zone, commandes rapides pour tout rendre silencieux ou audible, export WAV avec zones et taille du dossier des modèles dans les paramètres.",
+  "pub_date": "2026-10-15T05:32:02Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSdFFyMUJGTFp3Nkdtd2xJMEpMV3FCclJkYTVnSTFvS0ExaUpUcEFmaDZSSlJlc3N0UUdlK01USStBTmJXN3Q3U00zQXNmVHNzT3F4VDNsT1RYaThOcS9uMG8yZ2ZxWEFRPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkxOTk1ODQ2CWZpbGU6QUkgRHViYmluZyBTdHVkaW9fMC40LjFfeDY0LXNldHVwLmV4ZQl2ZXJzaW9uOjAuNC4xCm9tYWNmOVZDbEs5NFRwcjVtWkd0T2JHTTFnWC9tdmhTUHlJZDJLYlBBUWZSZXNyNTdJSUYyKzJiSnkrUU9wOHJ4V2NVWHdRandEcmVXdlQyRmxaaUNRPT0K",
-      "url": "https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.4.1/AI-Dubbing-Studio-0.4.1-Setup.exe"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSdFFyMUJGTFp3Nk1JeHJTUlJXUUlYT2I0dnMzUkpVT0xtajZvVlF5NUFUWGQ2YzIrcm1mVTMrNzN0TFFnRU9OaEZReTJBZDFMaUVNZlp5bVE1bFRiczI2NzZ2MDNxOHc4PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkyMDQyMTUxCWZpbGU6QUkgRHViYmluZyBTdHVkaW9fMC40LjJfeDY0LXNldHVwLmV4ZQl2ZXJzaW9uOjAuNC4yCmg4MTVKUzZOdkFkbGhIM2NDZ0JmM3d5d0w2OC80Rmk3Vis0Qm1zQW5XakJpMHB0RnltRm9McDYvTW04U05lVWpWQXZsN21jV1EyMDF1N0xjRTR1NERBPT0K",
+      "url": "https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.4.2/AI-Dubbing-Studio-0.4.2-Setup.exe"
     }
-  },
-  "notes": "Dossier des modèles configurable avec déplacement vérifié, coupure fiable des pistes audio et catalogue préparatoire GGUF/FP8/BF16 pour les GPU de 16 Go. Les moteurs TTS restent à intégrer aux phases 5 et 6.",
-  "pub_date": "2026-10-14T16:39:09Z"
+  }
 }

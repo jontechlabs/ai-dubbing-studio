@@ -20,7 +20,7 @@ CUDA inference remains unqualified on this development host. AMD/Intel/Metal/Dir
 
 ## Update signatures and Windows
 
-Windows x64 application and NSIS packages are built with cargo-xwin and an updater signature. Separate Minisign verification with the configured public key accepts the installer signature and rejects a modified installer. The private key stays outside Git; Windows Actions reads it from a repository secret. This is separate from Authenticode.
+Windows x64 application and NSIS packages are built by the native Windows workflow, or locally with cargo-xwin, with an updater signature. Separate Minisign verification with the configured public key accepts the installer signature and rejects a modified installer. The private key stays outside Git; Windows Actions reads it from a repository secret. This is separate from Authenticode.
 
 The [Windows workflow](https://github.com/jontechlabs/ai-dubbing-studio/actions/workflows/windows.yml) repeats frontend/browser/Rust checks and builds/signs packages. See Actions for the current commit result. It does not install the large Bandit runtime/model or qualify CUDA.
 
