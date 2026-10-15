@@ -142,10 +142,30 @@ pub async fn status<R: tauri::Runtime>(
     };
     Ok(Status{installed:ready,installing:core.jobs.lock().map_err(io_error)?.values().any(|j|j.saved.record.kind=="ttsInstall" && ["queued","running"].contains(&j.saved.record.status.as_str())),size_bytes:manifest(&app)?.files.iter().map(|f|f.size).sum(),inventory:inventory.unwrap_or_else(||serde_json::json!({"devices":[],"warning":if ready{Some("DEVICE_PROBE_FAILED")}else{None}}))})
 }
-fn extract(archive: &Path, destination: &Path) -> Result<(), String> {
+fn copy_cancelled(
+    reader: &mut impl std::io::Read,
+    writer: &mut impl std::io::Write,
+    flag: &AtomicBool,
+) -> Result<(), String> {
+    let mut buffer = vec![0_u8; 1024 * 1024];
+    loop {
+        if flag.load(Ordering::Relaxed) {
+            return Err("CANCELLED".into());
+        }
+        let size = reader.read(&mut buffer).map_err(io_error)?;
+        if size == 0 {
+            return Ok(());
+        }
+        writer.write_all(&buffer[..size]).map_err(io_error)?;
+    }
+}
+fn extract(archive: &Path, destination: &Path, flag: &AtomicBool) -> Result<(), String> {
     let mut archive =
         zip::ZipArchive::new(std::fs::File::open(archive).map_err(io_error)?).map_err(io_error)?;
     for index in 0..archive.len() {
+        if flag.load(Ordering::Relaxed) {
+            return Err("CANCELLED".into());
+        }
         let mut entry = archive.by_index(index).map_err(io_error)?;
         let name = entry.enclosed_name().ok_or("INVALID_PATH")?;
         if entry.is_dir() {
@@ -155,11 +175,11 @@ fn extract(archive: &Path, destination: &Path) -> Result<(), String> {
         if let Some(parent) = path.parent() {
             std::fs::create_dir_all(parent).map_err(io_error)?;
         }
-        std::io::copy(
+        copy_cancelled(
             &mut entry,
             &mut std::fs::File::create(path).map_err(io_error)?,
-        )
-        .map_err(io_error)?;
+            flag,
+        )?;
     }
     Ok(())
 }
@@ -196,7 +216,7 @@ pub fn install<R: tauri::Runtime>(
             if !existing.is_some_and(|v|v["runtimeReady"]==true && v["cudaVersion"].as_str()==if cuda{Some("12.8")}else{None}){
                 let archive=folder.join("python.zip");
                 separation::fetch(&core,&app,&key,&["https://www.python.org/ftp/python/3.12.10/python-3.12.10-embed-amd64.zip".into()],&archive,("4acbed6dd1c744b0376e3b1cf57ce906f9dc9e95e68824584c8099a63025a3c3",11133606),&flag).await?;
-                let (archive,dest)=(archive,folder.join("python"));tauri::async_runtime::spawn_blocking(move||extract(&archive,&dest)).await.map_err(io_error)??;
+                let (archive,dest)=(archive,folder.join("python"));let extraction_flag=flag.clone();tauri::async_runtime::spawn_blocking(move||extract(&archive,&dest,&extraction_flag)).await.map_err(io_error)??;
                 project::atomic_write(&folder.join("python/python312._pth"),b"python312.zip\n.\nLib/site-packages\nimport site\n")?;
                 let runtime:RuntimeManifest=serde_json::from_slice(&std::fs::read(separation::resources(&app).join("cosyvoice-runtime.json")).map_err(io_error)?).map_err(io_error)?;
                 let mut files=runtime.variants.into_iter().find(|(name,_)|name==if cuda{"cu128"}else{"cpu"}).ok_or("TTS_RUNTIME_FAILED")?.1;files.extend(runtime.common);
@@ -207,7 +227,7 @@ pub fn install<R: tauri::Runtime>(
                     let archive=if let Some(path)=file.bundled_path {crate::domain::valid_relative(&path)?;let archive=separation::resources(&app).join(path);let bytes=std::fs::read(&archive).map_err(io_error)?;if bytes.len() as u64!=file.size || format!("{:x}",Sha256::digest(&bytes))!=file.sha256{return Err("MODEL_CHECKSUM_FAILED".into());}archive}
                     else {let archive=folder.join("wheels").join(&file.name);separation::fetch(&core,&app,&key,&[file.url],&archive,(&file.sha256,file.size),&flag).await?;archive};
                     jobs::update(&core,&app,&key,|j|{j.stage="ttsExtract".into();j.progress=None;});
-                    let destination=folder.join("python/Lib/site-packages");tauri::async_runtime::spawn_blocking(move||extract(&archive,&destination)).await.map_err(io_error)??;
+                    let destination=folder.join("python/Lib/site-packages");let extraction_flag=flag.clone();tauri::async_runtime::spawn_blocking(move||extract(&archive,&destination,&extraction_flag)).await.map_err(io_error)??;
                     if flag.load(Ordering::Relaxed){return Err("CANCELLED".into());}
                 }
                 jobs::update(&core,&app,&key,|j|{j.stage="dependenciesCheck".into();j.progress=None;});

@@ -12,6 +12,27 @@ fn options() -> Options {
         seed: 7,
     }
 }
+#[test]
+fn dependency_extraction_copy_observes_cancellation_between_chunks() {
+    struct Source<'a> {
+        flag: &'a AtomicBool,
+    }
+    impl std::io::Read for Source<'_> {
+        fn read(&mut self, buffer: &mut [u8]) -> std::io::Result<usize> {
+            buffer[..100].fill(7);
+            self.flag.store(true, Ordering::Relaxed);
+            Ok(100)
+        }
+    }
+    let flag = AtomicBool::new(false);
+    let mut source = Source { flag: &flag };
+    let mut output = Vec::new();
+    assert_eq!(
+        copy_cancelled(&mut source, &mut output, &flag).unwrap_err(),
+        "CANCELLED"
+    );
+    assert_eq!(output.len(), 100);
+}
 fn fixture() -> Project {
     let mut p = Project::new("Dubbing".into(), "ja".into(), "fr".into());
     p.format_version = 3;
