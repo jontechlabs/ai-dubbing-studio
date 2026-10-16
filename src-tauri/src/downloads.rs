@@ -92,7 +92,9 @@ async fn attempt(
 ) -> Result<(), Failure> {
     let mut response = tokio::select! {
         _ = cancelled(flag) => return Err(Failure::new("CANCELLED", "Cancelled", false)),
-        result = client.get(url).send() => result.map_err(|error| Failure::new("DOWNLOAD_FAILED", error.without_url(), true))?,
+        // Drama's 38.6 GB file can take several hours on a slower connection.
+        // Keep the client's 60-second inactivity deadline; extend only the total deadline.
+        result = client.get(url).timeout(Duration::from_secs(if spec.size >= 16 * 1024 * 1024 * 1024 {43200}else{3600})).send() => result.map_err(|error| Failure::new("DOWNLOAD_FAILED", error.without_url(), true))?,
     };
     let status = response.status();
     if !status.is_success() {
