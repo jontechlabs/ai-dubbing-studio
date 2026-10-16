@@ -833,7 +833,9 @@ async fn snippet_level(
     .unwrap();
     let data = pcm(&output, "0:a:0").await;
     assert_eq!(data.len(), ((end - start) * 48 * 2) as usize);
-    data[data.len() / 2]
+    // The fixture's mono DC signal was upmixed with sqrt(1/2); compare in its
+    // original calibration units while retaining stereo in every rendered file.
+    data[data.len() / 2] / std::f32::consts::FRAC_1_SQRT_2
 }
 #[tokio::test]
 async fn copy_and_move_ranges_match_playback_reference_and_export_envelopes() {
@@ -881,7 +883,7 @@ async fn copy_and_move_ranges_match_playback_reference_and_export_envelopes() {
             audio_patch::all(&p).unwrap().len()
         );
         let original = pcm(&root.join("media/source.mkv"), "0:a:0").await;
-        assert!((original[120000] - 0.03).abs() < 0.001);
+        assert!((original[120000] - 0.03 * std::f32::consts::FRAC_1_SQRT_2).abs() < 0.001);
     }
 }
 #[tokio::test]
