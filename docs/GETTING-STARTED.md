@@ -12,7 +12,7 @@ WebView2 Runtime must be available. FFmpeg/FFprobe are bundled. No AI runtime or
 To verify a download in PowerShell, compare its value with the release's `SHA256SUMS.txt`:
 
 ```powershell
-Get-FileHash .\AI-Dubbing-Studio-0.7.3-Setup.exe -Algorithm SHA256
+Get-FileHash .\AI-Dubbing-Studio-0.9.0-Setup.exe -Algorithm SHA256
 Get-FileHash .\AI-Dubbing-Studio-Windows-Portable.zip -Algorithm SHA256
 ```
 
@@ -94,3 +94,9 @@ Drag a selected dubbing clip to align its onset. Resize its right edge to length
 ## Visual timing and detailed zoom (0.8.0)
 
 Generate/select a take, then Dubbing → Analyze lips. Select its mouth region, choose a short shot, analyze and audition the proposed timing with the video before applying it. Manual edits and undo remain available. Ctrl+wheel and Ctrl+plus/minus zoom the timeline, Shift+Z fits it. See [visual alignment and generative feasibility](LIP-ALIGNMENT.md) and [zoom controls](TIMELINE-ZOOM.md). Generative video inpainting is not integrated in this release.
+
+## New in 0.9
+
+Choose source and replacement tracks in **Audio**, then use the selected range to copy, move or swap portions. [Detailed guide](AUDIO-TRANSFERS.md).
+
+After choosing a generated take, open **Dubbing → Retouch lips (video)**. Install MuseTalk, select CUDA, frame the face and mouth mask, generate and compare a variant before activating it. [Detailed guide and limits](LIP-INPAINTING.md).

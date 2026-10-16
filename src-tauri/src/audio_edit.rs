@@ -108,7 +108,7 @@ pub fn enqueue<R: tauri::Runtime>(
     id: &str,
     output: PathBuf,
 ) -> Result<String, String> {
-    let (input, root, track, project_id) = {
+    let (input, root, track, snapshot) = {
         let lock = core.session.lock().map_err(io_error)?;
         let session = lock.as_ref().ok_or("NO_PROJECT")?;
         session.project.validate()?;
@@ -123,7 +123,7 @@ pub fn enqueue<R: tauri::Runtime>(
             project::asset(&session.root, track.path.as_deref().ok_or("INVALID_PATH")?)?,
             session.root.clone(),
             track,
-            session.project.id.clone(),
+            session.project.clone(),
         )
     };
     let parent = output
@@ -139,21 +139,67 @@ pub fn enqueue<R: tauri::Runtime>(
         .clone()
         .try_acquire_owned()
         .map_err(|_| "BUSY".to_string())?;
-    let key = jobs::create(&core, &app, "audioExport", project_id, None);
+    let key = jobs::create(&core, &app, "audioExport", snapshot.id.clone(), None);
     let result_key = key.clone();
-    tauri::async_runtime::spawn_blocking(move || {
-        let _permit = permit;
-        let flag = core.jobs.lock().unwrap().get(&key).unwrap().cancel.clone();
-        jobs::update(&core, &app, &key, |job| {
-            job.status = "running".into();
-            job.stage = "audioRender".into();
-            job.progress = Some(0.0);
+    if !crate::audio_patch::layers(&snapshot, &track.id).is_empty() {
+        tauri::async_runtime::spawn(async move {
+            let _permit = permit;
+            let flag = core.jobs.lock().unwrap().get(&key).unwrap().cancel.clone();
+            jobs::update(&core, &app, &key, |j| {
+                j.status = "running".into();
+                j.stage = "audioRender".into();
+                j.progress = Some(0.0);
+            });
+            let result = async {
+                let temporary = tempfile::NamedTempFile::new_in(&parent)
+                    .map_err(io_error)?
+                    .into_temp_path();
+                let duration = track
+                    .duration_ms
+                    .or_else(|| snapshot.media.as_ref().map(|m| m.info.duration_ms))
+                    .ok_or("MEDIA_MISSING")?;
+                crate::audio_patch::snippet(
+                    &core,
+                    &app,
+                    &key,
+                    &snapshot,
+                    &root,
+                    crate::audio_patch::Snippet {
+                        track_id: &track.id,
+                        start_ms: 0,
+                        end_ms: duration,
+                        channels: 2,
+                        rate: 48000,
+                        fader: true,
+                    },
+                    &temporary,
+                    &flag,
+                )
+                .await?;
+                if flag.load(Ordering::Relaxed) {
+                    return Err("CANCELLED".into());
+                }
+                temporary.persist(&output).map_err(io_error)?;
+                Ok(())
+            }
+            .await;
+            separation::finish(&core, &app, &key, &result);
         });
-        let result = render(&input, &output, &track, &flag, |value| {
-            jobs::update(&core, &app, &key, |job| job.progress = Some(value))
+    } else {
+        tauri::async_runtime::spawn_blocking(move || {
+            let _permit = permit;
+            let flag = core.jobs.lock().unwrap().get(&key).unwrap().cancel.clone();
+            jobs::update(&core, &app, &key, |job| {
+                job.status = "running".into();
+                job.stage = "audioRender".into();
+                job.progress = Some(0.0);
+            });
+            let result = render(&input, &output, &track, &flag, |value| {
+                jobs::update(&core, &app, &key, |job| job.progress = Some(value))
+            });
+            separation::finish(&core, &app, &key, &result);
         });
-        separation::finish(&core, &app, &key, &result);
-    });
+    }
     Ok(result_key)
 }
 #[cfg(test)]

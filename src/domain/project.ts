@@ -2,7 +2,9 @@ import type { Project } from './types';
 import { alignCues } from './subtitles';
 import { validVoiceVariant } from './modelVariants';
 import { validVoiceSettings } from './tts';
-export const APP_VERSION = '0.8.0';
+import { validateAudioPatches } from './audioPatch';
+import { validateLipVideos } from './inpaint';
+export const APP_VERSION = '0.9.0';
 
 export function blankProject(name = 'Untitled', source = 'ja', target = 'fr'): Project {
   const now = new Date().toISOString();
@@ -92,7 +94,7 @@ export function validateProject(value: unknown): Project {
   const preferences = project.modelPreferences;
   if (preferences && !validVoiceVariant(preferences.ttsProviderId, preferences.voiceVariantId))
     throw new Error('INVALID_PROJECT');
-  if (![1, 2, 3, 4, 5, 6, 7].includes(project.formatVersion))
+  if (![1, 2, 3, 4, 5, 6, 7, 8].includes(project.formatVersion))
     throw new Error('UNSUPPORTED_PROJECT_VERSION');
   if (project.dubbingTiming) {
     const timing = project.dubbingTiming;
@@ -305,5 +307,7 @@ export function validateProject(value: unknown): Project {
       )
         throw Error('INVALID_GENERATION');
   }
+  validateLipVideos(project);
+  validateAudioPatches(project);
   return project;
 }

@@ -9,6 +9,12 @@ import {
   setAllAudio,
   trackLabel,
 } from '../domain/audio';
+import {
+  audioPatches,
+  removeTransfer,
+  patchGain,
+  type TransferOptions,
+} from '../domain/audioPatch';
 import { formatTime, parseTime } from '../domain/time';
 
 export function AudioRegionsEditor({
@@ -18,6 +24,8 @@ export function AudioRegionsEditor({
   videoRef,
   onEdit,
   onExport,
+  onTransfer,
+  busy,
 }: {
   project: Project;
   selection: AudioSelection | null;
@@ -25,6 +33,8 @@ export function AudioRegionsEditor({
   videoRef: RefObject<HTMLVideoElement | null>;
   onEdit: (update: (p: Project) => Project) => void;
   onExport: (trackId: string) => void;
+  onTransfer: (options: TransferOptions) => void;
+  busy: boolean;
 }) {
   const { t } = useTranslation(),
     container = useRef<HTMLDivElement>(null);
@@ -46,6 +56,9 @@ export function AudioRegionsEditor({
   );
   const [gain, setGain] = useState(existing?.gain ?? 1),
     [mute, setMute] = useState(existing?.mute ?? false);
+  const [targetId, setTargetId] = useState(
+    tracks.find((t) => t.kind !== 'dubbing' && t.id !== track.id)?.id ?? '',
+  );
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
   useEffect(() => {
@@ -275,6 +288,88 @@ export function AudioRegionsEditor({
           <Download size={14} />
           {t('exportTrackRegions')}
         </button>
+      )}
+      {track.kind !== 'dubbing' && (
+        <section className="settings-section audio-transfer">
+          <h3>{t('transferTitle')}</h3>
+          <p className="panel-description">{t('transferHint')}</p>
+          <label className="field">
+            <span>{t('transferTarget')}</span>
+            <select value={targetId} onChange={(e) => setTargetId(e.target.value)}>
+              <option value="">{t('transferChoose')}</option>
+              {tracks
+                .filter((t) => t.kind !== 'dubbing' && t.id !== track.id)
+                .map((track) => (
+                  <option key={track.id} value={track.id}>
+                    {t(trackLabel(track))}
+                  </option>
+                ))}
+            </select>
+          </label>
+          <div className="region-actions">
+            {(['copy', 'move', 'swap'] as const).map((operation) => (
+              <button
+                className="button subtle"
+                key={operation}
+                disabled={busy || !targetId || targetId === track.id}
+                onClick={() => {
+                  try {
+                    const { startMs, endMs } = range();
+                    if (endMs - startMs < 10 || endMs - startMs > 60000)
+                      throw Error('INVALID_AUDIO_TRANSFER');
+                    setError(null);
+                    onTransfer({
+                      sourceTrackId: track.id,
+                      targetTrackId: targetId,
+                      startMs,
+                      endMs,
+                      operation,
+                    });
+                  } catch (e) {
+                    setError(String(e).replace('Error: ', ''));
+                  }
+                }}
+              >
+                {t(`transfer.${operation}`)}
+              </button>
+            ))}
+          </div>
+          <p className="panel-description">{t('transferUndoHint')}</p>
+          {audioPatches(project)
+            .filter((e) => e.trackId === track.id && e.sourcePath === project.media?.path)
+            .map((e) => (
+              <div className="runtime-card" key={e.id}>
+                <strong>
+                  {t(`transfer.${e.operation}`)} · {formatTime(e.startMs)} → {formatTime(e.endMs)}
+                </strong>
+                <p>{t(e.mode === 'silence' ? 'transferCut' : 'transferLayer')}</p>
+                {e.mode !== 'silence' && (
+                  <label className="field">
+                    <span>
+                      {t('transferGain')} · {Math.round(e.gain * 100)}%
+                    </span>
+                    <input
+                      aria-label={t('transferGain')}
+                      type="range"
+                      min="0"
+                      max="2"
+                      step="0.05"
+                      value={e.gain}
+                      onChange={(event) =>
+                        onEdit((p) => patchGain(p, e.id, Number(event.target.value)))
+                      }
+                    />
+                  </label>
+                )}
+                <button
+                  className="button subtle"
+                  onClick={() => onEdit((p) => removeTransfer(p, e.operationId))}
+                >
+                  {t('transferRemove')}
+                </button>
+              </div>
+            ))}
+        </section>
       )}
       <p className="panel-description">{t('regionGainHint')}</p>
     </section>

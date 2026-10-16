@@ -22,6 +22,7 @@ import { moveCue, type SubtitleRole } from '../domain/timing';
 import { Waveform } from './Waveform';
 import { formatTime } from '../domain/time';
 import { audioTracks, editTrack } from '../domain/audio';
+import { trackPatches } from '../domain/audioPatch';
 import { subtitleDisplay, toggleSubtitles } from '../domain/subtitleDisplay';
 import { dubbingClips, dubbingOffset, moveDubbing, resizeDubbing } from '../domain/mix';
 import { useTimelineZoom } from '../hooks/useTimelineZoom';
@@ -720,6 +721,37 @@ export const Timeline = memo(function Timeline({
                         ) : (
                           Math.round(region.gain * 100) + '%'
                         )}
+                      </button>
+                    ))}
+                {track &&
+                  project &&
+                  trackPatches(project, track.id)
+                    .filter(
+                      (e) =>
+                        e.endMs * scale >= scrollLeft && e.startMs * scale <= scrollLeft + viewport,
+                    )
+                    .map((e) => (
+                      <button
+                        key={e.id}
+                        className={`audio-patch ${e.mode === 'silence' ? 'cut' : ''}`}
+                        title={`${t(`transfer.${e.operation}`)} · ${formatTime(e.startMs)} → ${formatTime(e.endMs)}`}
+                        aria-label={`${t(`transfer.${e.operation}`)} ${t(key)} ${formatTime(e.startMs)}`}
+                        style={{
+                          left: e.startMs * scale,
+                          width: Math.max(3, (e.endMs - e.startMs) * scale),
+                        }}
+                        onPointerDown={(event) => event.stopPropagation()}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          onAudioSelection({
+                            mediaId: project.media!.id,
+                            trackId: track.id,
+                            startMs: e.startMs,
+                            endMs: e.endMs,
+                          });
+                        }}
+                      >
+                        {e.mode === 'silence' ? '×' : '↔'}
                       </button>
                     ))}
                 {track && audioDrag?.trackId === track.id && (

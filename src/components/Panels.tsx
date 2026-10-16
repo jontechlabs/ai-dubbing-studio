@@ -26,6 +26,7 @@ import { DubPanel } from './DubPanel';
 import { ModelStorageSettings } from './ModelStorageSettings';
 import { MkvExportPanel } from './MkvExportPanel';
 import { LipAnalysisPanel } from './LipAnalysisPanel';
+import { InpaintPanel } from './InpaintPanel';
 import * as bridge from '../services/bridge';
 import { downloadText } from '../services/browserStore';
 
@@ -108,7 +109,7 @@ export function Panels({
       }}
     >
       <aside
-        className={`context-panel ${panel === 'alignment' || panel === 'lips' ? 'wide-panel' : ''}`}
+        className={`context-panel ${panel === 'alignment' || panel === 'lips' || panel === 'inpaint' ? 'wide-panel' : ''}`}
         role="dialog"
         aria-modal="true"
         aria-label={t(title)}
@@ -134,6 +135,7 @@ export function Panels({
             onModels={() => onPanel('models')}
             onCharacters={() => onPanel('characters')}
             onLips={() => onPanel('lips')}
+            onInpaint={() => onPanel('inpaint')}
             onOriginal={onOriginal}
             onPlay={onPlayGeneration}
             activeGenerationId={activeGenerationId}
@@ -146,6 +148,17 @@ export function Panels({
             jobs={jobs}
             snapshot={snapshot}
             applySnapshot={applySnapshot}
+            onError={onError}
+          />
+        )}
+        {panel === 'inpaint' && project && (
+          <InpaintPanel
+            key={`${project.id}:${selectedId}`}
+            project={project}
+            line={project.dialogues.find((d) => d.id === selectedId)}
+            jobs={jobs}
+            snapshot={snapshot}
+            onEdit={onEdit}
             onError={onError}
           />
         )}
@@ -420,6 +433,9 @@ function JobsPanel({ jobs, onError }: { jobs: Job[]; onError: (s: string) => voi
             'mkvExport',
             'referenceTranscription',
             'lipAnalysis',
+            'inpaint',
+            'inpaintInstall',
+            'audioTransfer',
           ].includes(job.kind) &&
             ['failed', 'cancelled', 'interrupted'].includes(job.status) && (
               <button

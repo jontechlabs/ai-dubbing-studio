@@ -1,9 +1,11 @@
 mod audio_edit;
 mod audio_files;
+mod audio_patch;
 mod domain;
 mod downloads;
 mod embedded;
 mod graphics;
+mod inpaint;
 #[cfg(test)]
 mod integration_tests;
 mod jobs;
@@ -61,6 +63,41 @@ fn analyze_lips(
     options: lips::Options,
 ) -> Result<String, String> {
     lips::enqueue(core.inner().clone(), app, options)
+}
+#[tauri::command]
+async fn inpaint_status(
+    app: tauri::AppHandle,
+    core: State<'_, Shared>,
+) -> Result<serde_json::Value, String> {
+    inpaint::status(core.inner().clone(), app).await
+}
+#[tauri::command]
+fn install_inpaint(app: tauri::AppHandle, core: State<'_, Shared>) -> Result<String, String> {
+    inpaint::install(core.inner().clone(), app)
+}
+#[tauri::command]
+fn inpaint_lips(
+    app: tauri::AppHandle,
+    core: State<'_, Shared>,
+    options: inpaint::Options,
+) -> Result<String, String> {
+    inpaint::enqueue(core.inner().clone(), app, options)
+}
+#[tauri::command]
+fn inpaint_path(core: State<'_, Shared>, id: String) -> Result<String, String> {
+    inpaint::media_path(&core, &id)
+}
+#[tauri::command]
+fn transfer_audio(
+    app: tauri::AppHandle,
+    core: State<'_, Shared>,
+    options: audio_patch::Options,
+) -> Result<String, String> {
+    audio_patch::enqueue(core.inner().clone(), app, options)
+}
+#[tauri::command]
+fn audio_patch_path(core: State<'_, Shared>, id: String) -> Result<String, String> {
+    audio_patch::path(&core, &id)
 }
 #[tauri::command]
 fn lip_analysis_result(
@@ -806,6 +843,30 @@ fn retry_job(app: tauri::AppHandle, core: State<'_, Shared>, id: String) -> Resu
         .ok_or("INVALID_PROJECT")?
         .saved
         .clone();
+    if record.inpaint_install {
+        return inpaint::install(core.inner().clone(), app);
+    }
+    if let Some(request) = record.audio_transfer {
+        let session = core.session.lock().map_err(io_error)?;
+        let s = session.as_ref().ok_or("NO_PROJECT")?;
+        if s.root != request.root
+            || s.project.id != request.project_id
+            || s.project.revision != request.revision
+        {
+            return Err("STALE_REVISION".into());
+        }
+        drop(session);
+        return audio_patch::enqueue(core.inner().clone(), app, request.options);
+    }
+    if let Some(request) = record.inpaint {
+        let session = core.session.lock().map_err(io_error)?;
+        let s = session.as_ref().ok_or("NO_PROJECT")?;
+        if s.root != request.root || s.project.id != request.project_id {
+            return Err("INPAINT_STALE".into());
+        }
+        drop(session);
+        return inpaint::enqueue(core.inner().clone(), app, request.options);
+    }
     if record.speaker_install {
         return speakers::install(core.inner().clone(), app);
     }
@@ -1012,6 +1073,12 @@ pub fn run() {
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
+            inpaint_status,
+            install_inpaint,
+            inpaint_lips,
+            inpaint_path,
+            transfer_audio,
+            audio_patch_path,
             analyze_lips,
             lip_analysis_result,
             latest_lip_analysis,

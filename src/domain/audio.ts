@@ -173,8 +173,13 @@ export function editTrack(
 export function dubbingMix(project: Project) {
   let next = editTrack(project, 'dubbing', { mute: false, solo: false });
   next = editTrack(next, 'original', { mute: true, solo: false });
+  const chosen = project.modelPreferences?.dubbingSourceTrackId;
+  const replacement =
+    chosen && chosen !== 'auto'
+      ? chosen
+      : audioTracks(project).find((t) => t.role === 'speech')?.id;
   next.tracks = next.tracks.map((t) =>
-    t.kind === 'audio' ? { ...t, mute: t.role === 'speech', solo: false } : t,
+    t.kind === 'audio' ? { ...t, mute: t.id === replacement, solo: false } : t,
   );
   return next;
 }

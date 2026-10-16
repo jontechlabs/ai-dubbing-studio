@@ -215,7 +215,7 @@ impl Project {
         }
     }
     pub fn validate(&self) -> Result<(), String> {
-        if ![1, 2, 3, 4, 5, 6, 7].contains(&self.format_version) {
+        if ![1, 2, 3, 4, 5, 6, 7, 8].contains(&self.format_version) {
             return Err("UNSUPPORTED_PROJECT_VERSION".into());
         }
         if let Some(timing) = &self.dubbing_timing {
@@ -426,6 +426,8 @@ impl Project {
             }
         }
         crate::tts::validate_generations(self)?;
+        crate::inpaint::validate(self)?;
+        crate::audio_patch::validate(self)?;
         Ok(())
     }
 }

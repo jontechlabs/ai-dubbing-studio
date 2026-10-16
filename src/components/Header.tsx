@@ -30,6 +30,7 @@ export type Panel =
   | 'alignment'
   | 'dub'
   | 'lips'
+  | 'inpaint'
   | null;
 export function Header({
   project,

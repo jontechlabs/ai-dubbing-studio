@@ -258,11 +258,10 @@ pub async fn reference<R: tauri::Runtime>(
     path: Option<String>,
     label: String,
 ) -> Result<Project, String> {
-    let imported = line_id.is_none();
     if busy(&core) || jobs::active_processing(&core) {
         return Err("BUSY".into());
     }
-    let (root, project_id, input, index, start, duration, transcript) = {
+    let (root, project_id, input, start, duration, transcript, snapshot) = {
         let session = core.session.lock().map_err(io_error)?;
         let s = session.as_ref().ok_or("NO_PROJECT")?;
         if !s
@@ -280,12 +279,12 @@ pub async fn reference<R: tauri::Runtime>(
                 .iter()
                 .find(|line| &line.id == line_id)
                 .ok_or("NO_DIALOGUES")?;
-            let (input, index) = audio_source(&s.project, &s.root)?;
+            let track = crate::audio_patch::source_track(&s.project, None)?;
+            let input = PathBuf::from(track.id);
             (
                 s.root.clone(),
                 s.project.id.clone(),
                 input,
-                index,
                 line.start_ms,
                 (line.end_ms - line.start_ms).min(20000),
                 s.project
@@ -295,6 +294,7 @@ pub async fn reference<R: tauri::Runtime>(
                     .map(|cue| cue.text.as_str())
                     .collect::<Vec<_>>()
                     .join("\n"),
+                Some(s.project.clone()),
             )
         } else {
             let input = PathBuf::from(path.ok_or("INVALID_PATH")?)
@@ -308,9 +308,9 @@ pub async fn reference<R: tauri::Runtime>(
                 s.project.id.clone(),
                 input,
                 0,
-                0,
                 20000,
                 String::new(),
+                None,
             )
         }
     };
@@ -321,48 +321,73 @@ pub async fn reference<R: tauri::Runtime>(
     let key = id();
     let relative = format!("characters/reference-{key}.wav");
     let output = folder.join(format!("reference-{key}.wav"));
-    let result = tokio::time::timeout(
-        Duration::from_secs(60),
-        media::command(&media::binary(&app, "ffmpeg")?)
-            .args([
-                "-hide_banner",
-                "-loglevel",
-                "error",
-                "-nostdin",
-                "-protocol_whitelist",
-                "file,pipe",
-                "-i",
-            ])
-            .arg(&input)
-            .args([
-                "-map",
-                &if imported {
-                    "0:a:0".into()
-                } else {
-                    format!("0:{index}")
+    if let Some(p) = snapshot {
+        let flag = std::sync::atomic::AtomicBool::new(false);
+        let result = tokio::time::timeout(
+            Duration::from_secs(60),
+            crate::audio_patch::snippet(
+                &core,
+                &app,
+                "",
+                &p,
+                &root,
+                crate::audio_patch::Snippet {
+                    track_id: input.to_str().ok_or("INVALID_AUDIO_TRANSFER")?,
+                    start_ms: start,
+                    end_ms: start + duration,
+                    channels: 1,
+                    rate: 24000,
+                    fader: false,
                 },
-                "-ss",
-                &format!("{:.3}", start as f64 / 1000.0),
-                "-t",
-                &format!("{:.3}", duration as f64 / 1000.0),
-                "-vn",
-                "-ac",
-                "1",
-                "-ar",
-                "24000",
-                "-c:a",
-                "pcm_s16le",
-                "-n",
-            ])
-            .arg(&output)
-            .output(),
-    )
-    .await
-    .map_err(|_| "REFERENCE_FAILED")?
-    .map_err(io_error)?;
-    if !result.status.success() {
-        let _ = std::fs::remove_file(&output);
-        return Err("REFERENCE_FAILED".into());
+                &output,
+                &flag,
+            ),
+        )
+        .await;
+        if !matches!(result, Ok(Ok(()))) {
+            let _ = std::fs::remove_file(&output);
+            return Err("REFERENCE_FAILED".into());
+        }
+    } else {
+        let result = tokio::time::timeout(
+            Duration::from_secs(60),
+            media::command(&media::binary(&app, "ffmpeg")?)
+                .args([
+                    "-hide_banner",
+                    "-loglevel",
+                    "error",
+                    "-nostdin",
+                    "-protocol_whitelist",
+                    "file,pipe",
+                    "-i",
+                ])
+                .arg(&input)
+                .args([
+                    "-map",
+                    "0:a:0",
+                    "-ss",
+                    &format!("{:.3}", start as f64 / 1000.0),
+                    "-t",
+                    &format!("{:.3}", duration as f64 / 1000.0),
+                    "-vn",
+                    "-ac",
+                    "1",
+                    "-ar",
+                    "24000",
+                    "-c:a",
+                    "pcm_s16le",
+                    "-n",
+                ])
+                .arg(&output)
+                .output(),
+        )
+        .await
+        .map_err(|_| "REFERENCE_FAILED")?
+        .map_err(io_error)?;
+        if !result.status.success() {
+            let _ = std::fs::remove_file(&output);
+            return Err("REFERENCE_FAILED".into());
+        }
     }
     let duration = crate::audio_files::reference_duration(&output)?;
     let mut session = core.session.lock().map_err(io_error)?;

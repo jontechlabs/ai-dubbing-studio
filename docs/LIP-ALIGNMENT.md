@@ -28,7 +28,7 @@ Ce mode vise les plans courts avec une bouche lisible et relativement stable, y 
 
 ## Modifier réellement les lèvres de la vidéo
 
-**Cette retouche générative est possible avec des moteurs externes, mais n’est pas intégrée dans v0.8.0.** Le bouton Analyser les lèvres ajuste l’audio et conserve les images source. Le MKV actuel copie la vidéo originale.
+**Depuis v0.9.0, MuseTalk 1.5 est intégré dans le panneau Retouche des lèvres.** [Guide de la retouche](LIP-INPAINTING.md). Le bouton Analyser les lèvres décrit ici ajuste uniquement l’audio. L’export réencode la vidéo lorsque des retouches activées sont incluses. Le tableau suivant conserve les pistes étudiées pour des moteurs supplémentaires.
 
 | Solution | Fonction documentée | Intérêt et limites pour une future intégration |
 | --- | --- | --- |

@@ -78,7 +78,7 @@ test('exports the flushed mixer settings with selectable original track, codec a
   await page.screenshot({path:'docs/screenshots/phase7-export.png'});
   await panel.getByRole('button',{name:'Exporter le MKV',exact:true}).click();await expect(page.getByRole('dialog',{name:'Traitements'}).getByText('Mixage et export MKV',{exact:true})).toBeVisible();
   const call=await page.evaluate(()=>(window as any).__calls.find((c:any)=>c.command==='export_mkv'));
-  expect(call.args).toEqual({path:'C:/Exports/dubbed.mkv',options:{codec:'flac',includeOriginal:true,sourceSubtitles:false,targetSubtitles:true,allowIncomplete:false}});
+  expect(call.args).toEqual({path:'C:/Exports/dubbed.mkv',options:{codec:'flac',includeOriginal:true,sourceSubtitles:false,targetSubtitles:true,allowIncomplete:false,includeRetouched:true}});
 });
 test('dubbing regions mute real output and original audition restores the saved mix on normal playback',async({page})=>{
   await setup(page);await page.getByRole('button',{name:'Audio',exact:true}).click();

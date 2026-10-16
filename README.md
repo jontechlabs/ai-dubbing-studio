@@ -4,7 +4,13 @@ A local desktop workspace for preparing video dubbing: review bilingual subtitle
 
 Built with **Tauri 2, React, TypeScript and Rust**. English and French interface. Dark and light themes.
 
-**v0.8.0 — Visual voice alignment and precise timeline zoom.** Select a mouth region, analyze its activity locally, audition a proposed voice start/duration with the video, then apply or adjust it manually. This is assisted timing, not phoneme recognition or generated mouth images. Ctrl + wheel, Ctrl + +/−, Shift + Z, a zoom slider and millisecond ticks make short clips editable inside long films. [Lip alignment and video-model feasibility](docs/LIP-ALIGNMENT.md) · [Zoom controls](docs/TIMELINE-ZOOM.md).
+**v0.9.0 — Local lip retouching and audio range transfers.** MuseTalk 1.5 generates mouth images from a selected dubbed take, using an explicit CUDA GPU, FP16 UNet and FP32 VAE. Frame the full face and blend only the chosen mouth region; compare variants before activation. Anime support is experimental. Choose both the voice-reference source track and the track to replace in the dubbing mix. Copy, move or swap ranges between original/stem tracks, with independent transferred-range gain and undo. [Lip retouching](docs/LIP-INPAINTING.md) · [Audio transfers](docs/AUDIO-TRANSFERS.md) · [Timing analysis](docs/LIP-ALIGNMENT.md).
+
+**Fish Audio Drama 3 catalogue.** Official FP8 and community RAM-offloaded variants are listed with sources and hardware limits. Drama 3 generation is not integrated in this release. [Details](docs/FISH-DRAMA-3.md).
+
+![Lip retouch panel](docs/screenshots/inpaint-region.png)
+
+*React/Chrome interface with synthetic video and simulated native model inventory; this screenshot is not an RTX inference benchmark. See validation for the separate real neural CPU diagnostic.*
 
 **Local reference transcription and corrected Fish help.** Whisper small Q5_1 transcribes Japanese, French and the other available languages. The editable transcript is saved with the character reference. The 181 MiB model downloads on first use and runs on CPU to leave VRAM for dubbing. [Reference guide](docs/REFERENCE-TRANSCRIPTION.md).
 
@@ -14,7 +20,7 @@ CosyVoice3, Fish S2 FP8/GGUF and Qwen3-TTS GGUF remain available. [Models and GP
 
 *Actual React browser UI with a simulated reference and transcription result. Separate native checks transcribe real Japanese speech. These are not RTX performance measurements.*
 
-[Windows downloads](https://github.com/jontechlabs/ai-dubbing-studio/releases/tag/v0.8.0) · [User guide](docs/GETTING-STARTED.md) · [Build instructions](docs/BUILDING.md) · [Français](README.fr.md)
+[Windows downloads](https://github.com/jontechlabs/ai-dubbing-studio/releases/tag/v0.9.0) · [User guide](docs/GETTING-STARTED.md) · [Build instructions](docs/BUILDING.md) · [Français](README.fr.md)
 
 ![Studio with bilingual dialogue, video preview, text editor and timeline](docs/screenshots/studio.png)
 
@@ -28,9 +34,9 @@ Audio regions with independent silence and volume, timeline range selection, fas
 
 | Package | Purpose |
 | --- | --- |
-| [Windows x64 setup](https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.8.0/AI-Dubbing-Studio-0.8.0-Setup.exe) | NSIS installer for the current user, with English/French installer interface |
-| [Portable ZIP](https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.8.0/AI-Dubbing-Studio-Windows-Portable.zip) | Extract the whole folder and launch `AI Dubbing Studio.exe` |
-| [SHA-256 checksums](https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.8.0/SHA256SUMS.txt) | Verify the setup and ZIP downloads |
+| [Windows x64 setup](https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.9.0/AI-Dubbing-Studio-0.9.0-Setup.exe) | NSIS installer for the current user, with English/French installer interface |
+| [Portable ZIP](https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.9.0/AI-Dubbing-Studio-Windows-Portable.zip) | Extract the whole folder and launch `AI Dubbing Studio.exe` |
+| [SHA-256 checksums](https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.9.0/SHA256SUMS.txt) | Verify the setup and ZIP downloads |
 
 Target: **Windows 10/11 x64**, with **Microsoft Edge WebView2 Runtime**. FFmpeg and FFprobe are included. Python, CUDA and AI model downloads are not required for editing and playback. Installation may need Internet access if WebView2 is missing; local project editing does not require a cloud account.
 

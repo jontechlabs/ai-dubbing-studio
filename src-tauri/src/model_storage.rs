@@ -13,6 +13,7 @@ use std::{
 
 // Only application-owned model installations belong here. Project assets stay in projects.
 const INSTALLATIONS: &[&str] = &[
+    "musetalk-runtime",
     "bandit-runtime",
     "speaker-runtime",
     "cosyvoice3-runtime",
@@ -492,7 +493,12 @@ mod tests {
     #[test]
     fn moves_all_installations_and_reloads_durable_path() {
         let (_temp, data, source, dest) = fixture();
-        for name in ["cosyvoice3-runtime", "voice-engines", "whisper-reference"] {
+        for name in [
+            "cosyvoice3-runtime",
+            "voice-engines",
+            "whisper-reference",
+            "musetalk-runtime",
+        ] {
             fs::create_dir_all(source.join(name)).unwrap();
             fs::write(source.join(name).join("model.bin"), b"voice model").unwrap();
         }
@@ -518,7 +524,12 @@ mod tests {
         );
         assert!(!source.join("bandit-runtime").exists());
         assert!(!source.join("speaker-runtime").exists());
-        for name in ["cosyvoice3-runtime", "voice-engines", "whisper-reference"] {
+        for name in [
+            "cosyvoice3-runtime",
+            "voice-engines",
+            "whisper-reference",
+            "musetalk-runtime",
+        ] {
             assert_eq!(
                 fs::read(dest.join(name).join("model.bin")).unwrap(),
                 b"voice model"

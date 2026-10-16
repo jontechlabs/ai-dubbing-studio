@@ -6,6 +6,7 @@ import type { RefObject } from 'react';
 import { AudioQuickControls } from './AudioQuickControls';
 import { AudioRegionsEditor } from './AudioRegionsEditor';
 import { audioTracks, editTrack, trackLabel, dubbingMix } from '../domain/audio';
+import { setAudioSource } from '../domain/audioPatch';
 import { mixReport } from '../domain/mix';
 import * as bridge from '../services/bridge';
 export function AudioPanel({
@@ -56,6 +57,12 @@ export function AudioPanel({
         'speakerInstall',
         'speakers',
         'modelMove',
+        'audioTransfer',
+        'tts',
+        'ttsInstall',
+        'voiceInstall',
+        'inpaint',
+        'inpaintInstall',
       ].includes(job.kind) && ['running', 'queued', 'paused'].includes(job.status),
   );
   useEffect(() => {
@@ -185,6 +192,32 @@ export function AudioPanel({
       {!!tracks.length && (
         <>
           <h3>{t('audioMixer')}</h3>
+          {project && (
+            <section className="settings-section">
+              {(['referenceTrackId', 'dubbingSourceTrackId'] as const).map((key) => (
+                <label className="field" key={key}>
+                  <span>
+                    {t(key === 'referenceTrackId' ? 'referenceTrack' : 'replacementTrack')}
+                  </span>
+                  <select
+                    value={project.modelPreferences?.[key] ?? 'auto'}
+                    onChange={(e) => onEdit((p) => setAudioSource(p, key, e.target.value))}
+                  >
+                    <option value="auto">{t('referenceTrackDefault')}</option>
+                    {tracks
+                      .filter((t) => t.kind !== 'dubbing')
+                      .map((track) => (
+                        <option key={track.id} value={track.id}>
+                          {t(trackLabel(track))}
+                        </option>
+                      ))}
+                  </select>
+                </label>
+              ))}
+              <p className="panel-description">{t('audioSourceHint')}</p>
+            </section>
+          )}
+
           {!!project && !!mixReport(project).clips.length && (
             <>
               <button
@@ -261,6 +294,15 @@ export function AudioPanel({
               selected={selected}
               videoRef={videoRef}
               onEdit={onEdit}
+              busy={active || working || !bridge.native}
+              onTransfer={(options) => {
+                videoRef.current?.pause();
+                void run(async () => {
+                  await bridge.transferAudio(options);
+                  showJobs();
+                  return null;
+                });
+              }}
               onExport={(id) =>
                 void run(async () => {
                   if (await bridge.exportAudioTrack(project, id, true)) showJobs();

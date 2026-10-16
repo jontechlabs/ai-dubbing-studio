@@ -44,6 +44,7 @@ export interface VoiceSettings {
   variantId?: string | null;
   device: string;
   referenceMode: 'character' | 'current' | 'custom';
+  referenceTrackId?: string;
   referenceId: string | null;
   mode: 'zeroShot' | 'crossLingual';
   speed: number;
@@ -156,7 +157,12 @@ export interface Project {
   tracks: Track[];
   characters: Character[];
   speakerAnalysis?: SpeakerAnalysis | null;
-  modelPreferences?: { ttsProviderId: string | null; voiceVariantId?: string | null };
+  modelPreferences?: {
+    ttsProviderId: string | null;
+    voiceVariantId?: string | null;
+    referenceTrackId?: string;
+    dubbingSourceTrackId?: string;
+  };
   subtitleDisplay?: 'off' | 'source' | 'target' | 'both';
   generations: (Generation | { id: string; kind?: string; [key: string]: unknown })[];
   pronunciation: Record<string, string>;

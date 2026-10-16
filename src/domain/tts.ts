@@ -10,6 +10,10 @@ export function validVoiceSettings(value: unknown): value is VoiceSettings {
     (!s.variantId?.startsWith('qwen3') || !s.mood || s.mood === 'default') &&
     (s.variantId == null || !!voiceVariant(s.variantId)) &&
     ['character', 'current', 'custom'].includes(s.referenceMode) &&
+    (s.referenceTrackId === undefined ||
+      (typeof s.referenceTrackId === 'string' &&
+        s.referenceTrackId.length > 0 &&
+        s.referenceTrackId.length <= 128)) &&
     ['zeroShot', 'crossLingual'].includes(s.mode) &&
     Number.isFinite(s.speed) &&
     s.speed >= 0.5 &&

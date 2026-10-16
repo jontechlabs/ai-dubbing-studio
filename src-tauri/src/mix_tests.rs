@@ -1,4 +1,5 @@
 use super::*;
+use crate::audio_patch::{self, Snippet};
 use std::sync::Mutex;
 fn tool(name: &str) -> PathBuf {
     if cfg!(windows) {
@@ -167,6 +168,7 @@ async fn mkv_contains_synchronized_mix_original_and_both_subtitles_with_unchange
     let app = app.handle().clone();
     let core = core(&root, p.clone());
     let options = Options {
+        include_retouched: true,
         include_original: true,
         source_subtitles: true,
         target_subtitles: true,
@@ -276,6 +278,7 @@ async fn silence_export_and_cancel_keep_sources_and_existing_destinations() {
         revision: 0,
         output: output.clone(),
         options: Options {
+            include_retouched: true,
             include_original: false,
             source_subtitles: false,
             target_subtitles: false,
@@ -358,6 +361,7 @@ async fn moved_dubbing_changes_mkv_onset_without_changing_subtitles_or_original_
         revision: p.revision,
         output: root.join("exports/shifted.mkv"),
         options: Options {
+            include_retouched: true,
             include_original: false,
             source_subtitles: true,
             target_subtitles: true,
@@ -632,6 +636,7 @@ async fn export_fits_to_next_take_and_flags_zero_slots() {
         revision: 0,
         output: root.join("exports/fitted.mkv"),
         options: Options {
+            include_retouched: true,
             include_original: false,
             source_subtitles: false,
             target_subtitles: false,
@@ -693,6 +698,7 @@ async fn export_job_captures_saved_levels_and_produces_aac_while_edits_continue(
         app,
         output.clone(),
         Options {
+            include_retouched: true,
             include_original: false,
             source_subtitles: false,
             target_subtitles: true,
@@ -755,4 +761,413 @@ async fn export_job_captures_saved_levels_and_produces_aac_while_edits_continue(
             .tracks[2]
             .mute
     );
+}
+
+async fn transfer_fixture(
+    operation: &str,
+) -> (
+    tempfile::TempDir,
+    PathBuf,
+    Arc<Core>,
+    tauri::App<tauri::test::MockRuntime>,
+    Project,
+) {
+    let (temp, root, p) = fixture().await;
+    let core = core(&root, p.clone());
+    let app = tauri::test::mock_app();
+    let request = audio_patch::Request {
+        root: root.clone(),
+        project_id: p.id.clone(),
+        revision: p.revision,
+        options: audio_patch::Options {
+            source_track_id: "original".into(),
+            target_track_id: "music".into(),
+            start_ms: 1000,
+            end_ms: 2000,
+            operation: operation.into(),
+        },
+    };
+    audio_patch::transfer(&core, app.handle(), "", &request, &AtomicBool::new(false))
+        .await
+        .unwrap();
+    let edited = core
+        .session
+        .lock()
+        .unwrap()
+        .as_ref()
+        .unwrap()
+        .project
+        .clone();
+    (temp, root, core, app, edited)
+}
+#[allow(clippy::too_many_arguments)]
+async fn snippet_level(
+    core: &Arc<Core>,
+    app: &tauri::AppHandle<tauri::test::MockRuntime>,
+    root: &Path,
+    p: &Project,
+    track: &str,
+    start: u64,
+    end: u64,
+    fader: bool,
+) -> f32 {
+    let output = root.join("exports/snippet.wav");
+    audio_patch::snippet(
+        core,
+        app,
+        "",
+        p,
+        root,
+        Snippet {
+            track_id: track,
+            start_ms: start,
+            end_ms: end,
+            channels: 2,
+            rate: 48000,
+            fader,
+        },
+        &output,
+        &AtomicBool::new(false),
+    )
+    .await
+    .unwrap();
+    let data = pcm(&output, "0:a:0").await;
+    assert_eq!(data.len(), ((end - start) * 48 * 2) as usize);
+    data[data.len() / 2]
+}
+#[tokio::test]
+async fn copy_and_move_ranges_match_playback_reference_and_export_envelopes() {
+    for operation in ["copy", "move"] {
+        let (_temp, root, core, app, p) = transfer_fixture(operation).await;
+        assert_eq!(p.format_version, 8);
+        p.validate().unwrap();
+        assert_eq!(
+            audio_patch::all(&p).unwrap().len(),
+            if operation == "copy" { 1 } else { 2 }
+        );
+        let source = snippet_level(
+            &core,
+            app.handle(),
+            &root,
+            &p,
+            "original",
+            1100,
+            1900,
+            false,
+        )
+        .await;
+        assert!((source - if operation == "copy" { 0.03 } else { 0.0 }).abs() < 0.001);
+        assert!(
+            (snippet_level(&core, app.handle(), &root, &p, "music", 1100, 1900, false).await
+                - 0.13)
+                .abs()
+                < 0.001
+        );
+        assert!(
+            (snippet_level(&core, app.handle(), &root, &p, "music", 1100, 1900, true).await
+                - 0.065)
+                .abs()
+                < 0.001
+        );
+        assert!(
+            (snippet_level(&core, app.handle(), &root, &p, "music", 2500, 2900, false).await - 0.1)
+                .abs()
+                < 0.001
+        );
+        // Saved assets and the operation survive reopening; source files retain their level.
+        let loaded = project::load(&root).unwrap();
+        assert_eq!(
+            audio_patch::all(&loaded).unwrap().len(),
+            audio_patch::all(&p).unwrap().len()
+        );
+        let original = pcm(&root.join("media/source.mkv"), "0:a:0").await;
+        assert!((original[120000] - 0.03).abs() < 0.001);
+    }
+}
+#[tokio::test]
+async fn swap_captures_both_ranges_before_replacing_either_track() {
+    let (_temp, root, core, app, p) = transfer_fixture("swap").await;
+    assert!(
+        (snippet_level(
+            &core,
+            app.handle(),
+            &root,
+            &p,
+            "original",
+            1100,
+            1900,
+            false
+        )
+        .await
+            - 0.1)
+            .abs()
+            < 0.001
+    );
+    assert!(
+        (snippet_level(&core, app.handle(), &root, &p, "music", 1100, 1900, false).await - 0.03)
+            .abs()
+            < 0.001
+    );
+    // A second transfer sees the already edited track, rather than the original WAV.
+    let r = audio_patch::Request {
+        root: root.clone(),
+        project_id: p.id.clone(),
+        revision: p.revision,
+        options: audio_patch::Options {
+            source_track_id: "music".into(),
+            target_track_id: "original".into(),
+            start_ms: 1200,
+            end_ms: 1800,
+            operation: "move".into(),
+        },
+    };
+    audio_patch::transfer(&core, app.handle(), "", &r, &AtomicBool::new(false))
+        .await
+        .unwrap();
+    let p = core
+        .session
+        .lock()
+        .unwrap()
+        .as_ref()
+        .unwrap()
+        .project
+        .clone();
+    assert!(
+        (snippet_level(
+            &core,
+            app.handle(),
+            &root,
+            &p,
+            "original",
+            1300,
+            1700,
+            false
+        )
+        .await
+            - 0.13)
+            .abs()
+            < 0.001
+    );
+    assert!(
+        snippet_level(&core, app.handle(), &root, &p, "music", 1300, 1700, false)
+            .await
+            .abs()
+            < 0.0001
+    );
+}
+#[tokio::test]
+async fn stale_or_cancelled_transfer_does_not_change_project_or_leave_assets() {
+    let (_temp, root, p) = fixture().await;
+    let core = core(&root, p.clone());
+    let app = tauri::test::mock_app();
+    let mut r = audio_patch::Request {
+        root: root.clone(),
+        project_id: p.id.clone(),
+        revision: p.revision + 1,
+        options: audio_patch::Options {
+            source_track_id: "original".into(),
+            target_track_id: "music".into(),
+            start_ms: 1000,
+            end_ms: 2000,
+            operation: "move".into(),
+        },
+    };
+    assert_eq!(
+        audio_patch::transfer(&core, app.handle(), "", &r, &AtomicBool::new(false))
+            .await
+            .unwrap_err(),
+        "STALE_REVISION"
+    );
+    r.revision = p.revision;
+    assert_eq!(
+        audio_patch::transfer(&core, app.handle(), "", &r, &AtomicBool::new(true))
+            .await
+            .unwrap_err(),
+        "CANCELLED"
+    );
+    assert_eq!(
+        core.session
+            .lock()
+            .unwrap()
+            .as_ref()
+            .unwrap()
+            .project
+            .revision,
+        p.revision
+    );
+    assert_eq!(fs::read_dir(root.join("stems")).unwrap().count(), 1);
+}
+#[tokio::test]
+async fn reference_selection_defaults_to_speech_and_accepts_music_or_original() {
+    let (_temp, _root, mut p) = fixture().await;
+    assert_eq!(audio_patch::source_track(&p, None).unwrap().id, "original");
+    p.model_preferences =
+        Some(serde_json::json!({"ttsProviderId":null,"referenceTrackId":"music"}));
+    assert_eq!(audio_patch::source_track(&p, None).unwrap().id, "music");
+    assert_eq!(
+        audio_patch::source_track(&p, Some("original")).unwrap().id,
+        "original"
+    );
+    assert!(audio_patch::source_track(&p, Some("dubbing")).is_err());
+    p.tracks.push(serde_json::from_value(serde_json::json!({"id":"speech","kind":"audio","role":"speech","path":"stems/speech.wav","language":"ja","mute":false,"solo":false,"gain":1})).unwrap());
+    p.model_preferences = None;
+    assert_eq!(audio_patch::source_track(&p, None).unwrap().id, "speech");
+}
+fn inpaint_options() -> crate::inpaint::Options {
+    serde_json::from_value(serde_json::json!({"lineId":"line","generationId":"voice","device":"cuda:0","face":{"x":0.1,"y":0.1,"width":0.6,"height":0.8},"endX":0.2,"endY":0.15,"mask":{"x":0.2,"y":0.5,"width":0.6,"height":0.4},"feather":0.15,"blend":0.8,"style":"anime","seed":7})).unwrap()
+}
+#[tokio::test]
+async fn translated_face_crop_and_alpha_overlay_use_valid_ffmpeg_expressions() {
+    let (_temp, root, _p) = fixture().await;
+    let o = inpaint_options();
+    o.validate().unwrap();
+    let face = root.join("cache/face.png");
+    let crop = crate::inpaint::crop_expression(&o, 1000);
+    ffmpeg(
+        &[
+            "-i",
+            root.join("media/source.mkv").to_str().unwrap(),
+            "-vf",
+            &crop,
+            "-frames:v",
+            "1",
+            "-update",
+            "1",
+        ],
+        &face,
+    )
+    .await;
+    let overlay = crate::inpaint::overlay_expression(&o, 1000, 160, 90);
+    ffmpeg(
+        &[
+            "-i",
+            root.join("media/source.mkv").to_str().unwrap(),
+            "-loop",
+            "1",
+            "-i",
+            face.to_str().unwrap(),
+            "-filter_complex",
+            &overlay,
+            "-map",
+            "[out]",
+            "-an",
+            "-t",
+            "0.2",
+            "-c:v",
+            "libx264",
+        ],
+        &root.join("cache/composite.mp4"),
+    )
+    .await;
+    let info = media::probe_executable(&tool("ffprobe"), &root.join("cache/composite.mp4"))
+        .await
+        .unwrap();
+    assert_eq!(info.duration_ms, 200);
+    let mut invalid = o;
+    invalid.device = "cpu".into();
+    assert_eq!(invalid.validate().unwrap_err(), "INPAINT_CUDA_REQUIRED");
+    invalid.device = "cuda:0".into();
+    invalid.end_x = 0.9;
+    assert!(invalid.validate().is_err());
+}
+
+#[tokio::test]
+async fn retouched_variants_reencode_only_when_selected_and_refuse_stale_timing() {
+    use sha2::Digest;
+    let (_temp, root, mut p) = fixture().await;
+    ffmpeg(
+        &[
+            "-f",
+            "lavfi",
+            "-i",
+            "color=c=red:s=160x90:r=25:d=1.48",
+            "-an",
+            "-c:v",
+            "libx264",
+            "-pix_fmt",
+            "yuv420p",
+        ],
+        &root.join("generations/lips-edit.mp4"),
+    )
+    .await;
+    let fingerprint = format!(
+        "{:x}",
+        sha2::Sha256::digest(b"media/source.mkv|fr|voice|1000|2000|false")
+    );
+    p.format_version = 8;
+    p.generations.push(serde_json::json!({"kind":"lipVideo","id":"edit","dialogueId":"line","generationId":"voice","sourcePath":"media/source.mkv","language":"fr","path":"generations/lips-edit.mp4","startMs":1000,"durationMs":1480,"slotMs":2000,"exactDuration":false,"fingerprint":fingerprint,"enabled":true,"options":inpaint_options(),"createdAt":"2026-10-16T00:00:00Z","modelRevision":"fixture"}));
+    p.validate().unwrap();
+    assert_eq!(crate::inpaint::active(&p).unwrap().len(), 1);
+    let app = tauri::test::mock_app();
+    let core = core(&root, p.clone());
+    let output = root.join("exports/retouched.mkv");
+    let options = Options {
+        include_retouched: true,
+        include_original: true,
+        source_subtitles: true,
+        target_subtitles: true,
+        codec: "flac".into(),
+        allow_incomplete: false,
+    };
+    let request = Request {
+        root: root.clone(),
+        project_id: p.id.clone(),
+        revision: p.revision,
+        output: output.clone(),
+        options: options.clone(),
+    };
+    export(
+        &core,
+        app.handle(),
+        "",
+        &request,
+        &p,
+        &Arc::new(AtomicBool::new(false)),
+    )
+    .await
+    .unwrap();
+    for (time, red) in [("0.5", false), ("1.2", true), ("2.8", false)] {
+        let sample = media::command(&tool("ffmpeg"))
+            .args(["-v", "error", "-ss", time, "-i"])
+            .arg(&output)
+            .args([
+                "-an",
+                "-vf",
+                "scale=1:1",
+                "-frames:v",
+                "1",
+                "-f",
+                "rawvideo",
+                "-pix_fmt",
+                "rgb24",
+                "pipe:1",
+            ])
+            .output()
+            .await
+            .unwrap();
+        assert!(sample.status.success());
+        assert_eq!(sample.stdout.len(), 3);
+        assert!(
+            if red {
+                sample.stdout[0] > 190 && sample.stdout[2] < 80
+            } else {
+                sample.stdout[2] > 190 && sample.stdout[0] < 80
+            },
+            "{:?}",
+            sample.stdout
+        );
+    }
+    p.dubbing_timing = Some(
+        serde_json::from_value(
+            serde_json::json!({"sourcePath":"media/source.mkv","offsetsMs":{"line":{"fr":100}}}),
+        )
+        .unwrap(),
+    );
+    assert_eq!(crate::inpaint::active(&p).unwrap_err(), "INPAINT_STALE");
+    assert!(validate(&p, &options).is_err());
+    let original = Options {
+        include_retouched: false,
+        ..options
+    };
+    assert!(validate(&p, &original).is_ok());
 }

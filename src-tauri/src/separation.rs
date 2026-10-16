@@ -282,6 +282,9 @@ pub(crate) async fn process<R: tauri::Runtime>(
     } else {
         let mut failure = "SEPARATION_FAILED";
         jobs::update(core, app, key, |job| {
+            if job.kind == "inpaint" {
+                failure = "INPAINT_FAILED";
+            }
             if job.kind == "referenceTranscription" {
                 failure = "ASR_FAILED";
             }

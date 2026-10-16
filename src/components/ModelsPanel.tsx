@@ -7,6 +7,8 @@ import { futureVoiceProviders } from '../domain/providers';
 import { VoiceVariantSettings } from './VoiceVariantSettings';
 import { CosyModel } from './DubPanel';
 import { VoiceEngineModels } from './VoiceEngineModels';
+import { InpaintModel } from './InpaintPanel';
+import { DramaModels } from './DramaModels';
 export function ModelsPanel({
   project,
   jobs,
@@ -64,6 +66,8 @@ export function ModelsPanel({
       <p className="panel-description">{t('modelsHint')}</p>
       <CosyModel jobs={jobs} onError={onError} onStarted={showJobs} />
       <VoiceEngineModels jobs={jobs} onError={onError} onStarted={showJobs} />
+      <DramaModels />
+      <InpaintModel jobs={jobs} onError={onError} />
       <div className="model-card">
         <h3>
           <AudioLines size={16} />
@@ -120,6 +124,7 @@ export function ModelsPanel({
                 ...p,
                 formatVersion: Math.max(p.formatVersion, 3),
                 modelPreferences: {
+                  ...p.modelPreferences,
                   ttsProviderId: event.target.value || null,
                   voiceVariantId: null,
                 },

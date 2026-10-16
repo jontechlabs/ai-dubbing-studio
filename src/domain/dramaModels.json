@@ -1,0 +1,61 @@
+{
+  "checkedAt": "2026-10-16",
+  "integrated": false,
+  "variants": [
+    {
+      "id": "drama3-official-fp8",
+      "name": "FP8 / BF16 · Fish Audio",
+      "origin": "official",
+      "engine": "fish-speech · Linux / WSL · CUDA",
+      "source": "https://huggingface.co/fishaudio/drama-3",
+      "revision": "e0a9218aa48888270f06ef1ed9ea67622c0e17d2",
+      "sizeBytes": 41474674072,
+      "detailKey": "dramaOfficial",
+      "candidate16Gb": false
+    },
+    {
+      "id": "drama3-int4",
+      "name": "INT4 W4A16 · SGLang-Omni",
+      "origin": "community",
+      "engine": "SGLang-Omni · GPTQ-Marlin",
+      "source": "https://huggingface.co/fishaudio/drama-3-int4",
+      "revision": "a6f588691a13b6607cb09f9800556487ab7aa0fe",
+      "sizeBytes": 23971918496,
+      "detailKey": "dramaInt4",
+      "candidate16Gb": false
+    },
+    {
+      "id": "drama3-comfy-fp8",
+      "name": "FP8 · ComfyUI · experts en RAM",
+      "origin": "community",
+      "engine": "ComfyUI-Drama3 · ComfyUI ≥ 0.40",
+      "source": "https://huggingface.co/PedroMarinhoDev/Drama-3-ComfyUI",
+      "revision": "9063c072019aa578895e51adb5489c6cd2c834b0",
+      "sizeBytes": 40144065412,
+      "detailKey": "dramaOffload",
+      "candidate16Gb": true
+    },
+    {
+      "id": "drama3-comfy-w6a8",
+      "name": "W6A8 · ComfyUI · experts en RAM",
+      "origin": "community",
+      "engine": "ComfyUI-Drama3 · ComfyUI ≥ 0.40",
+      "source": "https://huggingface.co/PedroMarinhoDev/Drama-3-ComfyUI",
+      "revision": "9063c072019aa578895e51adb5489c6cd2c834b0",
+      "sizeBytes": 34222261324,
+      "detailKey": "dramaW6",
+      "candidate16Gb": true
+    },
+    {
+      "id": "drama3-comfy-w4a8",
+      "name": "W4A8 · ComfyUI · experts en RAM",
+      "origin": "community",
+      "engine": "ComfyUI-Drama3 · ComfyUI ≥ 0.40",
+      "source": "https://huggingface.co/PedroMarinhoDev/Drama-3-ComfyUI",
+      "revision": "9063c072019aa578895e51adb5489c6cd2c834b0",
+      "sizeBytes": 26169212860,
+      "detailKey": "dramaW4",
+      "candidate16Gb": true
+    }
+  ]
+}

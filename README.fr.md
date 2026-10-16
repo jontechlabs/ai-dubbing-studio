@@ -1,10 +1,16 @@
 # AI Dubbing Studio — phases 1–7
 
-[Version anglaise et captures de l’interface](README.md) · [Téléchargements Windows](https://github.com/jontechlabs/ai-dubbing-studio/releases/tag/v0.8.0)
+[Version anglaise et captures de l’interface](README.md) · [Téléchargements Windows](https://github.com/jontechlabs/ai-dubbing-studio/releases/tag/v0.9.0)
 
 Studio desktop local de travail texte, voix et vidéo. Tauri 2, React, TypeScript strict et Rust.
 
-**v0.8.0 — Calage visuel des voix et zoom précis.** Désignez la zone de bouche, analysez son activité en local, écoutez le départ et la durée proposés avec la vidéo, puis appliquez ou corrigez manuellement. C’est un calage assisté, sans reconnaissance de phonèmes ni génération de nouvelles images de bouche. Ctrl + molette, Ctrl + +/−, Maj + Z, curseur de zoom et règle en millisecondes facilitent le montage dans les vidéos longues. [Calage et pistes pour la retouche vidéo](docs/LIP-ALIGNMENT.md) · [Zoom de la timeline](docs/TIMELINE-ZOOM.md).
+**v0.9.0 — Retouche locale des lèvres et transferts audio.** MuseTalk 1.5 génère les images de bouche depuis la prise de doublage sélectionnée : GPU CUDA choisi, UNet FP16, VAE FP32. Cadrez le visage et le masque de bouche, comparez les variantes avant activation. Le mode anime reste expérimental. Choisissez la piste de référence vocale et celle à remplacer dans le mix ; copiez, déplacez ou interchangez des portions entre pistes, avec volume propre et annulation. [Retouche des lèvres](docs/LIP-INPAINTING.md) · [Transferts audio](docs/AUDIO-TRANSFERS.md) · [Calage visuel](docs/LIP-ALIGNMENT.md).
+
+**Catalogue Fish Audio Drama 3.** Variantes FP8 officielles et conversions avec experts en RAM, sources et besoins matériels. La génération Drama 3 n’est pas intégrée dans cette version. [Détails](docs/FISH-DRAMA-3.md).
+
+![Panneau de retouche des lèvres](docs/screenshots/inpaint-region.png)
+
+*Interface React/Chrome, vidéo synthétique et inventaire natif simulé. Test neural CPU distinct ; performances sur RTX non mesurées.*
 
 **Références vocales : transcription automatique locale et aide Fish corrigée.** Whisper small Q5_1 transcrit le japonais, le français et les autres langues proposées. Le texte reste modifiable et sauvegardé avec le personnage. Modèle de 181 Mio téléchargé au premier usage ; traitement sur CPU pour laisser la VRAM au doublage. [Guide des références](docs/REFERENCE-TRANSCRIPTION.md).
 

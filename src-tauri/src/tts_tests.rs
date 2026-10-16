@@ -7,6 +7,7 @@ fn options() -> Options {
         mood: None,
         variant_id: None,
         device: "cpu".into(),
+        reference_track_id: None,
         reference_mode: "character".into(),
         reference_id: None,
         mode: "crossLingual".into(),

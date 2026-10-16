@@ -8,6 +8,29 @@ import { browserStore, downloadText, pickBrowserFile } from './browserStore';
 import { audioPeaks, type Waveform } from '../domain/waveform';
 
 export const native = isTauri();
+export function transferAudio(options: import('../domain/audioPatch').TransferOptions) {
+  return invoke<string>('transfer_audio', { options });
+}
+export async function audioPatchUrl(id: string) {
+  return convertFileSrc(await invoke<string>('audio_patch_path', { id }));
+}
+export interface InpaintStatus {
+  installed: boolean;
+  sizeBytes: number;
+  devices: { id: string; name: string; memoryMb: number }[];
+}
+export function inpaintStatus() {
+  return invoke<InpaintStatus>('inpaint_status');
+}
+export function installInpaint() {
+  return invoke<string>('install_inpaint');
+}
+export function inpaintLips(options: import('../domain/inpaint').InpaintOptions) {
+  return invoke<string>('inpaint_lips', { options });
+}
+export async function inpaintUrl(id: string) {
+  return convertFileSrc(await invoke<string>('inpaint_path', { id }));
+}
 export function analyzeLips(options: import('../domain/lips').LipOptions) {
   return invoke<string>('analyze_lips', { options });
 }
@@ -64,6 +87,7 @@ export async function exportGeneration(id: string) {
   if (path) await invoke('export_generation', { id, path });
 }
 export interface MkvOptions {
+  includeRetouched?: boolean;
   includeOriginal: boolean;
   sourceSubtitles: boolean;
   targetSubtitles: boolean;

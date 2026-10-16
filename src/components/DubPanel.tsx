@@ -15,6 +15,7 @@ import {
 } from '../domain/tts';
 import * as bridge from '../services/bridge';
 import { installedVoiceVariants, voiceVariant } from '../domain/voiceEngines';
+import { audioTracks, trackLabel } from '../domain/audio';
 import { ReferenceTranscription } from './ReferenceTranscription';
 import {
   dubbingOffset,
@@ -131,6 +132,7 @@ export function DubPanel({
   onModels,
   onCharacters,
   onLips,
+  onInpaint,
   onOriginal,
   onPlay,
   activeGenerationId,
@@ -145,6 +147,7 @@ export function DubPanel({
   onModels: () => void;
   onCharacters: () => void;
   onLips: () => void;
+  onInpaint: () => void;
   onOriginal: (line: Dialogue) => void;
   onPlay: (generation: Generation) => void;
   activeGenerationId: string | null;
@@ -238,6 +241,9 @@ export function DubPanel({
         <div className="settings-section">
           <button className="button accent wide" onClick={onLips} disabled={busy}>
             {t('lipsAnalyze')}
+          </button>
+          <button className="button subtle wide" onClick={onInpaint} disabled={busy}>
+            {t('inpaintOpen')}
           </button>
           <label className="field">
             <span>{t('dubbingOffset')}</span>
@@ -367,6 +373,25 @@ export function DubPanel({
           <option value="custom">{t('ttsReferenceCustom')}</option>
         </select>
       </label>
+      {settings.referenceMode === 'current' && (
+        <label className="field">
+          <span>{t('referenceTrack')}</span>
+          <select
+            value={settings.referenceTrackId ?? 'auto'}
+            disabled={busy}
+            onChange={(e) => edit({ referenceTrackId: e.target.value })}
+          >
+            <option value="auto">{t('referenceTrackProject')}</option>
+            {audioTracks(project)
+              .filter((t) => t.kind !== 'dubbing')
+              .map((track) => (
+                <option key={track.id} value={track.id}>
+                  {t(trackLabel(track))}
+                </option>
+              ))}
+          </select>
+        </label>
+      )}
       {settings.referenceMode === 'custom' && (
         <label className="field">
           <span>{t('ttsReferenceChoice')}</span>
@@ -519,7 +544,11 @@ export function DubPanel({
           setWorking(true);
           onEdit((p) => ({
             ...editVoiceSettings(p, line.id, { ...settings, mode }),
-            modelPreferences: { ttsProviderId: variant.providerId, voiceVariantId: variant.id },
+            modelPreferences: {
+              ...p.modelPreferences,
+              ttsProviderId: variant.providerId,
+              voiceVariantId: variant.id,
+            },
           }));
           void snapshot()
             .then(() =>

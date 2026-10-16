@@ -1,7 +1,9 @@
 import { useEffect, useLayoutEffect, useRef, useState, type RefObject } from 'react';
 import type { Project } from '../domain/types';
-import { audioTracks, effectiveGain, gainChanges, regionGain } from '../domain/audio';
+import { audioTracks, effectiveGain, regionGain } from '../domain/audio';
 import { audioUrls } from '../services/bridge';
+import { trackPatches, layerGate, layerChanges } from '../domain/audioPatch';
+import { AudioPatchBus } from '../services/audioPatchBus';
 import { DubbingBus } from '../services/dubbingBus';
 
 type Node = { gain: GainNode; audio: HTMLMediaElement; source: MediaElementAudioSourceNode };
@@ -12,6 +14,7 @@ type Graph = {
   sync: () => void;
   schedule: () => void;
   dubbing: DubbingBus;
+  patches: AudioPatchBus;
 };
 // One source node per media element, including React's effect replay.
 const graphs = new WeakMap<HTMLVideoElement, Graph>();
@@ -70,6 +73,7 @@ export function useAudioMix(
             sync: () => {},
             schedule: () => {},
             dubbing: new DubbingBus(context, onError),
+            patches: new AudioPatchBus(context, onError),
           };
           graphs.set(video, active);
         } catch (error) {
@@ -96,8 +100,12 @@ export function useAudioMix(
           (track) => (track.kind === 'original' ? 'original' : track.id) === id,
         );
         const base = track ? effectiveGain(track, tracks, state.volume) : 0;
+        const patches = state.project && track ? trackPatches(state.project, track.id) : [];
         node.gain.gain.cancelScheduledValues(now);
-        node.gain.gain.setValueAtTime(base * (track ? regionGain(track, position) : 1), now);
+        node.gain.gain.setValueAtTime(
+          base * (track ? regionGain(track, position) : 1) * layerGate(patches, position),
+          now,
+        );
         if (
           track &&
           !video.paused &&
@@ -105,7 +113,12 @@ export function useAudioMix(
           video.readyState >= 3 &&
           video.playbackRate > 0
         ) {
-          for (const point of gainChanges(track, position, position + 3000 * video.playbackRate))
+          for (const point of layerChanges(
+            track,
+            patches,
+            position,
+            position + 3000 * video.playbackRate,
+          ))
             node.gain.gain.setValueAtTime(
               base * point.gain,
               now + (point.timeMs - position) / 1000 / video.playbackRate,
@@ -120,6 +133,7 @@ export function useAudioMix(
         .catch(() => onError('AUDIO_PLAYBACK_FAILED'));
     };
     attached.sync = () => {
+      attached.patches.tick(current.current.project, video, current.current.volume);
       attached.dubbing.tick(current.current.project, video, current.current.volume);
       for (const [id, node] of attached.nodes) {
         if (node.audio === video) continue;
@@ -196,6 +210,7 @@ export function useAudioMix(
       queueMicrotask(() => {
         if (attached.released) {
           attached.dubbing.dispose();
+          attached.patches.dispose();
           graphs.delete(video);
           void attached.context.close();
         }
@@ -262,7 +277,10 @@ export function useAudioMix(
     prepare: async (time: number) => {
       if (graph.current) {
         await graph.current.context.resume();
-        await graph.current.dubbing.prepare(current.current.project, time, current.current.volume);
+        await Promise.all([
+          graph.current.dubbing.prepare(current.current.project, time, current.current.volume),
+          graph.current.patches.prepare(current.current.project, time, current.current.volume),
+        ]);
       }
     },
     originalMuted:

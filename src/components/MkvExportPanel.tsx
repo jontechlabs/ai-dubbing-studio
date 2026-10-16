@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import type { Project } from '../domain/types';
 import { audioTracks, effectiveGain, trackLabel, dubbingMix } from '../domain/audio';
 import { mixReport } from '../domain/mix';
+import { lipVideos, currentLipVideo } from '../domain/inpaint';
 import * as bridge from '../services/bridge';
 export function MkvExportPanel({
   project,
@@ -22,6 +23,7 @@ export function MkvExportPanel({
 }) {
   const { t } = useTranslation();
   const [options, setOptions] = useState<bridge.MkvOptions>({
+    includeRetouched: true,
     includeOriginal: true,
     sourceSubtitles: true,
     targetSubtitles: true,
@@ -37,6 +39,23 @@ export function MkvExportPanel({
     <section className="settings-section mkv-export-panel">
       <h3>{t('exportMkvTitle')}</h3>
       <p className="panel-description">{t('exportMkvHint')}</p>
+      {!!lipVideos(project).length && (
+        <div className="runtime-card">
+          <label className="checkbox-field">
+            <input
+              type="checkbox"
+              checked={options.includeRetouched}
+              onChange={(e) => setOptions({ ...options, includeRetouched: e.target.checked })}
+            />
+            {t('inpaintInclude', { count: lipVideos(project).filter((e) => e.enabled).length })}
+          </label>
+          <p className="panel-description">{t('inpaintEncodeHint')}</p>
+          {options.includeRetouched &&
+            lipVideos(project).some((e) => e.enabled && !currentLipVideo(project, e)) && (
+              <p className="warning">{t('inpaintStale')}</p>
+            )}
+        </div>
+      )}
       <div className="runtime-card">
         <strong>{t('mixSummary', { count: report.clips.length })}</strong>
         <p>

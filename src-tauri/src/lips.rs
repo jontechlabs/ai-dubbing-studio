@@ -24,7 +24,7 @@ pub struct Region {
     pub height: f64,
 }
 impl Region {
-    fn validate(&self) -> Result<(), String> {
+    pub(crate) fn validate(&self) -> Result<(), String> {
         if [self.x, self.y, self.width, self.height]
             .iter()
             .any(|v| !v.is_finite())

@@ -1,6 +1,6 @@
 use crate::{
     domain::{id, io_error, now, Project},
-    jobs, media, project, separation, Core,
+    jobs, project, separation, Core,
 };
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
@@ -26,6 +26,8 @@ pub struct Options {
     pub variant_id: Option<String>,
     pub device: String,
     pub reference_mode: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub reference_track_id: Option<String>,
     pub reference_id: Option<String>,
     pub mode: String,
     pub speed: f64,
@@ -71,6 +73,13 @@ impl Options {
             || !(0.5..=2.0).contains(&self.speed)
         {
             return Err("INVALID_TTS_REQUEST".into());
+        }
+        if self
+            .reference_track_id
+            .as_ref()
+            .is_some_and(|s| s.is_empty() || s.len() > 128)
+        {
+            return Err("INVALID_AUDIO_TRANSFER".into());
         }
         Ok(())
     }
@@ -307,7 +316,7 @@ pub fn fingerprint(p: &Project, line_id: &str) -> Result<String, String> {
         .iter()
         .find(|line| line.id == line_id)
         .ok_or("NO_DIALOGUES")?;
-    let value = serde_json::json!({"text":text(p,line),"start":line.start_ms,"end":line.end_ms,"character":line.character_id,"characterData":p.characters.iter().find(|character|Some(&character.id)==line.character_id.as_ref()),"voiceSettings":line.voice_settings,"source":p.media.as_ref().map(|m|&m.path),"language":p.languages.target,"pronunciation":p.pronunciation});
+    let value = serde_json::json!({"text":text(p,line),"start":line.start_ms,"end":line.end_ms,"character":line.character_id,"characterData":p.characters.iter().find(|character|Some(&character.id)==line.character_id.as_ref()),"voiceSettings":line.voice_settings,"referenceTrack":p.model_preferences.as_ref().map(|v|&v["referenceTrackId"]),"audioPatches":crate::audio_patch::all(p)?,"source":p.media.as_ref().map(|m|&m.path),"language":p.languages.target,"pronunciation":p.pronunciation});
     Ok(format!(
         "{:x}",
         Sha256::digest(serde_json::to_vec(&value).map_err(io_error)?)
@@ -393,6 +402,9 @@ fn validate_input(p: &Project, line_id: &str, options: &Options) -> Result<(), S
     } else if p.media.is_none() || line.end_ms - line.start_ms < 1000 {
         return Err("INVALID_REFERENCE_AUDIO".into());
     }
+    if options.reference_mode == "current" {
+        crate::audio_patch::source_track(p, options.reference_track_id.as_deref())?;
+    }
     Ok(())
 }
 fn reference<'a>(
@@ -473,36 +485,26 @@ async fn execute_with_launch<R: tauri::Runtime>(
     let ref_temp = directory.join(format!("{generation_id}-reference.wav"));
     let ref_prepared = directory.join(format!("{generation_id}-normalized.wav"));
     let (reference_audio, transcript) = if request.options.reference_mode == "current" {
-        let (source, index) = crate::speakers::audio_source(&p, &request.root)?;
-        let args = vec![
-            "-hide_banner".into(),
-            "-loglevel".into(),
-            "error".into(),
-            "-nostdin".into(),
-            "-protocol_whitelist".into(),
-            "file,pipe".into(),
-            "-i".into(),
-            source.to_string_lossy().into_owned(),
-            "-map".into(),
-            format!("0:{index}"),
-            "-ss".into(),
-            format!("{:.3}", line.start_ms as f64 / 1000.0),
-            "-t".into(),
-            format!(
-                "{:.3}",
-                (line.end_ms - line.start_ms).min(20000) as f64 / 1000.0
-            ),
-            "-vn".into(),
-            "-ac".into(),
-            "1".into(),
-            "-ar".into(),
-            "24000".into(),
-            "-c:a".into(),
-            "pcm_s16le".into(),
-            "-n".into(),
-            ref_temp.to_string_lossy().into_owned(),
-        ];
-        separation::process(core, app, key, &media::binary(app, "ffmpeg")?, &args, flag).await?;
+        let track =
+            crate::audio_patch::source_track(&p, request.options.reference_track_id.as_deref())?;
+        crate::audio_patch::snippet(
+            core,
+            app,
+            key,
+            &p,
+            &request.root,
+            crate::audio_patch::Snippet {
+                track_id: &track.id,
+                start_ms: line.start_ms,
+                end_ms: line.end_ms.min(line.start_ms + 20000),
+                channels: 1,
+                rate: 24000,
+                fader: false,
+            },
+            &ref_temp,
+            flag,
+        )
+        .await?;
         let transcript = p
             .source_cues
             .iter()

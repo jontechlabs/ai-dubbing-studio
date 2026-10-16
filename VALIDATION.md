@@ -1,4 +1,20 @@
-# Validation - 15 October 2026
+# Validation - 16 October 2026
+
+## v0.9.0 local lip inpainting and audio range transfers
+
+Windows workflow evidence will be recorded before publication.
+
+New checks exercise non-destructive copy/move/swap, successive operations, explicit voice-reference sources, destination levels, stale/cancelled commits and unchanged original audio. Browser output is measured using Web Audio analysers while seeking, muting and changing gain. Source-reference and replacement-track preferences survive reload and model changes. Native FFmpeg checks use constant-level stereo fixtures, not subjective separation quality scores.
+
+MuseTalk 1.5's official pretrained UNet, VAE and Whisper tiny files were downloaded and SHA-256 verified. A real **CPU diagnostic** generated five 256×256 neural frames from an original drawn-face fixture and a 0.2-second synthetic tone. Checks confirm valid pixels and transparency outside the selected mouth mask. This is a pipeline smoke test, **not a benchmark or an evaluation of phoneme accuracy, French lip quality, films or animes**. No NVIDIA GPU is present on this development host. The production UI requires explicit CUDA; its RTX 5060 Ti peak memory, speed and output quality remain unqualified. Batch 1, FP16 UNet, FP32 VAE and allocator limits are implementation choices, not measured memory guarantees.
+
+Native tests exercise translated face-crop/overlay expressions, retouched MKV output at the expected timestamps, schema validation and stale-timing refusal. Browser tests frame a face, select profiles, render simulated variants, audition without original-audio leakage, activate/undo and configure export. These UI scenarios simulate native inference; screenshots use synthetic video. The native Windows GUI/installer limitation recorded below still applies.
+
+Model/runtime download manifests pin revisions, file lengths and SHA-256. Worker tests cover mask boundaries, invalid input, silent references, CUDA-only production selection and Windows path normalization. Storage migration tests now include `musetalk-runtime`. No model weights are included in release archives.
+
+Fish Audio Drama 3 is added as an **informational catalogue only**, with upstream/quantized variants, file sizes including codec, RAM offload requirements and source revisions. It is not an installed or selectable generation engine. The official runtime requires at least 48 GB VRAM; the community ComfyUI loader is a candidate for 16 GB VRAM with 64 GB system RAM. No Drama 3 inference, performance or quality claim is qualified here. [Catalogue and sources](docs/FISH-DRAMA-3.md).
+
+Projects using lip variants, transfer layers or the new global audio choices are saved as format **8**. Existing project formats remain readable; earlier applications cannot open format 8. [Lip guide](docs/LIP-INPAINTING.md) · [Transfer guide](docs/AUDIO-TRANSFERS.md).
 
 ## v0.8.0 visual timing proposals and timeline zoom
 

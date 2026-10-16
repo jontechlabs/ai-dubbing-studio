@@ -21,11 +21,16 @@ mod tests;
 #[derive(Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Options {
+    #[serde(default = "include_retouched_default")]
+    pub include_retouched: bool,
     pub include_original: bool,
     pub source_subtitles: bool,
     pub target_subtitles: bool,
     pub codec: String,
     pub allow_incomplete: bool,
+}
+fn include_retouched_default() -> bool {
+    true
 }
 #[derive(Clone, Serialize, Deserialize)]
 pub struct Request {
@@ -40,7 +45,7 @@ pub(crate) struct Clip {
     pub id: String,
     pub path: String,
     pub slot_ms: u64,
-    exact_duration: bool,
+    pub(crate) exact_duration: bool,
     start: u64,
     frames: u64,
     end_ms: u64,
@@ -136,7 +141,7 @@ fn default_track(kind: &str, mute: bool) -> Track {
     )
     .unwrap()
 }
-fn tracks(p: &Project) -> Vec<Track> {
+pub(crate) fn tracks(p: &Project) -> Vec<Track> {
     let mut result = vec![p
         .tracks
         .iter()
@@ -170,35 +175,6 @@ fn gain(track: &Track, tracks: &[Track]) -> f64 {
         track.gain
     }
 }
-fn sum(terms: &[String]) -> String {
-    match terms.len() {
-        0 => "0".into(),
-        1 => terms[0].clone(),
-        n => format!("({}+{})", sum(&terms[..n / 2]), sum(&terms[n / 2..])),
-    }
-}
-fn expression(track: &Track, base: f64) -> String {
-    let terms: Vec<_> = if track.regions_enabled == Some(false) {
-        vec![]
-    } else {
-        track
-            .regions
-            .iter()
-            .filter_map(|r| {
-                let value = if r.mute { 0.0 } else { r.gain } - 1.0;
-                (value != 0.0).then(|| {
-                    format!(
-                        "({value})*gte(t,{:.6})*lt(t,{:.6})",
-                        r.start_ms as f64 / 1000.0,
-                        r.end_ms as f64 / 1000.0
-                    )
-                })
-            })
-            .collect()
-    };
-    format!("{base}*(1+{})", sum(&terms))
-}
-
 // One bounded buffer per active take; thousands of clips do not become thousands of
 // FFmpeg inputs or command-line arguments. Raw float keeps overlapping voices unclipped.
 fn assemble(
@@ -289,6 +265,9 @@ fn assemble(
 }
 fn validate(p: &Project, options: &Options) -> Result<(), String> {
     p.validate()?;
+    if options.include_retouched {
+        crate::inpaint::active(p)?;
+    }
     let media = p.media.as_ref().ok_or("MEDIA_MISSING")?;
     if media.info.duration_ms == 0 || !["aac", "flac"].contains(&options.codec.as_str()) {
         return Err("INVALID_EXPORT".into());
@@ -581,15 +560,26 @@ fn arguments(
             _ => continue,
         };
         let label = format!("bus{}", labels.len());
-        let expr = expression(track, base);
         let mono =
             track.kind == "dubbing"
                 || (track.kind == "original"
                     && media.info.streams.iter().any(|s| {
                         Some(s.index) == media.audio_stream_index && s.channels == Some(1)
                     }));
-        let pan = if mono { "pan=stereo|c0=c0|c1=c0," } else { "" };
-        filters.push(format!("[{input}]{pan}aresample=48000:async=1:first_pts=0,aformat=sample_fmts=fltp:channel_layouts=stereo,aeval=exprs='val(0)*({expr})|val(1)*({expr})':channel_layout=stereo,aformat=channel_layouts=stereo[{label}]"));
+        crate::audio_patch::graph(
+            root,
+            p,
+            track,
+            &input,
+            mono,
+            base,
+            &label,
+            &mut args,
+            &mut index,
+            &mut filters,
+            0,
+            media.info.duration_ms,
+        )?;
         labels.push(format!("[{label}]"));
     }
     if labels.is_empty() {
@@ -598,6 +588,30 @@ fn arguments(
         ));
     } else {
         filters.push(format!("{}amix=inputs={}:normalize=0:dropout_transition=0,apad,atrim=duration={duration},aeval=exprs='clip(val(0),-1,1)|clip(val(1),-1,1)':channel_layout=stereo,aformat=sample_fmts=fltp:channel_layouts=stereo[mix]",labels.join(""),labels.len()));
+    }
+    let edits = if options.include_retouched {
+        crate::inpaint::active(p)?
+    } else {
+        vec![]
+    };
+    let mut video_map = "0:v:0".to_owned();
+    for (number, edit) in edits.iter().enumerate() {
+        args.extend([
+            "-i".into(),
+            project::asset(root, &edit.path)?
+                .to_string_lossy()
+                .into_owned(),
+        ]);
+        let previous = if number == 0 {
+            "0:v:0".to_owned()
+        } else {
+            format!("vretouch{}", number - 1)
+        };
+        let start = edit.start_ms as f64 / 1000.0;
+        let end = (edit.start_ms + edit.duration_ms) as f64 / 1000.0;
+        filters.push(format!("[{index}:v:0]setpts=PTS-STARTPTS+{start}/TB[vpatch{number}];[{previous}][vpatch{number}]overlay=eof_action=pass:repeatlast=0:enable='gte(t,{start})*lt(t,{end})'[vretouch{number}]"));
+        index += 1;
+        video_map = format!("[vretouch{number}]");
     }
     let graph = temp.join("mix.ffgraph");
     fs::write(&graph, filters.join(";\n")).map_err(io_error)?;
@@ -628,11 +642,15 @@ fn arguments(
         "-/filter_complex".into(),
         graph.to_string_lossy().into_owned(),
         "-map".into(),
-        "0:v:0".into(),
+        video_map,
         "-map".into(),
         "[mix]".into(),
         "-c:v".into(),
-        "copy".into(),
+        if edits.is_empty() {
+            "copy".into()
+        } else {
+            "libx264".into()
+        },
         "-c:a:0".into(),
         options.codec.clone(),
         "-metadata:s:a:0".into(),
@@ -642,6 +660,9 @@ fn arguments(
         "-disposition:a:0".into(),
         "default".into(),
     ]);
+    if !edits.is_empty() {
+        args.extend(["-crf", "18", "-preset", "medium", "-pix_fmt", "yuv420p"].map(str::to_owned));
+    }
     if options.codec == "aac" {
         args.extend(["-b:a:0", "320k"].map(str::to_owned));
     }
@@ -691,7 +712,7 @@ fn arguments(
     ]);
     Ok(args)
 }
-async fn run<R: tauri::Runtime>(
+pub(crate) async fn run<R: tauri::Runtime>(
     core: &Arc<Core>,
     app: &tauri::AppHandle<R>,
     key: &str,

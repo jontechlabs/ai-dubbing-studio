@@ -17,6 +17,7 @@ import type { Job, Project } from '../domain/types';
 import type { Transport } from '../hooks/useTransport';
 import { formatTime } from '../domain/time';
 import { IconButton } from './IconButton';
+import { LipVideoOverlay } from './LipVideoOverlay';
 import { useMemo } from 'react';
 import { cueIndex } from '../domain/cueIndex';
 import { audioTracks, dubbingMix } from '../domain/audio';
@@ -111,6 +112,11 @@ export function Player({
               onTimeUpdate={transport.onTime}
               onError={transport.onError}
               onClick={transport.toggle}
+            />
+            <LipVideoOverlay
+              project={project}
+              base={contentRef}
+              enabled={!transport.originalOnly}
             />
             <div className="subtitle-overlay">{activeText}</div>
           </>

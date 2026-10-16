@@ -39,6 +39,12 @@ pub struct ImportRequest {
 #[derive(Clone, Serialize, Deserialize)]
 pub struct PersistedJob {
     #[serde(default)]
+    pub audio_transfer: Option<crate::audio_patch::Request>,
+    #[serde(default)]
+    pub inpaint: Option<crate::inpaint::Request>,
+    #[serde(default)]
+    pub inpaint_install: bool,
+    #[serde(default)]
     pub lips: Option<crate::lips::Request>,
     pub record: Job,
     pub request: Option<ImportRequest>,
@@ -98,6 +104,9 @@ pub fn create<R: tauri::Runtime>(
             key.clone(),
             Control {
                 saved: PersistedJob {
+                    audio_transfer: None,
+                    inpaint: None,
+                    inpaint_install: false,
                     lips: None,
                     record: record.clone(),
                     request,
