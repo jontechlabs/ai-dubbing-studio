@@ -2,7 +2,9 @@
 
 ## v0.10.0 Drama 3 FP8 generation with experts in RAM
 
-Windows workflow evidence will be recorded before publication.
+Windows checks and signed-update package production passed in [run 38923839748](https://github.com/jontechlabs/ai-dubbing-studio/actions/runs/38923839748), built from `1edb5b890b04d1dd11473191b7f022a1f9d847f5`. All 217 Windows suite checks passed (57 TypeScript, 67 Rust, 58 Chrome, 35 Python), plus the real FP8/cache/tiny-model/header diagnostic, plus two real Japanese ASR checks using the final Windows release executable. The setup and portable archive are copied unchanged from this workflow. Final metadata only records this evidence and the verified update feed.
+
+Packaged Windows worker timings for the 7.2-second Japanese fixture: auto: 113.2 s, ja: 56.98 s. These are CI CPU measurements, not performance estimates for the user’s PC.
 
 The source includes pinned ComfyUI 0.40.0 core modules and ComfyUI-Drama3, used headlessly in an isolated worker. A real Windows CPU diagnostic exercises FP8 dequantization, RAM expert banks, bounded LRU hits/evictions and matching numerical outputs. A tiny model then loads via meta tensors and assignment and generates two frames through the real full/linear attention, DeltaNet and codebook sampler. All 912 backbone and 455 codec tensor names/shapes in the pinned remote safetensors headers match the full meta architecture. The headers were read with bounded HTTP ranges; no 40 GB checkpoint was downloaded on this host.
 
