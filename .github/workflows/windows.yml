@@ -81,10 +81,14 @@ jobs:
           name: windows-x64-development-build
           path: artifacts/*
           if-no-files-found: error
-      - name: Retain browser failure diagnostics
+      - name: Retain failure diagnostics
         if: failure()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: browser-failure-diagnostics
-          path: test-results/
+          name: failure-diagnostics
+          path: |
+            test-results/
+            .cache/reference-transcription/**/*.log
+            .cache/reference-transcription/**/*.json
+          include-hidden-files: true
           if-no-files-found: ignore

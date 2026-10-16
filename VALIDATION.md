@@ -10,6 +10,8 @@ The former Drama catalogue and installation cards are consolidated into one card
 
 The Drama installation disk preflight now logs the actual storage path, available bytes and required bytes before rejecting insufficient space. Required space remains missing/incomplete weights plus a 2 GiB margin after runtime installation; complete files are subsequently SHA-256 verified by the downloader. Two additional Python checks cover the shortage details and reuse/required-space boundary. The original failure reported by the user was confirmed to be insufficient free space; the capacity guard remains enabled.
 
+The packaged ASR diagnostic uses the same bounded 600-second worker deadline as the application. The initial Windows run passed all suites and package compilation but exceeded the former CI-only 180-second ASR limit on its shared CPU. Failure artifacts now retain ASR logs/results without downloading or uploading the model as an artifact.
+
 
 ## v0.10.0 Drama 3 FP8 generation with experts in RAM
 

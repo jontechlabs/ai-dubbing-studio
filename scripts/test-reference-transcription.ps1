@@ -27,7 +27,15 @@ foreach ($language in @('auto','ja')) {
     $arguments = @('--transcribe-reference', "`"$extendedModel`"", "`"$raw`"", $language, "`"$result`"")
     $watch = [Diagnostics.Stopwatch]::StartNew()
     $worker = Start-Process -FilePath $ExecutablePath -ArgumentList $arguments -PassThru -WindowStyle Hidden -RedirectStandardOutput $stdout -RedirectStandardError $stderr
-    if (-not $worker.WaitForExit(180000)) { $worker.Kill(); throw 'Transcription worker deadline exceeded' }
+    # Match the application's bounded 10-minute worker deadline. Shared CI CPUs
+    # can exceed three minutes even for this short fixture.
+    if (-not $worker.WaitForExit(600000)) {
+        $worker.Kill()
+        $null = $worker.WaitForExit(5000)
+        Get-Content -LiteralPath $stderr -Tail 15
+        Get-Content -LiteralPath $stdout -Tail 5
+        throw "Transcription worker deadline exceeded ($language, 600 seconds)"
+    }
     $worker.Refresh()
     if ($worker.ExitCode -ne 0) { Get-Content -LiteralPath $stderr -Tail 15; Get-Content -LiteralPath $stdout -Tail 5; throw "Transcription worker failed: $($worker.ExitCode)" }
     $text = (Get-Content -LiteralPath $result -Raw -Encoding utf8 | ConvertFrom-Json).text
