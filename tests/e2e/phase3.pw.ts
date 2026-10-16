@@ -176,6 +176,9 @@ test('real audio output becomes silent when all tracks are disabled and resumes 
   await page.getByRole('button',{name:'Lecture',exact:true}).click();await expect.poll(()=>page.evaluate(()=>(window as any).__rms())).toBeGreaterThan(0.001);
   await page.getByRole('button',{name:'Couper Audio original',exact:true}).click();await expect.poll(()=>page.evaluate(()=>(window as any).__rms())).toBeLessThan(0.000001);await expect(page.locator('video')).toHaveJSProperty('muted',true);
   await page.getByRole('button',{name:'Activer Audio original',exact:true}).click();await expect.poll(()=>page.evaluate(()=>(window as any).__rms())).toBeGreaterThan(0.001);
+  // A real separation starts after pending edits are saved. Do not inject a
+  // mock completion while the original-track toggle is still being autosaved.
+  await expect(page.locator('.save-indicator')).toHaveText('Sauvegardé');
   await page.evaluate(()=>(window as any).__completeSeparation());await expect(page.locator('.track-label')).toHaveCount(7);
   for(const name of ['Voix','Musique','Effets'])await page.getByRole('button',{name:'Couper '+name,exact:true}).click();
   await expect.poll(()=>page.evaluate(()=>(window as any).__rms())).toBeLessThan(0.000001);await expect(page.locator('video')).toHaveJSProperty('muted',true);

@@ -12,6 +12,8 @@ The Drama installation disk preflight now logs the actual storage path, availabl
 
 The packaged ASR diagnostic uses the same bounded 600-second worker deadline as the application. The initial Windows run passed all suites and package compilation but exceeded the former CI-only 180-second ASR limit on its shared CPU. Failure artifacts now retain ASR logs/results without downloading or uploading the model as an artifact.
 
+The playback silence test waits for the preceding track edit to save before injecting a mock separation completion. This mirrors `useProject.run`, which flushes pending edits before starting a real separation; injecting a result early could preserve the intentionally unsaved original-track toggle during project rebasing. All real audio level and embedded-track mute assertions remain. The adjusted check passed three consecutive local Chrome runs.
+
 
 ## v0.10.0 Drama 3 FP8 generation with experts in RAM
 
