@@ -4,6 +4,9 @@ import {nativeMock} from './nativeMock';
 test('Drama FP8 exposes verified install size and the RAM offload profile',async({page})=>{
  await nativeMock(page);await page.goto('/');await page.getByRole('button',{name:'Modèles',exact:true}).click();
  const panel=page.getByRole('dialog',{name:'Modèles'});
+ await panel.getByRole('combobox',{name:'Moteur préféré pour le projet'}).selectOption('fish-drama3');
+ await panel.getByRole('combobox',{name:'Variante préférée'}).selectOption('drama3-comfy-fp8');
+ await expect(panel.locator('.voice-variant-detail').getByText(/cache GPU plafonné à 4 Gio/)).toBeVisible();
  const card=panel.locator('.model-card').filter({has:page.getByRole('heading',{name:'Fish Audio Drama 3 · FP8 · experts en RAM',exact:true})});
  await expect(card.getByText(/37.39 GiB/)).toBeVisible();await expect(card.getByText(/cache GPU plafonné à 4 Gio/)).toBeVisible();await expect(card.getByText(/Fish Audio Community License/)).toBeVisible();
  await card.scrollIntoViewIfNeeded();await page.screenshot({path:'docs/screenshots/drama3-install.png'});

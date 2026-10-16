@@ -473,7 +473,8 @@
     "qwenSmall": "Modèle officiel Base 0,6B pour le clonage vocal en BF16 ; moins de paramètres que le 1,7B. Garder un seul modèle chargé et traiter une réplique à la fois lors de l’intégration.",
     "qwenFull": "Modèle officiel Base 1,7B en BF16 pour le clonage vocal. La mémoire du moteur complet reste à mesurer ; le 0,6B et le profil GGUF sont des alternatives plus légères.",
     "qwenGguf": "Projet HaujetZhao : talker Q5_K, predictor Q8_0 et composants ONNX FP16. Conversion depuis les poids officiels, pas un simple GGUF à ouvrir dans un lecteur LLM ; le moteur hybride complet est nécessaire.",
-    "phase6Gguf": "Moteur audio.cpp 0.9.1 : poids GGUF Q8_0, calcul Vulkan sur le GPU sélectionné ou CPU. En automatique, priorité au GPU dédié. Les fichiers incluent aussi le codec vocal."
+    "phase6Gguf": "Moteur audio.cpp 0.9.1 : poids GGUF Q8_0, calcul Vulkan sur le GPU sélectionné ou CPU. En automatique, priorité au GPU dédié. Les fichiers incluent aussi le codec vocal.",
+    "dramaGenerationHint": "Drama 3 FP8 : experts en RAM, cache GPU plafonné à 4 Gio, autres couches BF16 et codec FP32. Profil NVIDIA 16 Go + 64 Go de RAM ; au moins 46 Gio de RAM et 12 Gio de VRAM libres à la génération. Environ 40,1 Go de modèles, prévoir 60 Go libres pour la première installation. Premier chargement long, calcul plus lent que S2. Aucun repli CPU."
   },
   "allAudioSilent": "Tout rendre silencieux",
   "allAudioAudible": "Tout rendre audible",
