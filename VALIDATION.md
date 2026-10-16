@@ -1,5 +1,16 @@
 # Validation - 16 October 2026
 
+## v0.10.0 Drama 3 FP8 generation with experts in RAM
+
+Windows workflow evidence will be recorded before publication.
+
+The source includes pinned ComfyUI 0.40.0 core modules and ComfyUI-Drama3, used headlessly in an isolated worker. A real Windows CPU diagnostic exercises FP8 dequantization, RAM expert banks, bounded LRU hits/evictions and matching numerical outputs. A tiny model then loads via meta tensors and assignment and generates two frames through the real full/linear attention, DeltaNet and codebook sampler. All 912 backbone and 455 codec tensor names/shapes in the pinned remote safetensors headers match the full meta architecture. The headers were read with bounded HTTP ranges; no 40 GB checkpoint was downloaded on this host.
+
+These are implementation diagnostics, not a full-model voice sample or a benchmark. This host has no NVIDIA GPU and insufficient RAM/disk for the complete model. RTX 5060 Ti peak VRAM, speed, first-load memory and French voice quality remain unmeasured. The 4 GiB expert cache ceiling, 2 GiB reserve, separate FP32 codec phases and available-memory checks are safeguards, not measured guarantees. Production generation requires CUDA and has no CPU inference fallback. CUDA 12.8 uses the supported PyTorch BF16 eager path; Comfy Kitchen's CUDA 13-only optimized quantization kernels are not required for this FP8-to-BF16 expert path.
+
+Browser checks cover install/repair, exact download size, CUDA-only selection, exact transcript mode, mood dispatch, separate Drama provider metadata, persistence and existing audio/mix controls. Native schema checks include Drama settings; worker checks reject insufficient physical/available RAM, insufficient free VRAM, missing transcripts and bad model integrity. All model/runtime files have pinned URLs, lengths and SHA-256. Source, setup and portable archives include licenses and corresponding worker/core source, never model weights.
+
+
 ## v0.9.0 local lip inpainting and audio range transfers
 
 Windows checks and signed-update package production passed in [run 38868291239](https://github.com/jontechlabs/ai-dubbing-studio/actions/runs/38868291239), built from `ed5956ee2848faf64a2f8f4718579ddb6a4654f6`. All 210 Windows suite checks passed (56 TypeScript, 67 Rust, 56 Chrome, 31 Python), plus two real Japanese ASR checks using the final Windows release executable. The setup and portable archive are copied unchanged from this workflow. Final metadata only records this evidence and the verified update feed.

@@ -6,7 +6,11 @@ Built with **Tauri 2, React, TypeScript and Rust**. English and French interface
 
 **v0.9.0 — Local lip retouching and audio range transfers.** MuseTalk 1.5 generates mouth images from a selected dubbed take, using an explicit CUDA GPU, FP16 UNet and FP32 VAE. Frame the full face and blend only the chosen mouth region; compare variants before activation. Anime support is experimental. Choose both the voice-reference source track and the track to replace in the dubbing mix. Copy, move or swap ranges between original/stem tracks, with independent transferred-range gain and undo. [Lip retouching](docs/LIP-INPAINTING.md) · [Audio transfers](docs/AUDIO-TRANSFERS.md) · [Timing analysis](docs/LIP-ALIGNMENT.md).
 
-**Fish Audio Drama 3 catalogue.** Official FP8 and community RAM-offloaded variants are listed with sources and hardware limits. Drama 3 generation is not integrated in this release. [Details](docs/FISH-DRAMA-3.md).
+**v0.10.0 — Fish Audio Drama 3 generation.** A separate FP8 engine keeps routed experts in system RAM, uses up to 4 GiB of GPU expert cache and loads the FP32 codec separately. Profile for NVIDIA 16 GB VRAM + 64 GB RAM, exact reference transcript, moods, seed, independent takes and the existing timing/mix/MKV tools. About 40.1 GB of model downloads; 46 GiB available RAM and 12 GiB free VRAM required. Full-model RTX speed and French quality are not measured on the development host. [Installation and limits](docs/FISH-DRAMA-3.md).
+
+![Drama 3 generation](docs/screenshots/drama3-generation.png)
+
+*Actual React UI with simulated CUDA inventory and generation completion; separate real CPU diagnostics exercise FP8 expert offload, the cache and a tiny autoregressive model.*
 
 ![Lip retouch panel](docs/screenshots/inpaint-region.png)
 
@@ -20,7 +24,7 @@ CosyVoice3, Fish S2 FP8/GGUF and Qwen3-TTS GGUF remain available. [Models and GP
 
 *Actual React browser UI with a simulated reference and transcription result. Separate native checks transcribe real Japanese speech. These are not RTX performance measurements.*
 
-[Windows downloads](https://github.com/jontechlabs/ai-dubbing-studio/releases/tag/v0.9.0) · [User guide](docs/GETTING-STARTED.md) · [Build instructions](docs/BUILDING.md) · [Français](README.fr.md)
+[Windows downloads](https://github.com/jontechlabs/ai-dubbing-studio/releases/tag/v0.10.0) · [User guide](docs/GETTING-STARTED.md) · [Build instructions](docs/BUILDING.md) · [Français](README.fr.md)
 
 ![Studio with bilingual dialogue, video preview, text editor and timeline](docs/screenshots/studio.png)
 

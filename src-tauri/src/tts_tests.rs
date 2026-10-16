@@ -244,6 +244,7 @@ fn phase6_variants_survive_project_validation_and_fish_requires_transcript_mode(
         ("qwen3-17b-gguf-q8", "qwen3-tts"),
         ("fish-s2-gguf-q8", "fish-s2"),
         ("fish-s2-fp8", "fish-s2"),
+        ("drama3-comfy-fp8", "fish-drama3"),
     ] {
         settings.variant_id = Some(id.into());
         settings.device = if id.contains("gguf") {

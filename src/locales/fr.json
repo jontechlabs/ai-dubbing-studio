@@ -277,7 +277,11 @@
     "INVALID_AUDIO_TRANSFER": "Sélection audio invalide : choisissez deux pistes différentes et une portion de 10 ms à 60 s.",
     "AUDIO_TRANSFER_FAILED": "Le transfert audio a échoué. Consultez les logs de Traitements.",
     "AUDIO_TRANSFER_LIMIT": "Limite du montage audio atteinte : 128 couches au total, 8 portions proches et 128 Mio décodés. Réduisez les portions superposées.",
-    "INPAINT_TIMEOUT": "La retouche a dépassé deux heures. Réessayez avec un extrait plus court."
+    "INPAINT_TIMEOUT": "La retouche a dépassé deux heures. Réessayez avec un extrait plus court.",
+    "TTS_DRAMA_RAM_REQUIRED": "Drama 3 FP8 exige au moins 64 Go de RAM physique et 46 Gio de RAM disponibles. Fermez les applications qui occupent la mémoire.",
+    "TTS_DRAMA_VRAM_REQUIRED": "Drama 3 exige au moins 12 Gio de VRAM libre sur le GPU NVIDIA sélectionné. Fermez les autres moteurs IA.",
+    "TTS_DRAMA_DISK_REQUIRED": "Espace disque insuffisant dans le stockage des modèles pour Drama 3. Prévoir environ 60 Go libres à la première installation.",
+    "TTS_DRAMA_FRAME_LIMIT": "Drama 3 a atteint sa limite de génération : scindez le texte ou essayez une autre graine ou référence. Aucun audio tronqué conservé."
   },
   "preparingVideo": "Préparation de la vidéo…",
   "loadingVideo": "Chargement de la vidéo…",
@@ -718,7 +722,7 @@
   "inpaintTimeoutHint": "Le traitement peut être annulé dans Traitements.",
   "dramaTitle": "Fish Audio Drama 3",
   "dramaStatus": "Référencé · génération non intégrée",
-  "dramaHint": "Modèle MoE 35B, environ 3B actifs par token, clonage vocal et contrôle expressif. Ce catalogue ne l’installe pas et ne l’ajoute pas aux moteurs de génération déjà intégrés.",
+  "dramaHint": "Le profil FP8 avec experts en RAM est intégré. Les autres variantes ci-dessous restent référencées pour information.",
   "dramaVariant": "Variante Drama 3 à examiner",
   "dramaSize": "Poids + codec : {{size}} Gio (taille des fichiers, pas VRAM)",
   "dramaCandidate": "Candidat 16 Go de VRAM + 64 Go de RAM : experts déportés en RAM ; compatibilité et vitesse sur RTX 5060 Ti non mesurées.",
@@ -728,5 +732,8 @@
   "dramaW6": "Conversion W6A8 communautaire avec experts en RAM, environ 40 Go de RAM selon l’auteur. Chargeur ComfyUI spécifique requis ; qualité française et performances non évaluées dans le studio.",
   "dramaW4": "Conversion W4A8 communautaire, environ 32 Go de RAM selon l’auteur. L’auteur signale davantage de générations silencieuses avec des références réelles ; préférer le FP8 si la RAM le permet.",
   "dramaLicense": "Fish Audio Community License 1.0 · sources vérifiées le 16/10/2026",
-  "dramaNoGguf": "Aucun moteur Drama 3 GGUF n’est intégré. Les variantes S2 restent disponibles pour générer dans cette version."
+  "dramaNoGguf": "Drama 3 est disponible en FP8 avec experts en RAM. Aucun moteur GGUF Drama 3 n’est intégré.",
+  "dramaGenerationHint": "Drama 3 FP8 : experts en RAM, cache GPU plafonné à 4 Gio, autres couches BF16 et codec FP32. Profil NVIDIA 16 Go + 64 Go de RAM ; au moins 46 Gio de RAM et 12 Gio de VRAM libres à la génération. Environ 40,1 Go de modèles, prévoir 60 Go libres pour la première installation. Premier chargement long, calcul plus lent que S2. Aucun repli CPU.",
+  "dramaIntegrated": "FP8 intégré · génération avec experts en RAM",
+  "phase6FishLicenseDrama": "Drama 3 · Fish Audio Community License 1.0 · Built with Fish Audio"
 }

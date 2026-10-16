@@ -388,7 +388,9 @@ fn validate_input(p: &Project, line_id: &str, options: &Options) -> Result<(), S
     {
         return Err("TTS_LANGUAGE_UNSUPPORTED".into());
     }
-    if options.variant().starts_with("fish-s2") && options.mode != "zeroShot" {
+    if (options.variant().starts_with("fish") || options.variant() == "drama3-comfy-fp8")
+        && options.mode != "zeroShot"
+    {
         return Err("TTS_TRANSCRIPT_REQUIRED".into());
     }
     if options.reference_mode != "current" {
@@ -440,6 +442,12 @@ async fn execute<R: tauri::Runtime>(
             python: separation::python(&root(core)),
             script: separation::resources(app).join("cosyvoice_worker.py"),
             model: root(core).join("model"),
+        }
+    } else if request.options.variant() == "drama3-comfy-fp8" {
+        WorkerLaunch {
+            python: separation::python(&crate::voice_engines::root(core).join("drama-runtime")),
+            script: separation::resources(app).join("drama_worker.py"),
+            model: crate::voice_engines::root(core).join(request.options.variant()),
         }
     } else {
         WorkerLaunch {
@@ -527,7 +535,9 @@ async fn execute_with_launch<R: tauri::Runtime>(
     let input = directory.join(format!("{generation_id}.request.json"));
     let result_path = directory.join(format!("{generation_id}.result.json"));
     let raw_text = text(&p, line);
-    let prompt_text = if request.options.variant().starts_with("fish-s2") {
+    let prompt_text = if request.options.variant().starts_with("fish")
+        || request.options.variant() == "drama3-comfy-fp8"
+    {
         match request.options.mood.as_deref().unwrap_or("default") {
             "default" => raw_text.clone(),
             mood => format!("[{mood}] {raw_text}"),
@@ -537,7 +547,7 @@ async fn execute_with_launch<R: tauri::Runtime>(
     };
     let input_value = serde_json::json!({"preparedReferenceAudio":ref_prepared,"variantId":request.options.variant(),"text":raw_text,"promptText":prompt_text,"mood":request.options.mood,"language":p.languages.target,"referenceAudio":reference_audio,"referenceTranscript":transcript,"modelDir":launch.model,"outputPath":destination,"resultPath":result_path,"device":request.options.device,"speed":request.options.speed,"mode":request.options.mode,"seed":request.options.seed});
     project::atomic_write(&input, &serde_json::to_vec(&input_value).map_err(io_error)?)?;
-    let result = tokio::time::timeout(Duration::from_secs(900), async {
+    let result = tokio::time::timeout(Duration::from_secs(if request.options.variant()=="drama3-comfy-fp8"{3600}else{900}), async {
         if request.options.variant().contains("gguf") {
             return crate::voice_engines::generate_gguf(core, app, key, &input_value, flag).await;
         }
@@ -587,7 +597,7 @@ async fn execute_with_launch<R: tauri::Runtime>(
         }
         .into());
     }
-    let generation = serde_json::json!({"id":generation_id,"kind":"tts","dialogueId":line.id,"providerId":if request.options.variant()=="cosy3-official"{"cosyvoice3"}else if request.options.variant().starts_with("fish"){"fish-s2"}else{"qwen3-tts"},"modelId":request.options.variant(),"path":format!("generations/{generation_id}.wav"),"createdAt":now(),"sourcePath":p.media.as_ref().map(|m|&m.path),"startMs":line.start_ms,"endMs":line.end_ms,"text":text(&p,line),"language":p.languages.target,"characterId":line.character_id,"durationMs":duration,"sampleRate":24000,"options":request.options,"referenceTranscript":transcript,"referenceId":if request.options.reference_mode=="current"{None}else{reference(&p,line,&request.options).ok().map(|r|&r.id)},"device":metadata["device"],"deviceName":metadata["deviceName"],"peakVramMb":metadata["peakVramMb"],"compatibilityMode":metadata["compatibilityMode"].as_bool().unwrap_or(false),"inputHash":request.fingerprint});
+    let generation = serde_json::json!({"id":generation_id,"kind":"tts","dialogueId":line.id,"providerId":if request.options.variant()=="cosy3-official"{"cosyvoice3"}else if request.options.variant()=="drama3-comfy-fp8"{"fish-drama3"}else if request.options.variant().starts_with("fish"){"fish-s2"}else{"qwen3-tts"},"modelId":request.options.variant(),"path":format!("generations/{generation_id}.wav"),"createdAt":now(),"sourcePath":p.media.as_ref().map(|m|&m.path),"startMs":line.start_ms,"endMs":line.end_ms,"text":text(&p,line),"language":p.languages.target,"characterId":line.character_id,"durationMs":duration,"sampleRate":24000,"options":request.options,"referenceTranscript":transcript,"referenceId":if request.options.reference_mode=="current"{None}else{reference(&p,line,&request.options).ok().map(|r|&r.id)},"device":metadata["device"],"deviceName":metadata["deviceName"],"peakVramMb":metadata["peakVramMb"],"expertsInRam":metadata["expertsInRam"],"expertCacheGiB":metadata["expertCacheGiB"],"compatibilityMode":metadata["compatibilityMode"].as_bool().unwrap_or(false),"inputHash":request.fingerprint});
     let mut session = core.session.lock().map_err(io_error)?;
     let s = session.as_mut().ok_or("NO_PROJECT")?;
     if s.root != request.root || s.project.id != request.project_id {

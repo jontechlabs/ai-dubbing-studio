@@ -48,10 +48,22 @@ export function VoiceEngineModels({
               <h3>{variant.name}</h3>
               <p>{t(state?.installed ? 'modelInstalled' : 'ttsNotInstalled')}</p>
               <p className="panel-description">
-                {t(variant.backend === 'vulkan' ? 'phase6Gguf' : 'phase6Fp8')}
+                {t(
+                  variant.providerId === 'fish-drama3'
+                    ? 'dramaGenerationHint'
+                    : variant.backend === 'vulkan'
+                      ? 'phase6Gguf'
+                      : 'phase6Fp8',
+                )}
               </p>
-              {variant.providerId === 'fish-s2' && (
-                <p className="warning">{t('phase6FishLicense')}</p>
+              {variant.providerId.startsWith('fish') && (
+                <p className="warning">
+                  {t(
+                    variant.providerId === 'fish-drama3'
+                      ? 'phase6FishLicenseDrama'
+                      : 'phase6FishLicense',
+                  )}
+                </p>
               )}
               {state && (
                 <small>

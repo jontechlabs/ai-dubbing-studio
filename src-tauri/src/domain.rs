@@ -261,6 +261,8 @@ impl Project {
                         "fish-s2-bf16",
                     ]
                     .contains(&preferences["voiceVariantId"].as_str().unwrap_or("")),
+                    Some("fish-drama3") => ["drama3-comfy-fp8"]
+                        .contains(&preferences["voiceVariantId"].as_str().unwrap_or("")),
                     Some("qwen3-tts") => [
                         "qwen3-06b-bf16",
                         "qwen3-17b-bf16",
@@ -276,9 +278,9 @@ impl Project {
                 }
             }
             if !preferences["ttsProviderId"].is_null()
-                && !preferences["ttsProviderId"]
-                    .as_str()
-                    .is_some_and(|id| ["cosyvoice3", "fish-s2", "qwen3-tts"].contains(&id))
+                && !preferences["ttsProviderId"].as_str().is_some_and(|id| {
+                    ["cosyvoice3", "fish-s2", "fish-drama3", "qwen3-tts"].contains(&id)
+                })
             {
                 return Err("INVALID_PROJECT".into());
             }

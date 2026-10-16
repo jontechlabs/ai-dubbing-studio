@@ -14,6 +14,17 @@ export interface VoiceVariant {
 }
 import { installedVoiceVariants } from './voiceEngines';
 export const voiceVariants: VoiceVariant[] = [
+  {
+    id: 'drama3-comfy-fp8',
+    providerId: 'fish-drama3',
+    name: 'Drama 3 · FP8 · experts en RAM',
+    format: 'FP8 E4M3 / BF16',
+    origin: 'community',
+    engine: 'ComfyUI-Drama3 · experts en RAM',
+    source: 'https://huggingface.co/PedroMarinhoDev/Drama-3-ComfyUI',
+    detailKey: 'dramaGenerationHint',
+    suggested16Gb: true,
+  },
   ...installedVoiceVariants
     .filter((v) => v.backend === 'vulkan')
     .map((v) => ({

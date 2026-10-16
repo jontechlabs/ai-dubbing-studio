@@ -9,8 +9,10 @@ export function DramaModels() {
   return (
     <section className="model-card drama-models">
       <h3>{t('dramaTitle')}</h3>
-      <span className="model-state">{t('dramaStatus')}</span>
-      <p>{t('dramaHint')}</p>
+      <span className="model-state">
+        {t(id === 'drama3-comfy-fp8' ? 'dramaIntegrated' : 'dramaStatus')}
+      </span>
+      <p>{t(id === 'drama3-comfy-fp8' ? 'dramaGenerationHint' : 'dramaHint')}</p>
       <label className="field">
         <span>{t('dramaVariant')}</span>
         <select

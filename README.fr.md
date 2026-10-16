@@ -1,12 +1,16 @@
 # AI Dubbing Studio — phases 1–7
 
-[Version anglaise et captures de l’interface](README.md) · [Téléchargements Windows](https://github.com/jontechlabs/ai-dubbing-studio/releases/tag/v0.9.0)
+[Version anglaise et captures de l’interface](README.md) · [Téléchargements Windows](https://github.com/jontechlabs/ai-dubbing-studio/releases/tag/v0.10.0)
 
 Studio desktop local de travail texte, voix et vidéo. Tauri 2, React, TypeScript strict et Rust.
 
 **v0.9.0 — Retouche locale des lèvres et transferts audio.** MuseTalk 1.5 génère les images de bouche depuis la prise de doublage sélectionnée : GPU CUDA choisi, UNet FP16, VAE FP32. Cadrez le visage et le masque de bouche, comparez les variantes avant activation. Le mode anime reste expérimental. Choisissez la piste de référence vocale et celle à remplacer dans le mix ; copiez, déplacez ou interchangez des portions entre pistes, avec volume propre et annulation. [Retouche des lèvres](docs/LIP-INPAINTING.md) · [Transferts audio](docs/AUDIO-TRANSFERS.md) · [Calage visuel](docs/LIP-ALIGNMENT.md).
 
-**Catalogue Fish Audio Drama 3.** Variantes FP8 officielles et conversions avec experts en RAM, sources et besoins matériels. La génération Drama 3 n’est pas intégrée dans cette version. [Détails](docs/FISH-DRAMA-3.md).
+**v0.10.0 — Génération Fish Audio Drama 3.** Moteur FP8 distinct de S2, experts en RAM et cache GPU plafonné à 4 Gio. Profil NVIDIA 16 Go + 64 Go RAM : référence transcrite, humeurs, graine et essais indépendants, avec calage, mixage et export MKV existants. Environ 40,1 Go de modèles ; 46 Gio de RAM disponibles et 12 Gio de VRAM libre requis. Performances du modèle complet et qualité française sur RTX non mesurées ici. [Guide](docs/FISH-DRAMA-3.md).
+
+![Génération Drama 3](docs/screenshots/drama3-generation.png)
+
+*Interface React réelle, inventaire CUDA et résultat simulés. Diagnostic séparé du calcul FP8 et d’un petit modèle autorégressif sur CPU.*
 
 ![Panneau de retouche des lèvres](docs/screenshots/inpaint-region.png)
 

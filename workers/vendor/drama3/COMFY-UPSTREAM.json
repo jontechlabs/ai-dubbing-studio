@@ -1,0 +1,8 @@
+{
+  "repository": "https://github.com/Comfy-Org/ComfyUI",
+  "revision": "3541246a9c997f4b8c32f9f88f3c985d02021c79",
+  "version": "0.40.0",
+  "license": "GPL-3.0-or-later",
+  "archive": "comfy-core.zip",
+  "sha256": "75395bb263e4b5c325a2b99f47004245433b15a070f00eaa6620c18462265d37"
+}

@@ -58,6 +58,7 @@ export interface TranslationProvider {
 export const futureVoiceProviders = [
   { id: 'cosyvoice3', name: 'CosyVoice3', phase: 5 },
   { id: 'fish-s2', name: 'Fish Audio S2', phase: 6 },
+  { id: 'fish-drama3', name: 'Fish Audio Drama 3', phase: 9 },
   { id: 'qwen3-tts', name: 'Qwen3-TTS', phase: 6 },
 ] as const;
 export interface SpeakerIdentificationProvider {

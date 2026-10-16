@@ -19,6 +19,12 @@ export const installedVoiceVariants = [
     backend: 'vulkan',
   },
   { id: 'fish-s2-fp8', providerId: 'fish-s2', name: 'Fish S2 Pro · FP8 E4M3', backend: 'cuda' },
+  {
+    id: 'drama3-comfy-fp8',
+    providerId: 'fish-drama3',
+    name: 'Fish Audio Drama 3 · FP8 · experts en RAM',
+    backend: 'cuda',
+  },
 ] as const;
 export function voiceVariant(id?: string | null) {
   return installedVoiceVariants.find((v) => v.id === id);

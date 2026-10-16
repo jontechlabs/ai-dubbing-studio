@@ -1,25 +1,48 @@
-# Fish Audio Drama 3 — catalogue du studio, 16 octobre 2026
+# Fish Audio Drama 3 — génération FP8 avec experts en RAM
 
-Drama 3 est désormais visible dans **Modèles**, avec les variantes et sources ci-dessous. Son moteur de génération **n’est pas intégré dans v0.9.0** : il n’y a pas de bouton d’installation ni de choix Drama 3 dans Doublage. Les moteurs CosyVoice3, Fish S2 et Qwen3 déjà intégrés restent utilisables.
+Depuis **v0.10.0**, le studio installe et utilise un moteur Drama 3 distinct de S2. Le profil communautaire FP8/BF16 garde les experts routés en RAM et limite leur cache GPU à **4 Gio**. Le codec FP32 est utilisé avant puis après le modèle ; il ne reste pas chargé sur le GPU pendant la génération des codes. Built with Fish Audio.
 
-Le [modèle officiel](https://huggingface.co/fishaudio/drama-3) possède un backbone MoE d’environ 35B paramètres, dont environ 3B actifs par token. Ses experts sont en FP8, le reste en BF16 ; le nombre de paramètres actifs ne signifie pas que tous les poids tiennent dans une petite carte. La [documentation d’installation](https://speech.fish.audio/install/) annonce au moins **48 Go de VRAM** et NVIDIA CUDA sous Linux/WSL pour le runtime officiel.
+## Installation sur RTX 5060 Ti 16 Go + 64 Go de RAM
 
-## Pistes pour RTX 5060 Ti 16 Go + 64 Go de RAM
+1. Choisir le dossier dans **Paramètres → Stockage des modèles**. Prévoir environ **60 Go libres** à la première installation, sur un SSD si possible. Les poids et le codec représentent **40 144 065 412 octets**, soit 37,39 Gio ; le runtime Python/CUDA et ses archives s’ajoutent à ce total.
+2. Ouvrir **Modèles**, trouver **Fish Audio Drama 3 · FP8 · experts en RAM**, puis installer cette variante. Les téléchargements utilisent des révisions, tailles et SHA-256 fixés. La vérification peut durer, particulièrement pour le fichier de 38,6 Go. Le bouton Annuler et les logs restent disponibles ; un nouvel essai réutilise les fichiers complets vérifiés.
+3. Fermer les autres moteurs IA et applications gourmandes. Le profil exige au moins **46 Gio de RAM disponible**, **12 Gio de VRAM libre** et une machine de la classe 64 Go de RAM.
+4. Dans **Doublage**, choisir Drama 3 et le GPU NVIDIA. « Automatique » choisit le premier GPU CUDA visible ; le Ryzen iGPU n’est pas un périphérique CUDA. Un choix `cuda:N` conserve ce GPU pendant toutes les étapes. Il n’y a pas de génération de secours sur CPU.
 
-La [conversion communautaire ComfyUI-Drama3](https://huggingface.co/PedroMarinhoDev/Drama-3-ComfyUI) conserve les experts en RAM et utilise un cache GPU. Son auteur annonce un GPU NVIDIA à partir de 8 Go, et environ 48 Go de RAM pour les poids FP8. Cela en fait un **candidat** pour votre configuration, sans qualification sur RTX 5060 Ti ni mesure de qualité française dans le studio. Le chargeur est distinct de celui de S2 FP8.
+Le moteur utilise PyTorch 2.8.0 avec CUDA 12.8 et les experts FP8 sont déquantifiés en BF16 à l’utilisation. Il ne dépend pas des noyaux de quantification optimisés CUDA 13 de Comfy Kitchen. Un avertissement Comfy sur ces noyaux ne signifie donc pas que la génération BF16 a échoué.
 
-| Variante | Fichiers du modèle + codec | RAM indiquée par l’auteur | État dans le studio |
-| --- | --- | --- | --- |
-| FP8 / BF16 officiel | Environ 41,47 Go | Runtime officiel : GPU ≥ 48 Go | Référencé, non intégré |
-| ComfyUI FP8 experts / BF16 | Environ 40,14 Go | Environ 48 Go système | Candidat 16 Go VRAM + 64 Go RAM, non intégré |
-| ComfyUI W6A8 | Environ 34,22 Go | Environ 40 Go système | Référencé, non intégré |
-| ComfyUI W4A8 | Environ 26,17 Go | Environ 32 Go système | Référencé ; l’auteur signale davantage de sorties silencieuses |
-| [INT4 W4A16 / SGLang-Omni](https://huggingface.co/fishaudio/drama-3-int4) | Environ 23,97 Go avec codec | Qualification 16 Go non établie ici | Référencé, non intégré |
+![Installation Drama 3](screenshots/drama3-install.png)
 
-Les tailles sont calculées depuis les métadonnées des fichiers Hugging Face, codec inclus, et ne représentent pas la VRAM. Le catalogue indique les tailles en **Gio**. Les révisions exactes consultées sont dans `src/domain/dramaModels.json`. Aucun poids Drama 3 n’est téléchargé par cette version, et aucune variante GGUF Drama 3 n’est annoncée compatible avec notre moteur audio.cpp.
+## Générer une réplique
 
-![Catalogue Drama 3](screenshots/drama3-catalogue.png)
+1. Saisir le texte traduit, puis ouvrir **Doubler** sur la réplique.
+2. Choisir **Fish Audio Drama 3 · FP8 · experts en RAM** et la RTX.
+3. Choisir une référence vocale de **1 à 20 secondes**, propre et sans musique si possible. La piste d’extraction reste celle choisie dans Audio, par défaut Voix. Une référence française peut mieux guider l’accent français.
+4. Fournir **la transcription exacte de toute la référence**, dans sa langue d’origine. Pour une référence de personnage, utiliser **Transcrire la référence** puis vérifier le résultat. Drama 3 n’utilise pas le mode sans transcription ; la traduction française d’une référence japonaise ne remplace pas son texte japonais exact.
+5. Choisir l’humeur, la vitesse et la graine, puis **Générer un nouvel essai**. La consigne d’humeur est une indication au modèle, sans résultat garanti. Les logs montrent le chargement, les morceaux de texte et les trames audio générées.
+6. Écouter et choisir l’essai. Le WAV mono 24 kHz rejoint les outils existants : déplacement et durée sur la timeline, ajustement automatique, mixage avec les pistes, retouche des lèvres et export MKV.
 
-Capture de la vraie interface React/Chrome ; la disponibilité des modèles installés est simulée pour le test. Le catalogue Drama 3 lui-même utilise les métadonnées publiques vérifiées. Il ne s’agit pas d’un résultat d’inférence.
+![Génération Drama 3](screenshots/drama3-generation.png)
 
-La licence à consulter est la [Fish Audio Community License 1.0](https://huggingface.co/fishaudio/drama-3/blob/main/LICENSE). Le catalogue ne modifie pas les installations S2 et n’assimile pas leurs formats ou licences à ceux de Drama 3.
+Ces captures montrent la véritable interface React dans Chrome, avec inventaire CUDA et fin de génération simulés pour les tests ; elles ne montrent pas un résultat du modèle complet.
+
+## Temps de calcul et mémoire
+
+Le premier chargement lit environ 38,6 Go de poids et prépare les banques d’experts en RAM. Cela peut prendre plusieurs minutes. Le modèle et le codec sont libérés à la fin de la tâche. La séparation RAM/GPU économise la VRAM, mais ajoute des transferts PCIe ; ne pas attendre les temps de S2. La tâche est limitée à une heure, environ 28 secondes par morceau de texte et 120 secondes de sortie au total ; une limite de trames atteinte rejette la prise tronquée.
+
+Le cache de 4 Gio est réduit si la mémoire libre et les couches à charger l’exigent. Une réserve GPU de 2 Gio est demandée. La construction du modèle sur `meta` puis l’assignation des poids évitent une seconde copie complète en RAM. Ces protections ne constituent pas une garantie de consommation mesurée sur la RTX 5060 Ti.
+
+Le poste de développement n’a pas de GPU NVIDIA et ne peut pas charger les poids complets. Les tests Windows CPU vérifient le calcul FP8, les banques RAM, les évictions du cache, une génération autorégressive avec un modèle réduit et les 1 367 noms/formes de tenseurs des en-têtes réels. **Vitesse, pic mémoire et qualité française du modèle complet restent à mesurer sur votre machine.** Voir [VALIDATION.md](../VALIDATION.md).
+
+Si une prise se tait ou s’interrompt, vérifier que la transcription couvre tout l’extrait, utiliser une référence différente puis une autre graine. L’auteur du chargeur signale ce comportement possible avec certaines références.
+
+## Sources, variantes et licences
+
+- [Modèle Fish Audio Drama 3](https://huggingface.co/fishaudio/drama-3) : MoE d’environ 35B, environ 3B actifs ; le runtime officiel annonce au moins 48 Go de VRAM.
+- [Chargeur ComfyUI-Drama3](https://github.com/PedroMarinhoDev/ComfyUI-Drama3), révision `66c4fb9cd3c0151e1e2ccd207847cb8335e87ab4`, avec adaptation de chargement documentée. Utilisé sans serveur ni installation préalable de ComfyUI.
+- [Poids convertis FP8 et codec](https://huggingface.co/PedroMarinhoDev/Drama-3-ComfyUI), révision `9063c072019aa578895e51adb5489c6cd2c834b0` ; tailles et SHA-256 dans `workers/voice-engines.json`.
+- ComfyUI 0.40.0, révision `3541246a9c997f4b8c32f9f88f3c985d02021c79`. Source et licence du cœur distribuées dans `workers/vendor/drama3/comfy-core.zip` ; dépendances Windows isolées et vérifiées dans `workers/drama-runtime.json`.
+
+Les variantes officielles FP8, INT4/SGLang-Omni, W6A8 et W4A8 restent **référencées sans moteur de génération intégré**. Aucun moteur GGUF Drama 3 n’est annoncé utilisable ici. Les installations S2 restent séparées.
+
+Consulter la [Fish Audio Community License 1.0](https://huggingface.co/fishaudio/drama-3/blob/main/LICENSE) pour les poids, composants Fish et sorties. Le chargeur et le cœur Comfy sont sous GPL-3.0 avec exceptions décrites par leurs notices ; le source correspondant et les licences sont fournis avec l’application. Les poids sont téléchargés sur demande et ne sont inclus dans aucune archive de distribution.

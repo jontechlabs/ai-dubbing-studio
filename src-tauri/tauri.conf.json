@@ -1,7 +1,7 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "AI Dubbing Studio",
-  "version": "0.9.0",
+  "version": "0.10.0",
   "identifier": "studio.local.dubbing",
   "build": {
     "beforeDevCommand": "pnpm dev",
@@ -30,9 +30,7 @@
   },
   "bundle": {
     "active": true,
-    "targets": [
-      "nsis"
-    ],
+    "targets": ["nsis"],
     "resources": {
       "../public/demo.mp4": "demo/demo.mp4",
       "binaries/": "binaries/",
@@ -68,20 +66,17 @@
       "../workers/musetalk_worker.py": "workers/musetalk_worker.py",
       "../workers/musetalk-model.json": "workers/musetalk-model.json",
       "../workers/musetalk-runtime.json": "workers/musetalk-runtime.json",
-      "../workers/MUSETALK-LICENSE.txt": "workers/MUSETALK-LICENSE.txt"
+      "../workers/MUSETALK-LICENSE.txt": "workers/MUSETALK-LICENSE.txt",
+      "../workers/drama_worker.py": "workers/drama_worker.py",
+      "../workers/drama-runtime.json": "workers/drama-runtime.json",
+      "../workers/vendor/drama3/": "workers/vendor/drama3/"
     },
-    "icon": [
-      "icons/icon.ico",
-      "icons/icon.png"
-    ],
+    "icon": ["icons/icon.ico", "icons/icon.png"],
     "windows": {
       "nsis": {
         "installMode": "currentUser",
         "displayLanguageSelector": true,
-        "languages": [
-          "French",
-          "English"
-        ]
+        "languages": ["French", "English"]
       }
     },
     "createUpdaterArtifacts": true

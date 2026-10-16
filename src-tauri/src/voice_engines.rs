@@ -36,6 +36,7 @@ pub const IDS: &[&str] = &[
     "qwen3-06b-gguf-q8",
     "qwen3-17b-gguf-q8",
     "fish-s2-fp8",
+    "drama3-comfy-fp8",
 ];
 pub fn root(core: &Core) -> PathBuf {
     crate::model_storage::root(core).join("voice-engines")
@@ -59,6 +60,16 @@ pub fn installed(core: &Core, id: &str) -> bool {
         && if id == "fish-s2-fp8" {
             separation::python(&root(core).join("fish-runtime")).is_file()
                 && root(core).join(id).join("model.safetensors").is_file()
+        } else if id == "drama3-comfy-fp8" {
+            separation::python(&root(core).join("drama-runtime")).is_file()
+                && root(core)
+                    .join(id)
+                    .join("drama3_fp8experts_bf16.safetensors")
+                    .is_file()
+                && root(core)
+                    .join(id)
+                    .join("drama3_codec.safetensors")
+                    .is_file()
         } else {
             root(core).join("audiocpp/audiocpp_cli.exe").is_file()
                 && root(core).join(id).join("model.gguf").is_file()
@@ -102,12 +113,23 @@ pub async fn status<R: tauri::Runtime>(
         vec![]
     };
     let variants:Vec<_>=manifest(&app)?.variants.into_iter().map(|v|serde_json::json!({"id":v.id,"installed":installed(&core,&v.id),"sizeBytes":v.files.iter().map(|f|f.size).sum::<u64>()})).collect();
-    let cuda = if include_cuda && permit.is_some() && installed(&core, "fish-s2-fp8") {
+    let cuda = if include_cuda
+        && permit.is_some()
+        && (installed(&core, "fish-s2-fp8") || installed(&core, "drama3-comfy-fp8"))
+    {
         separation::probe(
-            &separation::python(&root(&core).join("fish-runtime")),
+            &separation::python(&root(&core).join(if installed(&core, "fish-s2-fp8") {
+                "fish-runtime"
+            } else {
+                "drama-runtime"
+            })),
             &[
                 separation::resources(&app)
-                    .join("fish_worker.py")
+                    .join(if installed(&core, "fish-s2-fp8") {
+                        "fish_worker.py"
+                    } else {
+                        "drama_worker.py"
+                    })
                     .to_string_lossy()
                     .into_owned(),
                 "--info".into(),
@@ -159,7 +181,10 @@ pub fn install<R: tauri::Runtime>(
                 tauri::async_runtime::spawn_blocking(move||tts::extract(&archive,&target,&f)).await.map_err(io_error)??;
                 if inventory(&core).await.is_empty(){return Err("TTS_RUNTIME_FAILED".into());}
             } else {
-                install_fish_python(&core,&app,&key,&flag).await?;
+                install_fish_python(&core,&app,&key,&flag,selected.engine=="drama3").await?;
+                if selected.engine=="drama3" {
+                    separation::process(&core,&app,&key,&separation::python(&folder.join("drama-runtime")),&[separation::resources(&app).join("drama_worker.py").to_string_lossy().into_owned(),"--preflight".into(),folder.join(&id).to_string_lossy().into_owned()],&flag).await?;
+                }
             }
             for file in selected.files {
                 crate::domain::valid_relative(&file.name)?;
@@ -178,8 +203,13 @@ async fn install_fish_python<R: tauri::Runtime>(
     app: &tauri::AppHandle<R>,
     key: &str,
     flag: &Arc<AtomicBool>,
+    drama: bool,
 ) -> Result<(), String> {
-    let folder = root(core).join("fish-runtime");
+    let folder = root(core).join(if drama {
+        "drama-runtime"
+    } else {
+        "fish-runtime"
+    });
     std::fs::create_dir_all(folder.join("python/Lib/site-packages")).map_err(io_error)?;
     let archive = folder.join("python.zip");
     separation::fetch(
@@ -205,7 +235,12 @@ async fn install_fish_python<R: tauri::Runtime>(
         b"python312.zip\n.\nLib/site-packages\nimport site\n",
     )?;
     let runtime: serde_json::Value = serde_json::from_slice(
-        &std::fs::read(separation::resources(app).join("fish-runtime.json")).map_err(io_error)?,
+        &std::fs::read(separation::resources(app).join(if drama {
+            "drama-runtime.json"
+        } else {
+            "fish-runtime.json"
+        }))
+        .map_err(io_error)?,
     )
     .map_err(io_error)?;
     std::fs::create_dir_all(folder.join("wheels")).map_err(io_error)?;
@@ -270,11 +305,23 @@ async fn install_fish_python<R: tauri::Runtime>(
             .await
             .map_err(io_error)??;
     }
+    if drama {
+        let archive = separation::resources(app).join("vendor/drama3/comfy-core.zip");
+        let destination = folder.join("core");
+        let f = flag.clone();
+        tauri::async_runtime::spawn_blocking(move || tts::extract(&archive, &destination, &f))
+            .await
+            .map_err(io_error)??;
+    }
     if separation::probe(
         &separation::python(&folder),
         &[
             separation::resources(app)
-                .join("fish_worker.py")
+                .join(if drama {
+                    "drama_worker.py"
+                } else {
+                    "fish_worker.py"
+                })
                 .to_string_lossy()
                 .into_owned(),
             "--runtime-info".into(),

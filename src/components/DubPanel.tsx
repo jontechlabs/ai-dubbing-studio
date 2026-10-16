@@ -178,9 +178,11 @@ export function DubPanel({
           ? bridge.ttsStatus().then((s) => {
               if (!disposed) setStatus(s);
             })
-          : bridge.voiceStatus(variantId === 'fish-s2-fp8').then((s) => {
-              if (!disposed) setEngines(s);
-            })
+          : bridge
+              .voiceStatus(['fish-s2-fp8', 'drama3-comfy-fp8'].includes(variantId))
+              .then((s) => {
+                if (!disposed) setEngines(s);
+              })
       ).catch((e) => {
         if (!disposed) onError(String(e));
       });
@@ -197,8 +199,11 @@ export function DubPanel({
   const variant = voiceVariant(settings.variantId)!;
   const mood = settings.mood ?? 'default';
   const instructedMood = variant.providerId === 'cosyvoice3' && mood !== 'default';
-  const mode =
-    variant.providerId === 'fish-s2' ? 'zeroShot' : instructedMood ? 'crossLingual' : settings.mode;
+  const mode = variant.providerId.startsWith('fish')
+    ? 'zeroShot'
+    : instructedMood
+      ? 'crossLingual'
+      : settings.mode;
   const ready =
     variant.id === 'cosy3-official'
       ? status?.installed
@@ -312,7 +317,7 @@ export function DubPanel({
               variantId: next.id,
               device: 'auto',
               mood: next.providerId === 'qwen3-tts' ? 'default' : mood,
-              mode: next.providerId === 'fish-s2' ? 'zeroShot' : settings.mode,
+              mode: next.providerId.startsWith('fish') ? 'zeroShot' : settings.mode,
             });
           }}
         >
@@ -326,11 +331,13 @@ export function DubPanel({
       {variant.id !== 'cosy3-official' && (
         <p className="panel-description">
           {t(
-            variant.backend === 'vulkan'
-              ? 'phase6Gguf'
-              : variant.id === 'fish-s2-fp8'
-                ? 'phase6Fp8'
-                : 'ttsLocalHint',
+            variant.id === 'drama3-comfy-fp8'
+              ? 'dramaGenerationHint'
+              : variant.backend === 'vulkan'
+                ? 'phase6Gguf'
+                : variant.id === 'fish-s2-fp8'
+                  ? 'phase6Fp8'
+                  : 'ttsLocalHint',
           )}
         </p>
       )}
@@ -356,7 +363,7 @@ export function DubPanel({
               {d.name}
             </option>
           ))}
-          {variant.id !== 'fish-s2-fp8' && !devices?.some((d) => d.id === 'cpu') && (
+          {variant.backend !== 'cuda' && !devices?.some((d) => d.id === 'cpu') && (
             <option value="cpu">CPU</option>
           )}
         </select>
@@ -447,7 +454,7 @@ export function DubPanel({
           disabled={busy || instructedMood}
           onChange={(e) => edit({ mode: e.target.value as typeof settings.mode })}
         >
-          <option value="crossLingual" disabled={variant.providerId === 'fish-s2'}>
+          <option value="crossLingual" disabled={variant.providerId.startsWith('fish')}>
             {t('ttsCrossLingual')}
           </option>
           <option value="zeroShot">{t('ttsZeroShot')}</option>
@@ -457,7 +464,7 @@ export function DubPanel({
         {t(
           instructedMood
             ? 'ttsCosyMoodHint'
-            : variant.providerId === 'fish-s2'
+            : variant.providerId.startsWith('fish')
               ? 'ttsFishHint'
               : mode === 'crossLingual'
                 ? 'ttsCrossHint'

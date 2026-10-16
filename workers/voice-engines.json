@@ -113,6 +113,27 @@
           "sha256": "aa7d9206e9d710590987a3636934f643529c00cd490323594e6206aaa0c32d80"
         }
       ]
+    },
+    {
+      "id": "drama3-comfy-fp8",
+      "providerId": "fish-drama3",
+      "name": "Fish Audio Drama 3 \u00b7 FP8 \u00b7 experts en RAM",
+      "engine": "drama3",
+      "revision": "9063c072019aa578895e51adb5489c6cd2c834b0",
+      "files": [
+        {
+          "name": "drama3_fp8experts_bf16.safetensors",
+          "url": "https://huggingface.co/PedroMarinhoDev/Drama-3-ComfyUI/resolve/9063c072019aa578895e51adb5489c6cd2c834b0/drama3_fp8experts_bf16.safetensors",
+          "size": 38578417928,
+          "sha256": "5d053a200cf0f77faa13c087c78ef200c3b53f288451a6b9e7a8fa421c03a67b"
+        },
+        {
+          "name": "drama3_codec.safetensors",
+          "url": "https://huggingface.co/PedroMarinhoDev/Drama-3-ComfyUI/resolve/9063c072019aa578895e51adb5489c6cd2c834b0/drama3_codec.safetensors",
+          "size": 1565647484,
+          "sha256": "4fecf102907a48414230da9a74d72d07c3a92368eab53fab655797837bddf5ae"
+        }
+      ]
     }
   ]
 }

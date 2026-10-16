@@ -1,6 +1,6 @@
 {
   "checkedAt": "2026-10-16",
-  "integrated": false,
+  "integrated": true,
   "variants": [
     {
       "id": "drama3-official-fp8",
@@ -11,7 +11,8 @@
       "revision": "e0a9218aa48888270f06ef1ed9ea67622c0e17d2",
       "sizeBytes": 41474674072,
       "detailKey": "dramaOfficial",
-      "candidate16Gb": false
+      "candidate16Gb": false,
+      "integrated": false
     },
     {
       "id": "drama3-int4",
@@ -22,7 +23,8 @@
       "revision": "a6f588691a13b6607cb09f9800556487ab7aa0fe",
       "sizeBytes": 23971918496,
       "detailKey": "dramaInt4",
-      "candidate16Gb": false
+      "candidate16Gb": false,
+      "integrated": false
     },
     {
       "id": "drama3-comfy-fp8",
@@ -33,7 +35,8 @@
       "revision": "9063c072019aa578895e51adb5489c6cd2c834b0",
       "sizeBytes": 40144065412,
       "detailKey": "dramaOffload",
-      "candidate16Gb": true
+      "candidate16Gb": true,
+      "integrated": true
     },
     {
       "id": "drama3-comfy-w6a8",
@@ -44,7 +47,8 @@
       "revision": "9063c072019aa578895e51adb5489c6cd2c834b0",
       "sizeBytes": 34222261324,
       "detailKey": "dramaW6",
-      "candidate16Gb": true
+      "candidate16Gb": true,
+      "integrated": false
     },
     {
       "id": "drama3-comfy-w4a8",
@@ -55,7 +59,8 @@
       "revision": "9063c072019aa578895e51adb5489c6cd2c834b0",
       "sizeBytes": 26169212860,
       "detailKey": "dramaW4",
-      "candidate16Gb": true
+      "candidate16Gb": true,
+      "integrated": false
     }
   ]
 }
