@@ -74,7 +74,11 @@ export class AudioPatchBus {
     });
     if (
       nearby.length > 8 ||
-      nearby.reduce((n, c) => n + (c.endMs - c.startMs) * 48 * 2 * 4, 0) > 128 * 1024 * 1024
+      nearby.reduce(
+        (n, c) => n + (c.endMs - c.startMs) * (this.context.sampleRate / 1000) * 2 * 4,
+        0,
+      ) >
+        128 * 1024 * 1024
     )
       throw Error('AUDIO_TRANSFER_LIMIT');
     const keep = new Set([...nearby.map((c) => c.id), ...this.voices.keys()]);
@@ -84,7 +88,10 @@ export class AudioPatchBus {
         [...this.decoded.entries()].reduce((n, [, b]) => n + b.length * b.numberOfChannels * 4, 0) +
           nearby
             .filter((c) => !this.decoded.has(c.id))
-            .reduce((n, c) => n + (c.endMs - c.startMs) * 48 * 2 * 4, 0) <=
+            .reduce(
+              (n, c) => n + (c.endMs - c.startMs) * (this.context.sampleRate / 1000) * 2 * 4,
+              0,
+            ) <=
           128 * 1024 * 1024
       )
         break;
