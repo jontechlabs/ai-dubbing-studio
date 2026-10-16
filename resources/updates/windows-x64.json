@@ -1,11 +1,11 @@
 {
-  "version": "0.10.0",
-  "notes": "Génération Fish Audio Drama 3 FP8 avec experts en RAM et cache GPU plafonné à 4 Gio. Profil NVIDIA 16 Go + 64 Go RAM, modèle/codec de 40,1 Go, runtime Windows isolé, transcription exacte de référence, humeurs et essais indépendants. Calage, mixage et export MKV existants conservés. Tests FP8, cache et petit modèle réels ; performances et qualité du modèle complet sur RTX 5060 Ti non mesurées.",
-  "pub_date": "2026-10-16T15:48:25Z",
+  "version": "0.10.1",
+  "notes": "Volume directement dans la timeline : sélection sur toutes les pistes audio, curseur 0–200 %, silence/audible, retour à 100 %, sauvegarde et annulation, accès explicite aux options avancées. Fiche Fish Audio Drama 3 regroupée avec bouton Installer Drama 3 FP8 ou Vérifier / réparer directement visible. Espace disque : dossier, capacité disponible et besoin exact indiqués dans les logs avant un échec. Inférence Drama et modèles inchangés.",
+  "pub_date": "2026-10-16T17:42:28Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSdFFyMUJGTFp3NktIZk5aRWlOMjErTUlCcWNpcUdHamFLdmRES1lNRlZZL0gzK2cwSWR5VDdJbTdwc0dEc0xvMDR6NHNGWENETUFqd3FadW5tcU5kRDFhSk5BL01ua3dnPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkyMTY1NDE2CWZpbGU6QUkgRHViYmluZyBTdHVkaW9fMC4xMC4wX3g2NC1zZXR1cC5leGUJdmVyc2lvbjowLjEwLjAKSUFWZ1FGTkdCbXIwRW9YdXpkckk1RXdNTzRjZDBWZTJsbkxpYUJhSis3am5ZMFNQcjVCRmdCOXdJY3hUbENvemgxUG1jUkRUZG13RE5nc0duUHJzRHc9PQo=",
-      "url": "https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.10.0/AI-Dubbing-Studio-0.10.0-Setup.exe"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSdFFyMUJGTFp3Nk1pNlE5ZDQyYWNTalZKU3ZzWWNhSGxYSTBJZnYyQjFjUHc5WmhWN0VpSkU5MTh3aU0wU1BUb3hNR2hNNWk3MTc3VVB5bU9xODhQcVRVQzhUQ3ZIVlFRPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkyMTcxNTY0CWZpbGU6QUkgRHViYmluZyBTdHVkaW9fMC4xMC4xX3g2NC1zZXR1cC5leGUJdmVyc2lvbjowLjEwLjEKVWdUZzRoNUZ1WnZlT1d1L2FvSWllVE8ydUhmc2x6ZlpDVDhkWjk1VVZJNEEyRGgwNDltZDlJaFE5LzViSEFlWnZLOHBpem5wT3A2Ujhld2dDUEFDQ0E9PQo=",
+      "url": "https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.10.1/AI-Dubbing-Studio-0.10.1-Setup.exe"
     }
   }
 }

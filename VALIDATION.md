@@ -2,7 +2,9 @@
 
 ## v0.10.1 direct timeline volume and visible Drama installation
 
-Windows workflow evidence will be recorded before publication.
+Windows checks and signed-update package production passed in [run 38936068217](https://github.com/jontechlabs/ai-dubbing-studio/actions/runs/38936068217), built from `7a5a8131bf04c72266480988be7cb1fb2cc9f28d`. All 223 Windows suite checks passed (57 TypeScript, 67 Rust, 62 Chrome, 37 Python), plus the real FP8/cache/tiny-model/header diagnostic, plus two real Japanese ASR checks using the final Windows release executable. The setup and portable archive are copied unchanged from this workflow. Final metadata only records this evidence and the verified update feed.
+
+Packaged Windows worker timings for the 7.2-second Japanese fixture: auto: 234.45 s, ja: 113.19 s. These are CI CPU measurements, not performance estimates for the user’s PC.
 
 The inline selection toolbar reuses the existing non-destructive region gain/mute engine. Selection no longer automatically opens the Audio panel; advanced options open it explicitly. Browser checks select all five audio track types, amplify/mute/restore ranges, reopen regions, undo/redo from the focused slider, persist after reload and measure real Web Audio output inside/outside the range. Track mute/solo/master controls retain their existing priority. Native audio rendering is unchanged.
 
