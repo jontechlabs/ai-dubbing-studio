@@ -80,6 +80,7 @@ export function useTransport(
     if (!originalOnly || !project) return project;
     return {
       ...project,
+      generations: project.generations.filter((g) => g.kind !== 'audioPatch'),
       tracks: [
         ...project.tracks
           .filter((t) => t.kind !== 'original')
