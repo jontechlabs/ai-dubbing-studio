@@ -2,7 +2,9 @@
 
 ## v0.9.0 local lip inpainting and audio range transfers
 
-Windows workflow evidence will be recorded before publication.
+Windows checks and signed-update package production passed in [run 38868291239](https://github.com/jontechlabs/ai-dubbing-studio/actions/runs/38868291239), built from `ed5956ee2848faf64a2f8f4718579ddb6a4654f6`. All 210 Windows suite checks passed (56 TypeScript, 67 Rust, 56 Chrome, 31 Python), plus two real Japanese ASR checks using the final Windows release executable. The setup and portable archive are copied unchanged from this workflow. Final metadata only records this evidence and the verified update feed.
+
+Packaged Windows worker timings for the 7.2-second Japanese fixture: auto: 164.97 s, ja: 79.91 s. These are CI CPU measurements, not performance estimates for the user’s PC.
 
 New checks exercise non-destructive copy/move/swap, successive operations, explicit voice-reference sources, destination levels, stale/cancelled commits and unchanged original audio. Browser output is measured using Web Audio analysers while seeking, muting and changing gain. Source-reference and replacement-track preferences survive reload and model changes. Native FFmpeg checks use constant-level stereo fixtures, not subjective separation quality scores.
 
