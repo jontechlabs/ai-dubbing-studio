@@ -5,13 +5,13 @@ Depuis **v0.10.0**, le studio installe et utilise un moteur Drama 3 distinct de 
 ## Installation sur RTX 5060 Ti 16 Go + 64 Go de RAM
 
 1. Choisir le dossier dans **Paramètres → Stockage des modèles**. Prévoir environ **60 Go libres** à la première installation, sur un SSD si possible. Les poids et le codec représentent **40 144 065 412 octets**, soit 37,39 Gio ; le runtime Python/CUDA et ses archives s’ajoutent à ce total.
-2. Ouvrir **Modèles**, trouver **Fish Audio Drama 3 · FP8 · experts en RAM**, puis installer cette variante. Les téléchargements utilisent des révisions, tailles et SHA-256 fixés. La vérification peut durer, particulièrement pour le fichier de 38,6 Go. Le bouton Annuler et les logs restent disponibles ; un nouvel essai réutilise les fichiers complets vérifiés.
+2. Ouvrir **Modèles → Fish Audio Drama 3**. Laisser la variante **FP8 · ComfyUI · experts en RAM**, puis cliquer sur **Installer Drama 3 FP8**. Depuis v0.10.1, le bouton est directement dans cette fiche. Une installation existante affiche **Vérifier / réparer Drama 3 FP8**. Les téléchargements utilisent des révisions, tailles et SHA-256 fixés. La vérification peut durer, particulièrement pour le fichier de 38,6 Go. Le bouton Annuler et les logs restent disponibles ; un nouvel essai réutilise les fichiers complets vérifiés.
 3. Fermer les autres moteurs IA et applications gourmandes. Le profil exige au moins **46 Gio de RAM disponible**, **12 Gio de VRAM libre** et une machine de la classe 64 Go de RAM.
 4. Dans **Doublage**, choisir Drama 3 et le GPU NVIDIA. « Automatique » choisit le premier GPU CUDA visible ; le Ryzen iGPU n’est pas un périphérique CUDA. Un choix `cuda:N` conserve ce GPU pendant toutes les étapes. Il n’y a pas de génération de secours sur CPU.
 
 Le moteur utilise PyTorch 2.8.0 avec CUDA 12.8 et les experts FP8 sont déquantifiés en BF16 à l’utilisation. Il ne dépend pas des noyaux de quantification optimisés CUDA 13 de Comfy Kitchen. Un avertissement Comfy sur ces noyaux ne signifie donc pas que la génération BF16 a échoué.
 
-![Installation Drama 3](screenshots/drama3-install.png)
+![Installation Drama 3](screenshots/drama3-direct-install.png)
 
 ## Générer une réplique
 
@@ -46,3 +46,7 @@ Si une prise se tait ou s’interrompt, vérifier que la transcription couvre to
 Les variantes officielles FP8, INT4/SGLang-Omni, W6A8 et W4A8 restent **référencées sans moteur de génération intégré**. Aucun moteur GGUF Drama 3 n’est annoncé utilisable ici. Les installations S2 restent séparées.
 
 Consulter la [Fish Audio Community License 1.0](https://huggingface.co/fishaudio/drama-3/blob/main/LICENSE) pour les poids, composants Fish et sorties. Le chargeur et le cœur Comfy sont sous GPL-3.0 avec exceptions décrites par leurs notices ; le source correspondant et les licences sont fournis avec l’application. Les poids sont téléchargés sur demande et ne sont inclus dans aucune archive de distribution.
+
+## Espace disque insuffisant
+
+`TTS_DRAMA_DISK_REQUIRED` signifie que le disque du dossier de modèles n’a pas assez d’espace libre. Les logs de Traitements indiquent désormais le chemin vérifié, les Gio disponibles et les Gio requis (poids restant à télécharger + 2 Gio de marge). Prévoyez environ 60 Go libres pour une première installation complète, runtime compris. Libérez de l’espace ou déplacez le stockage depuis Paramètres, puis réessayez l’installation. Les fichiers complets déjà téléchargés sont réutilisés après vérification.

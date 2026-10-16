@@ -1,10 +1,31 @@
 import json
 from pathlib import Path
 import unittest
-from drama_worker import validate, memory_profile, GIB, verify_models
+from drama_worker import validate, memory_profile, GIB, verify_models, storage_preflight
+from unittest.mock import patch
+from types import SimpleNamespace
+import tempfile
 
 
 class DramaTests(unittest.TestCase):
+    def test_storage_shortage_logs_measured_path_and_capacity_before_failure(self):
+        with tempfile.TemporaryDirectory() as tmp, patch('shutil.disk_usage', return_value=SimpleNamespace(free=GIB)), patch('drama_worker.report') as report:
+            with self.assertRaisesRegex(ValueError, 'TTS_DRAMA_DISK_REQUIRED'):
+                storage_preflight(tmp, [{'name': 'weights', 'size': 3 * GIB}])
+            details = report.call_args.kwargs
+            self.assertEqual(details['storagePath'], str(Path(tmp)))
+            self.assertEqual(details['availableBytes'], GIB)
+            self.assertEqual(details['requiredBytes'], 5 * GIB)
+            self.assertIn('available 1.00 GiB; required 5.00 GiB', details['log'])
+
+    def test_storage_reuses_complete_weights_but_reserves_space_for_incomplete_files(self):
+        with tempfile.TemporaryDirectory() as tmp, patch('shutil.disk_usage', return_value=SimpleNamespace(free=2 * GIB + 4)), patch('drama_worker.report') as report:
+            directory = Path(tmp)
+            (directory / 'complete').write_bytes(b'123')
+            (directory / 'incomplete').write_bytes(b'1')
+            storage_preflight(directory, [{'name': 'complete', 'size': 3}, {'name': 'incomplete', 'size': 4}])
+            self.assertEqual(report.call_args.kwargs['requiredBytes'], 2 * GIB + 4)
+
     def test_transcript_and_gpu_required_before_any_model_load(self):
         request = dict(text='Bonjour', language='fr', mode='zeroShot', speed=1, device='cuda:0', referenceTranscript='こんにちは')
         validate(request)

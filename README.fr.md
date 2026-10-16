@@ -1,6 +1,12 @@
 # AI Dubbing Studio — phases 1–7
 
-[Version anglaise et captures de l’interface](README.md) · [Téléchargements Windows](https://github.com/jontechlabs/ai-dubbing-studio/releases/tag/v0.10.0)
+**v0.10.1 — Volume directement sur la timeline.** Sélectionnez une portion de n’importe quelle piste audio : un curseur 0–200 %, muet/audible et retour à 100 % apparaissent dans la timeline. Sauvegarde automatique, annulation et réglages avancés conservés. La fiche Fish Audio Drama 3 intègre maintenant le bouton **Installer Drama 3 FP8**, sans fiche d’installation séparée. [Guide des zones](docs/AUDIO-REGIONS.md) · [Installation Drama 3](docs/FISH-DRAMA-3.md).
+
+![Timeline volume](docs/screenshots/timeline-volume.png)
+
+*Interface React réelle avec audio de démonstration synthétique et inventaire natif simulé.*
+
+[Version anglaise et captures de l’interface](README.md) · [Téléchargements Windows](https://github.com/jontechlabs/ai-dubbing-studio/releases/tag/v0.10.1)
 
 Studio desktop local de travail texte, voix et vidéo. Tauri 2, React, TypeScript strict et Rust.
 

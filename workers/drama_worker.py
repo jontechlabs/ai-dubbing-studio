@@ -29,6 +29,21 @@ def memory_profile(total_ram, free_ram, free_vram):
     return CACHE_GIB
 
 
+def storage_preflight(directory, files):
+    import shutil
+    directory = Path(directory)
+    remaining = sum(f['size'] for f in files if not (directory / f['name']).is_file()
+                    or (directory / f['name']).stat().st_size != f['size'])
+    available = shutil.disk_usage(directory).free
+    required = remaining + 2 * GIB
+    # Emit measured values before failing so the user can choose the right disk.
+    report(log=f'Drama 3 storage: {directory}; available {available/GIB:.2f} GiB; '
+           f'required {required/GIB:.2f} GiB ({remaining/GIB:.2f} GiB of weights remaining + 2 GiB margin).',
+           storagePath=str(directory), availableBytes=available, requiredBytes=required)
+    if available < required:
+        raise ValueError('TTS_DRAMA_DISK_REQUIRED')
+
+
 def configure_core(cpu=False):
     # Core is extracted next to this runtime, not a user's ComfyUI installation.
     core = Path(sys.executable).parent.parent / 'core'
@@ -197,17 +212,14 @@ def main():
     args = parser.parse_args()
     with contextlib.redirect_stdout(sys.stderr):
         if args.preflight:
-            import shutil
             import psutil
             directory = Path(args.preflight)
             manifest = json.loads((HERE / 'voice-engines.json').read_text(encoding='utf-8'))
             files = next(v['files'] for v in manifest['variants'] if v['id'] == 'drama3-comfy-fp8')
-            remaining = sum(f['size'] for f in files if not (directory / f['name']).is_file() or (directory / f['name']).stat().st_size != f['size'])
-            if shutil.disk_usage(directory).free < remaining + 2 * GIB:
-                raise ValueError('TTS_DRAMA_DISK_REQUIRED')
+            storage_preflight(directory, files)
             if psutil.virtual_memory().total < 56 * GIB:
                 raise ValueError('TTS_DRAMA_RAM_REQUIRED')
-            report(log=f'Drama 3 installation: {remaining/GIB:.2f} GiB remaining; storage and physical RAM checked')
+            report(log='Drama 3 installation: storage and physical RAM checked')
         elif args.runtime_info:
             report(**runtime_info())
         elif args.info:

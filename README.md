@@ -1,5 +1,11 @@
 # AI Dubbing Studio
 
+**v0.10.1 — Volume directly on the timeline.** Select a range on any audio track to adjust its 0–200% gain, mute/unmute or restore 100% in the timeline. Changes autosave, support undo and keep the advanced Audio editor available. The Fish Audio Drama 3 card now includes its **Install Drama 3 FP8** button, with no separate installation card. [Audio regions](docs/AUDIO-REGIONS.md) · [Drama 3 installation](docs/FISH-DRAMA-3.md).
+
+![Timeline volume](docs/screenshots/timeline-volume.png)
+
+*Actual React UI with synthetic demo audio and simulated native inventory.*
+
 A local desktop workspace for preparing video dubbing: review bilingual subtitles, navigate dialogue by dialogue, and keep displayed text separate from voice pronunciation text.
 
 Built with **Tauri 2, React, TypeScript and Rust**. English and French interface. Dark and light themes.
@@ -24,7 +30,7 @@ CosyVoice3, Fish S2 FP8/GGUF and Qwen3-TTS GGUF remain available. [Models and GP
 
 *Actual React browser UI with a simulated reference and transcription result. Separate native checks transcribe real Japanese speech. These are not RTX performance measurements.*
 
-[Windows downloads](https://github.com/jontechlabs/ai-dubbing-studio/releases/tag/v0.10.0) · [User guide](docs/GETTING-STARTED.md) · [Build instructions](docs/BUILDING.md) · [Français](README.fr.md)
+[Windows downloads](https://github.com/jontechlabs/ai-dubbing-studio/releases/tag/v0.10.1) · [User guide](docs/GETTING-STARTED.md) · [Build instructions](docs/BUILDING.md) · [Français](README.fr.md)
 
 ![Studio with bilingual dialogue, video preview, text editor and timeline](docs/screenshots/studio.png)
 

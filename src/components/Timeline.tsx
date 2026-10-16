@@ -1,4 +1,4 @@
-import { memo, useEffect, useMemo, useRef, useState, type RefObject } from 'react';
+import { memo, useEffect, useLayoutEffect, useMemo, useRef, useState, type RefObject } from 'react';
 import {
   AudioLines,
   Captions,
@@ -26,6 +26,7 @@ import { trackPatches } from '../domain/audioPatch';
 import { subtitleDisplay, toggleSubtitles } from '../domain/subtitleDisplay';
 import { dubbingClips, dubbingOffset, moveDubbing, resizeDubbing } from '../domain/mix';
 import { useTimelineZoom } from '../hooks/useTimelineZoom';
+import { TimelineAudioSelection } from './TimelineAudioSelection';
 
 export const Timeline = memo(function Timeline({
   project,
@@ -36,6 +37,8 @@ export const Timeline = memo(function Timeline({
   onEdit,
   busy,
   onAudioSelection,
+  audioSelection,
+  onAudioAdvanced,
 }: {
   project: Project | null;
   selected: Dialogue | undefined;
@@ -44,7 +47,9 @@ export const Timeline = memo(function Timeline({
   onSelect: (line: Dialogue) => void;
   onEdit: (update: (p: Project) => Project) => void;
   busy: boolean;
-  onAudioSelection: (selection: AudioSelection) => void;
+  onAudioSelection: (selection: AudioSelection | null) => void;
+  audioSelection: AudioSelection | null;
+  onAudioAdvanced: () => void;
 }) {
   const { t } = useTranslation();
   const scroll = useRef<HTMLDivElement>(null);
@@ -54,6 +59,7 @@ export const Timeline = memo(function Timeline({
     trackId: string;
     anchor: number;
     end: number;
+    regionId?: string;
   } | null>(null);
   const associations = useMemo(() => {
     const source = new Map<string, Dialogue>(),
@@ -70,6 +76,13 @@ export const Timeline = memo(function Timeline({
   const [rowHeight, setRowHeight] = useState(37);
   const [scrollLeft, setScrollLeft] = useState(0);
   const [scrollTop, setScrollTop] = useState(0);
+  useLayoutEffect(() => {
+    if (audioSelection?.mediaId !== project?.media?.id) return;
+    const row = Array.from(
+      scroll.current?.querySelectorAll<HTMLElement>('.timeline-track') ?? [],
+    ).find((row) => row.dataset.trackId === audioSelection?.trackId);
+    row?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+  }, [audioSelection?.trackId, audioSelection?.mediaId, project?.media?.id]);
   const [drag, setDrag] = useState<{
     id: string;
     role: SubtitleRole;
@@ -248,6 +261,17 @@ export const Timeline = memo(function Timeline({
           </IconButton>
         </div>
       </div>
+      {project && audioSelection && (
+        <TimelineAudioSelection
+          key={`${project.id}:${audioSelection.mediaId}:${audioSelection.trackId}:${audioSelection.startMs}:${audioSelection.endMs}`}
+          project={project}
+          selection={audioSelection}
+          busy={busy}
+          onEdit={onEdit}
+          onSelection={onAudioSelection}
+          onAdvanced={onAudioAdvanced}
+        />
+      )}
       <div className="timeline-body">
         <div className="track-labels">
           <div style={{ transform: `translateY(${-scrollTop}px)` }}>
@@ -348,6 +372,7 @@ export const Timeline = memo(function Timeline({
               <div
                 key={key}
                 className={`timeline-track ${style} ${audioTool && track ? 'audio-selection-tool' : ''}`}
+                data-track-id={track?.id}
                 style={{ height: rowHeight }}
                 onPointerDown={(event) => {
                   if (!track || busy || event.button !== 0 || (!audioTool && !event.shiftKey))
@@ -362,7 +387,15 @@ export const Timeline = memo(function Timeline({
                     scale,
                     max,
                   );
-                  setAudioDrag({ trackId: track.id, anchor: point, end: point });
+                  setAudioDrag({
+                    trackId: track.id,
+                    anchor: point,
+                    end: point,
+                    regionId:
+                      (event.target as HTMLElement)
+                        .closest('[data-region-id]')
+                        ?.getAttribute('data-region-id') ?? undefined,
+                  });
                 }}
                 onPointerMove={(event) => {
                   if (
@@ -399,6 +432,17 @@ export const Timeline = memo(function Timeline({
                       startMs: Math.min(audioDrag.anchor, audioDrag.end),
                       endMs: Math.max(audioDrag.anchor, audioDrag.end),
                     });
+                  else {
+                    const region = track.regions?.find((r) => r.id === audioDrag.regionId);
+                    if (region)
+                      onAudioSelection({
+                        mediaId: project!.media!.id,
+                        trackId: track.id,
+                        regionId: region.id,
+                        startMs: region.startMs,
+                        endMs: region.endMs,
+                      });
+                  }
                   setAudioDrag(null);
                 }}
                 onPointerCancel={() => setAudioDrag(null)}
@@ -693,6 +737,7 @@ export const Timeline = memo(function Timeline({
                     .map((region, index) => (
                       <button
                         key={region.id}
+                        data-region-id={region.id}
                         className={`audio-region ${region.mute || region.gain === 0 ? 'silent' : 'audible'} ${track.regionsEnabled === false ? 'bypassed' : ''}`}
                         style={{
                           left: region.startMs * scale,
@@ -740,7 +785,9 @@ export const Timeline = memo(function Timeline({
                           left: e.startMs * scale,
                           width: Math.max(3, (e.endMs - e.startMs) * scale),
                         }}
-                        onPointerDown={(event) => event.stopPropagation()}
+                        onPointerDown={(event) => {
+                          if (!audioTool && !event.shiftKey) event.stopPropagation();
+                        }}
                         onClick={(event) => {
                           event.stopPropagation();
                           onAudioSelection({
@@ -754,6 +801,18 @@ export const Timeline = memo(function Timeline({
                         {e.mode === 'silence' ? '×' : '↔'}
                       </button>
                     ))}
+                {track &&
+                  !audioDrag &&
+                  audioSelection?.mediaId === project?.media?.id &&
+                  audioSelection?.trackId === track.id && (
+                    <div
+                      className="audio-range-selection persistent"
+                      style={{
+                        left: audioSelection.startMs * scale,
+                        width: Math.max(2, (audioSelection.endMs - audioSelection.startMs) * scale),
+                      }}
+                    />
+                  )}
                 {track && audioDrag?.trackId === track.id && (
                   <div
                     className="audio-range-selection"

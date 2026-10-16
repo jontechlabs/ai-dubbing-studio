@@ -280,7 +280,7 @@
     "INPAINT_TIMEOUT": "Retouch exceeded two hours. Retry with a shorter shot.",
     "TTS_DRAMA_RAM_REQUIRED": "Drama 3 FP8 needs 64 GB physical RAM and at least 46 GiB available RAM. Close memory-heavy apps.",
     "TTS_DRAMA_VRAM_REQUIRED": "Drama 3 needs at least 12 GiB free VRAM on the selected NVIDIA GPU. Close other AI engines.",
-    "TTS_DRAMA_DISK_REQUIRED": "Not enough free disk space in model storage for Drama 3. Allow about 60 GB on the first install.",
+    "TTS_DRAMA_DISK_REQUIRED": "Not enough free disk space for Drama 3. The folder, available space and required space are shown in Processing logs. Free up space or change model storage in Settings, then retry. Allow about 60 GB on the first install.",
     "TTS_DRAMA_FRAME_LIMIT": "Drama 3 hit its generation limit: split the text or try another seed or reference. Truncated audio was discarded."
   },
   "preparingVideo": "Preparing video…",
@@ -736,5 +736,14 @@
   "dramaNoGguf": "Drama 3 is available in FP8 with experts in RAM. No Drama 3 GGUF engine is integrated.",
   "dramaGenerationHint": "Drama 3 FP8: experts in RAM, GPU cache capped at 4 GiB, BF16 dense layers and FP32 codec. NVIDIA 16 GB + 64 GB RAM profile; at least 46 GiB available RAM and 12 GiB free VRAM for generation. About 40.1 GB of models; allow 60 GB free disk for the first install. First load takes time; slower than S2. No CPU fallback.",
   "dramaIntegrated": "FP8 integrated · generation with experts in RAM",
-  "phase6FishLicenseDrama": "Drama 3 · Fish Audio Community License 1.0 · Built with Fish Audio"
+  "phase6FishLicenseDrama": "Drama 3 · Fish Audio Community License 1.0 · Built with Fish Audio",
+  "timelineSelectionControls": "Audio selection controls",
+  "timelineSelectionVolume": "Selection volume",
+  "timelineSelectionNormal": "100%",
+  "timelineSelectionAdvanced": "Audio options",
+  "timelineSelectionClear": "Clear audio selection",
+  "timelineSelectionTrackMuted": "Track muted: its speaker control still takes priority.",
+  "dramaInstall": "Install Drama 3 FP8",
+  "dramaRepair": "Verify / repair Drama 3 FP8",
+  "dramaInstallHelp": "Automatic installation into your configured model storage folder. No separate ComfyUI installation is needed. See Processing for progress."
 }

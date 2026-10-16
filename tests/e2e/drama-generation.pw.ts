@@ -1,16 +1,26 @@
 import {test,expect} from '@playwright/test';
 import {nativeMock} from './nativeMock';
 
+test('the Drama catalogue card installs FP8 directly and hides installation for unsupported variants',async({page})=>{
+ await nativeMock(page);await page.goto('/');await page.evaluate(()=>(window as any).__dramaReady=false);
+ await page.getByRole('button',{name:'Modèles',exact:true}).click();const card=page.locator('.drama-models');
+ await expect(card.getByRole('button',{name:'Installer Drama 3 FP8',exact:true})).toBeEnabled();
+ await card.getByRole('combobox').selectOption('drama3-official-fp8');await expect(card.getByRole('button',{name:'Installer Drama 3 FP8',exact:true})).toHaveCount(0);
+ await card.getByRole('combobox').selectOption('drama3-comfy-fp8');await card.scrollIntoViewIfNeeded();await page.screenshot({path:'docs/screenshots/drama3-direct-install.png'});
+ await card.getByRole('button',{name:'Installer Drama 3 FP8',exact:true}).click();
+ expect(await page.evaluate(()=>(window as any).__calls.some((c:any)=>c.command==='install_voice_runtime'&&c.args.variantId==='drama3-comfy-fp8'))).toBe(true);
+});
+
 test('Drama FP8 exposes verified install size and the RAM offload profile',async({page})=>{
  await nativeMock(page);await page.goto('/');await page.getByRole('button',{name:'Modèles',exact:true}).click();
  const panel=page.getByRole('dialog',{name:'Modèles'});
  await panel.getByRole('combobox',{name:'Moteur préféré pour le projet'}).selectOption('fish-drama3');
  await panel.getByRole('combobox',{name:'Variante préférée'}).selectOption('drama3-comfy-fp8');
  await expect(panel.locator('.voice-variant-detail').getByText(/cache GPU plafonné à 4 Gio/)).toBeVisible();
- const card=panel.locator('.model-card').filter({has:page.getByRole('heading',{name:'Fish Audio Drama 3 · FP8 · experts en RAM',exact:true})});
- await expect(card.getByText(/37.39 GiB/)).toBeVisible();await expect(card.getByText(/cache GPU plafonné à 4 Gio/)).toBeVisible();await expect(card.getByText(/Fish Audio Community License/)).toBeVisible();
+ const card=panel.locator('.drama-models');
+ await expect(card.getByText(/37.39 Gio/)).toBeVisible();await expect(card.getByText(/cache GPU plafonné à 4 Gio/)).toBeVisible();await expect(card.getByText(/Fish Audio Community License/)).toBeVisible();
  await card.scrollIntoViewIfNeeded();await page.screenshot({path:'docs/screenshots/drama3-install.png'});
- await card.getByRole('button',{name:'Vérifier / réparer cette variante'}).click();
+ await card.getByRole('button',{name:'Vérifier / réparer Drama 3 FP8'}).click();
  expect(await page.evaluate(()=>(window as any).__calls.some((c:any)=>c.command==='install_voice_runtime'&&c.args.variantId==='drama3-comfy-fp8'))).toBe(true);
 });
 

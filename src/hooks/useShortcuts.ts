@@ -16,7 +16,11 @@ export function useShortcuts(actions: {
   useEffect(() => {
     const listener = (event: KeyboardEvent) => {
       const target = event.target as HTMLElement;
-      if (target.closest('input, textarea, select, [contenteditable="true"], [role="dialog"]'))
+      if (
+        target.closest(
+          'input:not([type="range"]), textarea, select, [contenteditable="true"], [role="dialog"]',
+        )
+      )
         return;
       const key = event.key.toLowerCase();
       const modifier = event.ctrlKey || event.metaKey;

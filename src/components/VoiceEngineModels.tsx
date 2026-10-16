@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import type { Job } from '../domain/types';
 import { installedVoiceVariants } from '../domain/voiceEngines';
 import * as bridge from '../services/bridge';
+import { DramaModels } from './DramaModels';
 
 export function VoiceEngineModels({
   jobs,
@@ -43,47 +44,54 @@ export function VoiceEngineModels({
         .filter((v) => v.id !== 'cosy3-official')
         .map((variant) => {
           const state = status?.variants.find((v) => v.id === variant.id);
+          const installButton = (
+            <button
+              className="button accent wide"
+              disabled={!bridge.native || busy}
+              onClick={() => {
+                setWorking(true);
+                void bridge
+                  .installVoiceRuntime(variant.id)
+                  .then(onStarted)
+                  .catch((e) => onError(String(e)))
+                  .finally(() => setWorking(false));
+              }}
+            >
+              {t(
+                variant.id === 'drama3-comfy-fp8'
+                  ? state?.installed
+                    ? 'dramaRepair'
+                    : 'dramaInstall'
+                  : state?.installed
+                    ? 'phase6Repair'
+                    : 'phase6Install',
+              )}
+            </button>
+          );
+          if (variant.id === 'drama3-comfy-fp8')
+            return (
+              <DramaModels
+                key={variant.id}
+                installed={state?.installed}
+                installButton={installButton}
+              />
+            );
           return (
             <div className="model-card" key={variant.id}>
               <h3>{variant.name}</h3>
               <p>{t(state?.installed ? 'modelInstalled' : 'ttsNotInstalled')}</p>
               <p className="panel-description">
-                {t(
-                  variant.providerId === 'fish-drama3'
-                    ? 'dramaGenerationHint'
-                    : variant.backend === 'vulkan'
-                      ? 'phase6Gguf'
-                      : 'phase6Fp8',
-                )}
+                {t(variant.backend === 'vulkan' ? 'phase6Gguf' : 'phase6Fp8')}
               </p>
               {variant.providerId.startsWith('fish') && (
-                <p className="warning">
-                  {t(
-                    variant.providerId === 'fish-drama3'
-                      ? 'phase6FishLicenseDrama'
-                      : 'phase6FishLicense',
-                  )}
-                </p>
+                <p className="warning">{t('phase6FishLicense')}</p>
               )}
               {state && (
                 <small>
                   {(state.sizeBytes / 1024 ** 3).toFixed(2)} GiB · {t('phase6ModelSize')}
                 </small>
               )}
-              <button
-                className="button accent wide"
-                disabled={!bridge.native || busy}
-                onClick={() => {
-                  setWorking(true);
-                  void bridge
-                    .installVoiceRuntime(variant.id)
-                    .then(onStarted)
-                    .catch((e) => onError(String(e)))
-                    .finally(() => setWorking(false));
-                }}
-              >
-                {t(state?.installed ? 'phase6Repair' : 'phase6Install')}
-              </button>
+              {installButton}
             </div>
           );
         })}

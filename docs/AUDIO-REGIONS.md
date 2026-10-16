@@ -1,4 +1,20 @@
-# Zones audio et volumes — 0.4.2
+# Zones audio et volumes
+
+## Volume directement dans la timeline — v0.10.1
+
+1. Activez **Sélectionner une zone audio**, puis faites glisser sur la portion d’Audio original, Voix, Musique, Effets ou Doublage. Maj + glisser reste disponible sur les pistes sources ; sur un bloc de doublage, Maj conserve l’aimantation du déplacement : utilisez le bouton de sélection pour y tracer une portion.
+2. Le cadre de sélection reste visible et la barre de réglages apparaît dans la timeline, sans ouvrir Audio.
+3. Déplacez **Volume de la sélection** de 0 à 200 %. Le changement est immédiat et sauvegardé automatiquement. Un déplacement du curseur rend la portion audible à ce niveau ; les boutons de piste et le volume général restent prioritaires.
+4. **Rendre la zone silencieuse/audible** coupe ou rétablit la portion. **100 %** rétablit son volume normal et la rend audible. Cela ne réactive pas une piste coupée.
+5. Un clic sur une zone existante rappelle ses réglages. **Ctrl+Z / Ctrl+Y** permettent d’annuler/rétablir. **Effacer la sélection audio** ferme les contrôles sans retirer le réglage enregistré.
+6. **Options audio** ouvre explicitement l’éditeur détaillé avec la même sélection : timecodes exacts, isolation, transferts et suppression des zones.
+
+Les zones ne modifient pas les fichiers source. Une nouvelle sélection remplace seulement la partie commune des anciennes zones et conserve leurs portions extérieures. Les niveaux sont réutilisés à la lecture, après un saut temporel et dans le mix exporté.
+
+![Réglage direct](screenshots/timeline-volume.png)
+
+Capture React réelle avec vidéo synthétique et inventaire natif simulé. Un test distinct mesure le son réellement produit dans le navigateur lors des changements de volume, de la mise en silence et d’un saut hors de la sélection.
+
 
 ## Couper ou entendre certaines portions
 
@@ -6,7 +22,7 @@
 2. Entrez **Début de la zone** et **Fin de la zone**, au format `00:00:03.000`. Vous pouvez aussi utiliser la réplique sélectionnée.
 3. Cliquez sur **Rendre la zone silencieuse** ou **Rendre la zone audible**. Pour changer son niveau, réglez **Volume de la zone**, puis **Enregistrer la zone**.
 
-Une autre méthode consiste à faire **Maj + glisser** sur une piste audio de la timeline. Le bouton **Sélectionner une zone audio** permet le même geste sans maintenir Maj. Le panneau Audio s’ouvre avec les timecodes de la sélection. Cliquez sur une zone existante dans la timeline ou dans la liste du panneau pour la modifier.
+Une autre méthode consiste à faire **Maj + glisser** sur une piste audio source de la timeline. Le bouton **Sélectionner une zone audio** permet le même geste sans maintenir Maj, y compris sur Doublage. Depuis v0.10.1, la barre de réglages s’affiche directement dans la timeline ; **Options audio** ouvre le panneau détaillé avec les timecodes de la sélection. Cliquez sur une zone existante dans la timeline ou dans la liste du panneau pour la modifier.
 
 Les zones silencieuses sont hachurées ; les zones audibles portent leur pourcentage. Les fichiers source restent inchangés. Les zones et leurs volumes sont sauvegardés avec le projet et peuvent être annulés/rétablis avec **Ctrl+Z / Ctrl+Y**.
 

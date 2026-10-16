@@ -257,11 +257,11 @@ test('timeline range selection paints inside regions, validates bounds, and supp
   await page.goto('/');await page.getByRole('button',{name:'Explorer l’exemple'}).click();await expect(page.getByRole('button',{name:'Lecture',exact:true})).toBeEnabled();
   const row=page.locator('.timeline-track.audio').first();const box=await row.boundingBox();expect(box).not.toBeNull();
   await page.keyboard.down('Shift');await page.mouse.move(box!.x+box!.width*0.15,box!.y+16);await page.mouse.down();await page.mouse.move(box!.x+box!.width*0.4,box!.y+16,{steps:8});await page.mouse.up();await page.keyboard.up('Shift');
-  await expect(page.getByRole('dialog',{name:'Audio',exact:true})).toBeVisible();await page.getByRole('button',{name:'N’écouter que cette zone',exact:true}).click();
+  await expect(page.getByRole('group',{name:'Réglage de la sélection audio'})).toBeVisible();await expect(page.getByRole('dialog',{name:'Audio',exact:true})).toHaveCount(0);await page.getByRole('button',{name:'Options audio',exact:true}).click();await expect(page.getByRole('dialog',{name:'Audio',exact:true})).toBeVisible();await page.getByRole('button',{name:'N’écouter que cette zone',exact:true}).click();
   await expect(page.locator('.audio-region')).toHaveCount(3);await page.getByRole('textbox',{name:'Fin de la zone'}).fill('99:00:00.000');await page.getByRole('button',{name:'Enregistrer la zone',exact:true}).click();await expect(page.getByRole('alert')).toContainText('timecodes');
   await page.getByRole('button',{name:'Fermer',exact:true}).click();await page.keyboard.press('Control+z');await expect(page.locator('.audio-region')).toHaveCount(0);
   await page.keyboard.press('Control+y');await expect(page.locator('.audio-region')).toHaveCount(3);
-  await page.locator('.audio-region.audible').first().click();await expect(page.getByRole('dialog',{name:'Audio',exact:true})).toBeVisible();await page.getByRole('slider',{name:'Volume de la zone'}).fill('0.4');await page.getByRole('button',{name:'Enregistrer la zone',exact:true}).click();await expect(page.locator('.audio-region.audible')).toContainText('40%');
+  await page.locator('.audio-region.audible').first().click();await page.getByRole('button',{name:'Options audio',exact:true}).click();await expect(page.getByRole('dialog',{name:'Audio',exact:true})).toBeVisible();await page.getByRole('slider',{name:'Volume de la zone'}).fill('0.4');await page.getByRole('button',{name:'Enregistrer la zone',exact:true}).click();await expect(page.locator('.audio-region.audible')).toContainText('40%');
   await page.getByRole('button',{name:'Fermer',exact:true}).click();await expect(page.locator('.save-indicator')).toHaveText('Sauvegardé');await page.reload();await expect(page.locator('.audio-region')).toHaveCount(3);
 });
 

@@ -22,10 +22,10 @@ export default function App() {
   const updater = useUpdater(studio.flush);
   const [panel, setPanel] = useState<Panel>(null);
   const [audioSelection, setAudioSelection] = useState<AudioSelection | null>(null);
-  const selectAudio = useCallback((value: AudioSelection) => {
+  const selectAudio = useCallback((value: AudioSelection | null) => {
     setAudioSelection(value);
-    setPanel('audio');
   }, []);
+  const openAudioAdvanced = useCallback(() => setPanel('audio'), []);
   const [subtitleRole, setSubtitleRole] = useState<'source' | 'target'>('source');
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [translationFocus, setTranslationFocus] = useState(0);
@@ -308,6 +308,8 @@ export default function App() {
         />
         <div style={{ height: timelineHeight, flexShrink: 0 }}>
           <Timeline
+            audioSelection={audioSelection}
+            onAudioAdvanced={openAudioAdvanced}
             onAudioSelection={selectAudio}
             project={studio.project}
             selected={selected}

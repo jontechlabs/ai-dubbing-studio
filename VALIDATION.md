@@ -1,5 +1,16 @@
 # Validation - 16 October 2026
 
+## v0.10.1 direct timeline volume and visible Drama installation
+
+Windows workflow evidence will be recorded before publication.
+
+The inline selection toolbar reuses the existing non-destructive region gain/mute engine. Selection no longer automatically opens the Audio panel; advanced options open it explicitly. Browser checks select all five audio track types, amplify/mute/restore ranges, reopen regions, undo/redo from the focused slider, persist after reload and measure real Web Audio output inside/outside the range. Track mute/solo/master controls retain their existing priority. Native audio rendering is unchanged.
+
+The former Drama catalogue and installation cards are consolidated into one card, with installation/repair for the integrated FP8 profile only. A simulated uninstalled inventory verifies the visible button invokes the existing installer; unsupported catalogue variants expose no installation action. Screenshots use the real React UI and simulated native inventory. The full-model RTX performance limitations documented for v0.10.0 remain unchanged.
+
+The Drama installation disk preflight now logs the actual storage path, available bytes and required bytes before rejecting insufficient space. Required space remains missing/incomplete weights plus a 2 GiB margin after runtime installation; complete files are subsequently SHA-256 verified by the downloader. Two additional Python checks cover the shortage details and reuse/required-space boundary. The original failure reported by the user was confirmed to be insufficient free space; the capacity guard remains enabled.
+
+
 ## v0.10.0 Drama 3 FP8 generation with experts in RAM
 
 Windows checks and signed-update package production passed in [run 38923839748](https://github.com/jontechlabs/ai-dubbing-studio/actions/runs/38923839748), built from `1edb5b890b04d1dd11473191b7f022a1f9d847f5`. All 217 Windows suite checks passed (57 TypeScript, 67 Rust, 58 Chrome, 35 Python), plus the real FP8/cache/tiny-model/header diagnostic, plus two real Japanese ASR checks using the final Windows release executable. The setup and portable archive are copied unchanged from this workflow. Final metadata only records this evidence and the verified update feed.

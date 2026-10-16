@@ -2086,6 +2086,56 @@ pre {
   border: 1px solid var(--accent);
   pointer-events: none;
 }
+.timeline-audio-selection {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 5px 12px;
+  flex-shrink: 0;
+  border-block: 1px solid var(--border);
+  background: var(--surface);
+  font-size: 11px;
+}
+.timeline-audio-selection label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.timeline-audio-selection input[type='range'] {
+  width: 125px;
+  accent-color: var(--accent);
+}
+.timeline-audio-selection output {
+  min-width: 34px;
+  font-variant-numeric: tabular-nums;
+}
+.timeline-audio-selection .selection-timecodes {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--muted);
+}
+.timeline-audio-selection .button {
+  min-height: 27px;
+  font-size: 11px;
+  padding: 4px 8px;
+}
+.timeline-audio-selection small {
+  color: var(--muted);
+}
+.audio-range-selection.persistent {
+  background: #b491f025;
+}
+.drama-install {
+  margin: 12px 0 16px;
+}
+.model-source code {
+  display: block;
+  overflow-wrap: anywhere;
+}
+.model-source button {
+  margin-top: 8px;
+}
 .model-storage-size {
   display: flex;
   flex-wrap: wrap;
