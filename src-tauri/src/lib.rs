@@ -22,6 +22,7 @@ mod transcription;
 mod tts;
 mod voice_engines;
 mod voice_fit;
+mod voice_space;
 mod waveform;
 pub fn smoke_test(path: &std::path::Path) -> Result<(), String> {
     smoke::run(path)
@@ -130,6 +131,16 @@ async fn voice_status(
     include_cuda: Option<bool>,
 ) -> Result<serde_json::Value, String> {
     voice_engines::status(core.inner().clone(), app, include_cuda.unwrap_or(false)).await
+}
+#[tauri::command]
+async fn voice_install_space(
+    app: tauri::AppHandle,
+    core: State<'_, Shared>,
+) -> Result<voice_space::Space, String> {
+    let core = core.inner().clone();
+    tauri::async_runtime::spawn_blocking(move || voice_space::check(&core, &app))
+        .await
+        .map_err(domain::io_error)?
 }
 #[tauri::command]
 fn install_voice_runtime(
@@ -1084,6 +1095,7 @@ pub fn run() {
             latest_lip_analysis,
             tts_status,
             voice_status,
+            voice_install_space,
             install_voice_runtime,
             install_tts_runtime,
             generate_line,

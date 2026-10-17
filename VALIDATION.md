@@ -1,4 +1,12 @@
-# Validation - 16 October 2026
+# Validation - 17 October 2026
+
+## v0.10.2 offline disk preflight before Drama dependencies
+
+Windows workflow evidence will be recorded before publication.
+
+The native preflight reads the pinned manifests and local file metadata, budgets missing model files and dependency archives, reserves 12 GiB for expanded runtime payload less existing Python/core files, plus 2 GiB margin. The pinned torch wheel actually expands to 6.88 GiB (central-directory measurement). This is a conservative estimate, not a checksum validation or a guarantee against other processes filling the disk. Existing SHA-256 download validation and the later Python model-space guard remain enabled. GetDiskFreeSpaceExW queries caller-available capacity on the configured storage volume (including extended paths), walking to its existing ancestor for a new folder. Missing/disconnected drives fail closed. The task rechecks under its job gate before creating runtime files, deleting readiness markers or downloading dependencies.
+
+Browser checks cover insufficient space, refreshed space, a reduction between display and click, and unavailable-drive recovery. Native tests cover first-install budgets, reuse/boundaries and an actual Windows capacity query with extended and missing-child paths. The installation UI and screenshots use simulated native storage; no 40 GB model is downloaded by tests. The docs distinguish a cut in an original WAV from fitted playback. No speculative change was made to neural generation or existing takes without the affected engine/audio comparison.
 
 ## v0.10.1 direct timeline volume and visible Drama installation
 

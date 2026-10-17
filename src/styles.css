@@ -2129,6 +2129,21 @@ pre {
 .drama-install {
   margin: 12px 0 16px;
 }
+.drama-space {
+  border: 1px solid var(--border);
+  padding: 12px;
+  border-radius: 6px;
+  margin-bottom: 12px;
+}
+.drama-space .storage-path {
+  display: block;
+  overflow-wrap: anywhere;
+  margin-top: 8px;
+}
+.drama-space small {
+  display: block;
+  margin-bottom: 8px;
+}
 .model-source code {
   display: block;
   overflow-wrap: anywhere;

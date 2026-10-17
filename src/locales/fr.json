@@ -745,5 +745,14 @@
   "timelineSelectionTrackMuted": "Piste coupée : son bouton haut-parleur reste prioritaire.",
   "dramaInstall": "Installer Drama 3 FP8",
   "dramaRepair": "Vérifier / réparer Drama 3 FP8",
-  "dramaInstallHelp": "Installation automatique dans le dossier de stockage des modèles configuré. Aucune installation séparée de ComfyUI n’est nécessaire. Voir la progression dans Traitements."
+  "dramaInstallHelp": "Installation automatique dans le dossier de stockage des modèles configuré. Aucune installation séparée de ComfyUI n’est nécessaire. Voir la progression dans Traitements.",
+  "dramaSpaceTitle": "Espace disque avant installation",
+  "dramaSpaceValues": "Disponibles : {{available}} Gio · Nécessaires (estimation) : {{required}} Gio",
+  "dramaSpaceEnough": "Espace suffisant pour démarrer.",
+  "dramaSpaceMissing": "Espace insuffisant : libérez encore environ {{missing}} Gio ou changez le dossier dans Paramètres.",
+  "dramaSpaceDetails": "Poids restants : {{models}} Gio · Archives à télécharger : {{downloads}} Gio · Réserve de décompression restante : {{runtime}} Gio · Marge : {{margin}} Gio.",
+  "dramaSpaceChecking": "Vérification de l’espace…",
+  "dramaSpaceRefresh": "Vérifier l’espace disque",
+  "dramaSpaceError": "Impossible de vérifier le stockage. Vérifiez que le disque est connecté, puis réessayez.",
+  "dramaSpaceHint": "Contrôle local sans téléchargement. Estimation prudente incluant les dépendances et leur décompression, avec déduction des fichiers déjà présents. L’espace est revérifié au démarrage ; l’intégrité des fichiers reste vérifiée pendant l’installation."
 }

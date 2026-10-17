@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Job } from '../domain/types';
 import { installedVoiceVariants } from '../domain/voiceEngines';
@@ -17,11 +17,32 @@ export function VoiceEngineModels({
   const { t } = useTranslation();
   const [status, setStatus] = useState<bridge.VoiceStatus | null>(null);
   const [working, setWorking] = useState(false);
+  const [space, setSpace] = useState<bridge.VoiceInstallSpace | null>(null);
+  const [spaceChecking, setSpaceChecking] = useState(false);
+  const [spaceError, setSpaceError] = useState(false);
+  const checkSpace = useCallback(async () => {
+    setSpaceChecking(true);
+    setSpaceError(false);
+    try {
+      const value = await bridge.voiceInstallSpace();
+      setSpace(value);
+      return value;
+    } catch {
+      setSpace(null);
+      setSpaceError(true);
+      return null;
+    } finally {
+      setSpaceChecking(false);
+    }
+  }, []);
   const completion = jobs
     .filter((j) => ['ttsInstall', 'modelMove'].includes(j.kind))
     .map((j) => j.id + j.status)
     .join('|');
   const busy = working || jobs.some((j) => ['queued', 'running', 'paused'].includes(j.status));
+  useEffect(() => {
+    if (bridge.native) void checkSpace();
+  }, [checkSpace, completion]);
   useEffect(() => {
     let disposed = false;
     if (bridge.native)
@@ -47,14 +68,22 @@ export function VoiceEngineModels({
           const installButton = (
             <button
               className="button accent wide"
-              disabled={!bridge.native || busy}
-              onClick={() => {
+              disabled={
+                !bridge.native ||
+                busy ||
+                (variant.id === 'drama3-comfy-fp8' && (spaceChecking || !space?.enough))
+              }
+              onClick={async () => {
                 setWorking(true);
-                void bridge
-                  .installVoiceRuntime(variant.id)
-                  .then(onStarted)
-                  .catch((e) => onError(String(e)))
-                  .finally(() => setWorking(false));
+                try {
+                  if (variant.id === 'drama3-comfy-fp8' && !(await checkSpace())?.enough) return;
+                  await bridge.installVoiceRuntime(variant.id);
+                  onStarted();
+                } catch (e) {
+                  onError(String(e));
+                } finally {
+                  setWorking(false);
+                }
               }}
             >
               {t(
@@ -74,6 +103,10 @@ export function VoiceEngineModels({
                 key={variant.id}
                 installed={state?.installed}
                 installButton={installButton}
+                space={space}
+                checking={spaceChecking}
+                spaceError={spaceError}
+                onCheckSpace={() => void checkSpace()}
               />
             );
           return (

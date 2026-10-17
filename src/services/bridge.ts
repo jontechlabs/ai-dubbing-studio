@@ -51,6 +51,19 @@ export function voiceStatus(includeCuda = false) {
 export function installVoiceRuntime(variantId: string) {
   return invoke<string>('install_voice_runtime', { variantId });
 }
+export interface VoiceInstallSpace {
+  path: string;
+  availableBytes: number;
+  requiredBytes: number;
+  modelBytes: number;
+  downloadBytes: number;
+  runtimeBytes: number;
+  marginBytes: number;
+  enough: boolean;
+}
+export function voiceInstallSpace() {
+  return invoke<VoiceInstallSpace>('voice_install_space');
+}
 export interface TtsStatus {
   installed: boolean;
   installing: boolean;

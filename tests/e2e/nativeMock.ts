@@ -61,6 +61,7 @@ export async function nativeMock(page: Page, large = false) {
     host.__TAURI_INTERNALS__={metadata:{currentWindow:{label:'main'}},convertFileSrc:(path:string)=>path.endsWith('.wav')?`/audio/${path.split('/').at(-1)}`:'/preview.mp4',transformCallback:(fn:(data:any)=>void)=>{const id=++counter;callbacks.set(id,fn);return id;},unregisterCallback:(id:number)=>callbacks.delete(id),invoke:async(command:string,args:any={})=>{
       host.__calls.push({command,args:JSON.parse(JSON.stringify(args))});
       if(command==='inpaint_status')return {installed:host.__inpaintReady,sizeBytes:3885781230,devices:[{id:'cuda:0',name:'RTX 5060 Ti (simulation)',memoryMb:16384}]};
+      if(command==='voice_install_space'){if(host.__spaceError)throw Error('disk unavailable');return host.__dramaSpace??{path:'F:/Models/voice-engines',availableBytes:70*1024**3,requiredBytes:40144065412+18*1024**3,modelBytes:40144065412,downloadBytes:4*1024**3,runtimeBytes:12*1024**3,marginBytes:2*1024**3,enough:true};}
       if(command==='install_inpaint'){job={id:'inpaint-install',projectId:'',kind:'inpaintInstall',status:'running',stage:'inpaintDownload',progress:.1,logs:[],error:null};emit('job-changed',job);return job.id;}
       if(command==='inpaint_path')return `generations/${args.id}.mp4`;
       if(command==='inpaint_lips'){host.__pendingInpaint=structuredClone(args.options);job={id:'inpaint-job',projectId:project.id,kind:'inpaint',status:'running',stage:'inpaintGenerate',progress:.2,logs:[],error:null};emit('job-changed',job);return job.id;}

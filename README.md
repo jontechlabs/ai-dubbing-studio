@@ -1,5 +1,11 @@
 # AI Dubbing Studio
 
+**v0.10.2 — Disk space before Drama 3 installation.** The model card shows the storage folder, available capacity and a conservative budget for missing weights, dependency archives and extraction. Installation is blocked when capacity is insufficient or cannot be checked; the native task checks again before any dependency download. [Installation](docs/FISH-DRAMA-3.md) · [Voice endings and timing](docs/DUBBING-PLACEMENT.md).
+
+![Drama 3 storage preflight](docs/screenshots/drama3-space.png)
+
+*Real React UI with simulated storage capacity / Interface React réelle, capacité simulée.*
+
 **v0.10.1 — Volume directly on the timeline.** Select a range on any audio track to adjust its 0–200% gain, mute/unmute or restore 100% in the timeline. Changes autosave, support undo and keep the advanced Audio editor available. The Fish Audio Drama 3 card now includes its **Install Drama 3 FP8** button, with no separate installation card. [Audio regions](docs/AUDIO-REGIONS.md) · [Drama 3 installation](docs/FISH-DRAMA-3.md).
 
 ![Timeline volume](docs/screenshots/timeline-volume.png)
@@ -30,7 +36,7 @@ CosyVoice3, Fish S2 FP8/GGUF and Qwen3-TTS GGUF remain available. [Models and GP
 
 *Actual React browser UI with a simulated reference and transcription result. Separate native checks transcribe real Japanese speech. These are not RTX performance measurements.*
 
-[Windows downloads](https://github.com/jontechlabs/ai-dubbing-studio/releases/tag/v0.10.1) · [User guide](docs/GETTING-STARTED.md) · [Build instructions](docs/BUILDING.md) · [Français](README.fr.md)
+[Windows downloads](https://github.com/jontechlabs/ai-dubbing-studio/releases/tag/v0.10.2) · [User guide](docs/GETTING-STARTED.md) · [Build instructions](docs/BUILDING.md) · [Français](README.fr.md)
 
 ![Studio with bilingual dialogue, video preview, text editor and timeline](docs/screenshots/studio.png)
 

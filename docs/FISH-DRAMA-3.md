@@ -49,4 +49,12 @@ Consulter la [Fish Audio Community License 1.0](https://huggingface.co/fishaudio
 
 ## Espace disque insuffisant
 
+Depuis **v0.10.2**, la fiche Drama 3 affiche le dossier utilisé, l’espace disponible et une estimation prudente de l’espace supplémentaire nécessaire **avant le téléchargement des dépendances**. Le bouton d’installation reste désactivé tant que le contrôle est en cours, impossible ou insuffisant. Après avoir libéré de l’espace, utilisez **Vérifier l’espace disque**.
+
+Le calcul inclut les poids manquants, les archives non présentes dans les caches Drama/CosyVoice, une réserve de 12 Gio pour le runtime décompressé (réduite de la taille du Python/cœur déjà présent) et 2 Gio de marge. Le paquet PyTorch épinglé décompressé représente à lui seul environ 6,88 Gio. Il s’agit d’une estimation de capacité, basée sur les tailles : les SHA-256 sont toujours vérifiés pendant l’installation. Un disque déconnecté bloque le démarrage. Le contrôle est répété au clic puis par la tâche native avant toute installation ; une diminution de l’espace libre peut donc empêcher une tâche initialement affichée comme possible.
+
+![Vérification avant installation](screenshots/drama3-space.png)
+
+Capture de l’interface React réelle avec un disque et des tailles simulés pour vérifier le blocage sans télécharger les modèles.
+
 `TTS_DRAMA_DISK_REQUIRED` signifie que le disque du dossier de modèles n’a pas assez d’espace libre. Les logs de Traitements indiquent désormais le chemin vérifié, les Gio disponibles et les Gio requis (poids restant à télécharger + 2 Gio de marge). Prévoyez environ 60 Go libres pour une première installation complète, runtime compris. Libérez de l’espace ou déplacez le stockage depuis Paramètres, puis réessayez l’installation. Les fichiers complets déjà téléchargés sont réutilisés après vérification.

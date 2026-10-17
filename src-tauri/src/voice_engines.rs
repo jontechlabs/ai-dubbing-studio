@@ -170,6 +170,13 @@ pub fn install<R: tauri::Runtime>(
         let flag = core.jobs.lock().unwrap().get(&key).unwrap().cancel.clone();
         let result=async {
             let _permit=tokio::select!{_=jobs::cancelled(&flag)=>return Err("CANCELLED".into()),permit=core.gate.clone().acquire_owned()=>permit.map_err(io_error)?,};
+            if selected.engine=="drama3" {
+                let probe_core=core.clone();let probe_app=app.clone();
+                let space=tauri::async_runtime::spawn_blocking(move||crate::voice_space::check(&probe_core,&probe_app)).await.map_err(io_error)??;
+                if flag.load(Ordering::Relaxed) {return Err("CANCELLED".into());}
+                jobs::update(&core,&app,&key,|j|j.logs.push(format!("Drama 3 before downloads: {}; available {:.2} GiB; estimated required {:.2} GiB (models, dependency archives, expansion and margin)",space.path,space.available_bytes as f64/1073741824.0,space.required_bytes as f64/1073741824.0)));
+                if !space.enough {return Err("TTS_DRAMA_DISK_REQUIRED".into());}
+            }
             jobs::update(&core,&app,&key,|j|{j.status="running".into();j.stage="runtime".into();});
             let folder=root(&core);std::fs::create_dir_all(folder.join(&id)).map_err(io_error)?;
             let _=std::fs::remove_file(folder.join(&id).join("ready.json"));

@@ -745,5 +745,14 @@
   "timelineSelectionTrackMuted": "Track muted: its speaker control still takes priority.",
   "dramaInstall": "Install Drama 3 FP8",
   "dramaRepair": "Verify / repair Drama 3 FP8",
-  "dramaInstallHelp": "Automatic installation into your configured model storage folder. No separate ComfyUI installation is needed. See Processing for progress."
+  "dramaInstallHelp": "Automatic installation into your configured model storage folder. No separate ComfyUI installation is needed. See Processing for progress.",
+  "dramaSpaceTitle": "Disk space before installation",
+  "dramaSpaceValues": "Available: {{available}} GiB · Required (estimate): {{required}} GiB",
+  "dramaSpaceEnough": "Enough space to start.",
+  "dramaSpaceMissing": "Not enough space: free about {{missing}} GiB more or change model storage in Settings.",
+  "dramaSpaceDetails": "Remaining weights: {{models}} GiB · Archives to download: {{downloads}} GiB · Remaining extraction reserve: {{runtime}} GiB · Margin: {{margin}} GiB.",
+  "dramaSpaceChecking": "Checking disk space…",
+  "dramaSpaceRefresh": "Check disk space",
+  "dramaSpaceError": "Cannot check storage. Verify that the drive is connected, then retry.",
+  "dramaSpaceHint": "Local check without downloads. Conservative estimate includes dependencies and extraction, deducting existing files. Space is checked again when starting; file integrity is still checked during installation."
 }

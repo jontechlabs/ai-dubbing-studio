@@ -1,12 +1,18 @@
 # AI Dubbing Studio — phases 1–7
 
+**v0.10.2 — Espace disque avant installation de Drama 3.** La fiche affiche le dossier, l’espace disponible et le besoin estimé incluant les dépendances, leur décompression et les poids manquants. Le bouton reste bloqué si le contrôle échoue ou manque de place ; le démarrage natif vérifie encore la capacité avant tout téléchargement. [Installation](docs/FISH-DRAMA-3.md) · [Fin de syllabe et calage](docs/DUBBING-PLACEMENT.md).
+
+![Drama 3 storage preflight](docs/screenshots/drama3-space.png)
+
+*Real React UI with simulated storage capacity / Interface React réelle, capacité simulée.*
+
 **v0.10.1 — Volume directement sur la timeline.** Sélectionnez une portion de n’importe quelle piste audio : un curseur 0–200 %, muet/audible et retour à 100 % apparaissent dans la timeline. Sauvegarde automatique, annulation et réglages avancés conservés. La fiche Fish Audio Drama 3 intègre maintenant le bouton **Installer Drama 3 FP8**, sans fiche d’installation séparée. [Guide des zones](docs/AUDIO-REGIONS.md) · [Installation Drama 3](docs/FISH-DRAMA-3.md).
 
 ![Timeline volume](docs/screenshots/timeline-volume.png)
 
 *Interface React réelle avec audio de démonstration synthétique et inventaire natif simulé.*
 
-[Version anglaise et captures de l’interface](README.md) · [Téléchargements Windows](https://github.com/jontechlabs/ai-dubbing-studio/releases/tag/v0.10.1)
+[Version anglaise et captures de l’interface](README.md) · [Téléchargements Windows](https://github.com/jontechlabs/ai-dubbing-studio/releases/tag/v0.10.2)
 
 Studio desktop local de travail texte, voix et vidéo. Tauri 2, React, TypeScript strict et Rust.
 

@@ -27,3 +27,12 @@ Le calage est associé au média et à la langue cible : un nouveau chemin de m�
 Capture de l’interface React/Chrome avec des prises et commandes natives simulées. Des vérifications distinctes mesurent la lecture Web Audio après déplacement, le départ réel dans un MKV et la conservation de hauteur lors de l’étirement/compression.
 
 Pour choisir l’interprétation avant de générer, consultez [Humeurs des voix](VOICE-MOODS.md).
+
+## Dernière syllabe coupée : comparer l’essai et la lecture synchronisée
+
+Écoutez d’abord l’essai seul dans **Doublage**, ou exportez son WAV : cette écoute utilise le fichier généré complet, indépendamment du créneau de la timeline.
+
+- **Le WAV est déjà coupé** : essayez une phrase complète avec une ponctuation finale, à vitesse 1, puis un nouvel essai avec une autre graine. Contrôlez également que la transcription de référence correspond à son audio. La ponctuation aide à poser les pauses selon les [conseils Fish Audio](https://docs.fish.audio/resources/best-practices/real-time-streaming) ; elle ne garantit pas qu’un modèle produise toutes les syllabes. Un arrêt trop précoce du moteur nécessite une nouvelle génération.
+- **Le WAV est complet, seule la lecture avec la vidéo semble coupée** : revenez à **Durée automatique**, comparez, puis allongez le bloc avec son bord droit dans l’espace disponible. Contrôlez aussi le départ du doublage suivant et les zones muettes/volumes placées sur la fin. Une forte compression peut rendre l’articulation finale moins nette.
+
+Le calage existant utilise la voix complète et un changement de tempo avec conservation de la hauteur ; la durée finale reste bornée par le créneau et la voix suivante. Le moteur utilisé et la comparaison WAV/lecture sont nécessaires pour identifier la cause d’un cas précis. Aucun ajout de silence ne recrée une syllabe absente du fichier source.
