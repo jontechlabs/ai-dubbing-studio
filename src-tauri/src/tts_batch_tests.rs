@@ -106,7 +106,8 @@ fn request(p: &Project, root: &Path) -> Request {
 #[test]
 fn selection_excludes_untranslated_even_with_tts_text_and_force_preserves_existing_file() {
     let tmp = tempfile::tempdir().unwrap();
-    let root = tmp.path();
+    let root_path = tmp.path().canonicalize().unwrap();
+    let root = root_path.as_path();
     let mut p = fixture(root, &["Bonjour", "<i> </i>", "Salut"]);
     p.dialogues[1].tts_text = Some("Manual pronunciation alone is not a translation".into());
     let line = &p.dialogues[0];
