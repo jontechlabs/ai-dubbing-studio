@@ -6,13 +6,18 @@ repo=Path(__file__).resolve().parents[1]
 import zipfile
 core_tmp=tempfile.TemporaryDirectory(prefix='drama-core-')
 with zipfile.ZipFile(repo/'workers/vendor/drama3/comfy-core.zip') as archive:archive.extractall(core_tmp.name)
-sys.path[:0]=[core_tmp.name,str(repo/'workers/vendor/drama3')]
-import comfy.cli_args
-comfy.cli_args.args.cpu=True
-comfy.cli_args.args.disable_dynamic_vram=True
+sys.path[:0]=[str(repo/'workers'),core_tmp.name,str(repo/'workers/vendor/drama3')]
+from drama_worker import configure_core
+configure_core(cpu=True)
 import torch,comfy.ops,comfy.model_management as mm
-from drama3.offload import FP8Experts,ExpertStore,SlotPool
-mm.DISABLE_PINNED_MEMORY=True
+from drama3.offload import FP8Experts,ExpertStore,SlotPool,HostBank
+assert mm.DISABLE_PINNED_MEMORY
+import comfy.utils
+assert not comfy.utils.DISABLE_MMAP
+source=torch.arange(32,dtype=torch.uint8).reshape(8,4)
+bank=HostBank(2,{'weight':source})
+assert bank.fields['weight'].data_ptr()==source.data_ptr()
+print('PASS: unpinned expert bank shares existing contiguous storage, no full host copy; safetensors mmap remains enabled')
 torch.set_num_threads(4)
 torch.manual_seed(42)
 original=FP8Experts(16,128,128,device='cpu',dtype=torch.bfloat16)

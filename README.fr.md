@@ -1,5 +1,7 @@
 # AI Dubbing Studio — phases 1–7
 
+**v0.10.3** corrige la finalisation audio de CosyVoice3 et allège la mémoire de Drama 3 avec des experts mappés sans copie complète en RAM verrouillée. Régénérez les essais pour profiter de la correction CosyVoice3 ; les fichiers existants restent intacts.
+
 **v0.10.2 — Espace disque avant installation de Drama 3.** La fiche affiche le dossier, l’espace disponible et le besoin estimé incluant les dépendances, leur décompression et les poids manquants. Le bouton reste bloqué si le contrôle échoue ou manque de place ; le démarrage natif vérifie encore la capacité avant tout téléchargement. [Installation](docs/FISH-DRAMA-3.md) · [Fin de syllabe et calage](docs/DUBBING-PLACEMENT.md).
 
 ![Drama 3 storage preflight](docs/screenshots/drama3-space.png)
@@ -12,7 +14,7 @@
 
 *Interface React réelle avec audio de démonstration synthétique et inventaire natif simulé.*
 
-[Version anglaise et captures de l’interface](README.md) · [Téléchargements Windows](https://github.com/jontechlabs/ai-dubbing-studio/releases/tag/v0.10.2)
+[Version anglaise et captures de l’interface](README.md) · [Téléchargements Windows](https://github.com/jontechlabs/ai-dubbing-studio/releases/tag/v0.10.3)
 
 Studio desktop local de travail texte, voix et vidéo. Tauri 2, React, TypeScript strict et Rust.
 

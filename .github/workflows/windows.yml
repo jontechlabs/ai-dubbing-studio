@@ -66,6 +66,10 @@ jobs:
           New-Item -ItemType Directory -Force artifacts | Out-Null
           python scripts/test-drama-core.py | Tee-Object artifacts/drama-core-validation.txt
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
+      - name: CosyVoice causal vocoder finalization diagnostic
+        run: |
+          python scripts/test-cosyvoice-tail.py | Tee-Object artifacts/cosyvoice-tail-validation.txt
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
       - name: Build unsigned Windows installer
         env:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}

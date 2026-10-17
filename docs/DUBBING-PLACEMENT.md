@@ -36,3 +36,9 @@ Pour choisir l’interprétation avant de générer, consultez [Humeurs des voix
 - **Le WAV est complet, seule la lecture avec la vidéo semble coupée** : revenez à **Durée automatique**, comparez, puis allongez le bloc avec son bord droit dans l’espace disponible. Contrôlez aussi le départ du doublage suivant et les zones muettes/volumes placées sur la fin. Une forte compression peut rendre l’articulation finale moins nette.
 
 Le calage existant utilise la voix complète et un changement de tempo avec conservation de la hauteur ; la durée finale reste bornée par le créneau et la voix suivante. Le moteur utilisé et la comparaison WAV/lecture sont nécessaires pour identifier la cause d’un cas précis. Aucun ajout de silence ne recrée une syllabe absente du fichier source.
+
+## CosyVoice3 : fin acoustique (v0.10.3)
+
+Une fin active et brusque a été reproduite sur « Il était craint par tous les gangsters... », avec le modèle officiel et un autre extrait vocal de référence. Le décodeur causal recevait une frontière de log-mels nuls ; zéro en log-mel ne représente pas du silence. À sa finalisation, le studio fournit désormais huit trames de contexte acoustique silencieux (`log(1e-5)`, 160 ms), après le réglage de vitesse, et conserve toute la sortie du vocodeur. Le texte, la graine, les tokens du LLM et les anciens WAV ne sont pas modifiés. Aucun fondu n’est appliqué au dernier mot.
+
+Cette correction traite une frontière de décodage audio ; elle ne reconstruit pas un phonème que le modèle de langage n’aurait pas généré. **Générez un nouvel essai après la mise à jour** et comparez son WAV. Les essais existants restent inchangés. Si un mot est encore incomplet, vérifiez la référence et sa transcription et comparez une autre graine. Le contexte final est inclus dans la durée du nouveau WAV et dans le calage automatique.

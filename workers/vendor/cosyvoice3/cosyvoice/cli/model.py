@@ -445,6 +445,12 @@ class CosyVoice3Model(CosyVoice2Model):
             if speed != 1.0:
                 assert token_offset == 0 and finalize is True, 'speed change only support non-stream inference mode'
                 tts_mel = F.interpolate(tts_mel, size=int(tts_mel.shape[2] / speed), mode='linear')
+            if finalize:
+                # Studio: finish the causal vocoder with acoustic silence, not
+                # implicit zero log-mel context (which is NOT silent). Keep its
+                # output tail; padding the WAV after decoding cannot fix this
+                # boundary artefact. 8 mel frames = 160 ms at 24 kHz / hop 480.
+                tts_mel = F.pad(tts_mel, (0, 8), value=float(np.log(1e-5)))
             tts_speech, _ = self.hift.inference(speech_feat=tts_mel, finalize=finalize)
             tts_speech = tts_speech[:, self.hift_cache_dict[uuid]['speech_offset']:]
             self.hift_cache_dict[uuid]['speech_offset'] += tts_speech.shape[1]

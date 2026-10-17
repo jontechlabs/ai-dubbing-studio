@@ -40,14 +40,22 @@ class DramaTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'TTS_TRANSCRIPT_REQUIRED'):
             validate(request)
 
-    def test_64_gb_host_and_16_gb_gpu_budget_leave_explicit_headroom(self):
+    @patch('drama_worker.report')
+    def test_mapped_host_budget_accepts_busy_64gb_machine_and_keeps_real_guards(self, report):
         self.assertEqual(memory_profile(64 * GIB, 50 * GIB, 15 * GIB), 4)
+        self.assertEqual(memory_profile(62 * GIB, 32 * GIB, 13 * GIB), 4)
+        self.assertEqual(memory_profile(48 * GIB, 24 * GIB, 12 * GIB), 4)
+        measured = report.call_args.kwargs
+        self.assertEqual(measured['availableRamBytes'], 24 * GIB)
+        self.assertEqual(measured['requiredRamBytes'], 24 * GIB)
+        self.assertIn('memory-mapped unpinned experts', measured['log'])
         with self.assertRaisesRegex(ValueError, 'TTS_DRAMA_RAM_REQUIRED'):
             memory_profile(32 * GIB, 30 * GIB, 16 * GIB)
         with self.assertRaisesRegex(ValueError, 'TTS_DRAMA_RAM_REQUIRED'):
-            memory_profile(64 * GIB, 45 * GIB, 16 * GIB)
+            memory_profile(64 * GIB, 24 * GIB - 1, 16 * GIB)
+        self.assertEqual(report.call_args.kwargs['availableRamBytes'], 24 * GIB - 1)
         with self.assertRaisesRegex(ValueError, 'TTS_DRAMA_VRAM_REQUIRED'):
-            memory_profile(64 * GIB, 50 * GIB, 11 * GIB)
+            memory_profile(64 * GIB, 32 * GIB, 12 * GIB - 1)
 
     def test_drama_weights_are_distinct_from_s2_and_integrity_is_required(self):
         import tempfile

@@ -144,6 +144,7 @@
     "ttsVerify": "Vérification des poids",
     "ttsModel": "Téléchargement du modèle vocal",
     "ttsReference": "Préparation de la référence vocale",
+    "ttsMemory": "Vérification de la RAM et de la mémoire GPU",
     "ttsLoad": "Chargement du modèle vocal",
     "ttsGenerate": "Génération de la voix",
     "ttsReferenceAnalysis": "Analyse de la référence vocale sur CPU",
@@ -278,7 +279,7 @@
     "AUDIO_TRANSFER_FAILED": "Le transfert audio a échoué. Consultez les logs de Traitements.",
     "AUDIO_TRANSFER_LIMIT": "Limite du montage audio atteinte : 128 couches au total, 8 portions proches et 128 Mio décodés. Réduisez les portions superposées.",
     "INPAINT_TIMEOUT": "La retouche a dépassé deux heures. Réessayez avec un extrait plus court.",
-    "TTS_DRAMA_RAM_REQUIRED": "Drama 3 FP8 exige au moins 64 Go de RAM physique et 46 Gio de RAM disponibles. Fermez les applications qui occupent la mémoire.",
+    "TTS_DRAMA_RAM_REQUIRED": "Drama 3 FP8 exige au moins 48 Gio de RAM utilisable et 24 Gio disponibles avec les experts mappés. Consultez les mesures RAM/VRAM dans les logs et fermez les applications gourmandes.",
     "TTS_DRAMA_VRAM_REQUIRED": "Drama 3 exige au moins 12 Gio de VRAM libre sur le GPU NVIDIA sélectionné. Fermez les autres moteurs IA.",
     "TTS_DRAMA_DISK_REQUIRED": "Espace disque insuffisant pour Drama 3. Le dossier, l’espace disponible et l’espace requis sont indiqués dans les logs de Traitements. Libérez de l’espace ou changez le stockage des modèles dans Paramètres, puis réessayez. Prévoir environ 60 Go libres à la première installation.",
     "TTS_DRAMA_FRAME_LIMIT": "Drama 3 a atteint sa limite de génération : scindez le texte ou essayez une autre graine ou référence. Aucun audio tronqué conservé."
@@ -474,7 +475,7 @@
     "qwenFull": "Modèle officiel Base 1,7B en BF16 pour le clonage vocal. La mémoire du moteur complet reste à mesurer ; le 0,6B et le profil GGUF sont des alternatives plus légères.",
     "qwenGguf": "Projet HaujetZhao : talker Q5_K, predictor Q8_0 et composants ONNX FP16. Conversion depuis les poids officiels, pas un simple GGUF à ouvrir dans un lecteur LLM ; le moteur hybride complet est nécessaire.",
     "phase6Gguf": "Moteur audio.cpp 0.9.1 : poids GGUF Q8_0, calcul Vulkan sur le GPU sélectionné ou CPU. En automatique, priorité au GPU dédié. Les fichiers incluent aussi le codec vocal.",
-    "dramaGenerationHint": "Drama 3 FP8 : experts en RAM, cache GPU plafonné à 4 Gio, autres couches BF16 et codec FP32. Profil NVIDIA 16 Go + 64 Go de RAM ; au moins 46 Gio de RAM et 12 Gio de VRAM libres à la génération. Environ 40,1 Go de modèles, prévoir 60 Go libres pour la première installation. Premier chargement long, calcul plus lent que S2. Aucun repli CPU."
+    "dramaGenerationHint": "Drama 3 FP8 : experts en mémoire mappée, sans copie complète en RAM verrouillée ; cache GPU plafonné à 4 Gio, couches BF16 et codec FP32. Profil conseillé : NVIDIA 16 Go + 64 Go de RAM. Contrôle : 48 Gio utilisables, 24 Gio de RAM et 12 Gio de VRAM libres. Un SSD est conseillé ; les accès disque peuvent ralentir la génération. Environ 40,1 Go de modèles, prévoir 60 Go libres pour la première installation. Premier chargement long, calcul plus lent que S2. Aucun repli CPU."
   },
   "allAudioSilent": "Tout rendre silencieux",
   "allAudioAudible": "Tout rendre audible",
@@ -734,7 +735,7 @@
   "dramaW4": "Conversion W4A8 communautaire, environ 32 Go de RAM selon l’auteur. L’auteur signale davantage de générations silencieuses avec des références réelles ; préférer le FP8 si la RAM le permet.",
   "dramaLicense": "Fish Audio Community License 1.0 · sources vérifiées le 16/10/2026",
   "dramaNoGguf": "Drama 3 est disponible en FP8 avec experts en RAM. Aucun moteur GGUF Drama 3 n’est intégré.",
-  "dramaGenerationHint": "Drama 3 FP8 : experts en RAM, cache GPU plafonné à 4 Gio, autres couches BF16 et codec FP32. Profil NVIDIA 16 Go + 64 Go de RAM ; au moins 46 Gio de RAM et 12 Gio de VRAM libres à la génération. Environ 40,1 Go de modèles, prévoir 60 Go libres pour la première installation. Premier chargement long, calcul plus lent que S2. Aucun repli CPU.",
+  "dramaGenerationHint": "Drama 3 FP8 : experts en mémoire mappée, sans copie complète en RAM verrouillée ; cache GPU plafonné à 4 Gio, couches BF16 et codec FP32. Profil conseillé : NVIDIA 16 Go + 64 Go de RAM. Contrôle : 48 Gio utilisables, 24 Gio de RAM et 12 Gio de VRAM libres. Un SSD est conseillé ; les accès disque peuvent ralentir la génération. Environ 40,1 Go de modèles, prévoir 60 Go libres pour la première installation. Premier chargement long, calcul plus lent que S2. Aucun repli CPU.",
   "dramaIntegrated": "FP8 intégré · génération avec experts en RAM",
   "phase6FishLicenseDrama": "Drama 3 · Fish Audio Community License 1.0 · Built with Fish Audio",
   "timelineSelectionControls": "Réglage de la sélection audio",

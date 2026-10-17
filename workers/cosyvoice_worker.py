@@ -186,6 +186,8 @@ def generate_normalized(request):
             return result
         setattr(model.frontend, method, tracked)
     options = {'stream': False, 'speed': request['speed'], 'text_frontend': False}
+    report(stage='ttsGenerate', progress=None,
+           log='CosyVoice3: final vocoder context 160 ms; full decoded tail retained (no WAV fade or speech trimming).')
     with torch.inference_mode():
         generated = synthesis_stream(model, request, str(reference), options)
         chunks = [part['tts_speech'].float().cpu() for part in generated]

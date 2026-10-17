@@ -6,7 +6,7 @@ Depuis **v0.10.0**, le studio installe et utilise un moteur Drama 3 distinct de 
 
 1. Choisir le dossier dans **Paramètres → Stockage des modèles**. Prévoir environ **60 Go libres** à la première installation, sur un SSD si possible. Les poids et le codec représentent **40 144 065 412 octets**, soit 37,39 Gio ; le runtime Python/CUDA et ses archives s’ajoutent à ce total.
 2. Ouvrir **Modèles → Fish Audio Drama 3**. Laisser la variante **FP8 · ComfyUI · experts en RAM**, puis cliquer sur **Installer Drama 3 FP8**. Depuis v0.10.1, le bouton est directement dans cette fiche. Une installation existante affiche **Vérifier / réparer Drama 3 FP8**. Les téléchargements utilisent des révisions, tailles et SHA-256 fixés. La vérification peut durer, particulièrement pour le fichier de 38,6 Go. Le bouton Annuler et les logs restent disponibles ; un nouvel essai réutilise les fichiers complets vérifiés.
-3. Fermer les autres moteurs IA et applications gourmandes. Le profil exige au moins **46 Gio de RAM disponible**, **12 Gio de VRAM libre** et une machine de la classe 64 Go de RAM.
+3. Fermer les autres moteurs IA et applications gourmandes. Le profil conseillé reste **64 Go de RAM + NVIDIA 16 Go**. Depuis v0.10.3, les experts restent dans des vues du fichier Safetensors mappé, sans copie complète en RAM verrouillée. Les contrôles demandent **48 Gio de RAM physique utilisable**, **24 Gio de RAM disponible** et **12 Gio de VRAM libre**. Le cache GPU reste plafonné à 4 Gio. La mémoire disponible est contrôlée au démarrage et à nouveau après libération du codec, avant le chargement du grand modèle.
 4. Dans **Doublage**, choisir Drama 3 et le GPU NVIDIA. « Automatique » choisit le premier GPU CUDA visible ; le Ryzen iGPU n’est pas un périphérique CUDA. Un choix `cuda:N` conserve ce GPU pendant toutes les étapes. Il n’y a pas de génération de secours sur CPU.
 
 Le moteur utilise PyTorch 2.8.0 avec CUDA 12.8 et les experts FP8 sont déquantifiés en BF16 à l’utilisation. Il ne dépend pas des noyaux de quantification optimisés CUDA 13 de Comfy Kitchen. Un avertissement Comfy sur ces noyaux ne signifie donc pas que la génération BF16 a échoué.
@@ -58,3 +58,25 @@ Le calcul inclut les poids manquants, les archives non présentes dans les cache
 Capture de l’interface React réelle avec un disque et des tailles simulés pour vérifier le blocage sans télécharger les modèles.
 
 `TTS_DRAMA_DISK_REQUIRED` signifie que le disque du dossier de modèles n’a pas assez d’espace libre. Les logs de Traitements indiquent désormais le chemin vérifié, les Gio disponibles et les Gio requis (poids restant à télécharger + 2 Gio de marge). Prévoyez environ 60 Go libres pour une première installation complète, runtime compris. Libérez de l’espace ou déplacez le stockage depuis Paramètres, puis réessayez l’installation. Les fichiers complets déjà téléchargés sont réutilisés après vérification.
+
+## Mémoire disponible et erreur TTS_DRAMA_RAM_REQUIRED
+
+64 Go installés ne signifient pas 64 Gio disponibles : Windows, le navigateur, les autres moteurs IA et la mémoire réservée à l’iGPU en occupent une partie. L’ancien profil demandait 46 Gio disponibles et copiait les experts dans de la RAM verrouillée. Le profil v0.10.3 conserve des vues contiguës des poids mappés, que Windows peut garder en cache ou relire depuis le disque selon la pression mémoire. Le calcul neuronal reste sur le GPU sélectionné, sans repli CPU. Aucun poids n’est converti ni retéléchargé pour ce changement.
+
+Un SSD est conseillé pour le dossier des modèles. Si les pages ne tiennent pas en RAM, les relectures peuvent fortement ralentir la génération. Les seuils sont des garde-fous conservateurs du profil, pas une garantie de débit ou une mesure sur une RTX 5060 Ti. Fermez les autres applications IA et consultez les valeurs **physical / available / required / VRAM** dans les logs si le contrôle bloque encore. Ne désactivez pas les garde-fous pour forcer un chargement.
+
+## Variantes plus légères et vitesse
+
+Le [port communautaire ComfyUI](https://github.com/PedroMarinhoDev/ComfyUI-Drama3#choosing-a-file) annonce les profils suivants pour ses experts en RAM :
+
+| Variante | Fichier du modèle | RAM annoncée par l’auteur |
+|---|---:|---:|
+| FP8 | 38,6 Go | environ 48 Go |
+| W6A8 | 32,7 Go | environ 40 Go |
+| W4A8 | 24,6 Go | environ 32 Go |
+
+L’auteur constate davantage de sorties silencieuses en W4A8. W6A8 est donc un candidat à examiner pour réduire la mémoire en conservant la qualité. **Dans le studio v0.10.3, ces deux variantes restent au catalogue préparatoire ; seule la génération Drama 3 FP8 est intégrée.** Les chiffres ci-dessus ne sont pas les seuils du nouveau chargement mappé du studio et ne constituent pas des mesures sur une RTX 5060 Ti.
+
+Des [GGUF Drama 3 pour un port audio.cpp spécifique](https://huggingface.co/Jmica/Drama-3-GGUF) existent aussi. Ils demandent leur chargeur natif et ne peuvent pas être ajoutés au chargeur FP8 actuel en changeant simplement le fichier.
+
+Pour le profil intégré, libérer de la RAM et placer les poids sur SSD limite les relectures lentes. Le studio charge puis libère le modèle à chaque essai : conserver un moteur chaud pendant plusieurs répliques, réutiliser les références encodées et ajuster le cache VRAM sont des pistes d’optimisation futures, à mesurer avec des limites mémoire explicites. Aucun facteur d’accélération n’est garanti par v0.10.3 et une quantification plus petite n’est pas automatiquement plus rapide avec tous les noyaux CUDA.

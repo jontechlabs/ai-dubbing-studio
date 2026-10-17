@@ -1,4 +1,4 @@
-"""Headless Drama 3 FP8 inference. Experts stay in RAM; no neural CPU fallback."""
+"""Headless Drama 3 FP8 inference. File-backed host experts; no neural CPU fallback."""
 import argparse
 import contextlib
 import gc
@@ -15,6 +15,8 @@ sys.path.insert(0, str(HERE / 'vendor' / 'drama3'))
 os.environ.update(HF_HUB_OFFLINE='1', TRANSFORMERS_OFFLINE='1', HF_HUB_DISABLE_TELEMETRY='1')
 GIB = 1024 ** 3
 CACHE_GIB = 4
+MIN_TOTAL_RAM_GIB = 48
+MIN_AVAILABLE_RAM_GIB = 24
 
 
 def report(**values):
@@ -22,7 +24,18 @@ def report(**values):
 
 
 def memory_profile(total_ram, free_ram, free_vram):
-    if total_ram < 56 * GIB or free_ram < 46 * GIB:
+    # The checkpoint is memory-mapped and its expert banks are not copied into
+    # pinned RAM. Windows may reclaim file-backed pages under pressure. Reserve
+    # ample working memory for the runtime, dense layers and transfer buffers;
+    # do not require 46 GiB of unused physical RAM on a 64 GiB desktop.
+    report(stage='ttsMemory', progress=None,
+           log=f'Drama 3 memory: physical {total_ram/GIB:.2f} GiB; available {free_ram/GIB:.2f} GiB; '
+           f'required {MIN_TOTAL_RAM_GIB} GiB physical / {MIN_AVAILABLE_RAM_GIB} GiB available; '
+           f'VRAM available {free_vram/GIB:.2f} GiB / required 12 GiB; '
+           f'memory-mapped unpinned experts, GPU cache capped at {CACHE_GIB} GiB.',
+           totalRamBytes=total_ram, availableRamBytes=free_ram,
+           requiredRamBytes=MIN_AVAILABLE_RAM_GIB * GIB, availableVramBytes=free_vram)
+    if total_ram < MIN_TOTAL_RAM_GIB * GIB or free_ram < MIN_AVAILABLE_RAM_GIB * GIB:
         raise ValueError('TTS_DRAMA_RAM_REQUIRED')
     if free_vram < 12 * GIB:
         raise ValueError('TTS_DRAMA_VRAM_REQUIRED')
@@ -56,6 +69,12 @@ def configure_core(cpu=False):
     args.disable_cuda_graphs = True
     args.disable_xformers = True
     args.use_pytorch_cross_attention = True
+    # HostBank.pinned() then retains contiguous safetensors mmap views instead
+    # of allocating/copying all ~30 GiB of experts into non-pageable memory.
+    # The selected GPU still performs every neural operation. OS paging may
+    # make a busy host slower, but does not create a second resident model.
+    args.disable_pinned_memory = True
+    args.disable_mmap = False
     args.reserve_vram = 2.0
     import comfy.model_management
     from drama3.loader import load_drama3, load_codec
@@ -115,7 +134,7 @@ def generate_audio(request):
     directory = Path(request['modelDir'])
     verify_models(directory)
     from voice_reference import prepare_reference
-    report(stage='ttsReference', progress=None, log=f'Drama 3: FP8 experts in RAM; {cache} GiB GPU cache; {torch.cuda.get_device_name(0)}; RAM available {ram.available/GIB:.1f} GiB')
+    report(stage='ttsReference', progress=None, log=f'Drama 3: FP8 experts in memory-mapped host RAM (unpinned); {cache} GiB GPU cache; {torch.cuda.get_device_name(0)}; RAM available {ram.available/GIB:.1f} GiB')
     with prepare_reference(request['referenceAudio'], report, request.get('preparedReferenceAudio')) as reference:
         synthesize(request, directory, reference, cache)
 
@@ -145,7 +164,10 @@ def synthesize(request, directory, reference, cache):
     del codec
     gc.collect()
     mm.soft_empty_cache()
-    report(stage='ttsLoad', progress=None, log='Drama 3: loading FP8 experts into RAM (about 38.6 GB); first load can take several minutes')
+    import psutil
+    ram = psutil.virtual_memory()
+    memory_profile(ram.total, ram.available, torch.cuda.mem_get_info(device)[0])
+    report(stage='ttsLoad', progress=None, log='Drama 3: mapping FP8 weights (about 38.6 GB) without a full pinned RAM copy; first load can take several minutes')
     model = load_model(str(directory / 'drama3_fp8experts_bf16.safetensors'), experts_in_ram=True, expert_cache_gb=cache)
     chunks = split_text(request['promptText']) or [request['promptText']]
     reference_pair = (request['referenceTranscript'], codes)
@@ -198,7 +220,7 @@ def synthesize(request, directory, reference, cache):
     if not 0 < len(audio) <= 120 * 24000 or not np.isfinite(audio).all():
         raise ValueError('TTS_EMPTY_AUDIO')
     sf.write(request['outputPath'], np.clip(audio, -1, 1), 24000, subtype='PCM_16')
-    metadata = {'device': request.get('device', 'auto') if request.get('device') != 'auto' else 'cuda:0', 'deviceName': torch.cuda.get_device_name(0), 'peakVramMb': round(torch.cuda.max_memory_allocated(0)/1024**2), 'expertCacheGiB': cache, 'expertsInRam': True}
+    metadata = {'device': request.get('device', 'auto') if request.get('device') != 'auto' else 'cuda:0', 'deviceName': torch.cuda.get_device_name(0), 'peakVramMb': round(torch.cuda.max_memory_allocated(0)/1024**2), 'expertCacheGiB': cache, 'expertsInRam': True, 'expertMemoryMode': 'mapped'}
     Path(request['resultPath']).write_text(json.dumps(metadata), encoding='utf-8')
     report(stage='ttsGenerate', progress=1, log='Drama 3: WAV ready; GPU model released')
 
@@ -217,7 +239,9 @@ def main():
             manifest = json.loads((HERE / 'voice-engines.json').read_text(encoding='utf-8'))
             files = next(v['files'] for v in manifest['variants'] if v['id'] == 'drama3-comfy-fp8')
             storage_preflight(directory, files)
-            if psutil.virtual_memory().total < 56 * GIB:
+            ram = psutil.virtual_memory()
+            report(log=f'Drama 3 installation: physical RAM {ram.total/GIB:.2f} GiB / required {MIN_TOTAL_RAM_GIB} GiB')
+            if ram.total < MIN_TOTAL_RAM_GIB * GIB:
                 raise ValueError('TTS_DRAMA_RAM_REQUIRED')
             report(log='Drama 3 installation: storage and physical RAM checked')
         elif args.runtime_info:
