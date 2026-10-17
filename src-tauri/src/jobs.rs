@@ -24,6 +24,8 @@ pub struct Job {
     pub stage: String,
     pub error: Option<String>,
     pub logs: Vec<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub batch: Option<crate::tts_batch::Progress>,
 }
 #[derive(Clone, Serialize, Deserialize)]
 pub struct ImportRequest {
@@ -38,6 +40,8 @@ pub struct ImportRequest {
 }
 #[derive(Clone, Serialize, Deserialize)]
 pub struct PersistedJob {
+    #[serde(default)]
+    pub tts_batch: Option<String>,
     #[serde(default)]
     pub audio_transfer: Option<crate::audio_patch::Request>,
     #[serde(default)]
@@ -98,12 +102,14 @@ pub fn create<R: tauri::Runtime>(
         stage: "probe".into(),
         error: None,
         logs: vec![],
+        batch: None,
     };
     if let Ok(mut jobs) = core.jobs.lock() {
         jobs.insert(
             key.clone(),
             Control {
                 saved: PersistedJob {
+                    tts_batch: None,
                     audio_transfer: None,
                     inpaint: None,
                     inpaint_install: false,

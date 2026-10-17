@@ -346,6 +346,57 @@ h3 {
   scrollbar-width: thin;
   scrollbar-color: var(--raised) transparent;
 }
+.batch-selection-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  padding: 0 12px 10px;
+}
+.batch-selection-actions .button {
+  font-size: 10px;
+  padding: 6px 8px;
+}
+.dialogue-check {
+  pointer-events: auto;
+  accent-color: var(--accent);
+  cursor: pointer;
+  flex: 0 0 auto;
+}
+.reference-range audio {
+  width: 100%;
+  margin: 10px 0;
+}
+.reference-range-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+.reference-range .character-range {
+  display: flex;
+  gap: 10px;
+}
+.reference-range .field {
+  min-width: 0;
+  flex: 1;
+}
+.reference-range .field input {
+  width: 100%;
+}
+.reference-actions > .reference-file-import {
+  flex: 1;
+  min-width: 0;
+}
+.batch-dubbing details {
+  font-size: 11px;
+  line-height: 1.6;
+  margin-bottom: 12px;
+}
+.batch-job-summary {
+  font-size: 11px;
+  line-height: 1.6;
+}
 .dialogue-card {
   position: relative;
   background: var(--surface);

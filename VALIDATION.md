@@ -1,5 +1,16 @@
 # Validation - 17 October 2026
 
+## v0.11.0 — 17 October 2026
+
+Windows workflow evidence will be recorded before publication.
+
+- Real FFprobe audio-only probing and FFmpeg extraction validate a 21–23 second selection from a 24-second PCM source with different sample values before/after 20 seconds. The output is checked for exact selected samples, duration, project-owned file references and character references. Invalid/reversed/short/overlong/out-of-file ranges leave the previous project revision intact. Ordinary video probing retains its video requirement.
+- Batch native checks cover translated-only filtering (including a line with pronunciation text but no translation), selected-ID deduplication, default current-take preservation, forced generation, stale input/reference snapshots, real sequential child-process protocol execution, partial failure, profile forwarding, per-success persistence and retrying failures only. A cancellation/crash-window check recovers a truncated outcome journal and finds committed takes by stable batch-item ID, avoiding duplicates. These tests use synthetic PCM and a protocol worker, not neural model inference.
+- The durable plan is saved once outside the frequent job-status file; small outcome records are appended after each line. Cancellation stops the active child process. Batch progress combines completed items and current-worker progress. Device/runtime/out-of-memory failures stop the lot; other per-line failures retain previous takes and permit subsequent items.
+- Contiguous batch commits share one undo snapshot, bounding history memory for long lots. Manual commits split the group and retain their own undo/redo boundaries. Native history tests and the real batch protocol test verify these boundaries and preserved WAVs.
+- Browser checks cover audio seeking and bounded excerpt audition, numeric/player markers, character-file import, shift selection, shared engine/device/style/reference configuration, translated-only exclusions, default/forced behavior, progress and cancel/retry. HTTP range support in the fixture matches the native asset protocol. Existing single-line generation, playback, timeline, mix/export and model checks remain in the suite.
+- No model weights, worker inference algorithms or runtime versions changed. Models still unload between lines; no full-model batch speed claim or RTX 5060 Ti qualification is made. New project edits use the existing format 9; legacy single-line saved jobs remain readable.
+
 ## v0.10.3 — 17 October 2026
 
 Windows checks and signed-update package production passed in [run 39010539394](https://github.com/jontechlabs/ai-dubbing-studio/actions/runs/39010539394), built from `3e67cb3a05aad6af219dfc8f1ca975c3a0608906`. All 240 Windows suite checks passed (60 TypeScript, 74 Rust, 67 Chrome, 39 Python), plus actual unpinned-bank/FP8/cache/tiny-model/header diagnostics and the real causal-vocoder finalization diagnostic, plus two real Japanese ASR checks using the final Windows release executable. The setup and portable archive are copied unchanged from this workflow. Final metadata only records this evidence and the verified update feed.

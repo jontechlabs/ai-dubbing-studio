@@ -18,6 +18,9 @@ import { assignCharacter } from '../domain/characters';
 import { selectedGeneration, staleGeneration } from '../domain/tts';
 
 function DialoguesPane({
+  checkedIds,
+  onCheck,
+  onBatch,
   project,
   selectedId,
   onSelect,
@@ -31,6 +34,9 @@ function DialoguesPane({
   onDub,
   onPlayDub,
 }: {
+  checkedIds: string[];
+  onCheck: (ids: string[]) => void;
+  onBatch: () => void;
   project: Project | null;
   selectedId: string | null;
   onSelect: (line: Dialogue) => void;
@@ -48,6 +54,7 @@ function DialoguesPane({
   const [search, setSearch] = useState('');
   const [review, setReview] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const checkedAnchor = useRef<string | null>(null);
   const numbers = useMemo(
     () => new Map(project?.dialogues.map((line, index) => [line.id, index + 1]) ?? []),
     [project],
@@ -120,6 +127,25 @@ function DialoguesPane({
           {t('syncSubtitles')}
         </button>
       </div>
+      <div className="batch-selection-actions">
+        <button
+          className="button subtle"
+          disabled={!lines.length}
+          onClick={() => onCheck(lines.map((l) => l.id))}
+        >
+          {t('batchCheckVisible')}
+        </button>
+        <button className="text-button" disabled={!checkedIds.length} onClick={() => onCheck([])}>
+          {t('batchClearSelection')}
+        </button>
+        <button
+          className="button accent"
+          disabled={!project?.dialogues.length || busy}
+          onClick={onBatch}
+        >
+          {t('batchDub')} {checkedIds.length > 0 && `(${checkedIds.length})`}
+        </button>
+      </div>
       <div className="dialogue-scroll" ref={scrollRef}>
         {!lines.length ? (
           <div className="empty-dialogues">
@@ -148,6 +174,21 @@ function DialoguesPane({
                   }}
                 >
                   <DialogueCard
+                    checked={checkedIds.includes(line.id)}
+                    onCheck={(shift) => {
+                      const next = new Set(checkedIds),
+                        anchor = lines.findIndex((l) => l.id === checkedAnchor.current);
+                      if (shift && anchor >= 0) {
+                        for (const entry of lines.slice(
+                          Math.min(anchor, item.index),
+                          Math.max(anchor, item.index) + 1,
+                        ))
+                          next.add(entry.id);
+                      } else if (next.has(line.id)) next.delete(line.id);
+                      else next.add(line.id);
+                      checkedAnchor.current = line.id;
+                      onCheck([...next]);
+                    }}
                     project={project!}
                     line={line}
                     index={numbers.get(line.id) ?? item.index + 1}
@@ -177,6 +218,8 @@ function DialoguesPane({
 }
 export const Dialogues = memo(DialoguesPane);
 function DialogueCard({
+  checked,
+  onCheck,
   project,
   line,
   index,
@@ -189,6 +232,8 @@ function DialogueCard({
   onDub,
   onPlayDub,
 }: {
+  checked: boolean;
+  onCheck: (shift: boolean) => void;
   project: Project;
   line: Dialogue;
   index: number;
@@ -212,6 +257,17 @@ function DialogueCard({
         onClick={onSelect}
       />
       <div className="cue-time">
+        <input
+          type="checkbox"
+          className="dialogue-check"
+          checked={checked}
+          aria-label={t('batchCheckLine', { number: index })}
+          onClick={(e) => {
+            e.stopPropagation();
+            onCheck(e.shiftKey);
+          }}
+          onChange={() => {}}
+        />
         <span>
           {formatTime(line.startMs)} <span className="time-arrow">→</span> {formatTime(line.endMs)}
         </span>

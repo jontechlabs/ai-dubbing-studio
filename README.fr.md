@@ -1,5 +1,11 @@
 # AI Dubbing Studio — phases 1–7
 
+**v0.11.0 — Extraits de référence et doublage par lot.** Choisissez le début et la fin d’un extrait audio, écoutez-le et importez uniquement cette portion. Cochez des répliques ou prenez toutes les traductions, configurez le lot, puis générez avec conservation des prises à jour ou forçage de nouveaux essais. Progression, annulation et reprise sont disponibles. [Guide et captures](docs/BATCH-DUBBING.md).
+
+![Batch dubbing](docs/screenshots/batch-configuration.png)
+
+*Actual React UI with simulated model inventory / Interface React réelle, inventaire natif simulé.*
+
 **v0.10.3** corrige la finalisation audio de CosyVoice3 et allège la mémoire de Drama 3 avec des experts mappés sans copie complète en RAM verrouillée. Régénérez les essais pour profiter de la correction CosyVoice3 ; les fichiers existants restent intacts.
 
 **Références et accents :** chargez un fichier audio directement dans **Doublage**, écoutez-le, transcrivez-le et réutilisez-le sans personnage. Pour les moteurs compatibles, choisissez une consigne d’accent français (France, Québec, Belgique ou Suisse). Le résultat dépend du modèle ; une référence française reste préférable. [Guide et captures](docs/VOICE-REFERENCES-AND-ACCENTS.md).
@@ -20,7 +26,7 @@
 
 *Interface React réelle avec audio de démonstration synthétique et inventaire natif simulé.*
 
-[Version anglaise et captures de l’interface](README.md) · [Téléchargements Windows](https://github.com/jontechlabs/ai-dubbing-studio/releases/tag/v0.10.3)
+[Version anglaise et captures de l’interface](README.md) · [Téléchargements Windows](https://github.com/jontechlabs/ai-dubbing-studio/releases/tag/v0.11.0)
 
 Studio desktop local de travail texte, voix et vidéo. Tauri 2, React, TypeScript strict et Rust.
 

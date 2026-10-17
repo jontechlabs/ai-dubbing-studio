@@ -7,6 +7,7 @@ test('direct reference import auditions, edits, persists and reuses a file witho
   await open(); const panel=page.getByRole('dialog',{name:'Doublage'});
   await page.evaluate(()=>{(window as any).__dialogPath='C:/Audio/voix française.mp3';});
   await panel.getByRole('button',{name:'Charger un fichier de référence'}).click();
+  await panel.getByRole('button',{name:'Utiliser cet extrait',exact:true}).click();
   await expect(panel.getByRole('combobox',{name:'Référence vocale',exact:true})).toHaveValue('file');
   await expect(panel.locator('audio')).toHaveAttribute('src',/\/audio\/.+\.wav/);
   await panel.locator('audio').evaluate(async(audio:HTMLAudioElement)=>{await audio.play();});
@@ -35,13 +36,14 @@ test('direct reference import auditions, edits, persists and reuses a file witho
 test('import cancellation and decode failure keep the previous reference selected',async({page})=>{
   await nativeMock(page);await page.goto('/');await page.locator('.dialogue-card').first().getByRole('button',{name:'Doubler',exact:true}).click();
   const panel=page.getByRole('dialog',{name:'Doublage'}),button=panel.getByRole('button',{name:'Charger un fichier de référence'});
-  await button.click();await expect(panel.getByRole('combobox',{name:'Référence vocale',exact:true})).toHaveValue('file');
+  await button.click();await panel.getByRole('button',{name:'Utiliser cet extrait',exact:true}).click();await expect(panel.getByRole('combobox',{name:'Référence vocale',exact:true})).toHaveValue('file');
   await expect(page.locator('.save-indicator')).toHaveText('Sauvegardé');
   const before=await page.evaluate(()=>JSON.parse(localStorage.getItem('nativeMockProject')!));
   await page.evaluate(()=>{(window as any).__dialogPath=null;});await button.click();
   await expect(button).toBeEnabled();
   expect((await page.evaluate(()=>JSON.parse(localStorage.getItem('nativeMockProject')!))).voiceReferences).toEqual(before.voiceReferences);
   await page.evaluate(()=>{(window as any).__dialogPath='broken.mp3';(window as any).__referenceImportError=true;});await button.click();
+  await panel.getByRole('button',{name:'Utiliser cet extrait',exact:true}).click();
   await expect(button).toBeEnabled();expect((await page.evaluate(()=>JSON.parse(localStorage.getItem('nativeMockProject')!))).voiceReferences).toEqual(before.voiceReferences);
 });
 
@@ -49,6 +51,7 @@ test('Fish transcribes imported reference independently and Qwen disables accent
   await nativeMock(page);await page.goto('/');const open=()=>page.locator('.dialogue-card').first().getByRole('button',{name:'Doubler',exact:true}).click();await open();
   const panel=page.getByRole('dialog',{name:'Doublage'}),engine=panel.getByRole('combobox',{name:'Moteur et variante de voix'});
   await engine.selectOption('fish-s2-fp8');await panel.getByRole('button',{name:'Charger un fichier de référence'}).click();
+  await panel.getByRole('button',{name:'Utiliser cet extrait',exact:true}).click();
   await expect(panel.getByRole('button',{name:'Générer un nouvel essai'})).toBeDisabled();
   await panel.getByRole('combobox',{name:'Langue de l’audio de référence'}).selectOption('ja');
   await panel.getByRole('button',{name:'Transcrire automatiquement',exact:true}).click();

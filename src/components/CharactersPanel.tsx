@@ -12,6 +12,7 @@ import {
 } from '../domain/characters';
 import * as bridge from '../services/bridge';
 import { ReferenceTranscription } from './ReferenceTranscription';
+import { ReferenceFileImport } from './ReferenceFileImport';
 
 export function CharactersPanel({
   project,
@@ -257,19 +258,29 @@ export function CharactersPanel({
                 />
               </label>
               <div className="reference-actions">
-                <button
-                  className="button subtle"
-                  disabled={!bridge.native || working || active}
-                  onClick={() => {
+                <ReferenceFileImport
+                  label="referenceImport"
+                  busy={working || active}
+                  onError={onError}
+                  onImport={async (file) => {
+                    let imported = false;
                     setWorking(true);
-                    void run(() => bridge.importVoiceReference(character.id, null, label)).finally(
-                      () => setWorking(false),
-                    );
+                    try {
+                      await run(async () => {
+                        const result = await bridge.importCharacterReferenceFile(
+                          character.id,
+                          label,
+                          file,
+                        );
+                        imported = true;
+                        return result;
+                      });
+                      return imported;
+                    } finally {
+                      setWorking(false);
+                    }
                   }}
-                >
-                  <Download size={14} />
-                  {t('referenceImport')}
-                </button>
+                />
                 <button
                   className="button subtle"
                   disabled={!bridge.native || !selectedId || working || active}

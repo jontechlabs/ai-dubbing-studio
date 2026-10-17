@@ -167,7 +167,8 @@
     "inpaintModel": "Loading MuseTalk",
     "inpaintGenerate": "Generating lips",
     "inpaintCompose": "Compositing retouched video",
-    "audioTransfer": "Audio range transfer"
+    "audioTransfer": "Audio range transfer",
+    "ttsBatch": "Batch dubbing"
   },
   "shortcuts": "Space: play · J/K/L: transport · O: original · Ctrl+S: save · Ctrl+Z/Y: undo/redo",
   "errors": {
@@ -283,7 +284,11 @@
     "TTS_DRAMA_VRAM_REQUIRED": "Drama 3 needs at least 12 GiB free VRAM on the selected NVIDIA GPU. Close other AI engines.",
     "TTS_DRAMA_DISK_REQUIRED": "Not enough free disk space for Drama 3. The folder, available space and required space are shown in Processing logs. Free up space or change model storage in Settings, then retry. Allow about 60 GB on the first install.",
     "TTS_DRAMA_FRAME_LIMIT": "Drama 3 hit its generation limit: split the text or try another seed or reference. Truncated audio was discarded.",
-    "TTS_ACCENT_UNSUPPORTED": "Accent incompatible with this engine or target language."
+    "TTS_ACCENT_UNSUPPORTED": "Accent incompatible with this engine or target language.",
+    "INVALID_REFERENCE_RANGE": "The excerpt must last 1 to 20 seconds and stay within the file.",
+    "INVALID_TTS_BATCH": "Choose the lines to dub.",
+    "TTS_BATCH_EMPTY": "No translated line is ready to generate in this batch.",
+    "TTS_BATCH_PARTIAL": "Some lines failed. Successful takes are kept; Retry resumes the remaining lines."
   },
   "preparingVideo": "Preparing video…",
   "loadingVideo": "Loading video…",
@@ -759,7 +764,7 @@
   "dramaSpaceHint": "Local check without downloads. Conservative estimate includes dependencies and extraction, deducting existing files. Space is checked again when starting; file integrity is still checked during installation.",
   "ttsReferenceFile": "Imported audio file",
   "ttsImportReference": "Load a reference audio file",
-  "ttsImportReferenceHint": "WAV, MP3, FLAC, M4A, OGG, AAC or Opus. Copied into the project and converted to mono WAV; only the first 20 seconds are kept (1 second minimum). Prefer several seconds of clear solo speech without music.",
+  "ttsImportReferenceHint": "WAV, MP3, FLAC, M4A, OGG, AAC or Opus. Audition the source and choose start and end before copying the excerpt into the project (1 to 20 seconds). Prefer clear solo speech without music.",
   "ttsListenReference": "Listen to the voice reference",
   "ttsAccent": "Desired accent (instruction)",
   "ttsAccentHint": "Pronunciation instruction for CosyVoice3, Fish S2 and Drama 3; regional accents are not guaranteed. A clear French reference is the most reliable way to reduce Japanese accent transfer. CosyVoice3 uses instruction mode without reference transcription.",
@@ -770,5 +775,28 @@
     "frCA": "Quebec French",
     "frBE": "Belgian French",
     "frCH": "Swiss French"
-  }
+  },
+  "batchDub": "Batch dubbing",
+  "batchCheckVisible": "Check all (current filter)",
+  "batchClearSelection": "Clear checks",
+  "batchCheckLine": "Check line {{number}} for batch",
+  "batchScope": "Lines to dub",
+  "batchAllTranslated": "All translated lines in the project",
+  "batchSelected": "Checked lines ({{count}}), with translations only",
+  "batchForce": "Force a new take, even when an up-to-date take exists",
+  "batchPolicyHint": "Without forcing, current selected takes are kept. Each successful generation creates and selects a new take; previous takes remain available. An imported reference is shared; character defaults and current-line audio are resolved for each line. Generation runs sequentially on the chosen device.",
+  "batchPreview": "{{ready}} to generate · {{existing}} already dubbed · {{untranslated}} untranslated · {{blocked}} excluded (configuration/reference)",
+  "batchExcluded": "Show {{count}} excluded lines",
+  "batchLine": "Line {{number}}",
+  "batchChecking": "Checking lines…",
+  "batchStart": "Dub {{count}} lines",
+  "batchJobSummary": "{{completed}} / {{total}} processed · {{succeeded}} succeeded · {{failed}} failed · {{skipped}} excluded or already available",
+  "referenceSourcePreview": "Listen to the reference source file",
+  "referenceStart": "Excerpt start (s)",
+  "referenceEnd": "Excerpt end (s)",
+  "referenceMarkStart": "Start at player position",
+  "referenceMarkEnd": "End at player position",
+  "referencePlayRange": "Listen to this excerpt",
+  "referenceUseRange": "Use this excerpt",
+  "referenceRangeHint": "Selected duration: {{seconds}} s. Choose between 1 and 20 seconds within the file."
 }

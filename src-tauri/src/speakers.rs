@@ -250,10 +250,34 @@ pub fn enqueue<R: tauri::Runtime>(
     Ok(output)
 }
 
+#[derive(Clone, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ReferenceSpan {
+    pub start_ms: u64,
+    pub end_ms: u64,
+}
+pub struct ReferenceFile {
+    pub path: String,
+    pub range: Option<ReferenceSpan>,
+}
+impl From<String> for ReferenceFile {
+    fn from(path: String) -> Self {
+        Self { path, range: None }
+    }
+}
+pub fn validate_span(span: &ReferenceSpan, duration: u64) -> Result<(), String> {
+    if span.end_ms > duration
+        || span.end_ms <= span.start_ms
+        || !(1000..=20000).contains(&(span.end_ms - span.start_ms))
+    {
+        return Err("INVALID_REFERENCE_RANGE".into());
+    }
+    Ok(())
+}
 pub enum ReferenceTarget {
     Character(String),
     Dialogue {
-        line_id: String,
+        line_id: Option<String>,
         options: Box<crate::tts::Options>,
     },
 }
@@ -263,7 +287,7 @@ pub async fn reference<R: tauri::Runtime>(
     app: tauri::AppHandle<R>,
     target: ReferenceTarget,
     line_id: Option<String>,
-    path: Option<String>,
+    file: Option<ReferenceFile>,
     label: String,
 ) -> Result<Project, String> {
     if busy(&core) || jobs::active_processing(&core) {
@@ -280,7 +304,10 @@ pub async fn reference<R: tauri::Runtime>(
             }
             ReferenceTarget::Dialogue { line_id, options } => {
                 options.validate()?;
-                if !s.project.dialogues.iter().any(|l| &l.id == line_id) {
+                if line_id
+                    .as_ref()
+                    .is_some_and(|id| !s.project.dialogues.iter().any(|l| &l.id == id))
+                {
                     return Err("NO_DIALOGUES".into());
                 }
             }
@@ -311,7 +338,7 @@ pub async fn reference<R: tauri::Runtime>(
                 Some(s.project.clone()),
             )
         } else {
-            let input = PathBuf::from(path.ok_or("INVALID_PATH")?)
+            let input = PathBuf::from(&file.as_ref().ok_or("INVALID_PATH")?.path)
                 .canonicalize()
                 .map_err(io_error)?;
             if !input.is_file() {
@@ -322,13 +349,22 @@ pub async fn reference<R: tauri::Runtime>(
                 s.project.id.clone(),
                 s.project.revision,
                 input,
-                0,
-                20000,
+                file.as_ref()
+                    .and_then(|f| f.range.as_ref())
+                    .map_or(0, |s| s.start_ms),
+                file.as_ref()
+                    .and_then(|f| f.range.as_ref())
+                    .map_or(20000, |s| s.end_ms.saturating_sub(s.start_ms)),
                 String::new(),
                 None,
             )
         }
     };
+    if let Some(span) = file.as_ref().and_then(|f| f.range.as_ref()) {
+        validate_span(span, u64::MAX)?;
+        let info = media::probe_audio(&app, &input).await?;
+        validate_span(span, info.duration_ms)?;
+    }
     if duration < 500 {
         return Err("INVALID_REFERENCE_AUDIO".into());
     }
@@ -418,6 +454,20 @@ pub async fn reference<R: tauri::Runtime>(
         }
         let mut next = s.project.clone();
         next.format_version = next.format_version.max(3);
+        let label = if let Some(span) = file.as_ref().and_then(|f| f.range.as_ref()) {
+            format!(
+                "{} · {:.3}–{:.3} s",
+                if label.trim().is_empty() {
+                    "Audio"
+                } else {
+                    &label
+                },
+                span.start_ms as f64 / 1000.0,
+                span.end_ms as f64 / 1000.0
+            )
+        } else {
+            label
+        };
         let reference = VoiceReference {
             id: key.clone(),
             label: if label.trim().is_empty() {
@@ -450,11 +500,13 @@ pub async fn reference<R: tauri::Runtime>(
                 options.reference_mode = "file".into();
                 options.reference_id = Some(key);
                 next.voice_references.push(reference);
-                next.dialogues
-                    .iter_mut()
-                    .find(|l| l.id == line_id)
-                    .ok_or("NO_DIALOGUES")?
-                    .voice_settings = Some(*options);
+                if let Some(line_id) = line_id {
+                    next.dialogues
+                        .iter_mut()
+                        .find(|l| l.id == line_id)
+                        .ok_or("NO_DIALOGUES")?
+                        .voice_settings = Some(*options);
+                }
             }
         }
         s.replace(next, s.project.revision)

@@ -11,7 +11,12 @@ export async function nativeMock(page: Page, large = false) {
     if(range){const start=Number(range[1]),end=Math.min(data.length-1,range[2]?Number(range[2]):data.length-1);await route.fulfill({status:206,contentType:'video/mp4',headers:{'Accept-Ranges':'bytes','Content-Range':`bytes ${start}-${end}/${data.length}`},body:data.subarray(start,end+1)});}
     else await route.fulfill({status:200,contentType:'video/mp4',headers:{'Accept-Ranges':'bytes'},body:data});
   });
-  await page.route('**/*.wav',route=>route.fulfill({status:200,contentType:'audio/wav',body:wav(/\/(speech|music|sfx)\.wav$/.test(new URL(route.request().url()).pathname)?16:4)}));
+  await page.route('**/*.wav',async route=>{
+    const data=wav(/reference-source/.test(route.request().url())?60:/\/(speech|music|sfx)\.wav$/.test(new URL(route.request().url()).pathname)?16:4);
+    const range=route.request().headers().range?.match(/^bytes=(\d+)-(\d*)$/);
+    if(range){const start=Number(range[1]),end=Math.min(data.length-1,range[2]?Number(range[2]):data.length-1);await route.fulfill({status:206,contentType:'audio/wav',headers:{'Accept-Ranges':'bytes','Content-Range':`bytes ${start}-${end}/${data.length}`},body:data.subarray(start,end+1)});}
+    else await route.fulfill({status:200,contentType:'audio/wav',headers:{'Accept-Ranges':'bytes'},body:data});
+  });
   await page.addInitScript(({initial})=>{
     const host=window as unknown as Record<string,any>,callbacks=new Map<number,(data:any)=>void>(),listeners=new Map<string,number>();let counter=0,project=JSON.parse(localStorage.getItem('nativeMockProject')||'null')||structuredClone(initial),job:any;
     const emit=(name:string,payload:any)=>{const id=listeners.get(name);if(id)callbacks.get(id)?.({event:name,id,payload});};
@@ -26,6 +31,21 @@ export async function nativeMock(page: Page, large = false) {
     const undoStack:any[]=[],redoStack:any[]=[];
     host.__moveFirstDubbing=(offset:number)=>{project.formatVersion=7;project.dubbingTiming={sourcePath:project.media.path,offsetsMs:{[project.dialogues[0].id]:{fr:offset}}};project.revision++;emit('project-changed',structuredClone(project));localStorage.setItem('nativeMockProject',JSON.stringify(project));};
     host.__ttsReady=true;host.__pendingTts=null;
+    host.__clearTranslation=(index:number)=>{const line=project.dialogues[index];for(const cue of project.targetCues)if(line.targetCueIds.includes(cue.id))cue.text='';line.ttsText='Pronunciation alone';project.revision++;emit('project-changed',structuredClone(project));localStorage.setItem('nativeMockProject',JSON.stringify(project));};
+    const batchPlan=(selection:any)=>{
+      const result:any={requested:0,untranslated:0,existing:0,ready:[],blocked:[]};
+      for(const line of project.dialogues){if(selection.scope==='selected'&&!selection.lineIds.includes(line.id))continue;result.requested++;
+        const translation=project.targetCues.filter((c:any)=>line.targetCueIds.includes(c.id)).map((c:any)=>c.text).join('\n').replace(/<[^>]*>/g,'').trim();if(!translation){result.untranslated++;continue;}
+        const generation=project.generations.find((g:any)=>g.id===line.selectedGenerationIds.fr&&g.text===(line.ttsText??translation));if(generation&&!selection.force){result.existing++;continue;}
+        const o=selection.options,reference=o.referenceMode==='file'?project.voiceReferences?.find((r:any)=>r.id===o.referenceId):project.characters.find((c:any)=>c.id===line.characterId)?.references[0];
+        if(o.referenceMode!=='current'&&!reference){result.blocked.push({lineId:line.id,error:'TTS_REFERENCE_REQUIRED'});continue;}
+        if(o.mode==='zeroShot'&&o.referenceMode!=='current'&&!reference?.transcript.trim()){result.blocked.push({lineId:line.id,error:'TTS_TRANSCRIPT_REQUIRED'});continue;}
+        result.ready.push(line.id);
+      }return result;
+    };
+    const batchJobUpdate=()=>{const rows=host.__batchRows,done=rows.filter((r:any)=>r.status!=='pending').length,succeeded=rows.filter((r:any)=>r.status==='succeeded').length,failed=rows.filter((r:any)=>r.status==='failed').length;job={...job,kind:'ttsBatch',status:done===rows.length?(failed?'failed':'succeeded'):'running',stage:done===rows.length?'done':'ttsGenerate',error:done===rows.length&&failed?'TTS_BATCH_PARTIAL':null,progress:null,batch:{total:rows.length,completed:done,succeeded,failed,skipped:host.__batchSkipped,currentLineId:rows.find((r:any)=>r.status==='pending')?.id??null}};emit('job-changed',job);};
+    host.__advanceBatch=(error:string|null=null)=>{if(job.status==='cancelled')return;const row=host.__batchRows.find((r:any)=>r.status==='pending');if(!row)return;
+      if(!error){const before=structuredClone(job);host.__pendingTts={lineId:row.id,options:host.__pendingBatch.options};host.__completeTts();job=before;row.status='succeeded';}else row.status='failed';batchJobUpdate();};
     host.__completeTts=(durationMs=2000)=>{
       const {lineId,options}=host.__pendingTts,line=project.dialogues.find((d:any)=>d.id===lineId),id=`take-${project.generations.filter((g:any)=>g.kind==='tts').length+1}`;
       const text=line.ttsText??project.targetCues.filter((c:any)=>line.targetCueIds.includes(c.id)).map((c:any)=>c.text).join('\n');
@@ -97,12 +117,17 @@ export async function nativeMock(page: Page, large = false) {
       if(command==='speaker_status')return structuredClone(host.__speakerStatus);
       if(command==='identify_speakers'){job={id:'speakers',projectId:project.id,kind:'speakers',status:'running',stage:'speakerEmbeddings',progress:0.3,logs:[],error:null};emit('job-changed',job);return job.id;}
       if(command==='voice_reference_path')return `C:/Studio/characters/${args.referenceId}.wav`;
+      if(command==='reference_audio_info')return {path:'C:/Audio/reference-source.wav',durationMs:60000};
+      if(command==='preview_dubbing_batch')return batchPlan(args.selection);
+      if(command==='generate_dubbing_batch') {const plan=batchPlan(args.selection);host.__pendingBatch=structuredClone(args.selection);host.__batchRows=plan.ready.map((id:string)=>({id,status:'pending'}));host.__batchSkipped=plan.existing+plan.untranslated+plan.blocked.length;job={id:'batch-job',projectId:project.id,kind:'ttsBatch',logs:[],error:null};batchJobUpdate();return job.id;}
+      if(command==='retry_job'&&job.kind==='ttsBatch'){for(const row of host.__batchRows)if(row.status!=='succeeded')row.status='pending';batchJobUpdate();return job.id;}
+      if(command==='import_voice_reference') {if(host.__referenceImportError)throw Error('REFERENCE_FAILED');const character=project.characters.find((c:any)=>c.id===args.characterId);character.references.push({id:crypto.randomUUID(),label:args.label||'Excerpt',path:'characters/excerpt.wav',durationMs:args.range.endMs-args.range.startMs,transcript:'',sourceDialogueId:null});project.revision++;localStorage.setItem('nativeMockProject',JSON.stringify(project));return structuredClone(project);}
       if(command==='import_dubbing_reference'){
         if(host.__referenceImportError)throw Error('REFERENCE_FAILED');
         undoStack.push(structuredClone(project));redoStack.length=0;
         const id=crypto.randomUUID();project.voiceReferences??=[];
-        project.voiceReferences.push({id,label:'Voix française',path:`characters/reference-${id}.wav`,durationMs:7000,transcript:'',sourceDialogueId:null});
-        project.dialogues.find((l:any)=>l.id===args.lineId).voiceSettings={...args.options,referenceMode:'file',referenceId:id};
+        project.voiceReferences.push({id,label:'Voix française',path:`characters/reference-${id}.wav`,durationMs:args.range?args.range.endMs-args.range.startMs:7000,transcript:'',sourceDialogueId:null});
+        if(args.lineId)project.dialogues.find((l:any)=>l.id===args.lineId).voiceSettings={...args.options,referenceMode:'file',referenceId:id};
         project.formatVersion=Math.max(9,project.formatVersion);project.revision++;localStorage.setItem('nativeMockProject',JSON.stringify(project));return structuredClone(project);
       }
       if(command==='transcribe_voice_reference'){host.__pendingTranscription=structuredClone(args);job={id:'asr-job',projectId:project.id,kind:'referenceTranscription',status:'running',stage:'asrTranscribe',progress:null,logs:['Local Whisper small Q5_1, CPU. No audio upload.'],error:null};emit('job-changed',job);return job.id;}

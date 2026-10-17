@@ -47,6 +47,15 @@ pub async fn probe<R: tauri::Runtime>(
     probe_executable(&binary(app, "ffprobe")?, path).await
 }
 pub async fn probe_executable(executable: &Path, path: &Path) -> Result<MediaInfo, String> {
+    probe_kind(executable, path, "video").await
+}
+pub async fn probe_audio<R: tauri::Runtime>(
+    app: &tauri::AppHandle<R>,
+    path: &Path,
+) -> Result<MediaInfo, String> {
+    probe_kind(&binary(app, "ffprobe")?, path, "audio").await
+}
+async fn probe_kind(executable: &Path, path: &Path, kind: &str) -> Result<MediaInfo, String> {
     if !path.is_file() {
         return Err("INVALID_PATH".into());
     }
@@ -75,15 +84,21 @@ pub async fn probe_executable(executable: &Path, path: &Path) -> Result<MediaInf
             String::from_utf8_lossy(&output.stderr)
         ));
     }
-    parse_probe(
-        &output.stdout,
-        path.file_name()
-            .unwrap_or_default()
-            .to_string_lossy()
-            .into_owned(),
-    )
+    let name = path
+        .file_name()
+        .unwrap_or_default()
+        .to_string_lossy()
+        .into_owned();
+    if kind == "video" {
+        parse_probe(&output.stdout, name)
+    } else {
+        parse_probe_kind(&output.stdout, name, "audio")
+    }
 }
 pub fn parse_probe(bytes: &[u8], original_name: String) -> Result<MediaInfo, String> {
+    parse_probe_kind(bytes, original_name, "video")
+}
+fn parse_probe_kind(bytes: &[u8], original_name: String, kind: &str) -> Result<MediaInfo, String> {
     let value: Value = serde_json::from_slice(bytes)
         .map_err(|_| "PROCESS_FAILED: invalid FFprobe JSON".to_string())?;
     let duration = value["format"]["duration"]
@@ -110,8 +125,13 @@ pub fn parse_probe(bytes: &[u8], original_name: String) -> Result<MediaInfo, Str
             }
         })
         .collect::<Vec<_>>();
-    if !streams.iter().any(|s| s.kind == "video") {
-        return Err("NO_VIDEO".into());
+    if !streams.iter().any(|s| s.kind == kind) {
+        return Err(if kind == "video" {
+            "NO_VIDEO"
+        } else {
+            "INVALID_REFERENCE_AUDIO"
+        }
+        .into());
     }
     Ok(MediaInfo {
         original_name,

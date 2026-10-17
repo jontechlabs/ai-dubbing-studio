@@ -10,6 +10,7 @@ import type {
   Project,
 } from '../domain/types';
 import { APP_VERSION } from '../domain/project';
+import { jobProgress } from '../domain/batchProgress';
 import type { Panel } from './Header';
 import { ImportPanel } from './ImportPanel';
 import { IconButton } from './IconButton';
@@ -51,6 +52,7 @@ export function Panels({
   onEdit,
   videoRef,
   selectedId,
+  batchIds,
   onPanel,
   audioSelection,
   onPlayGeneration,
@@ -77,6 +79,7 @@ export function Panels({
   onEdit: (update: (project: Project) => Project) => void;
   videoRef: RefObject<HTMLVideoElement | null>;
   selectedId: string | null;
+  batchIds: string[];
   onPanel: (panel: Panel) => void;
   audioSelection: AudioSelection | null;
   onPlayGeneration: (generation: Generation) => void;
@@ -123,11 +126,16 @@ export function Panels({
         {panel === 'import' && (
           <ImportPanel run={run} onClose={close} onStarted={showJobs} onError={onError} />
         )}
-        {panel === 'dub' && project && (
+        {(panel === 'dub' || panel === 'batchDub') && project && (
           <DubPanel
+            key={`${project.id}:${panel}`}
+            batch={panel === 'batchDub' ? { selectedIds: batchIds } : undefined}
             run={run}
             project={project}
-            line={project.dialogues.find((d) => d.id === selectedId)}
+            line={
+              project.dialogues.find((d) => d.id === selectedId) ??
+              (panel === 'batchDub' ? project.dialogues[0] : undefined)
+            }
             jobs={jobs}
             onEdit={onEdit}
             snapshot={snapshot}
@@ -388,6 +396,7 @@ function JobsPanel({ jobs, onError }: { jobs: Job[]; onError: (s: string) => voi
               <Terminal size={16} />
             )}
             <strong>
+              {job.batch && `${t('batchDub')} · `}
               {t(
                 job.status === 'paused'
                   ? 'jobStages.separationPaused'
@@ -396,9 +405,22 @@ function JobsPanel({ jobs, onError }: { jobs: Job[]; onError: (s: string) => voi
                     : `jobStages.${job.stage}`,
               )}
             </strong>
-            <span>{job.progress === null ? '' : `${Math.round(job.progress * 100)}%`}</span>
+            <span>
+              {jobProgress(job) === null ? '' : `${Math.round(jobProgress(job)! * 100)}%`}
+            </span>
           </div>
-          <progress value={job.progress ?? undefined} max="1" />
+          <progress value={jobProgress(job) ?? undefined} max="1" />
+          {job.batch && (
+            <p className="batch-job-summary">
+              {t('batchJobSummary', {
+                completed: job.batch.completed,
+                total: job.batch.total,
+                succeeded: job.batch.succeeded,
+                failed: job.batch.failed,
+                skipped: job.batch.skipped,
+              })}
+            </p>
+          )}
           <span>
             {t(
               job.status === 'succeeded'
@@ -431,6 +453,7 @@ function JobsPanel({ jobs, onError }: { jobs: Job[]; onError: (s: string) => voi
             'speakers',
             'ttsInstall',
             'tts',
+            'ttsBatch',
             'mkvExport',
             'referenceTranscription',
             'lipAnalysis',

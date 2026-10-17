@@ -171,6 +171,15 @@ export interface Project {
   pronunciation: Record<string, string>;
 }
 export interface Job {
+  batch?: {
+    total: number;
+    completed: number;
+    succeeded: number;
+    failed: number;
+    skipped: number;
+    currentLineId: string | null;
+    currentIndex?: number | null;
+  } | null;
   id: string;
   projectId: string;
   kind: string;

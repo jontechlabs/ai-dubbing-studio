@@ -7,6 +7,7 @@ pub struct Session {
     pub project: Project,
     undo: Vec<Project>,
     redo: Vec<Project>,
+    history_group: Option<String>,
 }
 pub fn atomic_write(path: &Path, data: &[u8]) -> Result<(), String> {
     let parent = path.parent().ok_or("INVALID_PATH")?;
@@ -131,6 +132,7 @@ impl Session {
             project,
             undo: vec![],
             redo: vec![],
+            history_group: None,
         }
     }
     pub fn import_subtitles(&mut self, text: &str, role: &str) -> Result<Project, String> {
@@ -153,7 +155,15 @@ impl Session {
         atomic_write(&self.root.join(name), text.as_bytes())?;
         self.replace(next, self.project.revision)
     }
-    pub fn replace(&mut self, mut next: Project, revision: u64) -> Result<Project, String> {
+    pub fn replace(&mut self, next: Project, revision: u64) -> Result<Project, String> {
+        self.replace_grouped(next, revision, None)
+    }
+    pub fn replace_grouped(
+        &mut self,
+        mut next: Project,
+        revision: u64,
+        group: Option<&str>,
+    ) -> Result<Project, String> {
         if self.project.revision != revision || self.project.id != next.id {
             return Err("STALE_REVISION".into());
         }
@@ -161,15 +171,19 @@ impl Session {
         next.revision = revision + 1;
         next.updated_at = now();
         save(&self.root, &next)?;
-        self.undo.push(self.project.clone());
+        if group.is_none() || self.history_group.as_deref() != group {
+            self.undo.push(self.project.clone());
+        }
         if self.undo.len() > 100 {
             self.undo.remove(0);
         }
         self.redo.clear();
+        self.history_group = group.map(str::to_owned);
         self.project = next.clone();
         Ok(next)
     }
     pub fn history(&mut self, redo: bool) -> Result<Project, String> {
+        self.history_group = None;
         let from = if redo { &mut self.redo } else { &mut self.undo };
         let Some(mut next) = from.last().cloned() else {
             return Ok(self.project.clone());
@@ -191,6 +205,32 @@ impl Session {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn grouped_generations_use_one_undo_and_manual_edits_split_the_group() {
+        let tmp = tempfile::tempdir().unwrap();
+        let root = create_root(tmp.path(), "Grouped").unwrap();
+        let mut s = Session::new(
+            root,
+            Project::new("Original".into(), "ja".into(), "fr".into()),
+        );
+        for (name, group) in [
+            ("One", Some("batch")),
+            ("Two", Some("batch")),
+            ("Manual", None),
+            ("Three", Some("batch")),
+            ("Four", Some("batch")),
+        ] {
+            let mut p = s.project.clone();
+            p.name = name.into();
+            s.replace_grouped(p, s.project.revision, group).unwrap();
+        }
+        assert_eq!(s.history(false).unwrap().name, "Manual");
+        assert_eq!(s.history(false).unwrap().name, "Two");
+        assert_eq!(s.history(false).unwrap().name, "Original");
+        assert_eq!(s.history(true).unwrap().name, "Two");
+        assert_eq!(s.history(true).unwrap().name, "Manual");
+        assert_eq!(s.history(true).unwrap().name, "Four");
+    }
     #[test]
     fn project_reload_history_and_recovery() {
         let temp = tempfile::tempdir().unwrap();

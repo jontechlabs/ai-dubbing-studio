@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { AudioLines, ChevronUp, LoaderCircle, ShieldCheck, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Dialogues } from './components/Dialogues';
@@ -28,6 +28,21 @@ export default function App() {
   const openAudioAdvanced = useCallback(() => setPanel('audio'), []);
   const [subtitleRole, setSubtitleRole] = useState<'source' | 'target'>('source');
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [batchSelection, setBatchSelection] = useState<{ projectId: string | null; ids: string[] }>(
+    { projectId: null, ids: [] },
+  );
+  const batchIds = useMemo(() => {
+    const ids = new Set(studio.project?.dialogues.map((l) => l.id));
+    return batchSelection.projectId === studio.project?.id
+      ? batchSelection.ids.filter((id) => ids.has(id))
+      : [];
+  }, [batchSelection, studio.project]);
+  const batchProjectId = studio.project?.id ?? null;
+  const checkBatch = useCallback(
+    (ids: string[]) => setBatchSelection({ projectId: batchProjectId, ids }),
+    [batchProjectId],
+  );
+  const openBatch = useCallback(() => setPanel('batchDub'), []);
   const [translationFocus, setTranslationFocus] = useState(0);
   const [left, setLeft] = useState(Number(localStorage.getItem('studio.left') ?? 36));
   const [timelineHeight, setTimelineHeight] = useState(
@@ -216,6 +231,9 @@ export default function App() {
           style={{ gridTemplateColumns: `${left}% 5px minmax(0, 1fr)` }}
         >
           <Dialogues
+            checkedIds={batchIds}
+            onCheck={checkBatch}
+            onBatch={openBatch}
             project={studio.project}
             selectedId={selectedId}
             onSelect={select}
@@ -343,6 +361,7 @@ export default function App() {
         </button>
       </footer>
       <Panels
+        batchIds={batchIds}
         activeGenerationId={generationAudio.active}
         onPlayGeneration={playGeneration}
         onOriginal={(line) => {

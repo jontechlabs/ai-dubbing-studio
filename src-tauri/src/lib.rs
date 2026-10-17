@@ -20,6 +20,7 @@ mod speakers;
 mod subtitles;
 mod transcription;
 mod tts;
+mod tts_batch;
 mod voice_accent;
 mod voice_engines;
 mod voice_fit;
@@ -327,13 +328,14 @@ async fn import_voice_reference(
     line_id: Option<String>,
     path: Option<String>,
     label: String,
+    range: Option<speakers::ReferenceSpan>,
 ) -> Result<Project, String> {
     speakers::reference(
         core.inner().clone(),
         app,
         speakers::ReferenceTarget::Character(character_id),
         line_id,
-        path,
+        path.map(|path| speakers::ReferenceFile { path, range }),
         label,
     )
     .await
@@ -342,9 +344,10 @@ async fn import_voice_reference(
 async fn import_dubbing_reference(
     app: tauri::AppHandle,
     core: State<'_, Shared>,
-    line_id: String,
+    line_id: Option<String>,
     path: String,
     options: tts::Options,
+    range: Option<speakers::ReferenceSpan>,
 ) -> Result<Project, String> {
     let label = std::path::Path::new(&path)
         .file_stem()
@@ -359,10 +362,42 @@ async fn import_dubbing_reference(
             options: Box::new(options),
         },
         None,
-        Some(path),
+        Some(speakers::ReferenceFile { path, range }),
         label,
     )
     .await
+}
+#[tauri::command]
+async fn reference_audio_info(
+    app: tauri::AppHandle,
+    path: String,
+) -> Result<serde_json::Value, String> {
+    let path = std::path::PathBuf::from(path)
+        .canonicalize()
+        .map_err(io_error)?;
+    let info = media::probe_audio(&app, &path).await?;
+    if info.duration_ms < 1000 || !info.streams.iter().any(|s| s.kind == "audio") {
+        return Err("INVALID_REFERENCE_AUDIO".into());
+    }
+    app.asset_protocol_scope()
+        .allow_file(&path)
+        .map_err(io_error)?;
+    Ok(serde_json::json!({"path":path,"durationMs":info.duration_ms}))
+}
+#[tauri::command]
+fn preview_dubbing_batch(
+    core: State<'_, Shared>,
+    selection: tts_batch::Selection,
+) -> Result<tts_batch::Preview, String> {
+    tts_batch::preview(&core, &selection)
+}
+#[tauri::command]
+fn generate_dubbing_batch(
+    app: tauri::AppHandle,
+    core: State<'_, Shared>,
+    selection: tts_batch::Selection,
+) -> Result<String, String> {
+    tts_batch::enqueue(core.inner().clone(), app, selection)
 }
 #[tauri::command]
 fn voice_reference_path(
@@ -873,6 +908,9 @@ fn retry_job(app: tauri::AppHandle, core: State<'_, Shared>, id: String) -> Resu
         .ok_or("INVALID_PROJECT")?
         .saved
         .clone();
+    if let Some(key) = record.tts_batch {
+        return tts_batch::resume(core.inner().clone(), app, tts_batch::load(&core, &key)?);
+    }
     if record.inpaint_install {
         return inpaint::install(core.inner().clone(), app);
     }
@@ -957,7 +995,7 @@ fn retry_job(app: tauri::AppHandle, core: State<'_, Shared>, id: String) -> Resu
         let s = session.as_ref().ok_or("NO_PROJECT")?;
         if s.root != request.root
             || s.project.id != request.project_id
-            || tts::fingerprint(&s.project, &request.line_id)? != request.fingerprint
+            || !tts::matches_request(&s.project, &request)
         {
             return Err("STALE_REVISION".into());
         }
@@ -1154,6 +1192,9 @@ pub fn run() {
             identify_speakers,
             import_voice_reference,
             import_dubbing_reference,
+            reference_audio_info,
+            preview_dubbing_batch,
+            generate_dubbing_batch,
             voice_reference_path,
             transcribe_voice_reference,
             load_demo

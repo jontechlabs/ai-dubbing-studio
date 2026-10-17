@@ -120,11 +120,11 @@ async fn imported_mp3_is_copied_normalized_capped_and_undoable_without_a_charact
             core.clone(),
             app.handle().clone(),
             crate::speakers::ReferenceTarget::Dialogue {
-                line_id: line_id.clone(),
+                line_id: Some(line_id.clone()),
                 options: Box::new(options()),
             },
             None,
-            Some(path.to_string_lossy().into_owned()),
+            Some(path.to_string_lossy().into_owned().into()),
             "French reference".into(),
         )
     };
@@ -381,6 +381,115 @@ fn tts_snapshot_and_reference_validation() {
     );
 }
 
+#[tokio::test]
+async fn reference_range_copies_the_requested_audio_after_twenty_seconds_and_rejects_invalid_spans()
+{
+    let tmp = tempfile::tempdir().unwrap();
+    let root = tmp.path().canonicalize().unwrap();
+    let p = fixture();
+    let core = Arc::new(Core {
+        session: Mutex::new(Some(project::Session::new(root.clone(), p))),
+        jobs: Mutex::new(HashMap::new()),
+        gate: Arc::new(tokio::sync::Semaphore::new(1)),
+        data_dir: root.clone(),
+        model_dir: Mutex::new(root.clone()),
+    });
+    let input = root.join("long reference é.wav");
+    let mut pcm = Vec::with_capacity(24 * 24000 * 2);
+    for i in 0..24 * 24000 {
+        pcm.extend((if i < 20 * 24000 { 1000i16 } else { 5000i16 }).to_le_bytes());
+    }
+    let mut bytes = b"RIFF".to_vec();
+    bytes.extend((36 + pcm.len() as u32).to_le_bytes());
+    bytes.extend(b"WAVEfmt ");
+    bytes.extend(16u32.to_le_bytes());
+    bytes.extend(1u16.to_le_bytes());
+    bytes.extend(1u16.to_le_bytes());
+    bytes.extend(24000u32.to_le_bytes());
+    bytes.extend(48000u32.to_le_bytes());
+    bytes.extend(2u16.to_le_bytes());
+    bytes.extend(16u16.to_le_bytes());
+    bytes.extend(b"data");
+    bytes.extend((pcm.len() as u32).to_le_bytes());
+    bytes.extend(pcm);
+    std::fs::write(&input, bytes).unwrap();
+    let app = tauri::test::mock_app();
+    let file = |start, end| crate::speakers::ReferenceFile {
+        path: input.to_string_lossy().into_owned(),
+        range: Some(crate::speakers::ReferenceSpan {
+            start_ms: start,
+            end_ms: end,
+        }),
+    };
+    let saved = crate::speakers::reference(
+        core.clone(),
+        app.handle().clone(),
+        crate::speakers::ReferenceTarget::Dialogue {
+            line_id: None,
+            options: Box::new(options()),
+        },
+        None,
+        Some(file(21000, 23000)),
+        "Excerpt".into(),
+    )
+    .await
+    .unwrap();
+    assert_eq!(saved.voice_references[0].duration_ms, 2000);
+    assert!(saved.dialogues[0].voice_settings.is_none());
+    let bytes = std::fs::read(root.join(&saved.voice_references[0].path)).unwrap();
+    let data = bytes.windows(4).position(|b| b == b"data").unwrap() + 8;
+    assert!(bytes[data..]
+        .as_chunks::<2>()
+        .0
+        .iter()
+        .all(|b| i16::from_le_bytes([b[0], b[1]]) == 5000));
+    let saved = crate::speakers::reference(
+        core.clone(),
+        app.handle().clone(),
+        crate::speakers::ReferenceTarget::Character("speaker".into()),
+        None,
+        Some(file(21000, 23000)),
+        "Character excerpt".into(),
+    )
+    .await
+    .unwrap();
+    assert_eq!(
+        saved.characters[0].references.last().unwrap().duration_ms,
+        2000
+    );
+    for (start, end) in [
+        (0, 21000),
+        (22000, 25000),
+        (22000, 22000),
+        (21000, 21500),
+        (u64::MAX, 1),
+    ] {
+        assert_eq!(
+            crate::speakers::reference(
+                core.clone(),
+                app.handle().clone(),
+                crate::speakers::ReferenceTarget::Character("speaker".into()),
+                None,
+                Some(file(start, end)),
+                "Invalid".into()
+            )
+            .await
+            .unwrap_err(),
+            "INVALID_REFERENCE_RANGE"
+        );
+    }
+    assert_eq!(
+        core.session
+            .lock()
+            .unwrap()
+            .as_ref()
+            .unwrap()
+            .project
+            .revision,
+        saved.revision
+    );
+}
+
 #[test]
 fn phase6_variants_survive_project_validation_and_fish_requires_transcript_mode() {
     let mut p = fixture();
@@ -485,6 +594,8 @@ json.dump({'device':r['device'],'deviceName':'Protocol test','peakVramMb':0,'com
         line_id: p.dialogues[0].id.clone(),
         options: options(),
         fingerprint: fingerprint(&p, &p.dialogues[0].id).unwrap(),
+        option_fingerprint: None,
+        batch_item_id: None,
     };
     for _ in 0..2 {
         let key = jobs::create(&core, app.handle(), "tts", p.id.clone(), None);

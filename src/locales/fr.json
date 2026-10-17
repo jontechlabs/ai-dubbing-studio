@@ -167,7 +167,8 @@
     "inpaintModel": "Chargement de MuseTalk",
     "inpaintGenerate": "Génération des lèvres",
     "inpaintCompose": "Composition de la vidéo retouchée",
-    "audioTransfer": "Transfert de portions audio"
+    "audioTransfer": "Transfert de portions audio",
+    "ttsBatch": "Doublage par lot"
   },
   "shortcuts": "Espace : lecture · J/K/L : transport · O : original · Ctrl+S : sauvegarde · Ctrl+Z/Y : annuler/rétablir",
   "errors": {
@@ -283,7 +284,11 @@
     "TTS_DRAMA_VRAM_REQUIRED": "Drama 3 exige au moins 12 Gio de VRAM libre sur le GPU NVIDIA sélectionné. Fermez les autres moteurs IA.",
     "TTS_DRAMA_DISK_REQUIRED": "Espace disque insuffisant pour Drama 3. Le dossier, l’espace disponible et l’espace requis sont indiqués dans les logs de Traitements. Libérez de l’espace ou changez le stockage des modèles dans Paramètres, puis réessayez. Prévoir environ 60 Go libres à la première installation.",
     "TTS_DRAMA_FRAME_LIMIT": "Drama 3 a atteint sa limite de génération : scindez le texte ou essayez une autre graine ou référence. Aucun audio tronqué conservé.",
-    "TTS_ACCENT_UNSUPPORTED": "Accent incompatible avec ce moteur ou cette langue."
+    "TTS_ACCENT_UNSUPPORTED": "Accent incompatible avec ce moteur ou cette langue.",
+    "INVALID_REFERENCE_RANGE": "L’extrait doit durer entre 1 et 20 secondes et rester dans le fichier.",
+    "INVALID_TTS_BATCH": "Choisissez les répliques à doubler.",
+    "TTS_BATCH_EMPTY": "Aucune réplique traduite prête à générer dans ce lot.",
+    "TTS_BATCH_PARTIAL": "Certaines répliques ont échoué. Les réussites sont conservées ; Réessayer reprend les répliques restantes."
   },
   "preparingVideo": "Préparation de la vidéo…",
   "loadingVideo": "Chargement de la vidéo…",
@@ -759,7 +764,7 @@
   "dramaSpaceHint": "Contrôle local sans téléchargement. Estimation prudente incluant les dépendances et leur décompression, avec déduction des fichiers déjà présents. L’espace est revérifié au démarrage ; l’intégrité des fichiers reste vérifiée pendant l’installation.",
   "ttsReferenceFile": "Fichier audio importé",
   "ttsImportReference": "Charger un fichier de référence",
-  "ttsImportReferenceHint": "WAV, MP3, FLAC, M4A, OGG, AAC ou Opus. Copie locale dans le projet, conversion en WAV mono ; seules les 20 premières secondes sont conservées (1 seconde minimum). Préférez plusieurs secondes de parole claire, sans musique.",
+  "ttsImportReferenceHint": "WAV, MP3, FLAC, M4A, OGG, AAC ou Opus. Écoutez le fichier et choisissez le début et la fin avant de copier l’extrait dans le projet (1 à 20 secondes). Préférez une seule voix claire, sans musique.",
   "ttsListenReference": "Écouter la référence vocale",
   "ttsAccent": "Accent souhaité (consigne)",
   "ttsAccentHint": "Consigne de prononciation pour CosyVoice3, Fish S2 et Drama 3 ; les accents régionaux ne sont pas garantis. Pour limiter l’accent japonais, préférez une référence française nette. CosyVoice3 utilise le mode avec consigne, sans transcription de référence.",
@@ -770,5 +775,28 @@
     "frCA": "Français du Québec",
     "frBE": "Français de Belgique",
     "frCH": "Français de Suisse"
-  }
+  },
+  "batchDub": "Doublage par lot",
+  "batchCheckVisible": "Tout cocher (filtre actuel)",
+  "batchClearSelection": "Décocher",
+  "batchCheckLine": "Cocher la réplique {{number}} pour le lot",
+  "batchScope": "Répliques à doubler",
+  "batchAllTranslated": "Toutes les répliques traduites du projet",
+  "batchSelected": "Répliques cochées ({{count}}), avec traduction uniquement",
+  "batchForce": "Forcer un nouvel essai, même si une prise à jour existe",
+  "batchPolicyHint": "Sans forçage, les prises sélectionnées à jour sont conservées. Chaque réussite crée un nouvel essai et le sélectionne ; les anciens essais restent disponibles. Une référence importée est commune au lot ; la référence par défaut du personnage et l’audio actuel sont résolus pour chaque réplique. Traitement séquentiel sur le périphérique choisi.",
+  "batchPreview": "{{ready}} à générer · {{existing}} déjà doublées · {{untranslated}} sans traduction · {{blocked}} exclues (configuration/référence)",
+  "batchExcluded": "Voir les {{count}} répliques exclues",
+  "batchLine": "Réplique {{number}}",
+  "batchChecking": "Vérification des répliques…",
+  "batchStart": "Doubler {{count}} répliques",
+  "batchJobSummary": "{{completed}} / {{total}} traitées · {{succeeded}} réussies · {{failed}} échouées · {{skipped}} exclues ou déjà disponibles",
+  "referenceSourcePreview": "Écouter le fichier source de référence",
+  "referenceStart": "Début de l’extrait (s)",
+  "referenceEnd": "Fin de l’extrait (s)",
+  "referenceMarkStart": "Début à la position du lecteur",
+  "referenceMarkEnd": "Fin à la position du lecteur",
+  "referencePlayRange": "Écouter cet extrait",
+  "referenceUseRange": "Utiliser cet extrait",
+  "referenceRangeHint": "Durée sélectionnée : {{seconds}} s. Choisissez entre 1 et 20 secondes, dans les limites du fichier."
 }

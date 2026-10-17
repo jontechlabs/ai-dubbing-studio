@@ -98,6 +98,10 @@ pub struct Request {
     pub line_id: String,
     pub options: Options,
     pub fingerprint: String,
+    #[serde(default)]
+    pub option_fingerprint: Option<String>,
+    #[serde(default)]
+    pub batch_item_id: Option<String>,
 }
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -328,6 +332,61 @@ pub fn fingerprint(p: &Project, line_id: &str) -> Result<String, String> {
         Sha256::digest(serde_json::to_vec(&value).map_err(io_error)?)
     ))
 }
+fn option_fingerprint(p: &Project, line_id: &str, options: &Options) -> Result<String, String> {
+    let line = p
+        .dialogues
+        .iter()
+        .find(|l| l.id == line_id)
+        .ok_or("NO_DIALOGUES")?;
+    let reference = if options.reference_mode == "current" {
+        None
+    } else {
+        Some(reference(p, line, options)?)
+    };
+    let value = serde_json::json!({"options":options,"reference":reference,"selected":line.selected_generation_ids.get(&p.languages.target)});
+    Ok(format!(
+        "{:x}",
+        Sha256::digest(serde_json::to_vec(&value).map_err(io_error)?)
+    ))
+}
+pub(crate) fn prepare_request(
+    p: &Project,
+    root: &Path,
+    line_id: String,
+    mut options: Options,
+) -> Result<Request, String> {
+    if options.variant() == "cosy3-official"
+        && (options.mood.as_deref().is_some_and(|m| m != "default")
+            || options.accent.as_deref().is_some_and(|a| a != "auto"))
+    {
+        options.mode = "crossLingual".into();
+    }
+    options.validate()?;
+    validate_input(p, &line_id, &options)?;
+    Ok(Request {
+        root: root.into(),
+        project_id: p.id.clone(),
+        fingerprint: fingerprint(p, &line_id)?,
+        option_fingerprint: Some(option_fingerprint(p, &line_id, &options)?),
+        line_id,
+        options,
+        batch_item_id: None,
+    })
+}
+pub(crate) fn matches_request(p: &Project, request: &Request) -> bool {
+    fingerprint(p, &request.line_id).is_ok_and(|v| v == request.fingerprint)
+        && request.option_fingerprint.as_ref().is_none_or(|expected| {
+            option_fingerprint(p, &request.line_id, &request.options)
+                .is_ok_and(|actual| &actual == expected)
+        })
+}
+pub(crate) fn runtime_installed(core: &Core, options: &Options) -> bool {
+    if options.variant() == "cosy3-official" {
+        installed(core)
+    } else {
+        crate::voice_engines::installed(core, options.variant())
+    }
+}
 pub fn enqueue<R: tauri::Runtime>(
     core: Arc<Core>,
     app: tauri::AppHandle<R>,
@@ -354,14 +413,7 @@ pub fn enqueue<R: tauri::Runtime>(
     let request = {
         let session = core.session.lock().map_err(io_error)?;
         let s = session.as_ref().ok_or("NO_PROJECT")?;
-        validate_input(&s.project, &line_id, &options)?;
-        Request {
-            root: s.root.clone(),
-            project_id: s.project.id.clone(),
-            fingerprint: fingerprint(&s.project, &line_id)?,
-            line_id,
-            options,
-        }
+        prepare_request(&s.project, &s.root, line_id, options)?
     };
     let key = jobs::create(&core, &app, "tts", request.project_id.clone(), None);
     core.jobs
@@ -414,6 +466,14 @@ fn validate_input(p: &Project, line_id: &str, options: &Options) -> Result<(), S
     }
     if options.reference_mode == "current" {
         crate::audio_patch::source_track(p, options.reference_track_id.as_deref())?;
+        if options.mode == "zeroShot"
+            && !p
+                .source_cues
+                .iter()
+                .any(|c| line.source_cue_ids.contains(&c.id) && !c.text.trim().is_empty())
+        {
+            return Err("TTS_TRANSCRIPT_REQUIRED".into());
+        }
     }
     Ok(())
 }
@@ -445,7 +505,7 @@ fn reference<'a>(
         .find(|r| Some(&r.id) == reference_id)
         .ok_or("TTS_REFERENCE_REQUIRED".into())
 }
-async fn execute<R: tauri::Runtime>(
+pub(crate) async fn execute<R: tauri::Runtime>(
     core: &Arc<Core>,
     app: &tauri::AppHandle<R>,
     key: &str,
@@ -473,12 +533,12 @@ async fn execute<R: tauri::Runtime>(
     };
     execute_with_launch(core, app, key, request, flag, &launch).await
 }
-struct WorkerLaunch {
-    python: PathBuf,
-    script: PathBuf,
-    model: PathBuf,
+pub(crate) struct WorkerLaunch {
+    pub python: PathBuf,
+    pub script: PathBuf,
+    pub model: PathBuf,
 }
-async fn execute_with_launch<R: tauri::Runtime>(
+pub(crate) async fn execute_with_launch<R: tauri::Runtime>(
     core: &Arc<Core>,
     app: &tauri::AppHandle<R>,
     key: &str,
@@ -491,7 +551,7 @@ async fn execute_with_launch<R: tauri::Runtime>(
         let s = session.as_ref().ok_or("NO_PROJECT")?;
         if s.root != request.root
             || s.project.id != request.project_id
-            || fingerprint(&s.project, &request.line_id)? != request.fingerprint
+            || !matches_request(&s.project, request)
         {
             return Err("STALE_REVISION".into());
         }
@@ -609,14 +669,13 @@ async fn execute_with_launch<R: tauri::Runtime>(
         }
         .into());
     }
-    let generation = serde_json::json!({"id":generation_id,"kind":"tts","dialogueId":line.id,"providerId":if request.options.variant()=="cosy3-official"{"cosyvoice3"}else if request.options.variant()=="drama3-comfy-fp8"{"fish-drama3"}else if request.options.variant().starts_with("fish"){"fish-s2"}else{"qwen3-tts"},"modelId":request.options.variant(),"path":format!("generations/{generation_id}.wav"),"createdAt":now(),"sourcePath":p.media.as_ref().map(|m|&m.path),"startMs":line.start_ms,"endMs":line.end_ms,"text":text(&p,line),"language":p.languages.target,"characterId":line.character_id,"durationMs":duration,"sampleRate":24000,"options":request.options,"referenceTranscript":transcript,"referenceId":if request.options.reference_mode=="current"{None}else{reference(&p,line,&request.options).ok().map(|r|&r.id)},"device":metadata["device"],"deviceName":metadata["deviceName"],"peakVramMb":metadata["peakVramMb"],"expertsInRam":metadata["expertsInRam"],"expertCacheGiB":metadata["expertCacheGiB"],"expertMemoryMode":metadata["expertMemoryMode"],"compatibilityMode":metadata["compatibilityMode"].as_bool().unwrap_or(false),"inputHash":request.fingerprint});
+    let generation = serde_json::json!({"id":generation_id,"kind":"tts","dialogueId":line.id,"providerId":if request.options.variant()=="cosy3-official"{"cosyvoice3"}else if request.options.variant()=="drama3-comfy-fp8"{"fish-drama3"}else if request.options.variant().starts_with("fish"){"fish-s2"}else{"qwen3-tts"},"modelId":request.options.variant(),"path":format!("generations/{generation_id}.wav"),"createdAt":now(),"sourcePath":p.media.as_ref().map(|m|&m.path),"startMs":line.start_ms,"endMs":line.end_ms,"text":text(&p,line),"language":p.languages.target,"characterId":line.character_id,"durationMs":duration,"sampleRate":24000,"options":request.options,"referenceTranscript":transcript,"referenceId":if request.options.reference_mode=="current"{None}else{reference(&p,line,&request.options).ok().map(|r|&r.id)},"device":metadata["device"],"deviceName":metadata["deviceName"],"peakVramMb":metadata["peakVramMb"],"expertsInRam":metadata["expertsInRam"],"expertCacheGiB":metadata["expertCacheGiB"],"expertMemoryMode":metadata["expertMemoryMode"],"compatibilityMode":metadata["compatibilityMode"].as_bool().unwrap_or(false),"batchItemId":request.batch_item_id,"inputHash":request.fingerprint});
     let mut session = core.session.lock().map_err(io_error)?;
     let s = session.as_mut().ok_or("NO_PROJECT")?;
     if s.root != request.root || s.project.id != request.project_id {
         return Err("STALE_REVISION".into());
     }
-    let unchanged =
-        fingerprint(&s.project, &request.line_id).is_ok_and(|value| value == request.fingerprint);
+    let unchanged = matches_request(&s.project, request);
     let mut next = s.project.clone();
     next.format_version = next.format_version.max(if request.options.requires_v9() {
         9
@@ -633,6 +692,9 @@ async fn execute_with_launch<R: tauri::Runtime>(
     next.generations.push(generation);
     if let Some(line) = next.dialogues.iter_mut().find(|l| l.id == request.line_id) {
         if unchanged {
+            if request.batch_item_id.is_some() {
+                line.voice_settings = Some(request.options.clone());
+            }
             line.selected_generation_ids
                 .insert(p.languages.target.clone(), generation_id);
             line.status = if duration > line.end_ms - line.start_ms {
@@ -643,7 +705,11 @@ async fn execute_with_launch<R: tauri::Runtime>(
             .into();
         }
     }
-    let updated = s.replace(next, s.project.revision)?;
+    let updated = s.replace_grouped(
+        next,
+        s.project.revision,
+        request.batch_item_id.as_ref().map(|_| key),
+    )?;
     app.emit("project-changed", updated).map_err(io_error)
 }
 pub fn validate_generations(p: &Project) -> Result<(), String> {

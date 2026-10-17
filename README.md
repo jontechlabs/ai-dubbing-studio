@@ -1,5 +1,11 @@
 # AI Dubbing Studio
 
+**v0.11.0 — Reference excerpts and batch dubbing.** Choose and audition start/end times before importing an audio reference. Dub all translated lines or checked lines with a common configuration, keep current takes or force new ones, and track/cancel/resume the batch. Previous takes are retained. [Guide and screenshots](docs/BATCH-DUBBING.md).
+
+![Batch dubbing](docs/screenshots/batch-configuration.png)
+
+*Actual React UI with simulated model inventory / Interface React réelle, inventaire natif simulé.*
+
 **v0.10.3** improves CosyVoice3 acoustic endings and uses memory-mapped Drama 3 experts without a full pinned RAM copy. Generate new takes to use the CosyVoice3 change; existing WAVs remain untouched.
 
 **References and accents:** load, audition, transcribe and reuse a reference audio file directly in **Dubbing**, without assigning a character. Compatible engines accept French accent instructions (France, Quebec, Belgium or Switzerland); adherence varies, and a French reference remains preferable. [Guide and screenshots](docs/VOICE-REFERENCES-AND-ACCENTS.md).
@@ -44,7 +50,7 @@ CosyVoice3, Fish S2 FP8/GGUF and Qwen3-TTS GGUF remain available. [Models and GP
 
 *Actual React browser UI with a simulated reference and transcription result. Separate native checks transcribe real Japanese speech. These are not RTX performance measurements.*
 
-[Windows downloads](https://github.com/jontechlabs/ai-dubbing-studio/releases/tag/v0.10.3) · [User guide](docs/GETTING-STARTED.md) · [Build instructions](docs/BUILDING.md) · [Français](README.fr.md)
+[Windows downloads](https://github.com/jontechlabs/ai-dubbing-studio/releases/tag/v0.11.0) · [User guide](docs/GETTING-STARTED.md) · [Build instructions](docs/BUILDING.md) · [Français](README.fr.md)
 
 ![Studio with bilingual dialogue, video preview, text editor and timeline](docs/screenshots/studio.png)
 
@@ -58,8 +64,8 @@ Audio regions with independent silence and volume, timeline range selection, fas
 
 | Package | Purpose |
 | --- | --- |
-| [Windows x64 setup](https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.10.3/AI-Dubbing-Studio-0.10.3-Setup.exe) | NSIS installer for the current user, with English/French installer interface |
-| [Portable ZIP](https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.10.3/AI-Dubbing-Studio-Windows-Portable.zip) | Extract the whole folder and launch `AI Dubbing Studio.exe` |
+| [Windows x64 setup](https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.11.0/AI-Dubbing-Studio-0.11.0-Setup.exe) | NSIS installer for the current user, with English/French installer interface |
+| [Portable ZIP](https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.11.0/AI-Dubbing-Studio-Windows-Portable.zip) | Extract the whole folder and launch `AI Dubbing Studio.exe` |
 | [SHA-256 checksums](https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.10.3/SHA256SUMS.txt) | Verify the setup and ZIP downloads |
 
 Target: **Windows 10/11 x64**, with **Microsoft Edge WebView2 Runtime**. FFmpeg and FFprobe are included. Python, CUDA and AI model downloads are not required for editing and playback. Installation may need Internet access if WebView2 is missing; local project editing does not require a cloud account.

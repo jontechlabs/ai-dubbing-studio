@@ -165,16 +165,68 @@ export async function importVoiceReference(
   return invoke<Project>('import_voice_reference', { characterId, lineId, path, label });
 }
 export async function importDubbingReference(
-  lineId: string,
+  lineId: string | null,
   options: import('../domain/types').VoiceSettings,
+  selection?: ReferenceFileSelection,
 ): Promise<Project | null> {
   if (!native) throw new Error('DESKTOP_REQUIRED');
+  const path =
+    selection?.path ??
+    (await open({
+      multiple: false,
+      filters: [{ name: 'Audio', extensions: ['wav', 'flac', 'mp3', 'ogg', 'm4a', 'aac', 'opus'] }],
+    }));
+  if (!path) return null;
+  return invoke<Project>('import_dubbing_reference', {
+    lineId,
+    path,
+    options,
+    range: selection ? { startMs: selection.startMs, endMs: selection.endMs } : null,
+  });
+}
+export type ReferenceAudioInfo = { path: string; durationMs: number; url: string };
+export type DubbingBatchSelection = {
+  scope: 'all' | 'selected';
+  lineIds: string[];
+  force: boolean;
+  options: import('../domain/types').VoiceSettings;
+};
+export type DubbingBatchPreview = {
+  requested: number;
+  untranslated: number;
+  existing: number;
+  ready: string[];
+  blocked: { lineId: string; error: string }[];
+};
+export function previewDubbingBatch(selection: DubbingBatchSelection) {
+  return invoke<DubbingBatchPreview>('preview_dubbing_batch', { selection });
+}
+export function generateDubbingBatch(selection: DubbingBatchSelection) {
+  return invoke<string>('generate_dubbing_batch', { selection });
+}
+export type ReferenceFileSelection = ReferenceAudioInfo & { startMs: number; endMs: number };
+export async function chooseReferenceAudio(): Promise<ReferenceAudioInfo | null> {
+  if (!native) throw Error('DESKTOP_REQUIRED');
   const path = await open({
     multiple: false,
     filters: [{ name: 'Audio', extensions: ['wav', 'flac', 'mp3', 'ogg', 'm4a', 'aac', 'opus'] }],
   });
-  if (!path) return null;
-  return invoke<Project>('import_dubbing_reference', { lineId, path, options });
+  if (!path || typeof path !== 'string') return null;
+  const info = await invoke<{ path: string; durationMs: number }>('reference_audio_info', { path });
+  return { ...info, url: convertFileSrc(info.path) };
+}
+export function importCharacterReferenceFile(
+  characterId: string,
+  label: string,
+  file: ReferenceFileSelection,
+) {
+  return invoke<Project>('import_voice_reference', {
+    characterId,
+    label,
+    path: file.path,
+    lineId: null,
+    range: { startMs: file.startMs, endMs: file.endMs },
+  });
 }
 export async function voiceReferenceUrl(
   characterId: string | null,

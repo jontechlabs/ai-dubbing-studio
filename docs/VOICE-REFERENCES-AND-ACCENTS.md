@@ -6,7 +6,7 @@ Disponible dans **v0.10.3**, dans le panneau **Doublage** de chaque réplique.
 
 1. Ouvrez une réplique avec **Doubler** ou **Régénérer**.
 2. Cliquez sur **Charger un fichier de référence** et sélectionnez un WAV, MP3, FLAC, M4A, OGG, AAC ou Opus.
-3. Le studio copie les **20 premières secondes au maximum** dans le projet, en WAV mono PCM 16 bits à 24 kHz. Une seconde minimum est nécessaire ; plusieurs secondes de parole claire, sans musique, donnent une meilleure référence.
+3. À partir de v0.11.0, écoutez le fichier et choisissez le **début et la fin** de l’extrait avant **Utiliser cet extrait**. Le studio copie cette portion de **1 à 20 secondes** dans le projet, en WAV mono PCM 16 bits à 24 kHz. [Guide des extraits et du doublage par lot](BATCH-DUBBING.md). Plusieurs secondes de parole claire, sans musique, donnent une meilleure référence.
 4. Écoutez la référence avec le lecteur du panneau. Pour Fish S2, Drama 3 ou le mode CosyVoice3 avec transcription, renseignez **Texte réellement prononcé** ou utilisez **Transcrire automatiquement**, puis corrigez le résultat si nécessaire. La transcription décrit exactement l’audio dans sa langue d’origine, indépendamment du texte français à générer.
 5. Générez un nouvel essai. Le fichier apparaît dans **Référence vocale → Fichier audio importé**, puis dans la liste des références : il peut être réutilisé pour d’autres répliques sans créer de personnage.
 

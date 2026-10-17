@@ -4,7 +4,7 @@ import { validVoiceVariant } from './modelVariants';
 import { validVoiceSettings } from './tts';
 import { validateAudioPatches } from './audioPatch';
 import { validateLipVideos } from './inpaint';
-export const APP_VERSION = '0.10.3';
+export const APP_VERSION = '0.11.0';
 
 export function blankProject(name = 'Untitled', source = 'ja', target = 'fr'): Project {
   const now = new Date().toISOString();

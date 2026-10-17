@@ -29,6 +29,7 @@ export type Panel =
   | 'subtitles'
   | 'alignment'
   | 'dub'
+  | 'batchDub'
   | 'lips'
   | 'inpaint'
   | null;

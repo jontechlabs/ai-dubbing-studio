@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Check, Download, Mic2, Play, RefreshCw, Trash2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import type { Dialogue, Generation, Job, Project } from '../domain/types';
+import type { Dialogue, Generation, Job, Project, VoiceSettings } from '../domain/types';
 import {
   defaultVoiceSettings,
   deleteGeneration,
@@ -18,6 +18,8 @@ import { installedVoiceVariants, voiceVariant } from '../domain/voiceEngines';
 import { audioTracks, trackLabel } from '../domain/audio';
 import { ReferenceTranscription } from './ReferenceTranscription';
 import { accentSupported, voiceAccents } from '../domain/voiceAccents';
+import { ReferenceFileImport } from './ReferenceFileImport';
+import { BatchDubbingAction } from './BatchDubbingAction';
 import {
   dubbingOffset,
   moveDubbing,
@@ -160,6 +162,7 @@ function ReferenceAudio({
 }
 
 export function DubPanel({
+  batch,
   run,
   project,
   line,
@@ -176,6 +179,7 @@ export function DubPanel({
   onPlay,
   activeGenerationId,
 }: {
+  batch?: { selectedIds: string[] };
   run: (operation: () => Promise<Project | null>) => Promise<void>;
   project: Project;
   line: Dialogue | undefined;
@@ -193,11 +197,26 @@ export function DubPanel({
   activeGenerationId: string | null;
 }) {
   const { t } = useTranslation();
+  const [batchSettings, setBatchSettings] = useState<VoiceSettings>(() => {
+    const value = {
+      ...(line?.voiceSettings ?? defaultVoiceSettings),
+      variantId:
+        line?.voiceSettings?.variantId ??
+        project.modelPreferences?.voiceVariantId ??
+        'cosy3-official',
+    };
+    return {
+      ...value,
+      referenceMode:
+        value.referenceMode === 'custom' ? ('character' as const) : value.referenceMode,
+    };
+  });
+  const [referencePending, setReferencePending] = useState(false);
   const [status, setStatus] = useState<bridge.TtsStatus | null>(null),
     [working, setWorking] = useState(false);
   const [engines, setEngines] = useState<bridge.VoiceStatus | null>(null);
   const variantId =
-    line?.voiceSettings?.variantId ??
+    (batch ? batchSettings.variantId : line?.voiceSettings?.variantId) ??
     voiceVariant(project.modelPreferences?.voiceVariantId)?.id ??
     'cosy3-official';
   const [compareA, setCompareA] = useState(''),
@@ -232,10 +251,12 @@ export function DubPanel({
   }, [completion, onError, variantId]);
   if (!line) return <div className="panel-body">{t('selectLine')}</div>;
   const preferred = voiceVariant(project.modelPreferences?.voiceVariantId);
-  const settings = {
-    ...(line.voiceSettings ?? defaultVoiceSettings),
-    variantId: line.voiceSettings?.variantId ?? preferred?.id ?? 'cosy3-official',
-  };
+  const settings = batch
+    ? batchSettings
+    : {
+        ...(line.voiceSettings ?? defaultVoiceSettings),
+        variantId: line.voiceSettings?.variantId ?? preferred?.id ?? 'cosy3-official',
+      };
   const variant = voiceVariant(settings.variantId)!;
   const mood = settings.mood ?? 'default';
   const accent = accentSupported(variant.id, project.languages.target)
@@ -286,12 +307,14 @@ export function DubPanel({
     settings.referenceMode === 'current'
       ? line.endMs - line.startMs < 1000
       : !!reference && reference.durationMs < 1000;
-  const edit = (change: Partial<typeof settings>) =>
-    onEdit((p) => editVoiceSettings(p, line.id, { ...settings, mode, ...change }));
+  const edit = (change: Partial<typeof settings>) => {
+    if (batch) setBatchSettings({ ...settings, mode, ...change });
+    else onEdit((p) => editVoiceSettings(p, line.id, { ...settings, mode, ...change }));
+  };
   return (
     <div className="panel-body dub-panel">
       <h3>{variant.name}</h3>
-      {chosen && project.media && (
+      {!batch && chosen && project.media && (
         <div className="settings-section">
           <button className="button accent wide" onClick={onLips} disabled={busy}>
             {t('lipsAnalyze')}
@@ -433,7 +456,7 @@ export function DubPanel({
         >
           <option value="character">{t('ttsReferenceDefault')}</option>
           <option value="current">{t('ttsReferenceCurrent')}</option>
-          <option value="custom">{t('ttsReferenceCustom')}</option>
+          {!batch && <option value="custom">{t('ttsReferenceCustom')}</option>}
           <option value="file">{t('ttsReferenceFile')}</option>
         </select>
       </label>
@@ -480,18 +503,37 @@ export function DubPanel({
             ? `${fileReference ? '' : `${character?.name} · `}${reference.label} · ${(reference.durationMs / 1000).toFixed(1)} s`
             : t('ttsReferenceMissing')}
       </p>
-      <button
-        className="button subtle wide"
-        disabled={!bridge.native || busy}
-        onClick={() => {
+      <ReferenceFileImport
+        busy={busy}
+        onError={onError}
+        onPending={setReferencePending}
+        onImport={async (file) => {
+          let imported = false;
           setWorking(true);
-          void run(() => bridge.importDubbingReference(line.id, { ...settings, mode, accent }))
-            .catch((e) => onError(String(e)))
-            .finally(() => setWorking(false));
+          try {
+            await run(async () => {
+              const result = await bridge.importDubbingReference(
+                batch ? null : line.id,
+                { ...settings, mode, accent },
+                file,
+              );
+              imported = !!result;
+              if (result && batch)
+                setBatchSettings({
+                  ...settings,
+                  mode,
+                  accent,
+                  referenceMode: 'file',
+                  referenceId: result.voiceReferences?.at(-1)?.id ?? null,
+                });
+              return result;
+            });
+            return imported;
+          } finally {
+            setWorking(false);
+          }
         }}
-      >
-        {t('ttsImportReference')}
-      </button>
+      />
       <p className="panel-description">{t('ttsImportReferenceHint')}</p>
       <button className="text-button" onClick={onCharacters}>
         {t('ttsManageReferences')}
@@ -649,179 +691,206 @@ export function DubPanel({
           }
         />
       </label>
-      <label className="field">
-        <span>{t('ttsResolvedText')}</span>
-        <textarea value={inputText} readOnly rows={3} />
-      </label>
-      <p className="panel-description">{t('ttsEditPronunciationHint')}</p>
-      {(referenceMissing || transcriptMissing || shortReference || !inputText) && (
-        <p className="warning" role="status">
-          {t(
-            referenceMissing
-              ? 'errors.TTS_REFERENCE_REQUIRED'
-              : transcriptMissing
-                ? 'errors.TTS_TRANSCRIPT_REQUIRED'
-                : shortReference
-                  ? 'ttsReferenceTooShort'
-                  : 'errors.TTS_TEXT_REQUIRED',
+      {batch ? (
+        <BatchDubbingAction
+          project={project}
+          selectedIds={batch.selectedIds}
+          settings={{ ...settings, mode, accent }}
+          busy={busy || referencePending}
+          ready={!!ready}
+          snapshot={snapshot}
+          onStarted={onStarted}
+          onError={onError}
+        />
+      ) : (
+        <>
+          <label className="field">
+            <span>{t('ttsResolvedText')}</span>
+            <textarea value={inputText} readOnly rows={3} />
+          </label>
+          <p className="panel-description">{t('ttsEditPronunciationHint')}</p>
+          {(referenceMissing || transcriptMissing || shortReference || !inputText) && (
+            <p className="warning" role="status">
+              {t(
+                referenceMissing
+                  ? 'errors.TTS_REFERENCE_REQUIRED'
+                  : transcriptMissing
+                    ? 'errors.TTS_TRANSCRIPT_REQUIRED'
+                    : shortReference
+                      ? 'ttsReferenceTooShort'
+                      : 'errors.TTS_TEXT_REQUIRED',
+              )}
+            </p>
           )}
-        </p>
-      )}
-      <button
-        className="button accent wide"
-        disabled={
-          !bridge.native ||
-          busy ||
-          !ready ||
-          referenceMissing ||
-          transcriptMissing ||
-          shortReference ||
-          !inputText ||
-          inputText.length > 1000
-        }
-        onClick={() => {
-          setWorking(true);
-          onEdit((p) => ({
-            ...editVoiceSettings(p, line.id, { ...settings, mode, accent }),
-            modelPreferences: {
-              ...p.modelPreferences,
-              ttsProviderId: variant.providerId,
-              voiceVariantId: variant.id,
-            },
-          }));
-          void snapshot()
-            .then(() =>
-              bridge.generateLine(line.id, {
-                ...settings,
-                mode,
-                accent,
-              }),
-            )
-            .then(onStarted)
-            .catch((e) => onError(String(e)))
-            .finally(() => setWorking(false));
-        }}
-      >
-        <Mic2 size={15} />
-        {t('ttsGenerateNew')}
-      </button>
-      <div className="generation-heading">
-        <h3>{t('ttsGenerations', { count: generations.length })}</h3>
-        <button className="text-button" onClick={() => onOriginal(line)} disabled={!project.media}>
-          <Play size={13} />
-          {t('original')}
-        </button>
-      </div>
-      {generations.length > 1 && (
-        <div className="generation-compare">
-          <strong>{t('ttsCompare')}</strong>
-          {(['A', 'B'] as const).map((letter, index) => {
-            const id = (letter === 'A' ? compareA : compareB) || generations.at(-(index + 1))!.id;
-            const selected = generations.find((g) => g.id === id) ?? generations.at(-(index + 1))!;
+          <button
+            className="button accent wide"
+            disabled={
+              !bridge.native ||
+              busy ||
+              referencePending ||
+              !ready ||
+              referenceMissing ||
+              transcriptMissing ||
+              shortReference ||
+              !inputText ||
+              inputText.length > 1000
+            }
+            onClick={() => {
+              setWorking(true);
+              onEdit((p) => ({
+                ...editVoiceSettings(p, line.id, { ...settings, mode, accent }),
+                modelPreferences: {
+                  ...p.modelPreferences,
+                  ttsProviderId: variant.providerId,
+                  voiceVariantId: variant.id,
+                },
+              }));
+              void snapshot()
+                .then(() =>
+                  bridge.generateLine(line.id, {
+                    ...settings,
+                    mode,
+                    accent,
+                  }),
+                )
+                .then(onStarted)
+                .catch((e) => onError(String(e)))
+                .finally(() => setWorking(false));
+            }}
+          >
+            <Mic2 size={15} />
+            {t('ttsGenerateNew')}
+          </button>
+          <div className="generation-heading">
+            <h3>{t('ttsGenerations', { count: generations.length })}</h3>
+            <button
+              className="text-button"
+              onClick={() => onOriginal(line)}
+              disabled={!project.media}
+            >
+              <Play size={13} />
+              {t('original')}
+            </button>
+          </div>
+          {generations.length > 1 && (
+            <div className="generation-compare">
+              <strong>{t('ttsCompare')}</strong>
+              {(['A', 'B'] as const).map((letter, index) => {
+                const id =
+                  (letter === 'A' ? compareA : compareB) || generations.at(-(index + 1))!.id;
+                const selected =
+                  generations.find((g) => g.id === id) ?? generations.at(-(index + 1))!;
+                return (
+                  <div key={letter}>
+                    <select
+                      aria-label={t('ttsCompareTake', { letter })}
+                      value={selected.id}
+                      onChange={(e) =>
+                        letter === 'A' ? setCompareA(e.target.value) : setCompareB(e.target.value)
+                      }
+                    >
+                      {generations.map((g, i) => (
+                        <option value={g.id} key={g.id}>
+                          {t('ttsGenerationNumber', { number: i + 1 })}
+                        </option>
+                      ))}
+                    </select>
+                    <button className="button subtle" onClick={() => onPlay(selected)}>
+                      <Play size={12} />
+                      {letter}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+          {!generations.length && <p className="panel-description">{t('ttsNoGeneration')}</p>}
+          {[...generations].reverse().map((generation, index) => {
+            const active = chosen?.id === generation.id,
+              stale = staleGeneration(project, line, generation),
+              long = generation.durationMs > line.endMs - line.startMs;
             return (
-              <div key={letter}>
-                <select
-                  aria-label={t('ttsCompareTake', { letter })}
-                  value={selected.id}
-                  onChange={(e) =>
-                    letter === 'A' ? setCompareA(e.target.value) : setCompareB(e.target.value)
-                  }
-                >
-                  {generations.map((g, i) => (
-                    <option value={g.id} key={g.id}>
-                      {t('ttsGenerationNumber', { number: i + 1 })}
-                    </option>
-                  ))}
-                </select>
-                <button className="button subtle" onClick={() => onPlay(selected)}>
-                  <Play size={12} />
-                  {letter}
-                </button>
-              </div>
+              <article
+                className={`generation-card ${active ? 'selected' : ''}`}
+                key={generation.id}
+              >
+                <strong>
+                  {t('ttsGenerationNumber', { number: generations.length - index })} ·{' '}
+                  {(generation.durationMs / 1000).toFixed(2)} s {active && <Check size={13} />}
+                </strong>
+                <small>
+                  {voiceVariant(generation.options.variantId)?.name ?? generation.modelId} ·{' '}
+                  {generation.deviceName} · {generation.options.speed.toFixed(2)}× · {t('ttsSeed')}{' '}
+                  {generation.options.seed}
+                  {generation.options.mood && generation.options.mood !== 'default'
+                    ? ` · ${t(`moods.${generation.options.mood}`)}`
+                    : ''}
+                  {generation.options.accent && generation.options.accent !== 'auto'
+                    ? ` · ${t(`accents.${voiceAccents.find((a) => a.id === generation.options.accent)?.labelKey}`)}`
+                    : ''}
+                </small>
+                {generation.peakVramMb > 0 && (
+                  <small>{t('ttsPeakVram', { mb: generation.peakVramMb })}</small>
+                )}
+                {generation.compatibilityMode && <small>{t('ttsCompatibleTake')}</small>}
+                {(stale || long) && (
+                  <p className="warning">{t(stale ? 'ttsStale' : 'ttsTooLong')}</p>
+                )}
+                <div className="generation-actions">
+                  <button className="button subtle" onClick={() => onPlay(generation)}>
+                    <Play size={13} />
+                    {t(activeGenerationId === generation.id ? 'ttsStopListening' : 'listen')}
+                  </button>
+                  <button
+                    className="text-button"
+                    disabled={busy || active}
+                    onClick={() => onEdit((p) => selectGeneration(p, generation.id))}
+                  >
+                    {t('ttsSelect')}
+                  </button>
+                  <button
+                    className="text-button"
+                    disabled={busy}
+                    onClick={() =>
+                      void bridge.exportGeneration(generation.id).catch((e) => onError(String(e)))
+                    }
+                  >
+                    <Download size={13} />
+                    WAV
+                  </button>
+                  <button
+                    className="text-button"
+                    disabled={busy}
+                    aria-label={t('ttsDeleteGeneration', { number: generations.length - index })}
+                    onClick={() => onEdit((p) => deleteGeneration(p, generation.id))}
+                  >
+                    <Trash2 size={13} />
+                  </button>
+                </div>
+              </article>
             );
           })}
-        </div>
-      )}
-      {!generations.length && <p className="panel-description">{t('ttsNoGeneration')}</p>}
-      {[...generations].reverse().map((generation, index) => {
-        const active = chosen?.id === generation.id,
-          stale = staleGeneration(project, line, generation),
-          long = generation.durationMs > line.endMs - line.startMs;
-        return (
-          <article className={`generation-card ${active ? 'selected' : ''}`} key={generation.id}>
-            <strong>
-              {t('ttsGenerationNumber', { number: generations.length - index })} ·{' '}
-              {(generation.durationMs / 1000).toFixed(2)} s {active && <Check size={13} />}
-            </strong>
-            <small>
-              {voiceVariant(generation.options.variantId)?.name ?? generation.modelId} ·{' '}
-              {generation.deviceName} · {generation.options.speed.toFixed(2)}× · {t('ttsSeed')}{' '}
-              {generation.options.seed}
-              {generation.options.mood && generation.options.mood !== 'default'
-                ? ` · ${t(`moods.${generation.options.mood}`)}`
-                : ''}
-              {generation.options.accent && generation.options.accent !== 'auto'
-                ? ` · ${t(`accents.${voiceAccents.find((a) => a.id === generation.options.accent)?.labelKey}`)}`
-                : ''}
-            </small>
-            {generation.peakVramMb > 0 && (
-              <small>{t('ttsPeakVram', { mb: generation.peakVramMb })}</small>
-            )}
-            {generation.compatibilityMode && <small>{t('ttsCompatibleTake')}</small>}
-            {(stale || long) && <p className="warning">{t(stale ? 'ttsStale' : 'ttsTooLong')}</p>}
-            <div className="generation-actions">
-              <button className="button subtle" onClick={() => onPlay(generation)}>
-                <Play size={13} />
-                {t(activeGenerationId === generation.id ? 'ttsStopListening' : 'listen')}
-              </button>
+          {chosen && (
+            <div className="generation-review">
+              <span>{t(line.status)}</span>
               <button
-                className="text-button"
-                disabled={busy || active}
-                onClick={() => onEdit((p) => selectGeneration(p, generation.id))}
+                className="button accent"
+                disabled={busy || staleGeneration(project, line, chosen)}
+                onClick={() => onEdit((p) => reviewGeneration(p, line.id, true))}
               >
-                {t('ttsSelect')}
+                <Check size={14} />
+                {t('ttsValidate')}
               </button>
               <button
                 className="text-button"
                 disabled={busy}
-                onClick={() =>
-                  void bridge.exportGeneration(generation.id).catch((e) => onError(String(e)))
-                }
+                onClick={() => onEdit((p) => reviewGeneration(p, line.id, false))}
               >
-                <Download size={13} />
-                WAV
-              </button>
-              <button
-                className="text-button"
-                disabled={busy}
-                aria-label={t('ttsDeleteGeneration', { number: generations.length - index })}
-                onClick={() => onEdit((p) => deleteGeneration(p, generation.id))}
-              >
-                <Trash2 size={13} />
+                {t('ttsReview')}
               </button>
             </div>
-          </article>
-        );
-      })}
-      {chosen && (
-        <div className="generation-review">
-          <span>{t(line.status)}</span>
-          <button
-            className="button accent"
-            disabled={busy || staleGeneration(project, line, chosen)}
-            onClick={() => onEdit((p) => reviewGeneration(p, line.id, true))}
-          >
-            <Check size={14} />
-            {t('ttsValidate')}
-          </button>
-          <button
-            className="text-button"
-            disabled={busy}
-            onClick={() => onEdit((p) => reviewGeneration(p, line.id, false))}
-          >
-            {t('ttsReview')}
-          </button>
-        </div>
+          )}
+        </>
       )}
     </div>
   );
