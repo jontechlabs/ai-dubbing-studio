@@ -435,7 +435,7 @@ fn start_with_launch<R: tauri::Runtime>(
                 }
                 record_item(&core,&key,index,&request.items[index])?;
                 persist(&core,&app,&key,&request,None);
-                if request.items[index].error.as_deref().is_some_and(|e|["TTS_OUT_OF_MEMORY","DEVICE_UNAVAILABLE","TTS_RUNTIME_FAILED","TTS_RUNTIME_REQUIRED"].contains(&e)){return Err("TTS_BATCH_PARTIAL".into());}
+                if request.items[index].error.as_deref().is_some_and(|e|["TTS_OUT_OF_MEMORY","TTS_DRAMA_RAM_REQUIRED","TTS_DRAMA_VRAM_REQUIRED","TTS_DRAMA_DISK_REQUIRED","DEVICE_UNAVAILABLE","TTS_RUNTIME_FAILED","TTS_RUNTIME_REQUIRED"].contains(&e)){return Err("TTS_BATCH_PARTIAL".into());}
             }
             if request.items.iter().any(|i|i.status=="failed"){Err("TTS_BATCH_PARTIAL".into())}else{Ok(())}
         }.await;

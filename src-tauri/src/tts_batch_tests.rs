@@ -62,6 +62,8 @@ if r['text']=='slow' and not (folder/'retry').exists():
     open(r['outputPath'],'wb').write(b'partial');print(json.dumps({'stage':'ttsGenerate','progress':0.2}),flush=True);time.sleep(20)
 if r['text']=='fail' and not (folder/'retry').exists():
     print(json.dumps({'error':'TTS_EMPTY_AUDIO'}),flush=True);sys.exit(1)
+if r['text'].startswith('TTS_DRAMA_') and not (folder/'retry').exists():
+    print(json.dumps({'error':r['text']}),flush=True);sys.exit(1)
 with wave.open(r['outputPath'],'wb') as out:
     out.setparams((1,2,24000,0,'NONE','not compressed'));out.writeframes(struct.pack('<h',1000)*28800)
 json.dump({'device':r['device'],'deviceName':'Protocol test','peakVramMb':0},open(r['resultPath'],'w'))
@@ -215,6 +217,57 @@ async fn sequential_batch_keeps_successes_and_retries_only_failures_with_origina
     assert!(s.history(false).unwrap().generations.is_empty());
     assert_eq!(s.history(true).unwrap().generations.len(), 2);
     assert_eq!(s.history(true).unwrap().generations.len(), 3);
+}
+#[tokio::test]
+async fn drama_resource_guards_stop_remaining_lines_and_can_resume_after_correction() {
+    for error in [
+        "TTS_DRAMA_RAM_REQUIRED",
+        "TTS_DRAMA_VRAM_REQUIRED",
+        "TTS_DRAMA_DISK_REQUIRED",
+    ] {
+        let tmp = tempfile::tempdir().unwrap();
+        let root = tmp.path().canonicalize().unwrap();
+        let p = fixture(&root, &["Bonjour", error, "Salut"]);
+        let req = request(&p, &root);
+        let core = core(&root, p);
+        let app = tauri::test::mock_app();
+        let key = start_with_launch(
+            core.clone(),
+            app.handle().clone(),
+            req,
+            None,
+            Some(worker(&root)),
+        )
+        .unwrap();
+        let job = finished(&core, &key).await;
+        assert_eq!(job.status, "failed");
+        let progress = job.batch.unwrap();
+        assert_eq!(
+            (
+                progress.succeeded,
+                progress.failed,
+                progress.completed,
+                progress.total
+            ),
+            (1, 1, 2, 3)
+        );
+        assert_eq!(
+            std::fs::read_to_string(root.join("calls.jsonl"))
+                .unwrap()
+                .lines()
+                .count(),
+            2
+        );
+        let req = load(&core, &key).unwrap();
+        assert_eq!(req.items[1].error.as_deref(), Some(error));
+        assert_eq!(req.items[2].status, "pending");
+        std::fs::write(root.join("retry"), b"resources available").unwrap();
+        let retry =
+            resume_with_launch(core.clone(), app.handle().clone(), req, Some(worker(&root)))
+                .unwrap();
+        assert_eq!(finished(&core, &retry).await.status, "succeeded");
+        assert_eq!(project::load(&root).unwrap().generations.len(), 3);
+    }
 }
 #[tokio::test]
 async fn cancel_and_interrupted_journal_resume_without_duplicate_committed_takes() {

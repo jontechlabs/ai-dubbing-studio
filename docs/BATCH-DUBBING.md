@@ -40,7 +40,7 @@ Le récapitulatif indique les répliques prêtes, déjà doublées, non traduite
 
 Une seule réplique est générée à la fois, sur le périphérique choisi, pour éviter le cumul de modèles en VRAM. Le moteur est déchargé entre les répliques, comme en génération unitaire : le chargement des poids est donc répété, et un grand lot peut prendre longtemps. Cette version n’introduit pas de cache de modèle maintenu en mémoire.
 
-**Traitements** affiche l’étape courante, une progression globale et les nombres de réussites, échecs et exclusions. Un échec propre à une réplique laisse avancer les autres. Une erreur de périphérique, de runtime ou de mémoire arrête le lot pour éviter de répéter une erreur matérielle sur toutes les répliques.
+**Traitements** affiche l’étape courante, une progression globale et les nombres de réussites, échecs et exclusions. Un échec propre à une réplique laisse avancer les autres. Une erreur de périphérique, de runtime ou de mémoire arrête le lot pour éviter de répéter une erreur matérielle sur toutes les répliques. Cela comprend les contrôles de RAM, de VRAM et d’espace disque de Drama 3 ; après correction, la reprise traite les éléments restants.
 
 Les générations successives d’un lot partagent une étape d’annulation pour limiter la mémoire utilisée par l’historique. Une modification manuelle intercalée crée une séparation ; son historique reste indépendant. La reprise après annulation ou échec constitue une nouvelle étape. Annuler les modifications du projet conserve les WAV pour permettre le rétablissement.
 
