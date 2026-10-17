@@ -2,7 +2,9 @@
 
 ## v0.10.2 offline disk preflight before Drama dependencies
 
-Windows workflow evidence will be recorded before publication.
+Windows checks and signed-update package production passed in [run 39004545498](https://github.com/jontechlabs/ai-dubbing-studio/actions/runs/39004545498), built from `039bda980c93d9ea0d8bcba806466274123010a9`. All 228 Windows suite checks passed (57 TypeScript, 70 Rust, 64 Chrome, 37 Python), plus the real FP8/cache/tiny-model/header diagnostic, plus two real Japanese ASR checks using the final Windows release executable. The setup and portable archive are copied unchanged from this workflow. Final metadata only records this evidence and the verified update feed.
+
+Packaged Windows worker timings for the 7.2-second Japanese fixture: auto: 236.21 s, ja: 117.73 s. These are CI CPU measurements, not performance estimates for the user’s PC.
 
 The native preflight reads the pinned manifests and local file metadata, budgets missing model files and dependency archives, reserves 12 GiB for expanded runtime payload less existing Python/core files, plus 2 GiB margin. The pinned torch wheel actually expands to 6.88 GiB (central-directory measurement). This is a conservative estimate, not a checksum validation or a guarantee against other processes filling the disk. Existing SHA-256 download validation and the later Python model-space guard remain enabled. GetDiskFreeSpaceExW queries caller-available capacity on the configured storage volume (including extended paths), walking to its existing ancestor for a new folder. Missing/disconnected drives fail closed. The task rechecks under its job gate before creating runtime files, deleting readiness markers or downloading dependencies.
 
