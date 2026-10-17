@@ -22,6 +22,8 @@ mod tests;
 pub struct Options {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub mood: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub accent: Option<String>,
     #[serde(default)]
     pub variant_id: Option<String>,
     pub device: String,
@@ -38,6 +40,7 @@ impl Options {
         self.variant_id.as_deref().unwrap_or("cosy3-official")
     }
     pub fn validate(&self) -> Result<(), String> {
+        crate::voice_accent::validate(self, None)?;
         let mood = self.mood.as_deref().unwrap_or("default");
         if ![
             "default",
@@ -67,7 +70,7 @@ impl Options {
         {
             return Err("DEVICE_UNAVAILABLE".into());
         }
-        if !["character", "current", "custom"].contains(&self.reference_mode.as_str())
+        if !["character", "current", "custom", "file"].contains(&self.reference_mode.as_str())
             || !["zeroShot", "crossLingual"].contains(&self.mode.as_str())
             || !self.speed.is_finite()
             || !(0.5..=2.0).contains(&self.speed)
@@ -82,6 +85,9 @@ impl Options {
             return Err("INVALID_AUDIO_TRANSFER".into());
         }
         Ok(())
+    }
+    pub fn requires_v9(&self) -> bool {
+        self.reference_mode == "file" || self.accent.as_deref().is_some_and(|a| a != "auto")
     }
 }
 #[derive(Clone, Serialize, Deserialize)]
@@ -316,7 +322,7 @@ pub fn fingerprint(p: &Project, line_id: &str) -> Result<String, String> {
         .iter()
         .find(|line| line.id == line_id)
         .ok_or("NO_DIALOGUES")?;
-    let value = serde_json::json!({"text":text(p,line),"start":line.start_ms,"end":line.end_ms,"character":line.character_id,"characterData":p.characters.iter().find(|character|Some(&character.id)==line.character_id.as_ref()),"voiceSettings":line.voice_settings,"referenceTrack":p.model_preferences.as_ref().map(|v|&v["referenceTrackId"]),"audioPatches":crate::audio_patch::all(p)?,"source":p.media.as_ref().map(|m|&m.path),"language":p.languages.target,"pronunciation":p.pronunciation});
+    let value = serde_json::json!({"text":text(p,line),"start":line.start_ms,"end":line.end_ms,"character":line.character_id,"characterData":p.characters.iter().find(|character|Some(&character.id)==line.character_id.as_ref()),"voiceSettings":line.voice_settings,"fileReference":line.voice_settings.as_ref().filter(|o|o.reference_mode=="file").and_then(|o|o.reference_id.as_deref()).and_then(|id|p.voice_reference(None,id)),"referenceTrack":p.model_preferences.as_ref().map(|v|&v["referenceTrackId"]),"audioPatches":crate::audio_patch::all(p)?,"source":p.media.as_ref().map(|m|&m.path),"language":p.languages.target,"pronunciation":p.pronunciation});
     Ok(format!(
         "{:x}",
         Sha256::digest(serde_json::to_vec(&value).map_err(io_error)?)
@@ -329,7 +335,8 @@ pub fn enqueue<R: tauri::Runtime>(
     mut options: Options,
 ) -> Result<String, String> {
     if options.variant() == "cosy3-official"
-        && options.mood.as_deref().is_some_and(|m| m != "default")
+        && (options.mood.as_deref().is_some_and(|m| m != "default")
+            || options.accent.as_deref().is_some_and(|a| a != "auto"))
     {
         options.mode = "crossLingual".into();
     }
@@ -374,6 +381,7 @@ pub fn enqueue<R: tauri::Runtime>(
     Ok(output)
 }
 fn validate_input(p: &Project, line_id: &str, options: &Options) -> Result<(), String> {
+    crate::voice_accent::validate(options, Some(&p.languages.target))?;
     let line = p
         .dialogues
         .iter()
@@ -414,6 +422,13 @@ fn reference<'a>(
     line: &crate::domain::Dialogue,
     options: &Options,
 ) -> Result<&'a crate::domain::VoiceReference, String> {
+    if options.reference_mode == "file" {
+        return p
+            .voice_references
+            .iter()
+            .find(|r| Some(&r.id) == options.reference_id.as_ref())
+            .ok_or("TTS_REFERENCE_REQUIRED".into());
+    }
     let character = p
         .characters
         .iter()
@@ -538,14 +553,11 @@ async fn execute_with_launch<R: tauri::Runtime>(
     let prompt_text = if request.options.variant().starts_with("fish")
         || request.options.variant() == "drama3-comfy-fp8"
     {
-        match request.options.mood.as_deref().unwrap_or("default") {
-            "default" => raw_text.clone(),
-            mood => format!("[{mood}] {raw_text}"),
-        }
+        crate::voice_accent::fish_prompt(&raw_text, &request.options)
     } else {
         raw_text.clone()
     };
-    let input_value = serde_json::json!({"preparedReferenceAudio":ref_prepared,"variantId":request.options.variant(),"text":raw_text,"promptText":prompt_text,"mood":request.options.mood,"language":p.languages.target,"referenceAudio":reference_audio,"referenceTranscript":transcript,"modelDir":launch.model,"outputPath":destination,"resultPath":result_path,"device":request.options.device,"speed":request.options.speed,"mode":request.options.mode,"seed":request.options.seed});
+    let input_value = serde_json::json!({"preparedReferenceAudio":ref_prepared,"variantId":request.options.variant(),"text":raw_text,"promptText":prompt_text,"mood":request.options.mood,"accent":request.options.accent,"language":p.languages.target,"referenceAudio":reference_audio,"referenceTranscript":transcript,"modelDir":launch.model,"outputPath":destination,"resultPath":result_path,"device":request.options.device,"speed":request.options.speed,"mode":request.options.mode,"seed":request.options.seed});
     project::atomic_write(&input, &serde_json::to_vec(&input_value).map_err(io_error)?)?;
     let result = tokio::time::timeout(Duration::from_secs(if request.options.variant()=="drama3-comfy-fp8"{3600}else{900}), async {
         if request.options.variant().contains("gguf") {
@@ -606,18 +618,18 @@ async fn execute_with_launch<R: tauri::Runtime>(
     let unchanged =
         fingerprint(&s.project, &request.line_id).is_ok_and(|value| value == request.fingerprint);
     let mut next = s.project.clone();
-    next.format_version = next.format_version.max(
-        if request
-            .options
-            .mood
-            .as_deref()
-            .is_some_and(|m| m != "default")
-        {
-            7
-        } else {
-            5
-        },
-    );
+    next.format_version = next.format_version.max(if request.options.requires_v9() {
+        9
+    } else if request
+        .options
+        .mood
+        .as_deref()
+        .is_some_and(|m| m != "default")
+    {
+        7
+    } else {
+        5
+    });
     next.generations.push(generation);
     if let Some(line) = next.dialogues.iter_mut().find(|l| l.id == request.line_id) {
         if unchanged {
@@ -659,6 +671,10 @@ pub fn validate_generations(p: &Project) -> Result<(), String> {
         let settings: Options =
             serde_json::from_value(g["options"].clone()).map_err(|_| "INVALID_GENERATION")?;
         settings.validate()?;
+        crate::voice_accent::validate(&settings, g["language"].as_str())?;
+        if p.format_version < 9 && settings.requires_v9() {
+            return Err("INVALID_GENERATION".into());
+        }
         if p.format_version < 7 && settings.mood.as_deref().is_some_and(|m| m != "default") {
             return Err("INVALID_GENERATION".into());
         }
@@ -689,6 +705,14 @@ pub fn validate_generations(p: &Project) -> Result<(), String> {
         }
     }
     for line in &p.dialogues {
+        if p.format_version < 9
+            && line
+                .voice_settings
+                .as_ref()
+                .is_some_and(Options::requires_v9)
+        {
+            return Err("INVALID_PROJECT".into());
+        }
         if p.format_version < 7
             && line
                 .voice_settings

@@ -41,6 +41,76 @@ function take(p: Project, id = 'take1', durationMs = 2000): Generation {
   };
 }
 describe('dubbing takes', () => {
+  it('persists accent instructions in format 9 and rejects unsupported Qwen accents', () => {
+    const p = demoProject(),
+      changed = editVoiceSettings(p, p.dialogues[0].id, {
+        ...defaultVoiceSettings,
+        accent: 'fr-FR',
+      });
+    expect(changed.formatVersion).toBe(9);
+    expect(validateProject(JSON.parse(JSON.stringify(changed)))).toEqual(changed);
+    expect(() => validateProject({ ...changed, formatVersion: 8 })).toThrow('INVALID_TTS_REQUEST');
+    expect(
+      validVoiceSettings({
+        ...defaultVoiceSettings,
+        variantId: 'qwen3-06b-gguf-q8',
+        accent: 'fr-FR',
+      }),
+    ).toBe(false);
+    expect(validVoiceSettings({ ...defaultVoiceSettings, accent: 'arbitrary' })).toBe(false);
+  });
+  it('allows a reusable file reference without a character and detects transcript changes', () => {
+    const p = demoProject();
+    p.formatVersion = 9;
+    p.characters = [];
+    p.dialogues[0].characterId = null;
+    p.voiceReferences = [
+      {
+        id: 'file',
+        path: 'characters/file.wav',
+        label: 'Voix française',
+        durationMs: 5000,
+        transcript: 'Bonjour',
+        sourceDialogueId: null,
+      },
+    ];
+    const g = take(p);
+    g.options = { ...defaultVoiceSettings, referenceMode: 'file', referenceId: 'file' };
+    g.referenceId = 'file';
+    g.referenceTranscript = 'Bonjour';
+    p.generations = [g];
+    expect(validateProject(p)).toEqual(p);
+    expect(staleGeneration(p, p.dialogues[0], g)).toBe(false);
+    p.voiceReferences[0].transcript = 'Correction';
+    expect(staleGeneration(p, p.dialogues[0], g)).toBe(true);
+    p.voiceReferences[0].path = '../outside.wav';
+    expect(() => validateProject(p)).toThrow('INVALID_REFERENCE_AUDIO');
+  });
+  it('preserves a pending file transcript edit when another reference receives an ASR result', () => {
+    const base = demoProject();
+    base.formatVersion = 9;
+    base.voiceReferences = [
+      {
+        id: 'one',
+        path: 'characters/one.wav',
+        label: 'One',
+        durationMs: 3000,
+        transcript: '',
+        sourceDialogueId: null,
+      },
+    ];
+    const local = structuredClone(base),
+      incoming = structuredClone(base);
+    local.voiceReferences![0].transcript = 'Correction';
+    incoming.voiceReferences!.push({
+      ...base.voiceReferences[0],
+      id: 'two',
+      path: 'characters/two.wav',
+      transcript: 'ASR',
+    });
+    const merged = rebaseProject(base, local, incoming);
+    expect(merged.voiceReferences?.map((r) => r.transcript)).toEqual(['Correction', 'ASR']);
+  });
   it('roundtrips mood settings, upgrades the project and rejects moods unavailable on Qwen Base', () => {
     const p = demoProject(),
       changed = editVoiceSettings(p, p.dialogues[0].id, { ...defaultVoiceSettings, mood: 'angry' });

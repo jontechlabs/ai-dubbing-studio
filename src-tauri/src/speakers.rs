@@ -250,10 +250,18 @@ pub fn enqueue<R: tauri::Runtime>(
     Ok(output)
 }
 
+pub enum ReferenceTarget {
+    Character(String),
+    Dialogue {
+        line_id: String,
+        options: Box<crate::tts::Options>,
+    },
+}
+
 pub async fn reference<R: tauri::Runtime>(
     core: Arc<Core>,
     app: tauri::AppHandle<R>,
-    character_id: String,
+    target: ReferenceTarget,
     line_id: Option<String>,
     path: Option<String>,
     label: String,
@@ -261,16 +269,21 @@ pub async fn reference<R: tauri::Runtime>(
     if busy(&core) || jobs::active_processing(&core) {
         return Err("BUSY".into());
     }
-    let (root, project_id, input, start, duration, transcript, snapshot) = {
+    let (root, project_id, revision, input, start, duration, transcript, snapshot) = {
         let session = core.session.lock().map_err(io_error)?;
         let s = session.as_ref().ok_or("NO_PROJECT")?;
-        if !s
-            .project
-            .characters
-            .iter()
-            .any(|character| character.id == character_id)
-        {
-            return Err("INVALID_CHARACTER".into());
+        match &target {
+            ReferenceTarget::Character(id) => {
+                if !s.project.characters.iter().any(|c| &c.id == id) {
+                    return Err("INVALID_CHARACTER".into());
+                }
+            }
+            ReferenceTarget::Dialogue { line_id, options } => {
+                options.validate()?;
+                if !s.project.dialogues.iter().any(|l| &l.id == line_id) {
+                    return Err("NO_DIALOGUES".into());
+                }
+            }
         }
         if let Some(ref line_id) = line_id {
             let line = s
@@ -284,6 +297,7 @@ pub async fn reference<R: tauri::Runtime>(
             (
                 s.root.clone(),
                 s.project.id.clone(),
+                s.project.revision,
                 input,
                 line.start_ms,
                 (line.end_ms - line.start_ms).min(20000),
@@ -306,6 +320,7 @@ pub async fn reference<R: tauri::Runtime>(
             (
                 s.root.clone(),
                 s.project.id.clone(),
+                s.project.revision,
                 input,
                 0,
                 20000,
@@ -381,41 +396,71 @@ pub async fn reference<R: tauri::Runtime>(
                 .arg(&output)
                 .output(),
         )
-        .await
-        .map_err(|_| "REFERENCE_FAILED")?
-        .map_err(io_error)?;
+        .await;
+        let Ok(Ok(result)) = result else {
+            let _ = std::fs::remove_file(&output);
+            return Err("REFERENCE_FAILED".into());
+        };
         if !result.status.success() {
             let _ = std::fs::remove_file(&output);
             return Err("REFERENCE_FAILED".into());
         }
     }
-    let duration = crate::audio_files::reference_duration(&output)?;
-    let mut session = core.session.lock().map_err(io_error)?;
-    let s = session.as_mut().ok_or("NO_PROJECT")?;
-    if s.root != root || s.project.id != project_id {
-        return Err("STALE_REVISION".into());
+    let result = (|| {
+        let duration = crate::audio_files::reference_duration(&output)?;
+        if matches!(target, ReferenceTarget::Dialogue { .. }) && duration < 1000 {
+            return Err("INVALID_REFERENCE_AUDIO".into());
+        }
+        let mut session = core.session.lock().map_err(io_error)?;
+        let s = session.as_mut().ok_or("NO_PROJECT")?;
+        if s.root != root || s.project.id != project_id || s.project.revision != revision {
+            return Err("STALE_REVISION".into());
+        }
+        let mut next = s.project.clone();
+        next.format_version = next.format_version.max(3);
+        let reference = VoiceReference {
+            id: key.clone(),
+            label: if label.trim().is_empty() {
+                "Neutral".into()
+            } else {
+                label
+            },
+            path: relative,
+            duration_ms: duration,
+            transcript,
+            source_dialogue_id: line_id,
+        };
+        match target {
+            ReferenceTarget::Character(character_id) => {
+                let character = next
+                    .characters
+                    .iter_mut()
+                    .find(|c| c.id == character_id)
+                    .ok_or("INVALID_CHARACTER")?;
+                character.references.push(reference);
+                if character.default_reference_id.is_none() {
+                    character.default_reference_id = Some(key);
+                }
+            }
+            ReferenceTarget::Dialogue {
+                line_id,
+                mut options,
+            } => {
+                next.format_version = next.format_version.max(9);
+                options.reference_mode = "file".into();
+                options.reference_id = Some(key);
+                next.voice_references.push(reference);
+                next.dialogues
+                    .iter_mut()
+                    .find(|l| l.id == line_id)
+                    .ok_or("NO_DIALOGUES")?
+                    .voice_settings = Some(*options);
+            }
+        }
+        s.replace(next, s.project.revision)
+    })();
+    if result.is_err() {
+        let _ = std::fs::remove_file(&output);
     }
-    let mut next = s.project.clone();
-    next.format_version = next.format_version.max(3);
-    let character = next
-        .characters
-        .iter_mut()
-        .find(|character| character.id == character_id)
-        .ok_or("INVALID_CHARACTER")?;
-    character.references.push(VoiceReference {
-        id: key.clone(),
-        label: if label.trim().is_empty() {
-            "Neutral".into()
-        } else {
-            label
-        },
-        path: relative,
-        duration_ms: duration,
-        transcript,
-        source_dialogue_id: line_id,
-    });
-    if character.default_reference_id.is_none() {
-        character.default_reference_id = Some(key);
-    }
-    s.replace(next, s.project.revision)
+    result
 }

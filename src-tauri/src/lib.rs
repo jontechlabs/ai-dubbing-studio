@@ -20,6 +20,7 @@ mod speakers;
 mod subtitles;
 mod transcription;
 mod tts;
+mod voice_accent;
 mod voice_engines;
 mod voice_fit;
 mod voice_space;
@@ -330,9 +331,35 @@ async fn import_voice_reference(
     speakers::reference(
         core.inner().clone(),
         app,
-        character_id,
+        speakers::ReferenceTarget::Character(character_id),
         line_id,
         path,
+        label,
+    )
+    .await
+}
+#[tauri::command]
+async fn import_dubbing_reference(
+    app: tauri::AppHandle,
+    core: State<'_, Shared>,
+    line_id: String,
+    path: String,
+    options: tts::Options,
+) -> Result<Project, String> {
+    let label = std::path::Path::new(&path)
+        .file_stem()
+        .and_then(|v| v.to_str())
+        .unwrap_or("Audio")
+        .to_owned();
+    speakers::reference(
+        core.inner().clone(),
+        app,
+        speakers::ReferenceTarget::Dialogue {
+            line_id,
+            options: Box::new(options),
+        },
+        None,
+        Some(path),
         label,
     )
     .await
@@ -341,22 +368,14 @@ async fn import_voice_reference(
 fn voice_reference_path(
     app: tauri::AppHandle,
     core: State<'_, Shared>,
-    character_id: String,
+    character_id: Option<String>,
     reference_id: String,
 ) -> Result<String, String> {
     let session = core.session.lock().map_err(io_error)?;
     let s = session.as_ref().ok_or("NO_PROJECT")?;
     let reference = s
         .project
-        .characters
-        .iter()
-        .find(|character| character.id == character_id)
-        .and_then(|character| {
-            character
-                .references
-                .iter()
-                .find(|reference| reference.id == reference_id)
-        })
+        .voice_reference(character_id.as_deref(), &reference_id)
         .ok_or("INVALID_REFERENCE_AUDIO")?;
     let path = project::asset(&s.root, &reference.path)?;
     app.asset_protocol_scope()
@@ -368,7 +387,7 @@ fn voice_reference_path(
 fn transcribe_voice_reference(
     app: tauri::AppHandle,
     core: State<'_, Shared>,
-    character_id: String,
+    character_id: Option<String>,
     reference_id: String,
     language: String,
 ) -> Result<String, String> {
@@ -899,10 +918,7 @@ fn retry_job(app: tauri::AppHandle, core: State<'_, Shared>, id: String) -> Resu
         if s.root != request.root
             || s.project.id != request.project_id
             || s.project
-                .characters
-                .iter()
-                .find(|c| c.id == request.character_id)
-                .and_then(|c| c.references.iter().find(|r| r.id == request.reference_id))
+                .voice_reference(request.character_id.as_deref(), &request.reference_id)
                 .is_none_or(|r| {
                     r.path != request.reference_path || r.transcript != request.original_transcript
                 })
@@ -1137,6 +1153,7 @@ pub fn run() {
             install_speaker_runtime,
             identify_speakers,
             import_voice_reference,
+            import_dubbing_reference,
             voice_reference_path,
             transcribe_voice_reference,
             load_demo

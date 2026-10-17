@@ -41,9 +41,10 @@ export interface Dialogue {
 }
 export interface VoiceSettings {
   mood?: 'default' | 'angry' | 'happy' | 'sad' | 'calm' | 'surprised' | 'whisper';
+  accent?: 'auto' | 'fr-FR' | 'fr-CA' | 'fr-BE' | 'fr-CH';
   variantId?: string | null;
   device: string;
-  referenceMode: 'character' | 'current' | 'custom';
+  referenceMode: 'character' | 'current' | 'custom' | 'file';
   referenceTrackId?: string;
   referenceId: string | null;
   mode: 'zeroShot' | 'crossLingual';
@@ -157,6 +158,7 @@ export interface Project {
   dialogues: Dialogue[];
   tracks: Track[];
   characters: Character[];
+  voiceReferences?: VoiceReference[];
   speakerAnalysis?: SpeakerAnalysis | null;
   modelPreferences?: {
     ttsProviderId: string | null;

@@ -53,6 +53,8 @@
       "../workers/speaker-model.json": "workers/speaker-model.json",
       "../workers/SPEAKER-MODEL-LICENSE.txt": "workers/SPEAKER-MODEL-LICENSE.txt",
       "../workers/cosyvoice_worker.py": "workers/cosyvoice_worker.py",
+      "../workers/voice_accent.py": "workers/voice_accent.py",
+      "../workers/voice-accents.json": "workers/voice-accents.json",
       "../workers/cosyvoice_adapter.py": "workers/cosyvoice_adapter.py",
       "../workers/voice_reference.py": "workers/voice_reference.py",
       "../workers/cosyvoice-model.json": "workers/cosyvoice-model.json",

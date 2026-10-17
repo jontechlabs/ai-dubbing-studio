@@ -18,7 +18,8 @@ const REVISION: &str = "5359861c739e955e79d9a303bcbc70fb988958b1";
 pub struct Request {
     pub root: PathBuf,
     pub project_id: String,
-    pub character_id: String,
+    #[serde(default)]
+    pub character_id: Option<String>,
     pub reference_id: String,
     pub language: String,
     pub reference_path: String,
@@ -34,10 +35,7 @@ fn check_reference<'a>(
     request: &Request,
 ) -> Result<&'a crate::domain::VoiceReference, String> {
     let reference = p
-        .characters
-        .iter()
-        .find(|c| c.id == request.character_id)
-        .and_then(|c| c.references.iter().find(|r| r.id == request.reference_id))
+        .voice_reference(request.character_id.as_deref(), &request.reference_id)
         .ok_or("TTS_REFERENCE_REQUIRED")?;
     // Do not overwrite a manual correction, a replaced recording, or another project.
     if p.id != request.project_id
@@ -52,7 +50,7 @@ fn check_reference<'a>(
 pub fn enqueue<R: tauri::Runtime>(
     core: Arc<Core>,
     app: tauri::AppHandle<R>,
-    character_id: String,
+    character_id: Option<String>,
     reference_id: String,
     language: String,
 ) -> Result<String, String> {
@@ -73,10 +71,7 @@ pub fn enqueue<R: tauri::Runtime>(
         let s = session.as_ref().ok_or("NO_PROJECT")?;
         let reference = s
             .project
-            .characters
-            .iter()
-            .find(|c| c.id == character_id)
-            .and_then(|c| c.references.iter().find(|r| r.id == reference_id))
+            .voice_reference(character_id.as_deref(), &reference_id)
             .ok_or("TTS_REFERENCE_REQUIRED")?;
         if reference.duration_ms < 1000 {
             return Err("INVALID_REFERENCE_AUDIO".into());
@@ -150,7 +145,11 @@ pub fn enqueue<R: tauri::Runtime>(
             if s.root != request.root { return Err("STALE_REVISION".into()); }
             check_reference(&s.project, &request)?;
             let mut next = s.project.clone();
-            next.characters.iter_mut().find(|c| c.id == request.character_id).unwrap().references.iter_mut().find(|r| r.id == request.reference_id).unwrap().transcript = text;
+            let references = match request.character_id.as_deref() {
+                Some(owner) => &mut next.characters.iter_mut().find(|c| c.id == owner).ok_or("TTS_REFERENCE_REQUIRED")?.references,
+                None => &mut next.voice_references,
+            };
+            references.iter_mut().find(|r| r.id == request.reference_id).ok_or("TTS_REFERENCE_REQUIRED")?.transcript = text;
             if flag.load(Ordering::Relaxed) { return Err("CANCELLED".into()); }
             let saved = s.replace(next, s.project.revision)?;
             let _ = app.emit("project-changed", saved);
@@ -303,7 +302,7 @@ mod tests {
         let request = Request {
             root: PathBuf::new(),
             project_id: p.id.clone(),
-            character_id: "speaker".into(),
+            character_id: Some("speaker".into()),
             reference_id: "ref".into(),
             language: "auto".into(),
             reference_path: "characters/ref.wav".into(),
@@ -334,5 +333,38 @@ mod tests {
             "ASR_EMPTY_AUDIO"
         );
         assert!(!folder.path().join("result.json").exists());
+    }
+    #[test]
+    fn standalone_transcription_keeps_manual_corrections_and_old_character_requests_compatible() {
+        let mut p = crate::domain::Project::new("Test".into(), "ja".into(), "fr".into());
+        p.voice_references.push(crate::domain::VoiceReference {
+            id: "file".into(),
+            label: "Audio".into(),
+            path: "characters/file.wav".into(),
+            duration_ms: 3000,
+            transcript: String::new(),
+            source_dialogue_id: None,
+        });
+        let request = Request {
+            root: PathBuf::new(),
+            project_id: p.id.clone(),
+            character_id: None,
+            reference_id: "file".into(),
+            language: "auto".into(),
+            reference_path: "characters/file.wav".into(),
+            original_transcript: String::new(),
+        };
+        assert!(check_reference(&p, &request).is_ok());
+        p.voice_references[0].transcript = "Manual correction".into();
+        assert_eq!(check_reference(&p, &request).unwrap_err(), "STALE_REVISION");
+        let mut legacy = serde_json::to_value(request).unwrap();
+        legacy["character_id"] = "speaker".into();
+        assert_eq!(
+            serde_json::from_value::<Request>(legacy)
+                .unwrap()
+                .character_id
+                .as_deref(),
+            Some("speaker")
+        );
     }
 }

@@ -1,15 +1,17 @@
 import type { Dialogue, Generation, Project, VoiceSettings } from './types';
 import { dialogueText } from './subtitles';
 import { voiceVariant } from './voiceEngines';
+import { validAccent } from './voiceAccents';
 export function validVoiceSettings(value: unknown): value is VoiceSettings {
   if (!value || typeof value !== 'object') return false;
   const s = value as VoiceSettings;
   return (
+    validAccent(s.accent, s.variantId ?? undefined) &&
     (s.mood == null ||
       ['default', 'angry', 'happy', 'sad', 'calm', 'surprised', 'whisper'].includes(s.mood)) &&
     (!s.variantId?.startsWith('qwen3') || !s.mood || s.mood === 'default') &&
     (s.variantId == null || !!voiceVariant(s.variantId)) &&
-    ['character', 'current', 'custom'].includes(s.referenceMode) &&
+    ['character', 'current', 'custom', 'file'].includes(s.referenceMode) &&
     (s.referenceTrackId === undefined ||
       (typeof s.referenceTrackId === 'string' &&
         s.referenceTrackId.length > 0 &&
@@ -29,6 +31,7 @@ export function voiceGenerations(project: Project): Generation[] {
   return project.generations.filter((g): g is Generation => g.kind === 'tts');
 }
 export const defaultVoiceSettings: VoiceSettings = {
+  accent: 'auto',
   mood: 'default',
   device: 'auto',
   referenceMode: 'character',
@@ -54,7 +57,10 @@ export function selectedGeneration(project: Project, line: Dialogue) {
   );
 }
 export function staleGeneration(project: Project, line: Dialogue, generation: Generation) {
-  if (generation.options.referenceMode !== 'current') {
+  if (generation.options.referenceMode === 'file') {
+    const reference = project.voiceReferences?.find((r) => r.id === generation.referenceId);
+    if (!reference || reference.transcript !== generation.referenceTranscript) return true;
+  } else if (generation.options.referenceMode !== 'current') {
     const character = project.characters.find((c) => c.id === line.characterId);
     const reference = character?.references.find(
       (r) =>
@@ -130,6 +136,7 @@ export function editVoiceSettings(
   if (!line) throw Error('NO_DIALOGUES');
   line.voiceSettings = settings;
   next.formatVersion = Math.max(
+    (settings.accent && settings.accent !== 'auto') || settings.referenceMode === 'file' ? 9 : 1,
     settings.mood && settings.mood !== 'default' ? 7 : 5,
     next.formatVersion,
   );

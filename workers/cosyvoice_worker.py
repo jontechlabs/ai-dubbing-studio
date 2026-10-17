@@ -83,6 +83,8 @@ def verify_model(directory):
 
 
 def validate_request(request):
+    from voice_accent import accent_spec
+    accent_spec(request)
     if (request.get('mood') or 'default') not in ['default','angry','happy','sad','calm','surprised','whisper']:
         raise ValueError('TTS_STYLE_UNSUPPORTED')
     if not isinstance(request.get('text'), str) or not request['text'].strip() or len(request['text']) > 1000:
@@ -93,7 +95,7 @@ def validate_request(request):
         raise ValueError('INVALID_TTS_REQUEST')
     if request.get('mode') not in ['zeroShot', 'crossLingual']:
         raise ValueError('INVALID_TTS_REQUEST')
-    if request['mode'] == 'zeroShot' and (request.get('mood') or 'default') == 'default' and not request.get('referenceTranscript', '').strip():
+    if request['mode'] == 'zeroShot' and (request.get('mood') or 'default') == 'default' and accent_spec(request) is None and not request.get('referenceTranscript', '').strip():
         raise ValueError('TTS_TRANSCRIPT_REQUIRED')
     device = request.get('device', 'auto')
     if device not in ['cpu', 'auto'] and not re.fullmatch(r'cuda:\d{1,2}', device):
@@ -207,11 +209,13 @@ def generate_normalized(request):
 
 
 def synthesis_stream(model, request, reference, options):
+    from voice_accent import accent_spec
+    accent = accent_spec(request)
     mood = request.get('mood') or 'default'
     instructions = {'angry':'请用愤怒的语气说话。','happy':'请用开心的语气说话。','sad':'请用悲伤的语气说话。','calm':'请用平静的语气说话。','surprised':'请用惊讶的语气说话。','whisper':'请用低声耳语说话。'}
     prefix = 'You are a helpful assistant.'
-    if mood != 'default':
-        instruction = prefix + instructions[mood] + '<|endofprompt|>'
+    if mood != 'default' or accent:
+        instruction = prefix + instructions.get(mood, '') + (accent['cosyInstruction'] if accent else '') + '<|endofprompt|>'
         return model.inference_instruct2(request['text'], instruction, reference, **options)
     prefix += '<|endofprompt|>'
     if request['mode'] == 'zeroShot':

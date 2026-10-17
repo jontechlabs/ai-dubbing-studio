@@ -1,0 +1,32 @@
+{
+  "accents": [
+    {
+      "id": "fr-FR",
+      "language": "fr",
+      "labelKey": "frFR",
+      "fishInstruction": "speaking French with a native Metropolitan French accent from France",
+      "cosyInstruction": "请用自然地道的法国法语口音说话。"
+    },
+    {
+      "id": "fr-CA",
+      "language": "fr",
+      "labelKey": "frCA",
+      "fishInstruction": "speaking French with a native Quebec French accent",
+      "cosyInstruction": "请用自然的加拿大魁北克法语口音说话。"
+    },
+    {
+      "id": "fr-BE",
+      "language": "fr",
+      "labelKey": "frBE",
+      "fishInstruction": "speaking French with a native Belgian French accent",
+      "cosyInstruction": "请用自然的比利时法语口音说话。"
+    },
+    {
+      "id": "fr-CH",
+      "language": "fr",
+      "labelKey": "frCH",
+      "fishInstruction": "speaking French with a native Swiss French accent",
+      "cosyInstruction": "请用自然的瑞士法语口音说话。"
+    }
+  ]
+}

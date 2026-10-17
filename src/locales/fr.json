@@ -282,7 +282,8 @@
     "TTS_DRAMA_RAM_REQUIRED": "Drama 3 FP8 exige au moins 48 Gio de RAM utilisable et 24 Gio disponibles avec les experts mappés. Consultez les mesures RAM/VRAM dans les logs et fermez les applications gourmandes.",
     "TTS_DRAMA_VRAM_REQUIRED": "Drama 3 exige au moins 12 Gio de VRAM libre sur le GPU NVIDIA sélectionné. Fermez les autres moteurs IA.",
     "TTS_DRAMA_DISK_REQUIRED": "Espace disque insuffisant pour Drama 3. Le dossier, l’espace disponible et l’espace requis sont indiqués dans les logs de Traitements. Libérez de l’espace ou changez le stockage des modèles dans Paramètres, puis réessayez. Prévoir environ 60 Go libres à la première installation.",
-    "TTS_DRAMA_FRAME_LIMIT": "Drama 3 a atteint sa limite de génération : scindez le texte ou essayez une autre graine ou référence. Aucun audio tronqué conservé."
+    "TTS_DRAMA_FRAME_LIMIT": "Drama 3 a atteint sa limite de génération : scindez le texte ou essayez une autre graine ou référence. Aucun audio tronqué conservé.",
+    "TTS_ACCENT_UNSUPPORTED": "Accent incompatible avec ce moteur ou cette langue."
   },
   "preparingVideo": "Préparation de la vidéo…",
   "loadingVideo": "Chargement de la vidéo…",
@@ -604,7 +605,7 @@
   "asrTranscribe": "Transcrire automatiquement",
   "asrHint": "Whisper small multilingue · local, sur CPU · modèle de 181 Mio téléchargé au premier usage dans le dossier de modèles configuré. Aucun audio envoyé en ligne.",
   "asrReviewHint": "La transcription reste dans la langue parlée. Écoutez la référence et vérifiez le texte proposé ; corrigez les noms et les mots manquants avant le doublage.",
-  "asrDubReviewHint": "Vérifiez cette transcription en écoutant la référence. Vous pouvez la corriger dans « Gérer les personnages et les références ».",
+  "asrDubReviewHint": "Vérifiez et corrigez la transcription de la référence ici avant de générer. Elle doit correspondre exactement à l’audio, dans sa langue d’origine.",
   "asrCurrentHint": "Si le SRT original est absent, ouvrez « Gérer les personnages et les références », choisissez le personnage, puis « Extraire cette réplique » et « Transcrire automatiquement ». Utilisez ensuite cette référence pour le doublage.",
   "dubbingDragHint": "Glissez pour déplacer la voix. Maj : aimantation. Flèches : 10 ms ; Maj + flèches : 1 ms. Échap : annuler.",
   "dubbingOffset": "Décalage du doublage (ms)",
@@ -617,7 +618,7 @@
   "ttsMood": "Humeur / interprétation",
   "ttsMoodHint": "Consigne d’interprétation envoyée au moteur. Son intensité dépend du modèle et de la référence ; comparez les essais. Le texte des sous-titres reste identique.",
   "ttsMoodUnsupported": "Les variantes Qwen3-TTS Base intégrées ne proposent pas de contrôle d’humeur. Utilisez Fish S2 ou CosyVoice3 pour ce réglage.",
-  "ttsCosyMoodHint": "L’humeur utilise le mode d’instructions de CosyVoice3 avec votre référence vocale, sans transcription de référence.",
+  "ttsCosyMoodHint": "L’humeur ou l’accent utilise le mode d’instructions de CosyVoice3 avec votre référence vocale, sans transcription de référence.",
   "moods": {
     "default": "Par défaut",
     "angry": "En colère",
@@ -755,5 +756,19 @@
   "dramaSpaceChecking": "Vérification de l’espace…",
   "dramaSpaceRefresh": "Vérifier l’espace disque",
   "dramaSpaceError": "Impossible de vérifier le stockage. Vérifiez que le disque est connecté, puis réessayez.",
-  "dramaSpaceHint": "Contrôle local sans téléchargement. Estimation prudente incluant les dépendances et leur décompression, avec déduction des fichiers déjà présents. L’espace est revérifié au démarrage ; l’intégrité des fichiers reste vérifiée pendant l’installation."
+  "dramaSpaceHint": "Contrôle local sans téléchargement. Estimation prudente incluant les dépendances et leur décompression, avec déduction des fichiers déjà présents. L’espace est revérifié au démarrage ; l’intégrité des fichiers reste vérifiée pendant l’installation.",
+  "ttsReferenceFile": "Fichier audio importé",
+  "ttsImportReference": "Charger un fichier de référence",
+  "ttsImportReferenceHint": "WAV, MP3, FLAC, M4A, OGG, AAC ou Opus. Copie locale dans le projet, conversion en WAV mono ; seules les 20 premières secondes sont conservées (1 seconde minimum). Préférez plusieurs secondes de parole claire, sans musique.",
+  "ttsListenReference": "Écouter la référence vocale",
+  "ttsAccent": "Accent souhaité (consigne)",
+  "ttsAccentHint": "Consigne de prononciation pour CosyVoice3, Fish S2 et Drama 3 ; les accents régionaux ne sont pas garantis. Pour limiter l’accent japonais, préférez une référence française nette. CosyVoice3 utilise le mode avec consigne, sans transcription de référence.",
+  "ttsAccentUnsupported": "Ce moteur ou cette langue ne permet pas encore de choisir un accent dans le studio.",
+  "accents": {
+    "auto": "Automatique / référence",
+    "frFR": "Français de France",
+    "frCA": "Français du Québec",
+    "frBE": "Français de Belgique",
+    "frCH": "Français de Suisse"
+  }
 }

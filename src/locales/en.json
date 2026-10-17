@@ -282,7 +282,8 @@
     "TTS_DRAMA_RAM_REQUIRED": "Drama 3 FP8 needs at least 48 GiB usable physical RAM and 24 GiB available with mapped experts. Check measured RAM/VRAM in the logs and close memory-heavy apps.",
     "TTS_DRAMA_VRAM_REQUIRED": "Drama 3 needs at least 12 GiB free VRAM on the selected NVIDIA GPU. Close other AI engines.",
     "TTS_DRAMA_DISK_REQUIRED": "Not enough free disk space for Drama 3. The folder, available space and required space are shown in Processing logs. Free up space or change model storage in Settings, then retry. Allow about 60 GB on the first install.",
-    "TTS_DRAMA_FRAME_LIMIT": "Drama 3 hit its generation limit: split the text or try another seed or reference. Truncated audio was discarded."
+    "TTS_DRAMA_FRAME_LIMIT": "Drama 3 hit its generation limit: split the text or try another seed or reference. Truncated audio was discarded.",
+    "TTS_ACCENT_UNSUPPORTED": "Accent incompatible with this engine or target language."
   },
   "preparingVideo": "Preparing video…",
   "loadingVideo": "Loading video…",
@@ -604,7 +605,7 @@
   "asrTranscribe": "Transcribe automatically",
   "asrHint": "Whisper small multilingual · local CPU inference · 181 MiB model downloaded on first use into your configured model folder. No audio is uploaded.",
   "asrReviewHint": "The transcript stays in the spoken language. Listen to the reference and check the proposed text; correct names and missing words before dubbing.",
-  "asrDubReviewHint": "Check this transcript while listening to the reference. You can edit it in “Manage characters and references”.",
+  "asrDubReviewHint": "Review and correct the reference transcript here before generation. It must match the audio exactly, in its original language.",
   "asrCurrentHint": "If the original SRT is missing, open “Manage characters and references”, select the character, then “Extract this line” and “Transcribe automatically”. Use that reference for dubbing.",
   "dubbingDragHint": "Drag to move the voice. Shift: snap. Arrow keys: 10 ms; Shift + arrows: 1 ms. Escape: cancel.",
   "dubbingOffset": "Dubbing offset (ms)",
@@ -617,7 +618,7 @@
   "ttsMood": "Mood / delivery",
   "ttsMoodHint": "Delivery guidance is sent to the engine. Its strength depends on the model and reference; compare takes. Subtitle text stays the same.",
   "ttsMoodUnsupported": "The integrated Qwen3-TTS Base variants do not expose mood control. Use Fish S2 or CosyVoice3 for this setting.",
-  "ttsCosyMoodHint": "Mood uses CosyVoice3 instruction mode with your reference audio, without a reference transcript.",
+  "ttsCosyMoodHint": "Mood or accent uses CosyVoice3 instruction mode with your reference audio, without a reference transcript.",
   "moods": {
     "default": "Default",
     "angry": "Angry",
@@ -755,5 +756,19 @@
   "dramaSpaceChecking": "Checking disk space…",
   "dramaSpaceRefresh": "Check disk space",
   "dramaSpaceError": "Cannot check storage. Verify that the drive is connected, then retry.",
-  "dramaSpaceHint": "Local check without downloads. Conservative estimate includes dependencies and extraction, deducting existing files. Space is checked again when starting; file integrity is still checked during installation."
+  "dramaSpaceHint": "Local check without downloads. Conservative estimate includes dependencies and extraction, deducting existing files. Space is checked again when starting; file integrity is still checked during installation.",
+  "ttsReferenceFile": "Imported audio file",
+  "ttsImportReference": "Load a reference audio file",
+  "ttsImportReferenceHint": "WAV, MP3, FLAC, M4A, OGG, AAC or Opus. Copied into the project and converted to mono WAV; only the first 20 seconds are kept (1 second minimum). Prefer several seconds of clear solo speech without music.",
+  "ttsListenReference": "Listen to the voice reference",
+  "ttsAccent": "Desired accent (instruction)",
+  "ttsAccentHint": "Pronunciation instruction for CosyVoice3, Fish S2 and Drama 3; regional accents are not guaranteed. A clear French reference is the most reliable way to reduce Japanese accent transfer. CosyVoice3 uses instruction mode without reference transcription.",
+  "ttsAccentUnsupported": "This engine or target language does not yet support accent selection in the studio.",
+  "accents": {
+    "auto": "Automatic / reference",
+    "frFR": "French from France",
+    "frCA": "Quebec French",
+    "frBE": "Belgian French",
+    "frCH": "Swiss French"
+  }
 }

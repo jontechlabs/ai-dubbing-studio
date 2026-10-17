@@ -43,7 +43,7 @@ export async function nativeMock(page: Page, large = false) {
     host.__completeTranscription=(text='彼の名前は坂本太郎です。')=>{
       if(job.status==='cancelled')return;
       const {characterId,referenceId}=host.__pendingTranscription;
-      project.characters.find((c:any)=>c.id===characterId).references.find((r:any)=>r.id===referenceId).transcript=text;
+      (characterId?project.characters.find((c:any)=>c.id===characterId).references:project.voiceReferences).find((r:any)=>r.id===referenceId).transcript=text;
       project.revision++;emit('project-changed',structuredClone(project));localStorage.setItem('nativeMockProject',JSON.stringify(project));job={...job,status:'succeeded',stage:'done',progress:1};emit('job-changed',job);
     };
     host.__failTranscription=()=>{job={...job,status:'failed',error:'ASR_EMPTY_AUDIO'};emit('job-changed',job);};
@@ -88,7 +88,7 @@ export async function nativeMock(page: Page, large = false) {
       if(command==='plugin:dialog|save')return args.options?.defaultPath?.endsWith('.mkv')?'C:/Exports/dubbed.mkv':'C:/Exports/speech-montage.wav';
       if(command==='export_mkv'){job={id:'mkv-export',projectId:project.id,kind:'mkvExport',status:'running',stage:'mixEncode',progress:0.2,logs:[],error:null};emit('job-changed',job);return job.id;}
       if(command==='export_audio_track'){job={id:'export',projectId:project.id,kind:'audioExport',status:'running',stage:'audioRender',progress:0.5,logs:[],error:null};emit('job-changed',job);return job.id;}
-      if(command==='plugin:dialog|open')return 'D:/AI Models';
+      if(command==='plugin:dialog|open')return host.__dialogPath===undefined?'D:/AI Models':host.__dialogPath;
       if(command==='change_model_storage'){host.__pendingModelFolder=args.path;job={id:'modelMove',projectId:'',kind:'modelMove',status:'running',stage:'modelMove',progress:0.4,logs:[],error:null};emit('job-changed',job);return job.id;}
       if(command==='environment')return {platform:'windows',ffmpeg:true,ffprobe:true};
       if(command==='graphics_info')return {preference:'auto',executable:'C:/Studio/ai-dubbing-studio.exe',adapters:[{Name:'Intel iGPU'},{Name:'NVIDIA GPU'}]};
@@ -97,6 +97,14 @@ export async function nativeMock(page: Page, large = false) {
       if(command==='speaker_status')return structuredClone(host.__speakerStatus);
       if(command==='identify_speakers'){job={id:'speakers',projectId:project.id,kind:'speakers',status:'running',stage:'speakerEmbeddings',progress:0.3,logs:[],error:null};emit('job-changed',job);return job.id;}
       if(command==='voice_reference_path')return `C:/Studio/characters/${args.referenceId}.wav`;
+      if(command==='import_dubbing_reference'){
+        if(host.__referenceImportError)throw Error('REFERENCE_FAILED');
+        undoStack.push(structuredClone(project));redoStack.length=0;
+        const id=crypto.randomUUID();project.voiceReferences??=[];
+        project.voiceReferences.push({id,label:'Voix française',path:`characters/reference-${id}.wav`,durationMs:7000,transcript:'',sourceDialogueId:null});
+        project.dialogues.find((l:any)=>l.id===args.lineId).voiceSettings={...args.options,referenceMode:'file',referenceId:id};
+        project.formatVersion=Math.max(9,project.formatVersion);project.revision++;localStorage.setItem('nativeMockProject',JSON.stringify(project));return structuredClone(project);
+      }
       if(command==='transcribe_voice_reference'){host.__pendingTranscription=structuredClone(args);job={id:'asr-job',projectId:project.id,kind:'referenceTranscription',status:'running',stage:'asrTranscribe',progress:null,logs:['Local Whisper small Q5_1, CPU. No audio upload.'],error:null};emit('job-changed',job);return job.id;}
       if(command==='install_separation_runtime'){job={id:'runtime',projectId:null,kind:'runtime',status:'running',stage:'dependencies',progress:null,logs:[],error:null};emit('job-changed',job);return job.id;}
       if(command==='separate_audio'){job={id:'separation',projectId:project.id,kind:'separation',status:'running',stage:'separate',progress:0.3,logs:[],error:null};emit('job-changed',job);return job.id;}

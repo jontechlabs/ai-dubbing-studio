@@ -17,6 +17,7 @@ import * as bridge from '../services/bridge';
 import { installedVoiceVariants, voiceVariant } from '../domain/voiceEngines';
 import { audioTracks, trackLabel } from '../domain/audio';
 import { ReferenceTranscription } from './ReferenceTranscription';
+import { accentSupported, voiceAccents } from '../domain/voiceAccents';
 import {
   dubbingOffset,
   moveDubbing,
@@ -121,7 +122,45 @@ export function CosyModel({
   );
 }
 
+function ReferenceAudio({
+  owner,
+  referenceId,
+  onError,
+}: {
+  owner: string | null;
+  referenceId: string;
+  onError: (error: string) => void;
+}) {
+  const { t } = useTranslation();
+  const [source, setSource] = useState('');
+  useEffect(() => {
+    let disposed = false;
+    void bridge
+      .voiceReferenceUrl(owner, referenceId)
+      .then((url) => {
+        if (!disposed) setSource(url);
+      })
+      .catch((error) => {
+        if (!disposed) onError(String(error));
+      });
+    return () => {
+      disposed = true;
+    };
+  }, [owner, referenceId, onError]);
+  return (
+    <audio
+      key={referenceId}
+      controls
+      preload="metadata"
+      src={source || undefined}
+      aria-label={t('ttsListenReference')}
+      style={{ width: '100%' }}
+    />
+  );
+}
+
 export function DubPanel({
+  run,
   project,
   line,
   jobs,
@@ -137,6 +176,7 @@ export function DubPanel({
   onPlay,
   activeGenerationId,
 }: {
+  run: (operation: () => Promise<Project | null>) => Promise<void>;
   project: Project;
   line: Dialogue | undefined;
   jobs: Job[];
@@ -198,7 +238,11 @@ export function DubPanel({
   };
   const variant = voiceVariant(settings.variantId)!;
   const mood = settings.mood ?? 'default';
-  const instructedMood = variant.providerId === 'cosyvoice3' && mood !== 'default';
+  const accent = accentSupported(variant.id, project.languages.target)
+    ? (settings.accent ?? 'auto')
+    : 'auto';
+  const instructedMood =
+    variant.providerId === 'cosyvoice3' && (mood !== 'default' || accent !== 'auto');
   const mode = variant.providerId.startsWith('fish')
     ? 'zeroShot'
     : instructedMood
@@ -216,11 +260,16 @@ export function DubPanel({
         ? engines?.devices
         : engines?.cudaDevices.filter((d) => d.id.startsWith('cuda:'));
   const character = project.characters.find((c) => c.id === line.characterId);
-  const reference = character?.references.find(
-    (r) =>
-      r.id ===
-      (settings.referenceMode === 'custom' ? settings.referenceId : character.defaultReferenceId),
-  );
+  const fileReference = settings.referenceMode === 'file';
+  const reference = fileReference
+    ? project.voiceReferences?.find((r) => r.id === settings.referenceId)
+    : character?.references.find(
+        (r) =>
+          r.id ===
+          (settings.referenceMode === 'custom'
+            ? settings.referenceId
+            : character.defaultReferenceId),
+      );
   const generations = voiceGenerations(project).filter(
     (g) => g.dialogueId === line.id && g.language === project.languages.target,
   );
@@ -317,6 +366,7 @@ export function DubPanel({
               variantId: next.id,
               device: 'auto',
               mood: next.providerId === 'qwen3-tts' ? 'default' : mood,
+              accent: accentSupported(next.id, project.languages.target) ? accent : 'auto',
               mode: next.providerId.startsWith('fish') ? 'zeroShot' : settings.mode,
             });
           }}
@@ -373,11 +423,18 @@ export function DubPanel({
         <select
           value={settings.referenceMode}
           disabled={busy}
-          onChange={(e) => edit({ referenceMode: e.target.value as typeof settings.referenceMode })}
+          onChange={(e) =>
+            edit({
+              referenceMode: e.target.value as typeof settings.referenceMode,
+              referenceId:
+                e.target.value === 'file' ? (project.voiceReferences?.[0]?.id ?? null) : null,
+            })
+          }
         >
           <option value="character">{t('ttsReferenceDefault')}</option>
           <option value="current">{t('ttsReferenceCurrent')}</option>
           <option value="custom">{t('ttsReferenceCustom')}</option>
+          <option value="file">{t('ttsReferenceFile')}</option>
         </select>
       </label>
       {settings.referenceMode === 'current' && (
@@ -399,7 +456,7 @@ export function DubPanel({
           </select>
         </label>
       )}
-      {settings.referenceMode === 'custom' && (
+      {(settings.referenceMode === 'custom' || fileReference) && (
         <label className="field">
           <span>{t('ttsReferenceChoice')}</span>
           <select
@@ -408,7 +465,7 @@ export function DubPanel({
             onChange={(e) => edit({ referenceId: e.target.value || null })}
           >
             <option value="">{t('ttsChooseReference')}</option>
-            {character?.references.map((r) => (
+            {(fileReference ? project.voiceReferences : character?.references)?.map((r) => (
               <option key={r.id} value={r.id}>
                 {r.label} · {(r.durationMs / 1000).toFixed(1)} s
               </option>
@@ -420,26 +477,77 @@ export function DubPanel({
         {settings.referenceMode === 'current'
           ? t('ttsCurrentReferenceHint')
           : reference
-            ? `${character?.name} · ${reference.label} · ${(reference.durationMs / 1000).toFixed(1)} s`
+            ? `${fileReference ? '' : `${character?.name} · `}${reference.label} · ${(reference.durationMs / 1000).toFixed(1)} s`
             : t('ttsReferenceMissing')}
       </p>
+      <button
+        className="button subtle wide"
+        disabled={!bridge.native || busy}
+        onClick={() => {
+          setWorking(true);
+          void run(() => bridge.importDubbingReference(line.id, { ...settings, mode, accent }))
+            .catch((e) => onError(String(e)))
+            .finally(() => setWorking(false));
+        }}
+      >
+        {t('ttsImportReference')}
+      </button>
+      <p className="panel-description">{t('ttsImportReferenceHint')}</p>
       <button className="text-button" onClick={onCharacters}>
         {t('ttsManageReferences')}
       </button>
-      {settings.referenceMode !== 'current' && character && reference && (
+      {settings.referenceMode !== 'current' && reference && (
         <>
+          <ReferenceAudio
+            key={reference.id}
+            owner={fileReference ? null : character!.id}
+            referenceId={reference.id}
+            onError={onError}
+          />
           <ReferenceTranscription
             busy={busy || shortReference}
             onError={onError}
             start={async (language) => {
               await snapshot();
-              await bridge.transcribeVoiceReference(character.id, reference.id, language);
+              await bridge.transcribeVoiceReference(
+                fileReference ? null : character!.id,
+                reference.id,
+                language,
+              );
               onStarted();
             }}
           />
           <label className="field">
             <span>{t('referenceTranscript')}</span>
-            <textarea value={reference.transcript} readOnly rows={3} />
+            <textarea
+              value={reference.transcript}
+              disabled={busy}
+              rows={3}
+              onChange={(event) => {
+                const text = event.target.value;
+                onEdit((p) => ({
+                  ...p,
+                  ...(fileReference
+                    ? {
+                        voiceReferences: p.voiceReferences?.map((r) =>
+                          r.id === reference.id ? { ...r, transcript: text } : r,
+                        ),
+                      }
+                    : {
+                        characters: p.characters.map((c) =>
+                          c.id === character!.id
+                            ? {
+                                ...c,
+                                references: c.references.map((r) =>
+                                  r.id === reference.id ? { ...r, transcript: text } : r,
+                                ),
+                              }
+                            : c,
+                        ),
+                      }),
+                }));
+              }}
+            />
           </label>
           <p className="panel-description">{t('asrDubReviewHint')}</p>
         </>
@@ -489,6 +597,30 @@ export function DubPanel({
       </label>
       <p className="panel-description">
         {t(variant.providerId === 'qwen3-tts' ? 'ttsMoodUnsupported' : 'ttsMoodHint')}
+      </p>
+      <label className="field">
+        <span>{t('ttsAccent')}</span>
+        <select
+          value={accent}
+          disabled={busy || !accentSupported(variant.id, project.languages.target)}
+          onChange={(event) => edit({ accent: event.target.value as typeof settings.accent })}
+        >
+          <option value="auto">{t('accents.auto')}</option>
+          {voiceAccents
+            .filter((a) => a.language === project.languages.target)
+            .map((a) => (
+              <option key={a.id} value={a.id}>
+                {t(`accents.${a.labelKey}`)}
+              </option>
+            ))}
+        </select>
+      </label>
+      <p className="panel-description">
+        {t(
+          accentSupported(variant.id, project.languages.target)
+            ? 'ttsAccentHint'
+            : 'ttsAccentUnsupported',
+        )}
       </p>
       <label className="field">
         <span>
@@ -550,7 +682,7 @@ export function DubPanel({
         onClick={() => {
           setWorking(true);
           onEdit((p) => ({
-            ...editVoiceSettings(p, line.id, { ...settings, mode }),
+            ...editVoiceSettings(p, line.id, { ...settings, mode, accent }),
             modelPreferences: {
               ...p.modelPreferences,
               ttsProviderId: variant.providerId,
@@ -562,6 +694,7 @@ export function DubPanel({
               bridge.generateLine(line.id, {
                 ...settings,
                 mode,
+                accent,
               }),
             )
             .then(onStarted)
@@ -626,6 +759,9 @@ export function DubPanel({
               {generation.options.seed}
               {generation.options.mood && generation.options.mood !== 'default'
                 ? ` · ${t(`moods.${generation.options.mood}`)}`
+                : ''}
+              {generation.options.accent && generation.options.accent !== 'auto'
+                ? ` · ${t(`accents.${voiceAccents.find((a) => a.id === generation.options.accent)?.labelKey}`)}`
                 : ''}
             </small>
             {generation.peakVramMb > 0 && (

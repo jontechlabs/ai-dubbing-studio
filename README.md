@@ -2,6 +2,12 @@
 
 **v0.10.3** improves CosyVoice3 acoustic endings and uses memory-mapped Drama 3 experts without a full pinned RAM copy. Generate new takes to use the CosyVoice3 change; existing WAVs remain untouched.
 
+**References and accents:** load, audition, transcribe and reuse a reference audio file directly in **Dubbing**, without assigning a character. Compatible engines accept French accent instructions (France, Quebec, Belgium or Switzerland); adherence varies, and a French reference remains preferable. [Guide and screenshots](docs/VOICE-REFERENCES-AND-ACCENTS.md).
+
+![Direct reference import](docs/screenshots/reference-file-accent.png)
+
+*Actual React UI with simulated native reference import / Interface React réelle, import natif simulé.*
+
 **v0.10.2 — Disk space before Drama 3 installation.** The model card shows the storage folder, available capacity and a conservative budget for missing weights, dependency archives and extraction. Installation is blocked when capacity is insufficient or cannot be checked; the native task checks again before any dependency download. [Installation](docs/FISH-DRAMA-3.md) · [Voice endings and timing](docs/DUBBING-PLACEMENT.md).
 
 ![Drama 3 storage preflight](docs/screenshots/drama3-space.png)

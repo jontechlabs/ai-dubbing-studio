@@ -2,6 +2,12 @@
 
 **v0.10.3** corrige la finalisation audio de CosyVoice3 et allège la mémoire de Drama 3 avec des experts mappés sans copie complète en RAM verrouillée. Régénérez les essais pour profiter de la correction CosyVoice3 ; les fichiers existants restent intacts.
 
+**Références et accents :** chargez un fichier audio directement dans **Doublage**, écoutez-le, transcrivez-le et réutilisez-le sans personnage. Pour les moteurs compatibles, choisissez une consigne d’accent français (France, Québec, Belgique ou Suisse). Le résultat dépend du modèle ; une référence française reste préférable. [Guide et captures](docs/VOICE-REFERENCES-AND-ACCENTS.md).
+
+![Direct reference import](docs/screenshots/reference-file-accent.png)
+
+*Actual React UI with simulated native reference import / Interface React réelle, import natif simulé.*
+
 **v0.10.2 — Espace disque avant installation de Drama 3.** La fiche affiche le dossier, l’espace disponible et le besoin estimé incluant les dépendances, leur décompression et les poids manquants. Le bouton reste bloqué si le contrôle échoue ou manque de place ; le démarrage natif vérifie encore la capacité avant tout téléchargement. [Installation](docs/FISH-DRAMA-3.md) · [Fin de syllabe et calage](docs/DUBBING-PLACEMENT.md).
 
 ![Drama 3 storage preflight](docs/screenshots/drama3-space.png)

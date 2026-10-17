@@ -4,6 +4,28 @@ from cosyvoice_worker import synthesis_stream, validate_request
 
 
 class MoodTests(unittest.TestCase):
+    def test_accent_and_mood_use_cosy_instruction_without_japanese_transcript_conditioning(self):
+        calls = []
+        model = SimpleNamespace(inference_instruct2=lambda *a, **k: calls.append((a, k)))
+        request = dict(text='Bonjour !', language='fr', mode='zeroShot', speed=1, device='cpu', accent='fr-FR', mood='happy')
+        self.assertEqual(validate_request(request), 'cpu')
+        synthesis_stream(model, request, 'reference.wav', {'speed': 1})
+        args, options = calls[-1]
+        self.assertEqual(args[0], 'Bonjour !')
+        self.assertIn('法国法语', args[1])
+        self.assertIn('开心', args[1])
+        self.assertEqual(args[2], 'reference.wav')
+        self.assertEqual(options['speed'], 1)
+        request['mood'] = 'default'
+        self.assertEqual(validate_request(request), 'cpu')
+
+    def test_accent_rejects_wrong_language_unknown_preset_and_qwen_base(self):
+        from voice_accent import accent_spec
+        for request in [dict(accent='fr-FR',language='ja'), dict(accent='unknown',language='fr'), dict(accent='fr-FR',language='fr',variantId='qwen3-06b-gguf-q8')]:
+            with self.assertRaisesRegex(ValueError,'TTS_ACCENT_UNSUPPORTED'):
+                accent_spec(request)
+        self.assertIsNone(accent_spec({}))
+
     def test_cosy_style_uses_instruction_api_and_keeps_spoken_text_separate(self):
         calls = []
         model = SimpleNamespace(inference_instruct2=lambda *a, **k: calls.append(('style', a, k)),

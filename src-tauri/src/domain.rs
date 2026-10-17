@@ -172,6 +172,8 @@ pub struct Project {
     pub dialogues: Vec<Dialogue>,
     pub tracks: Vec<Track>,
     pub characters: Vec<Character>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub voice_references: Vec<VoiceReference>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub speaker_analysis: Option<SpeakerAnalysis>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -207,6 +209,7 @@ impl Project {
             dialogues: vec![],
             tracks: vec![],
             characters: vec![],
+            voice_references: vec![],
             speaker_analysis: None,
             model_preferences: None,
             subtitle_display: None,
@@ -214,8 +217,15 @@ impl Project {
             pronunciation: HashMap::new(),
         }
     }
+    pub fn voice_reference(&self, owner: Option<&str>, id: &str) -> Option<&VoiceReference> {
+        let references = match owner {
+            Some(owner) => &self.characters.iter().find(|c| c.id == owner)?.references,
+            None => &self.voice_references,
+        };
+        references.iter().find(|r| r.id == id)
+    }
     pub fn validate(&self) -> Result<(), String> {
-        if ![1, 2, 3, 4, 5, 6, 7, 8].contains(&self.format_version) {
+        if ![1, 2, 3, 4, 5, 6, 7, 8, 9].contains(&self.format_version) {
             return Err("UNSUPPORTED_PROJECT_VERSION".into());
         }
         if let Some(timing) = &self.dubbing_timing {
@@ -247,6 +257,18 @@ impl Project {
             .is_some_and(|mode| !["off", "source", "target", "both"].contains(&mode))
         {
             return Err("INVALID_PROJECT".into());
+        }
+        let mut reference_ids = std::collections::HashSet::new();
+        for reference in &self.voice_references {
+            valid_relative(&reference.path)?;
+            if self.format_version < 9
+                || !reference.path.starts_with("characters/")
+                || reference.id.is_empty()
+                || !reference_ids.insert(&reference.id)
+                || !(1000..=20000).contains(&reference.duration_ms)
+            {
+                return Err("INVALID_REFERENCE_AUDIO".into());
+            }
         }
         if let Some(preferences) = &self.model_preferences {
             if !preferences["voiceVariantId"].is_null() {

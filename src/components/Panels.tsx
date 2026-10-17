@@ -125,6 +125,7 @@ export function Panels({
         )}
         {panel === 'dub' && project && (
           <DubPanel
+            run={run}
             project={project}
             line={project.dialogues.find((d) => d.id === selectedId)}
             jobs={jobs}

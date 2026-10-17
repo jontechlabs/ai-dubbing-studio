@@ -10,7 +10,7 @@ Disponible à partir de **v0.7.3**, pour les références de personnages utilis�
 4. La zone **Traitements** affiche la préparation du modèle, la préparation audio, le chargement et la transcription. Vous pouvez annuler. Après réussite, revenez dans **Personnages** : **Texte réellement prononcé** contient le résultat et reste modifiable.
 5. Écoutez la référence, vérifiez le texte et utilisez **Utiliser par défaut** ou choisissez cette référence dans **Doublage → Autre référence du personnage**. Pour une référence japonaise, conservez la transcription japonaise ; ne la remplacez pas par la traduction française.
 
-Le même bouton est disponible directement dans **Doublage** lorsqu'une référence de personnage par défaut ou personnalisée est résolue. La transcription y est affichée ; le lien **Gérer les personnages et les références** permet de la corriger.
+Le même bouton est disponible directement dans **Doublage** pour une référence de personnage ou un **fichier audio importé** (v0.10.3). Le lecteur permet de l’écouter et **Texte réellement prononcé** est modifiable directement dans le panneau. [Importer un fichier et choisir un accent](VOICE-REFERENCES-AND-ACCENTS.md).
 
 Avec **Audio de la réplique actuelle**, le studio utilise toujours le texte du SRT original. S'il est absent, extrayez la réplique en référence de personnage, transcrivez-la et sélectionnez cette référence pour le doublage. La transcription ne modifie pas vos SRT.
 

@@ -164,11 +164,26 @@ export async function importVoiceReference(
   if (!lineId && !path) return null;
   return invoke<Project>('import_voice_reference', { characterId, lineId, path, label });
 }
-export async function voiceReferenceUrl(characterId: string, referenceId: string): Promise<string> {
+export async function importDubbingReference(
+  lineId: string,
+  options: import('../domain/types').VoiceSettings,
+): Promise<Project | null> {
+  if (!native) throw new Error('DESKTOP_REQUIRED');
+  const path = await open({
+    multiple: false,
+    filters: [{ name: 'Audio', extensions: ['wav', 'flac', 'mp3', 'ogg', 'm4a', 'aac', 'opus'] }],
+  });
+  if (!path) return null;
+  return invoke<Project>('import_dubbing_reference', { lineId, path, options });
+}
+export async function voiceReferenceUrl(
+  characterId: string | null,
+  referenceId: string,
+): Promise<string> {
   return convertFileSrc(await invoke<string>('voice_reference_path', { characterId, referenceId }));
 }
 export function transcribeVoiceReference(
-  characterId: string,
+  characterId: string | null,
   referenceId: string,
   language = 'auto',
 ) {

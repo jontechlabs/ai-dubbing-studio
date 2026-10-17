@@ -1,10 +1,12 @@
 use super::*;
 use crate::domain::{Character, Cue, VoiceReference};
+use crate::media;
 use std::{collections::HashMap, sync::Mutex};
 
 fn options() -> Options {
     Options {
         mood: None,
+        accent: None,
         variant_id: None,
         device: "cpu".into(),
         reference_track_id: None,
@@ -14,6 +16,151 @@ fn options() -> Options {
         speed: 1.0,
         seed: 7,
     }
+}
+#[test]
+fn accents_route_to_style_prompts_without_modifying_subtitles_and_reject_qwen() {
+    let mut p = fixture();
+    p.characters[0].references[0].transcript = "Bonjour".into();
+    let mut o = options();
+    o.accent = Some("fr-FR".into());
+    o.mood = Some("happy".into());
+    for variant in [
+        "cosy3-official",
+        "fish-s2-fp8",
+        "fish-s2-gguf-q8",
+        "drama3-comfy-fp8",
+    ] {
+        o.variant_id = Some(variant.into());
+        o.mode = if variant == "cosy3-official" {
+            "crossLingual"
+        } else {
+            "zeroShot"
+        }
+        .into();
+        assert!(validate_input(&p, &p.dialogues[0].id, &o).is_ok());
+    }
+    let spoken = text(&p, &p.dialogues[0]);
+    let prompt = crate::voice_accent::fish_prompt(&spoken, &o);
+    assert!(prompt.starts_with(
+        "[speaking French with a native Metropolitan French accent from France] [happy] "
+    ));
+    assert!(prompt.ends_with(&spoken));
+    assert_eq!(p.target_cues[0].text, "Bonjour");
+    assert!(crate::voice_accent::validate(&o, Some("ja")).is_err());
+    o.variant_id = Some("qwen3-06b-gguf-q8".into());
+    assert_eq!(o.validate().unwrap_err(), "TTS_ACCENT_UNSUPPORTED");
+    o.accent = Some("unknown".into());
+    assert!(o.validate().is_err());
+}
+
+#[test]
+fn standalone_reference_is_independent_of_characters_and_invalidates_inflight_snapshot() {
+    let mut p = fixture();
+    p.format_version = 9;
+    let mut reference = p.characters[0].references[0].clone();
+    reference.transcript = "日本語".into();
+    p.voice_references.push(reference);
+    p.characters.clear();
+    p.dialogues[0].character_id = None;
+    let mut o = options();
+    o.reference_mode = "file".into();
+    o.reference_id = Some("ref".into());
+    o.mode = "zeroShot".into();
+    p.dialogues[0].voice_settings = Some(o.clone());
+    p.validate().unwrap();
+    validate_input(&p, &p.dialogues[0].id, &o).unwrap();
+    let before = fingerprint(&p, &p.dialogues[0].id).unwrap();
+    p.voice_references[0].transcript = "Correction".into();
+    assert_ne!(before, fingerprint(&p, &p.dialogues[0].id).unwrap());
+    p.format_version = 8;
+    assert!(p.validate().is_err());
+    p.format_version = 9;
+    p.voice_references[0].path = "../outside.wav".into();
+    assert!(p.validate().is_err());
+}
+
+#[tokio::test]
+async fn imported_mp3_is_copied_normalized_capped_and_undoable_without_a_character() {
+    let temporary = tempfile::tempdir().unwrap();
+    let root = temporary.path().canonicalize().unwrap();
+    let mut p = fixture();
+    p.characters.clear();
+    p.dialogues[0].character_id = None;
+    let line_id = p.dialogues[0].id.clone();
+    let core = Arc::new(Core {
+        session: Mutex::new(Some(project::Session::new(root.clone(), p))),
+        jobs: Mutex::new(HashMap::new()),
+        gate: Arc::new(tokio::sync::Semaphore::new(1)),
+        data_dir: root.clone(),
+        model_dir: Mutex::new(root.clone()),
+    });
+    let app = tauri::test::mock_app();
+    let mp3 = root.join("voix française.mp3");
+    let result = media::command(&media::binary(app.handle(), "ffmpeg").unwrap())
+        .args([
+            "-v",
+            "error",
+            "-f",
+            "lavfi",
+            "-i",
+            "sine=frequency=400:sample_rate=44100",
+            "-t",
+            "21",
+            "-ac",
+            "2",
+            "-n",
+        ])
+        .arg(&mp3)
+        .output()
+        .await
+        .unwrap();
+    assert!(result.status.success());
+    let import = |path: PathBuf| {
+        crate::speakers::reference(
+            core.clone(),
+            app.handle().clone(),
+            crate::speakers::ReferenceTarget::Dialogue {
+                line_id: line_id.clone(),
+                options: Box::new(options()),
+            },
+            None,
+            Some(path.to_string_lossy().into_owned()),
+            "French reference".into(),
+        )
+    };
+    let saved = import(mp3.clone()).await.unwrap();
+    assert!(saved.characters.is_empty());
+    assert_eq!(saved.voice_references.len(), 1);
+    let reference = &saved.voice_references[0];
+    assert_eq!(reference.duration_ms, 20000);
+    assert_eq!(saved.format_version, 9);
+    let owned = project::asset(&root, &reference.path).unwrap();
+    std::fs::remove_file(mp3).unwrap();
+    assert_eq!(
+        crate::audio_files::reference_duration(&owned).unwrap(),
+        20000
+    );
+    let reopened = project::load(&root).unwrap();
+    assert_eq!(
+        reopened.dialogues[0]
+            .voice_settings
+            .as_ref()
+            .unwrap()
+            .reference_id
+            .as_deref(),
+        Some(reference.id.as_str())
+    );
+    let invalid = root.join("broken.wav");
+    std::fs::write(&invalid, b"invalid").unwrap();
+    assert!(import(invalid).await.is_err());
+    let mut session = core.session.lock().unwrap();
+    let s = session.as_mut().unwrap();
+    assert_eq!(s.project.revision, saved.revision);
+    assert!(s.history(false).unwrap().voice_references.is_empty());
+    assert_eq!(
+        s.history(true).unwrap().voice_references[0].id,
+        reference.id
+    );
 }
 #[test]
 fn mood_presets_are_supported_for_cosy_and_fish_but_not_qwen_base() {

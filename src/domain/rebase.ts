@@ -73,6 +73,19 @@ export function rebaseProject(base: Project, local: Project, incoming: Project):
     }
   }
   const originals = audioTracks(base);
+  if (changed(base.voiceReferences, local.voiceReferences)) {
+    const before = new Map(base.voiceReferences?.map((r) => [r.id, r]) ?? []);
+    const localIds = new Set(local.voiceReferences?.map((r) => r.id) ?? []);
+    next.voiceReferences = (next.voiceReferences ?? []).filter(
+      (r) => !before.has(r.id) || localIds.has(r.id),
+    );
+    for (const reference of local.voiceReferences ?? []) {
+      const index = next.voiceReferences.findIndex((r) => r.id === reference.id);
+      if (index < 0) next.voiceReferences.push(structuredClone(reference));
+      else if (changed(before.get(reference.id), reference))
+        next.voiceReferences[index] = structuredClone(reference);
+    }
+  }
   for (const localTrack of local.tracks) {
     const before =
       base.tracks.find((track) => track.id === localTrack.id) ??

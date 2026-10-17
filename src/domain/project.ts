@@ -4,7 +4,7 @@ import { validVoiceVariant } from './modelVariants';
 import { validVoiceSettings } from './tts';
 import { validateAudioPatches } from './audioPatch';
 import { validateLipVideos } from './inpaint';
-export const APP_VERSION = '0.10.2';
+export const APP_VERSION = '0.10.3';
 
 export function blankProject(name = 'Untitled', source = 'ja', target = 'fr'): Project {
   const now = new Date().toISOString();
@@ -94,7 +94,7 @@ export function validateProject(value: unknown): Project {
   const preferences = project.modelPreferences;
   if (preferences && !validVoiceVariant(preferences.ttsProviderId, preferences.voiceVariantId))
     throw new Error('INVALID_PROJECT');
-  if (![1, 2, 3, 4, 5, 6, 7, 8].includes(project.formatVersion))
+  if (![1, 2, 3, 4, 5, 6, 7, 8, 9].includes(project.formatVersion))
     throw new Error('UNSUPPORTED_PROJECT_VERSION');
   if (project.dubbingTiming) {
     const timing = project.dubbingTiming;
@@ -228,6 +228,22 @@ export function validateProject(value: unknown): Project {
         throw new Error('INVALID_REFERENCE_AUDIO');
   }
   const targetIds = new Set(project.targetCues.map((cue) => cue.id));
+  const referenceIds = new Set<string>();
+  for (const reference of project.voiceReferences ?? []) {
+    if (
+      project.formatVersion < 9 ||
+      !reference.id ||
+      referenceIds.has(reference.id) ||
+      !reference.path.startsWith('characters/') ||
+      /\.\.|[\\:]/.test(reference.path) ||
+      !Number.isSafeInteger(reference.durationMs) ||
+      reference.durationMs < 1000 ||
+      reference.durationMs > 20000 ||
+      typeof reference.transcript !== 'string'
+    )
+      throw Error('INVALID_REFERENCE_AUDIO');
+    referenceIds.add(reference.id);
+  }
   for (const dialogue of project.dialogues) {
     if (dialogue.characterId && !characterIds.has(dialogue.characterId))
       throw new Error('INVALID_CHARACTER');
@@ -256,6 +272,9 @@ export function validateProject(value: unknown): Project {
     if (generation.kind !== 'tts') continue;
     if (
       !validVoiceSettings(generation.options) ||
+      (project.formatVersion < 9 &&
+        (generation.options?.referenceMode === 'file' ||
+          (generation.options?.accent && generation.options.accent !== 'auto'))) ||
       (project.formatVersion < 7 &&
         generation.options?.mood &&
         generation.options.mood !== 'default') ||
@@ -294,6 +313,9 @@ export function validateProject(value: unknown): Project {
       line.voiceSettings &&
       (project.formatVersion < 5 ||
         !validVoiceSettings(line.voiceSettings) ||
+        (project.formatVersion < 9 &&
+          (line.voiceSettings.referenceMode === 'file' ||
+            (line.voiceSettings.accent && line.voiceSettings.accent !== 'auto'))) ||
         (line.voiceSettings.mood &&
           line.voiceSettings.mood !== 'default' &&
           project.formatVersion < 7))
