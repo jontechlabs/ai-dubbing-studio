@@ -2,7 +2,9 @@
 
 ## v0.10.3 — 17 October 2026
 
-Windows workflow evidence will be recorded before publication.
+Windows checks and signed-update package production passed in [run 39010539394](https://github.com/jontechlabs/ai-dubbing-studio/actions/runs/39010539394), built from `3e67cb3a05aad6af219dfc8f1ca975c3a0608906`. All 240 Windows suite checks passed (60 TypeScript, 74 Rust, 67 Chrome, 39 Python), plus actual unpinned-bank/FP8/cache/tiny-model/header diagnostics and the real causal-vocoder finalization diagnostic, plus two real Japanese ASR checks using the final Windows release executable. The setup and portable archive are copied unchanged from this workflow. Final metadata only records this evidence and the verified update feed.
+
+Packaged Windows worker timings for the 7.2-second Japanese fixture: auto: 236.71 s, ja: 123.81 s. These are CI CPU measurements, not performance estimates for the user’s PC.
 
 - Standalone references: real native FFmpeg import of a stereo 44.1 kHz MP3, conversion to 24 kHz mono PCM, 20-second cap, independent project-owned copy, persistence/reopening and one-step undo/redo. Failed decode keeps the previous project revision. Additional checks reject escaping reference paths and stale in-flight transcript snapshots. Character references remain compatible; standalone references share the existing bounded local Whisper transcription worker.
 - Accent requests: shared finite presets, native engine/language validation, CosyVoice instruction routing, combined mood/accent prompts and unmodified subtitle text. UI checks cover import, listening controls, manual transcript edits, local transcription without a character, cancellation/failure, persistence, generation options and unsupported Qwen controls. These are functional routing checks, not perceptual proof that a requested French regional accent is reproduced.

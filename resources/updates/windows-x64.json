@@ -1,11 +1,11 @@
 {
-  "version": "0.10.2",
-  "notes": "Drama 3 : affiche le dossier, la capacité disponible et le besoin estimé avant le téléchargement des dépendances. Installation bloquée si espace insuffisant ou disque indisponible ; actualisation et nouveau contrôle au clic puis au démarrage natif. Guide pour distinguer une fin de voix incomplète dans un essai et un problème de calage.",
-  "pub_date": "2026-10-17T05:31:53Z",
+  "version": "0.10.3",
+  "notes": "Import direct de références audio dans Doublage : copie locale, écoute, transcription et correction du texte, sans personnage. Consignes d’accent français pour les moteurs compatibles. CosyVoice3 : contexte acoustique silencieux à la finalisation du vocodeur ; générez de nouveaux essais. Drama 3 : experts mappés sans copie complète en RAM verrouillée, mesures et garde-fous mémoire. Les modèles existants sont réutilisés.",
+  "pub_date": "2026-10-17T07:09:47Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSdFFyMUJGTFp3Nk9IaUVSZGxBN1FJbEhUR3ZaOUJCbWowUEZRTVhCbG1MZzJ5Z1dsL3R0MEYvL3doaFRuY2xsUENaNklLc2I3a2tqdU5yQTd1UjcyODlQczRobGlQUXdzPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkyMjE0NjMyCWZpbGU6QUkgRHViYmluZyBTdHVkaW9fMC4xMC4yX3g2NC1zZXR1cC5leGUJdmVyc2lvbjowLjEwLjIKSmtRY3hoQlZ1MnMzRHl6ZW9WSWxhRWlmOTdOL2EyTDRzVW9UR09aQjZocFJ4bVlVa0Nlam1lQzQ2cTVpbXNFNy9hOTBQTDBMNXFwVmZkU3Z0U05NQWc9PQo=",
-      "url": "https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.10.2/AI-Dubbing-Studio-0.10.2-Setup.exe"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSdFFyMUJGTFp3NkliaVNlNHRBVkIweUdvLy9YMjlXbC9KSDZsRk5uWVdORUxxU2NMa3hKV3loNjlaSHZuNEhYb2VvZUdvNktDZ1BicHQ0azFNRlFZMVlzQndqSWc5OFFVPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkyMjIwNTA1CWZpbGU6QUkgRHViYmluZyBTdHVkaW9fMC4xMC4zX3g2NC1zZXR1cC5leGUJdmVyc2lvbjowLjEwLjMKY3FXU2pTWDBiSTZsYlhsa0J0czZQVFZtRTFzVDlzSmpaTnRUNThhVVNkUVdhcDJnVDJFS255QlhkYzZxQ2JCSTZkOU9GRHZLU3dia3VVaFRoZDNVREE9PQo=",
+      "url": "https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.10.3/AI-Dubbing-Studio-0.10.3-Setup.exe"
     }
   }
 }
