@@ -2,7 +2,9 @@
 
 ## v0.11.0 — 17 October 2026
 
-Windows workflow evidence will be recorded before publication.
+Windows checks and signed-update package production passed in [run 39019188878](https://github.com/jontechlabs/ai-dubbing-studio/actions/runs/39019188878), built from `cf5eea15a46a27abaf73fc47ad281aac128ed10a`. All 254 Windows suite checks passed (62 TypeScript, 81 Rust, 72 Chrome, 39 Python), plus actual unpinned-bank/FP8/cache/tiny-model/header diagnostics and the real causal-vocoder finalization diagnostic, plus two real Japanese ASR checks using the final Windows release executable. The setup and portable archive are copied unchanged from this workflow. Final metadata only records this evidence and the verified update feed.
+
+Packaged Windows worker timings for the 7.2-second Japanese fixture: auto: 175.29 s, ja: 87.08 s. These are CI CPU measurements, not performance estimates for the user’s PC.
 
 - Real FFprobe audio-only probing and FFmpeg extraction validate a 21–23 second selection from a 24-second PCM source with different sample values before/after 20 seconds. The output is checked for exact selected samples, duration, project-owned file references and character references. Invalid/reversed/short/overlong/out-of-file ranges leave the previous project revision intact. Ordinary video probing retains its video requirement.
 - Batch native checks cover translated-only filtering (including a line with pronunciation text but no translation), selected-ID deduplication, default current-take preservation, forced generation, stale input/reference snapshots, real sequential child-process protocol execution, partial failure, profile forwarding, per-success persistence and retrying failures only. A cancellation/crash-window check recovers a truncated outcome journal and finds committed takes by stable batch-item ID, avoiding duplicates. These tests use synthetic PCM and a protocol worker, not neural model inference.
