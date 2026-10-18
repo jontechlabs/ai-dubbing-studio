@@ -4,6 +4,8 @@ Filtres des trois statuts de traduction, lot validé uniquement (tout/sélection
 
 Local : vrais poids et moteur Windows vérifiés par SHA-256 ; deux traductions japonais → français générées par l’API privée sur CPU, processus arrêté et attendu à la fin. Résultats observés : « Son nom est Sakamoto Tarō. » et « Il faisait peur à tous les gangsters. ». Vérification de l’authentification du serveur local. Aucune mesure de performance RTX 5060 Ti n’a été faite sur ce poste.
 
+Contrôle additionnel local : serveur Windows réel sur Vulkan/AMD Radeon 860M, déport effectif des couches vers le GPU confirmé dans les logs, propositions structurées et arrêt attendu du processus. Le schéma est fourni dans l’enveloppe `response_format.json_schema.schema` attendue par la version épinglée de llama.cpp. La consigne explicite le respect des sujets/objets et interdit les préfixes de champ dans le sous-titre. Ces vérifications sur AMD ne qualifient pas la RTX 5060 Ti.
+
 Windows workflow evidence will be recorded before publication.
 
 # Validation - 18 October 2026
