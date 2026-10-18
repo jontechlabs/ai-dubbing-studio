@@ -6,7 +6,9 @@ Local : vrais poids et moteur Windows vérifiés par SHA-256 ; deux traductions 
 
 Contrôle additionnel local : serveur Windows réel sur Vulkan/AMD Radeon 860M, déport effectif des couches vers le GPU confirmé dans les logs, propositions structurées et arrêt attendu du processus. Le schéma est fourni dans l’enveloppe `response_format.json_schema.schema` attendue par la version épinglée de llama.cpp. La consigne explicite le respect des sujets/objets et interdit les préfixes de champ dans le sous-titre. Ces vérifications sur AMD ne qualifient pas la RTX 5060 Ti.
 
-Windows workflow evidence will be recorded before publication.
+Windows checks and signed-update package production passed in [run 39116635183](https://github.com/jontechlabs/ai-dubbing-studio/actions/runs/39116635183), built from `28f73afa788905295f1dacba5bac4552afe281d6`. All 285 Windows suite checks passed (71 TypeScript, 90 Rust, 79 Chrome, 45 Python), plus actual unpinned-bank/FP8/cache/tiny-model/header diagnostics and the real causal-vocoder finalization diagnostic, plus a real native Japanese-to-French LLM proposal and cancellation/process-release checks under a Unicode model path, plus two real Japanese ASR checks using the final Windows release executable. The setup and portable archive are copied unchanged from this workflow. Final metadata only records this evidence and the verified update feed.
+
+Packaged Windows worker timings for the 7.2-second Japanese fixture: auto: 159.79 s, ja: 74.54 s. These are CI CPU measurements, not performance estimates for the user’s PC.
 
 # Validation - 18 October 2026
 
