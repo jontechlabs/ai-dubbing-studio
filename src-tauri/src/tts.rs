@@ -512,7 +512,15 @@ pub(crate) async fn execute<R: tauri::Runtime>(
     request: &Request,
     flag: &AtomicBool,
 ) -> Result<(), String> {
-    let launch = if request.options.variant() == "cosy3-official" {
+    let launch = worker_launch(core, app, request);
+    execute_with_launch(core, app, key, request, flag, &launch).await
+}
+pub(crate) fn worker_launch<R: tauri::Runtime>(
+    core: &Core,
+    app: &tauri::AppHandle<R>,
+    request: &Request,
+) -> WorkerLaunch {
+    if request.options.variant() == "cosy3-official" {
         WorkerLaunch {
             python: separation::python(&root(core)),
             script: separation::resources(app).join("cosyvoice_worker.py"),
@@ -530,8 +538,7 @@ pub(crate) async fn execute<R: tauri::Runtime>(
             script: separation::resources(app).join("fish_worker.py"),
             model: crate::voice_engines::root(core).join(request.options.variant()),
         }
-    };
-    execute_with_launch(core, app, key, request, flag, &launch).await
+    }
 }
 pub(crate) struct WorkerLaunch {
     pub python: PathBuf,
@@ -545,6 +552,18 @@ pub(crate) async fn execute_with_launch<R: tauri::Runtime>(
     request: &Request,
     flag: &AtomicBool,
     launch: &WorkerLaunch,
+) -> Result<(), String> {
+    execute_with_session(core, app, key, request, flag, launch, None).await
+}
+#[allow(clippy::too_many_arguments)]
+pub(crate) async fn execute_with_session<R: tauri::Runtime>(
+    core: &Arc<Core>,
+    app: &tauri::AppHandle<R>,
+    key: &str,
+    request: &Request,
+    flag: &AtomicBool,
+    launch: &WorkerLaunch,
+    mut hot: Option<&mut crate::tts_session::Session>,
 ) -> Result<(), String> {
     let p = {
         let session = core.session.lock().map_err(io_error)?;
@@ -621,15 +640,20 @@ pub(crate) async fn execute_with_launch<R: tauri::Runtime>(
     project::atomic_write(&input, &serde_json::to_vec(&input_value).map_err(io_error)?)?;
     let result = tokio::time::timeout(Duration::from_secs(if request.options.variant()=="drama3-comfy-fp8"{3600}else{900}), async {
         if request.options.variant().contains("gguf") {
-            return crate::voice_engines::generate_gguf(core, app, key, &input_value, flag).await;
+            return if let Some(session)=hot.as_deref_mut(){crate::voice_engines::generate_gguf_with_session(core,app,key,&input_value,flag,Some(session)).await}else{crate::voice_engines::generate_gguf(core,app,key,&input_value,flag).await};
         }
         let args = [
                 launch.script.to_string_lossy().into_owned(),
                 "--request".into(),
                 input.to_string_lossy().into_owned(),
             ];
-        let first = separation::process(core, app, key, &launch.python, &args, flag).await;
+        if hot.as_ref().is_some_and(|s|s.compatible) {
+            let mut compatible = input_value.clone(); compatible["compatibilityMode"] = true.into();
+            project::atomic_write(&input, &serde_json::to_vec(&compatible).map_err(io_error)?)?;
+        }
+        let first = if let Some(session) = hot.as_deref_mut() {session.generate(core,app,key,launch,&input,flag).await} else {separation::process(core, app, key, &launch.python, &args, flag).await};
         if request.options.variant() == "cosy3-official" && request.options.device != "cpu"
+            && !hot.as_ref().is_some_and(|s|s.compatible)
             && first.as_ref().is_err_and(|e| ["TTS_NATIVE_CRASH", "TTS_ENGINE_FAILED"].contains(&e.as_str()))
             && !flag.load(Ordering::Relaxed) {
             jobs::update(core, app, key, |j| {
@@ -640,7 +664,7 @@ pub(crate) async fn execute_with_launch<R: tauri::Runtime>(
             let _ = std::fs::remove_file(&result_path);
             let mut compatible = input_value.clone(); compatible["compatibilityMode"] = true.into();
             project::atomic_write(&input, &serde_json::to_vec(&compatible).map_err(io_error)?)?;
-            separation::process(core, app, key, &launch.python, &args, flag).await
+            if let Some(session)=hot.as_deref_mut(){session.compatible=true;session.generate(core,app,key,launch,&input,flag).await} else {separation::process(core, app, key, &launch.python, &args, flag).await}
         } else { first }
     })
     .await
@@ -650,6 +674,10 @@ pub(crate) async fn execute_with_launch<R: tauri::Runtime>(
     let _ = std::fs::remove_file(&ref_temp);
     let _ = std::fs::remove_file(&ref_prepared);
     if let Err(error) = result {
+        if let Some(session) = hot {
+            session.close_logged(core, app, key).await;
+        }
+        let _ = std::fs::remove_file(destination.with_extension("raw.wav"));
         let _ = std::fs::remove_file(&destination);
         let _ = std::fs::remove_file(&result_path);
         return Err(error);

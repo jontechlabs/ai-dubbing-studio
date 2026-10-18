@@ -288,7 +288,7 @@ pub(crate) async fn process<R: tauri::Runtime>(
             if job.kind == "referenceTranscription" {
                 failure = "ASR_FAILED";
             }
-            if job.kind == "tts" {
+            if ["tts", "ttsBatch", "ttsBatch"].contains(&job.kind.as_str()) {
                 failure = match status.code().map(|c| c as u32) {
                     Some(0xC0000005 | 0xC0000409 | 0xC000001D) => "TTS_NATIVE_CRASH",
                     Some(0xC0000017 | 0xC000009A) => "TTS_SYSTEM_MEMORY",
@@ -347,6 +347,7 @@ pub fn install<R: tauri::Runtime>(
             "speakerInstall",
             "ttsInstall",
             "tts",
+            "ttsBatch",
             "speakers",
             "referenceTranscription",
             "modelMove",
@@ -424,6 +425,7 @@ pub fn enqueue<R: tauri::Runtime>(
             "speakerInstall",
             "ttsInstall",
             "tts",
+            "ttsBatch",
             "speakers",
             "referenceTranscription",
             "modelMove",

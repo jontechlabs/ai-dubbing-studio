@@ -1,5 +1,6 @@
 import type { Project } from './types';
 import { audioTracks } from './audio';
+import { cleanTranslationApprovals } from './translation';
 const changed = (a: unknown, b: unknown) => JSON.stringify(a) !== JSON.stringify(b);
 // Media jobs add results while a user's last keystrokes may still await autosave.
 export function rebaseProject(base: Project, local: Project, incoming: Project): Project {
@@ -13,6 +14,7 @@ export function rebaseProject(base: Project, local: Project, incoming: Project):
     'modelPreferences',
     'subtitleDisplay',
     'dubbingTiming',
+    'translationApprovals',
   ] as const)
     if (changed(base[key], local[key])) Object.assign(next, { [key]: structuredClone(local[key]) });
   if (changed(base.dialogues, local.dialogues))
@@ -118,5 +120,5 @@ export function rebaseProject(base: Project, local: Project, incoming: Project):
         Object.assign(server, { [key]: localTrack[key] });
   }
   next.formatVersion = Math.max(next.formatVersion, local.formatVersion);
-  return next;
+  return cleanTranslationApprovals(next);
 }

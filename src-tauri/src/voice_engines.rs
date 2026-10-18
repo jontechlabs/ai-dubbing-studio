@@ -72,6 +72,7 @@ pub fn installed(core: &Core, id: &str) -> bool {
                     .is_file()
         } else {
             root(core).join("audiocpp/audiocpp_cli.exe").is_file()
+                && root(core).join("audiocpp/audiocpp_server.exe").is_file()
                 && root(core).join(id).join("model.gguf").is_file()
         }
 }
@@ -350,6 +351,16 @@ pub async fn generate_gguf<R: tauri::Runtime>(
     input: &serde_json::Value,
     flag: &AtomicBool,
 ) -> Result<(), String> {
+    generate_gguf_with_session(core, app, key, input, flag, None).await
+}
+pub(crate) async fn generate_gguf_with_session<R: tauri::Runtime>(
+    core: &Arc<Core>,
+    app: &tauri::AppHandle<R>,
+    key: &str,
+    input: &serde_json::Value,
+    flag: &AtomicBool,
+    mut hot: Option<&mut crate::tts_session::Session>,
+) -> Result<(), String> {
     let id = input["variantId"].as_str().ok_or("INVALID_TTS_REQUEST")?;
     let selected = variant(app, id)?;
     let model = root(core).join(id).join("model.gguf");
@@ -361,20 +372,28 @@ pub async fn generate_gguf<R: tauri::Runtime>(
             j.progress = None;
         });
         let expected = selected.files.first().ok_or("TTS_RUNTIME_FAILED")?;
-        let valid = crate::downloads::cached(
-            &model,
-            &crate::downloads::Spec {
-                urls: &[],
-                sha256: &expected.sha256,
-                size: expected.size,
-            },
-            flag,
-        )
-        .await?;
+        let valid = if hot.as_ref().is_some_and(|s| s.has_gguf()) {
+            true
+        } else {
+            crate::downloads::cached(
+                &model,
+                &crate::downloads::Spec {
+                    urls: &[],
+                    sha256: &expected.sha256,
+                    size: expected.size,
+                },
+                flag,
+            )
+            .await?
+        };
         if !valid {
             return Err("MODEL_CHECKSUM_FAILED".into());
         }
-        let devices = inventory(core).await;
+        let devices = if let Some(device) = hot.as_ref().and_then(|s| s.gguf_device()) {
+            vec![device]
+        } else {
+            inventory(core).await
+        };
         let requested = input["device"].as_str().unwrap_or("auto");
         let device = if requested == "auto" {
             devices
@@ -443,15 +462,36 @@ pub async fn generate_gguf<R: tauri::Runtime>(
             j.logs
                 .push(format!("{} / {}", selected.name, device["name"]));
         });
-        separation::process(
-            core,
-            app,
-            key,
-            &root(core).join("audiocpp/audiocpp_cli.exe"),
-            &args,
-            flag,
-        )
-        .await?;
+        if let Some(session) = hot.as_deref_mut() {
+            session
+                .gguf(
+                    core,
+                    app,
+                    key,
+                    &root(core).join("audiocpp/audiocpp_server.exe"),
+                    &model,
+                    if selected.provider_id == "fish-s2" {
+                        "fish_audio"
+                    } else {
+                        "qwen3_tts"
+                    },
+                    device,
+                    input,
+                    &raw,
+                    flag,
+                )
+                .await?;
+        } else {
+            separation::process(
+                core,
+                app,
+                key,
+                &root(core).join("audiocpp/audiocpp_cli.exe"),
+                &args,
+                flag,
+            )
+            .await?;
+        }
         let output = input["outputPath"].as_str().ok_or("INVALID_PATH")?;
         separation::process(
             core,
@@ -494,7 +534,7 @@ pub async fn generate_gguf<R: tauri::Runtime>(
     result
 }
 
-fn qwen_language(code: &str) -> Result<&'static str, String> {
+pub(crate) fn qwen_language(code: &str) -> Result<&'static str, String> {
     match code {
         "zh" => Ok("Chinese"),
         "en" => Ok("English"),

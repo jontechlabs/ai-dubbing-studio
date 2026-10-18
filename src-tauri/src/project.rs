@@ -50,11 +50,12 @@ pub fn load(root: &Path) -> Result<Project, String> {
         let value: serde_json::Value =
             serde_json::from_slice(&std::fs::read(path).map_err(io_error)?)
                 .map_err(|_| "INVALID_PROJECT".to_string())?;
-        if !matches!(value["formatVersion"].as_u64(), Some(1..=9)) {
+        if !matches!(value["formatVersion"].as_u64(), Some(1..=10)) {
             return Err("UNSUPPORTED_PROJECT_VERSION".into());
         }
-        let p: Project =
+        let mut p: Project =
             serde_json::from_value(value).map_err(|_| "INVALID_PROJECT".to_string())?;
+        p.clean_translation_approvals();
         p.validate()?;
         Ok(p)
     };
@@ -167,6 +168,7 @@ impl Session {
         if self.project.revision != revision || self.project.id != next.id {
             return Err("STALE_REVISION".into());
         }
+        next.clean_translation_approvals();
         next.validate()?;
         next.revision = revision + 1;
         next.updated_at = now();
@@ -205,6 +207,71 @@ impl Session {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn translation_approval_survives_reload_and_tts_changes_but_not_text_edits() {
+        let tmp = tempfile::tempdir().unwrap();
+        let root = create_root(tmp.path(), "Reviews").unwrap();
+        let mut p = Project::new("Review".into(), "ja".into(), "fr".into());
+        p.source_cues =
+            crate::subtitles::parse_srt("1\n00:00:00,000 --> 00:00:02,000\nOriginal").unwrap();
+        p.target_cues =
+            crate::subtitles::parse_srt("1\n00:00:00,000 --> 00:00:02,000\nBonjour").unwrap();
+        p.dialogues = crate::subtitles::align(&p.source_cues, &p.target_cues);
+        p.format_version = 10;
+        let key = p.dialogues[0].id.clone();
+        p.translation_approvals.insert(
+            key.clone(),
+            crate::domain::TranslationApproval {
+                source_language: "ja".into(),
+                target_language: "fr".into(),
+                source_text: "Original".into(),
+                target_text: "Bonjour".into(),
+            },
+        );
+        save(&root, &p).unwrap();
+        let loaded = load(&root).unwrap();
+        assert_eq!(loaded.translation_approvals.len(), 1);
+        let mut session = Session::new(root.clone(), loaded);
+        let mut next = session.project.clone();
+        next.dialogues[0].status = "generated".into();
+        session.replace(next, session.project.revision).unwrap();
+        assert_eq!(session.project.translation_approvals.len(), 1);
+        let mut next = session.project.clone();
+        next.target_cues[0].text = "Correction".into();
+        session.replace(next, session.project.revision).unwrap();
+        assert!(load(&root).unwrap().translation_approvals.is_empty());
+        assert_eq!(
+            session.history(false).unwrap().translation_approvals.len(),
+            1
+        );
+        assert!(session
+            .history(true)
+            .unwrap()
+            .translation_approvals
+            .is_empty());
+    }
+    #[test]
+    fn legacy_voice_validation_is_independent_and_approval_requires_format_ten() {
+        let p = Project::new("Old".into(), "ja".into(), "fr".into());
+        let value = serde_json::to_value(&p).unwrap();
+        assert!(value.get("translationApprovals").is_none());
+        assert!(serde_json::from_value::<Project>(value)
+            .unwrap()
+            .translation_approvals
+            .is_empty());
+        let mut altered = p;
+        altered.translation_approvals.insert(
+            "missing".into(),
+            crate::domain::TranslationApproval {
+                source_language: "ja".into(),
+                target_language: "fr".into(),
+                source_text: "A".into(),
+                target_text: "B".into(),
+            },
+        );
+        assert!(altered.validate().is_err());
+    }
     #[test]
     fn grouped_generations_use_one_undo_and_manual_edits_split_the_group() {
         let tmp = tempfile::tempdir().unwrap();

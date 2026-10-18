@@ -16,6 +16,7 @@ import { formatTime } from '../domain/time';
 import type { Dialogue, Project } from '../domain/types';
 import { assignCharacter } from '../domain/characters';
 import { selectedGeneration, staleGeneration } from '../domain/tts';
+import { approveTranslation, translationState } from '../domain/translation';
 
 function DialoguesPane({
   checkedIds,
@@ -202,12 +203,24 @@ function DialoguesPane({
                     onTranslation={() => onTranslation(line)}
                     onDub={() => onDub(line)}
                     onPlayDub={() => onPlayDub(line)}
+                    onApprove={() =>
+                      onEdit((p) =>
+                        approveTranslation(p, line.id, translationState(p, line) !== 'approved'),
+                      )
+                    }
                   />
                 </div>
               );
             })}
           </div>
         )}
+      </div>
+      <div className="translation-legend" aria-label={t('translationLegend')}>
+        {(['untranslated', 'translated', 'approved'] as const).map((state) => (
+          <span key={state} className={`translation-badge ${state}`}>
+            ● {t(`translationState.${state}`)}
+          </span>
+        ))}
       </div>
       <div className="pane-footnote">
         <span className="tiny-dot" />
@@ -231,7 +244,9 @@ function DialogueCard({
   onTranslation,
   onDub,
   onPlayDub,
+  onApprove,
 }: {
+  onApprove: () => void;
   checked: boolean;
   onCheck: (shift: boolean) => void;
   project: Project;
@@ -247,10 +262,14 @@ function DialogueCard({
   onPlayDub: () => void;
 }) {
   const { t } = useTranslation();
+  const translation = translationState(project, line);
   const generation = selectedGeneration(project, line);
   const stale = !!generation && staleGeneration(project, line, generation);
   return (
-    <article className={`dialogue-card ${selected ? 'selected' : ''}`} onClick={onSelect}>
+    <article
+      className={`dialogue-card translation-${translation} ${selected ? 'selected' : ''}`}
+      onClick={onSelect}
+    >
       <button
         className="line-select"
         aria-label={`${t('selectedLine', { index })} · ${formatTime(line.startMs)}`}
@@ -357,6 +376,25 @@ function DialogueCard({
             </button>
           )}
         </div>
+      </div>
+      <div className="translation-review">
+        <button
+          className={`translation-badge ${translation}`}
+          disabled={translation === 'untranslated'}
+          aria-pressed={translation === 'approved'}
+          aria-label={t(
+            translation === 'approved' ? 'translationUnapprove' : 'translationApprove',
+            { number: index },
+          )}
+          title={t('translationReviewHint')}
+          onClick={(e) => {
+            e.stopPropagation();
+            onApprove();
+          }}
+        >
+          <span aria-hidden="true">{translation === 'approved' ? '✓' : '●'}</span>{' '}
+          {t(`translationState.${translation}`)}
+        </button>
       </div>
       <div className="card-footer">
         <button

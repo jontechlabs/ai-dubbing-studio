@@ -38,7 +38,7 @@ Le récapitulatif indique les répliques prêtes, déjà doublées, non traduite
 
 ## Progression, annulation et reprise
 
-Une seule réplique est générée à la fois, sur le périphérique choisi, pour éviter le cumul de modèles en VRAM. Le moteur est déchargé entre les répliques, comme en génération unitaire : le chargement des poids est donc répété, et un grand lot peut prendre longtemps. Cette version n’introduit pas de cache de modèle maintenu en mémoire.
+Depuis **v0.12.0**, une seule réplique est générée à la fois, sur le périphérique choisi, et le modèle reste chargé pendant le lot. Le processus est arrêté à la fin ou à l’annulation, avant de déclarer le traitement terminé. Voir le [guide du cache et des validations de traduction](BATCH-CACHE-AND-TRANSLATION-REVIEW.md) pour les particularités de Drama 3 et les contrôles de libération.
 
 **Traitements** affiche l’étape courante, une progression globale et les nombres de réussites, échecs et exclusions. Un échec propre à une réplique laisse avancer les autres. Une erreur de périphérique, de runtime ou de mémoire arrête le lot pour éviter de répéter une erreur matérielle sur toutes les répliques. Cela comprend les contrôles de RAM, de VRAM et d’espace disque de Drama 3 ; après correction, la reprise traite les éléments restants.
 

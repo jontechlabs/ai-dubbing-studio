@@ -393,6 +393,7 @@ pub fn change<R: tauri::Runtime>(
                 "speakerInstall",
                 "ttsInstall",
                 "tts",
+                "ttsBatch",
                 "speakers",
                 "modelMove",
                 "referenceTranscription",

@@ -40,7 +40,7 @@ def runtime_info():
     return dict(runtimeReady=True, torchVersion=torch.__version__, cudaVersion=torch.version.cuda)
 
 
-def generate(request):
+def generate(request, session=None):
     from cosyvoice_worker import validate_request
     requested = validate_request(request)
     if request['mode'] != 'zeroShot' or not request.get('referenceTranscript', '').strip():
@@ -54,45 +54,53 @@ def generate(request):
     import torch
     from cosyvoice_worker import device_info
     from bandit_worker import select_device
-    device = select_device('cuda:0' if requested.startswith('cuda:') else requested, device_info()['devices'])
+    device = session['fishDevice'] if session and 'fishDevice' in session else select_device('cuda:0' if requested.startswith('cuda:') else requested, device_info()['devices'])
     if not device.startswith('cuda:') or not torch.cuda.is_bf16_supported():
         raise ValueError('TTS_FP8_CUDA_REQUIRED')
     torch.cuda.set_device(device)
     torch.cuda.reset_peak_memory_stats()
-    if torch.cuda.mem_get_info()[0] < 12 * 1024**3:
+    if (not session or 'engine' not in session) and torch.cuda.mem_get_info()[0] < 12 * 1024**3:
         raise ValueError('TTS_FP8_MEMORY_REQUIRED')
     torch.set_num_threads(6)
     name = torch.cuda.get_device_name(device)
+    if session is not None:
+        session['fishDevice'] = device
     from voice_reference import prepare_reference
     with prepare_reference(request['referenceAudio'], report, request.get('preparedReferenceAudio')) as reference:
         manifest = json.loads((HERE/'voice-engines.json').read_text(encoding='utf-8'))
         variant = next(v for v in manifest['variants'] if v['id'] == 'fish-s2-fp8')
         directory = Path(request['modelDir'])
         total = sum(f['size'] for f in variant['files']); checked = 0
-        for file in variant['files']:
+        for file in ([] if session and 'engine' in session else variant['files']):
             path = directory/file['name']
             if not path.is_file() or path.stat().st_size != file['size']:
                 raise ValueError('MODEL_CHECKSUM_FAILED')
             with path.open('rb') as stream: digest = hashlib.file_digest(stream, 'sha256').hexdigest()
             if digest != file['sha256']: raise ValueError('MODEL_CHECKSUM_FAILED')
             checked += file['size']; report(stage='ttsVerify', progress=checked/total)
-        synthesize(request, reference, directory, 'cuda', requested if requested != 'auto' else device, name)
+        synthesize(request, reference, directory, 'cuda', requested if requested != 'auto' else device, name, session=session)
 
 
-def synthesize(request, reference, directory, execution_device, metadata_device, name, max_new_tokens=2048):
+def synthesize(request, reference, directory, execution_device, metadata_device, name, max_new_tokens=2048, session=None):
     import numpy as np
     import soundfile as sf
     import torch
-    report(stage='ttsLoad', progress=None, deviceName=name)
     from fish_speech.models.text2semantic.inference import launch_thread_safe_queue
     from fish_speech.models.dac.inference import load_model
     from fish_speech.inference_engine import TTSInferenceEngine
     from fish_speech.utils.schema import ServeTTSRequest, ServeReferenceAudio
-    queue, thread = launch_thread_safe_queue(str(directory), execution_device, torch.bfloat16, compile=False)
-    decoder = load_model('modded_dac_vq', str(directory/'codec.pth'), device=execution_device)
-    engine = TTSInferenceEngine(queue, decoder, torch.bfloat16, False)
+    if session and 'engine' in session:
+        engine = session['engine']
+        report(stage='ttsReuse', progress=None, log='Fish S2: reusing the loaded batch model and codec.')
+    else:
+        report(stage='ttsLoad', progress=None, deviceName=name)
+        queue, thread = launch_thread_safe_queue(str(directory), execution_device, torch.bfloat16, compile=False)
+        decoder = load_model('modded_dac_vq', str(directory/'codec.pth'), device=execution_device)
+        engine = TTSInferenceEngine(queue, decoder, torch.bfloat16, False)
+        if session is not None:
+            session['engine'] = engine
     report(stage='ttsGenerate', progress=None, deviceName=name)
-    options = ServeTTSRequest(text=request.get('promptText', request['text']), references=[ServeReferenceAudio(audio=reference.read_bytes(), text=request['referenceTranscript'])], seed=int(request.get('seed', 0)), streaming=False, max_new_tokens=max_new_tokens)
+    options = ServeTTSRequest(text=request.get('promptText', request['text']), references=[ServeReferenceAudio(audio=reference.read_bytes(), text=request['referenceTranscript'])], seed=int(request.get('seed', 0)), streaming=False, max_new_tokens=max_new_tokens, use_memory_cache='off')
     final = None
     for result in engine.inference(options):
         if result.code == 'error': raise RuntimeError(f'TTS_ENGINE_FAILED: {result.error}')

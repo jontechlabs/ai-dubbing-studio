@@ -54,19 +54,33 @@ fn selection() -> Selection {
 }
 fn worker(root: &Path) -> tts::WorkerLaunch {
     let script = root.join("batch-worker.py");
-    std::fs::write(&script,r#"import json,sys,wave,struct,time
+    std::fs::write(&script,r#"import json,sys,wave,struct,time,os
 from pathlib import Path
-r=json.load(open(sys.argv[-1],encoding='utf-8')); folder=Path(r['outputPath']).parent.parent
-with open(folder/'calls.jsonl','a',encoding='utf-8') as f: f.write(json.dumps(r)+'\n')
-if r['text']=='slow' and not (folder/'retry').exists():
-    open(r['outputPath'],'wb').write(b'partial');print(json.dumps({'stage':'ttsGenerate','progress':0.2}),flush=True);time.sleep(20)
-if r['text']=='fail' and not (folder/'retry').exists():
-    print(json.dumps({'error':'TTS_EMPTY_AUDIO'}),flush=True);sys.exit(1)
-if r['text'].startswith('TTS_DRAMA_') and not (folder/'retry').exists():
-    print(json.dumps({'error':r['text']}),flush=True);sys.exit(1)
-with wave.open(r['outputPath'],'wb') as out:
-    out.setparams((1,2,24000,0,'NONE','not compressed'));out.writeframes(struct.pack('<h',1000)*28800)
-json.dump({'device':r['device'],'deviceName':'Protocol test','peakVramMb':0},open(r['resultPath'],'w'))
+def generate(r):
+    folder=Path(r['outputPath']).parent.parent
+    r['workerPid']=os.getpid()
+    with open(folder/'calls.jsonl','a',encoding='utf-8') as f: f.write(json.dumps(r)+'\n')
+    if r['text']=='slow' and not (folder/'retry').exists():
+        open(r['outputPath'],'wb').write(b'partial');print(json.dumps({'stage':'ttsGenerate','progress':0.2}),flush=True);time.sleep(20)
+    if r['text']=='fail' and not (folder/'retry').exists():
+        sys.stderr.buffer.write(b'batch error details: \xff\n');sys.stderr.flush()
+        raise ValueError('TTS_EMPTY_AUDIO')
+    if r['text'].startswith('TTS_DRAMA_') and not (folder/'retry').exists():
+        raise ValueError(r['text'])
+    with wave.open(r['outputPath'],'wb') as out:
+        out.setparams((1,2,24000,0,'NONE','not compressed'));out.writeframes(struct.pack('<h',1000)*28800)
+    json.dump({'device':r['device'],'deviceName':'Protocol test','peakVramMb':0},open(r['resultPath'],'w'))
+if '--batch' in sys.argv:
+    for line in sys.stdin:
+        command=json.loads(line)
+        try:
+            generate(json.load(open(command['path'],encoding='utf-8-sig')))
+            print(json.dumps({'requestDone':command['requestId']}),flush=True)
+        except Exception as error:
+            print(json.dumps({'requestDone':command['requestId'],'error':str(error)}),flush=True)
+            break
+else:
+    generate(json.load(open(sys.argv[-1],encoding='utf-8-sig')))
 "#).unwrap();
     tts::WorkerLaunch {
         python: PathBuf::from(if cfg!(windows) { "python" } else { "python3" }),
@@ -101,6 +115,59 @@ fn request(p: &Project, root: &Path) -> Request {
         items,
         skipped: preview.untranslated + preview.existing + preview.blocked.len(),
     }
+}
+
+fn assert_worker_exited(pid: u64) {
+    let script = r#"import os,sys,ctypes
+pid=int(sys.argv[1])
+if os.name=='nt':
+    handle=ctypes.windll.kernel32.OpenProcess(0x1000,False,pid)
+    if handle:
+        code=ctypes.c_ulong();ctypes.windll.kernel32.GetExitCodeProcess(handle,ctypes.byref(code));ctypes.windll.kernel32.CloseHandle(handle)
+        sys.exit(1 if code.value==259 else 0)
+else:
+    try:os.kill(pid,0)
+    except ProcessLookupError:sys.exit(0)
+    sys.exit(1)
+"#;
+    assert!(
+        std::process::Command::new(if cfg!(windows) { "python" } else { "python3" })
+            .args(["-c", script, &pid.to_string()])
+            .status()
+            .unwrap()
+            .success(),
+        "worker still alive after terminal job state"
+    );
+}
+#[tokio::test]
+async fn successful_lot_reuses_one_process_and_releases_it_before_terminal_status() {
+    let tmp = tempfile::tempdir().unwrap();
+    let root = tmp.path().canonicalize().unwrap();
+    let p = fixture(&root, &["Bonjour", "Bonsoir", "Salut"]);
+    let req = request(&p, &root);
+    let core = core(&root, p);
+    let app = tauri::test::mock_app();
+    let key = start_with_launch(
+        core.clone(),
+        app.handle().clone(),
+        req,
+        None,
+        Some(worker(&root)),
+    )
+    .unwrap();
+    assert_eq!(finished(&core, &key).await.status, "succeeded");
+    let calls = std::fs::read_to_string(root.join("calls.jsonl")).unwrap();
+    let pids: Vec<_> = calls
+        .lines()
+        .map(|line| {
+            serde_json::from_str::<serde_json::Value>(line).unwrap()["workerPid"]
+                .as_u64()
+                .unwrap()
+        })
+        .collect();
+    assert_eq!(pids.len(), 3);
+    assert!(pids.iter().all(|p| *p == pids[0]));
+    assert_worker_exited(pids[0]);
 }
 
 #[test]
@@ -176,6 +243,10 @@ async fn sequential_batch_keeps_successes_and_retries_only_failures_with_origina
     .unwrap();
     let job = finished(&core, &key).await;
     assert_eq!(job.status, "failed");
+    assert!(job
+        .logs
+        .iter()
+        .any(|line| line.contains("batch error details:")));
     let progress = job.batch.unwrap();
     assert_eq!((progress.succeeded, progress.failed), (2, 1));
     let first_count = core
@@ -322,6 +393,18 @@ async fn cancel_and_interrupted_journal_resume_without_duplicate_committed_takes
             .len(),
         1
     );
+    let calls = std::fs::read_to_string(root.join("calls.jsonl")).unwrap();
+    let pids: Vec<_> = calls
+        .lines()
+        .map(|line| {
+            serde_json::from_str::<serde_json::Value>(line).unwrap()["workerPid"]
+                .as_u64()
+                .unwrap()
+        })
+        .collect();
+    assert_eq!(pids.len(), 2);
+    assert_eq!(pids[0], pids[1]);
+    assert_worker_exited(pids[0]);
     // Simulate the narrow crash window after a WAV/project commit but before its journal outcome.
     std::fs::write(
         folder(&core, &key).unwrap().join("results.jsonl"),

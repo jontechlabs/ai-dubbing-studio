@@ -116,7 +116,7 @@ def compatibility_profile(torch, device, enabled):
     return device.startswith('cuda:') and not enabled
 
 
-def generate(request):
+def generate(request, session=None):
     requested = validate_request(request)
     # Before NumPy/SciPy or any other dependency has a chance to import Torch.
     # Explicit model placement below also works if a driver ignores this mask.
@@ -124,7 +124,7 @@ def generate(request):
         os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
     from voice_reference import prepare_reference
     with prepare_reference(request['referenceAudio'], report, request.get('preparedReferenceAudio')) as reference:
-        generate_normalized(dict(request, referenceAudio=str(reference)))
+        generate_normalized(dict(request, referenceAudio=str(reference)), session)
 
 
 def inference_device(requested):
@@ -134,14 +134,14 @@ def inference_device(requested):
     return select_device(requested, device_info()['devices'])
 
 
-def generate_normalized(request):
+def generate_normalized(request, session=None):
     requested = validate_request(request)
     import numpy as np
     import soundfile as sf
     import torch
     from cosyvoice.cli.cosyvoice import CosyVoice3
     torch.set_num_threads(min(6, max(1, (os.cpu_count() or 2) // 2)))
-    device = inference_device(requested)
+    device = session['device'] if session and 'model' in session else inference_device(requested)
     name = torch.cuda.get_device_name(device) if device.startswith('cuda:') else 'CPU'
     if device.startswith('cuda:'):
         torch.cuda.set_device(device)
@@ -156,7 +156,8 @@ def generate_normalized(request):
     if not np.isfinite(audio).all() or float(np.max(np.abs(audio))) < 0.001:
         raise ValueError('TTS_REFERENCE_SILENT')
     directory = Path(request['modelDir'])
-    verify_model(directory)
+    if not session or 'model' not in session:
+        verify_model(directory)
     seed = int(request.get('seed', 0))
     random.seed(seed)
     np.random.seed(seed)
@@ -165,18 +166,43 @@ def generate_normalized(request):
         torch.cuda.manual_seed_all(seed)
     else:
         torch.random.default_generator.manual_seed(seed)
-    report(stage='ttsLoad', progress=None, device=requested, deviceName=name)
+    if not session or 'model' not in session:
+        report(stage='ttsLoad', progress=None, device=requested, deviceName=name)
     import cosyvoice.cli.cosyvoice as official
     from cosyvoice_adapter import inference_yaml
+    if session and 'model' in session:
+        model = session['model']
+        report(stage='ttsReuse', progress=None, log='CosyVoice3: reusing the loaded batch model.')
+    else:
+        model = load_model(CosyVoice3, official, inference_yaml, directory, fp16, device)
+        if session is not None:
+            session.update(model=model, device=device)
+        track_reference(model)
+    if session is not None:
+        # Model construction can consume random numbers on the first request.
+        # Start synthesis from the requested seed for both cold and warm lines.
+        random.seed(seed)
+        np.random.seed(seed)
+        if device.startswith('cuda:'):
+            torch.manual_seed(seed)
+            torch.cuda.manual_seed_all(seed)
+        else:
+            torch.random.default_generator.manual_seed(seed)
+    render(model, request, reference, device, requested, name, compatible, torch, np, sf)
+
+
+def load_model(CosyVoice3, official, inference_yaml, directory, fp16, device):
     original_loader = official.load_hyperpyyaml
     official.load_hyperpyyaml = inference_yaml
     try:
-        model = CosyVoice3(str(directory), fp16=fp16, load_trt=False, load_vllm=False, device=device)
+        return CosyVoice3(str(directory), fp16=fp16, load_trt=False, load_vllm=False, device=device)
     finally:
         official.load_hyperpyyaml = original_loader
     # The official Windows ONNX wheel runs reference tokenization on CPU.
     # Torch LLM, flow and vocoder use the selected CUDA device.
-    report(stage='ttsReferenceAnalysis', progress=None, log='Reference analysis: SoundFile/SciPy and ONNX CPU; neural inference: ' + name)
+
+
+def track_reference(model):
     # Emit a boundary for each expensive reference step. Fatal native faults now
     # leave both this last stage and a faulthandler stack in the processing log.
     for method, stage in [('_extract_speech_feat', 'ttsReferenceFeatures'), ('_extract_speech_token', 'ttsReferenceTokens'), ('_extract_spk_embedding', 'ttsReferenceSpeaker')]:
@@ -187,6 +213,10 @@ def generate_normalized(request):
             report(stage='ttsGenerate', progress=None)
             return result
         setattr(model.frontend, method, tracked)
+
+
+def render(model, request, reference, device, requested, name, compatible, torch, np, sf):
+    report(stage='ttsReferenceAnalysis', progress=None, log='Reference analysis: SoundFile/SciPy and ONNX CPU; neural inference: ' + name)
     options = {'stream': False, 'speed': request['speed'], 'text_frontend': False}
     report(stage='ttsGenerate', progress=None,
            log='CosyVoice3: final vocoder context 160 ms; full decoded tail retained (no WAV fade or speech trimming).')

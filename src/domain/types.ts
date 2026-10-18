@@ -139,6 +139,7 @@ export interface SpeakerAnalysis {
   }[];
 }
 export interface Project {
+  translationApprovals?: Record<string, import('./translation').TranslationApproval>;
   dubbingTiming?: {
     sourcePath: string;
     offsetsMs: Record<string, Record<string, number>>;

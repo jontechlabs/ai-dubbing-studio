@@ -414,7 +414,7 @@ export function DubPanel({
           )}
         </p>
       )}
-      <p className="panel-description">{t('ttsLocalHint')}</p>
+      <p className="panel-description">{t(batch ? 'ttsBatchLocalHint' : 'ttsLocalHint')}</p>
       {!ready && (
         <div className="tts-not-ready">
           <p>{t(checking ? 'phase6Checking' : 'ttsNeedsInstallation')}</p>

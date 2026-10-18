@@ -1,4 +1,15 @@
-# Validation - 17 October 2026
+# Validation - 18 October 2026
+
+## v0.12.0 — 18 October 2026
+
+Windows workflow evidence will be recorded before publication.
+
+- The batch owns a private persistent Python worker or a loopback-only audio.cpp server. Identical model/device/profile ownership is enforced for Python requests. Sequential requests retain model objects; per-line text, reference, transcript and seeds are not cached as conversation history.
+- Native protocol checks assert the same PID across successive requests, verify that PID is no longer alive after successful or cancelled terminal status, and exercise partial failures, context replacement and durable retry without duplicate committed takes. The inference gate is held until process teardown is awaited. Timeouts and early batch errors also close the owned worker.
+- Worker unit checks count single CosyVoice and Fish model/codec initialization across distinct texts and transcripts. Reference caching stays off for Fish. Drama keeps mapped FP8 weights and codec objects while Comfy manages device residency; the actual tiny-model diagnostic repeats inference with the same loaded model and seed.
+- Two real CPU requests through the already pinned audio.cpp v0.9.1 server and Qwen3-TTS 0.6B GGUF shared one process, then were terminated and awaited. Measured requests: 8.89 s and 2.09 s for short French text. This is a local CPU process-reuse check, not a GPU benchmark or full FP8 model qualification.
+- Translation approvals persist independently of voice state in project format 10. Unit/native/browser checks cover legacy input, reload, withdrawal, text/language invalidation, pronunciation/timing preservation, concurrent generation events and undo/redo. The screenshot uses the real React interface and mocked native commands.
+
 
 ## v0.11.0 — 17 October 2026
 

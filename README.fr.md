@@ -1,5 +1,8 @@
 # AI Dubbing Studio — phases 1–7
 
+**v0.12.0** conserve le modèle chargé pendant le doublage par lot, puis arrête son processus à la fin ou à l’annulation pour libérer sa mémoire. Les répliques sont grises sans traduction, vert clair avec traduction et vertes après validation explicite. La validation du texte reste indépendante de celle des voix. [Guide avec capture](docs/BATCH-CACHE-AND-TRANSLATION-REVIEW.md).
+
+
 **v0.11.0 — Extraits de référence et doublage par lot.** Choisissez le début et la fin d’un extrait audio, écoutez-le et importez uniquement cette portion. Cochez des répliques ou prenez toutes les traductions, configurez le lot, puis générez avec conservation des prises à jour ou forçage de nouveaux essais. Progression, annulation et reprise sont disponibles. [Guide et captures](docs/BATCH-DUBBING.md).
 
 ![Batch dubbing](docs/screenshots/batch-configuration.png)
@@ -26,7 +29,7 @@
 
 *Interface React réelle avec audio de démonstration synthétique et inventaire natif simulé.*
 
-[Version anglaise et captures de l’interface](README.md) · [Téléchargements Windows](https://github.com/jontechlabs/ai-dubbing-studio/releases/tag/v0.11.0)
+[Version anglaise et captures de l’interface](README.md) · [Téléchargements Windows](https://github.com/jontechlabs/ai-dubbing-studio/releases/tag/v0.12.0)
 
 Studio desktop local de travail texte, voix et vidéo. Tauri 2, React, TypeScript strict et Rust.
 

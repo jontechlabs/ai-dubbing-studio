@@ -418,6 +418,8 @@ fn start_with_launch<R: tauri::Runtime>(
         let result=async {
             let _permit=tokio::select!{_=jobs::cancelled(&flag)=>return Err("CANCELLED".into()),permit=core.gate.clone().acquire_owned()=>permit.map_err(io_error)?,};
             jobs::update(&core,&app,&key,|j|j.status="running".into());
+            let mut hot=crate::tts_session::Session::default();
+            let outcome=async {
             for index in 0..request.items.len() {
                 if request.items[index].status=="succeeded"{continue;}
                 if flag.load(Ordering::Relaxed){return Err("CANCELLED".into());}
@@ -426,7 +428,7 @@ fn start_with_launch<R: tauri::Runtime>(
                 let item=&request.items[index];let line_id=item.request.line_id.clone();
                 persist(&core,&app,&key,&request,Some(line_id.clone()));
                 jobs::update(&core,&app,&key,|j|{j.stage="ttsReference".into();j.progress=None;j.logs.push(format!("Dubbing {}/{}: {}",index+1,request.items.len(),line_id));});
-                let result=if let Some(launch)=launch.as_ref(){tts::execute_with_launch(&core,&app,&key,&item.request,&flag,launch).await}else{tts::execute(&core,&app,&key,&item.request,&flag).await};
+                let default_launch;let launch=if let Some(launch)=launch.as_ref(){launch}else{default_launch=tts::worker_launch(&core,&app,&item.request);&default_launch};let result=tts::execute_with_session(&core,&app,&key,&item.request,&flag,launch,Some(&mut hot)).await;
                 let item=&mut request.items[index];
                 match result {
                     Ok(())=>{item.status="succeeded".into();item.error=None;}
@@ -435,9 +437,10 @@ fn start_with_launch<R: tauri::Runtime>(
                 }
                 record_item(&core,&key,index,&request.items[index])?;
                 persist(&core,&app,&key,&request,None);
-                if request.items[index].error.as_deref().is_some_and(|e|["TTS_OUT_OF_MEMORY","TTS_DRAMA_RAM_REQUIRED","TTS_DRAMA_VRAM_REQUIRED","TTS_DRAMA_DISK_REQUIRED","DEVICE_UNAVAILABLE","TTS_RUNTIME_FAILED","TTS_RUNTIME_REQUIRED"].contains(&e)){return Err("TTS_BATCH_PARTIAL".into());}
+                if request.items[index].error.as_deref().is_some_and(|e|["TTS_OUT_OF_MEMORY","TTS_SYSTEM_MEMORY","TTS_FP8_MEMORY_REQUIRED","TTS_FP8_CUDA_REQUIRED","MODEL_CHECKSUM_FAILED","TTS_DRAMA_RAM_REQUIRED","TTS_DRAMA_VRAM_REQUIRED","TTS_DRAMA_DISK_REQUIRED","DEVICE_UNAVAILABLE","TTS_RUNTIME_FAILED","TTS_RUNTIME_REQUIRED"].contains(&e)){return Err("TTS_BATCH_PARTIAL".into());}
             }
             if request.items.iter().any(|i|i.status=="failed"){Err("TTS_BATCH_PARTIAL".into())}else{Ok(())}
+            }.await; hot.finish(&core,&app,&key).await;outcome
         }.await;
         persist(&core, &app, &key, &request, None);
         separation::finish(&core, &app, &key, &result);

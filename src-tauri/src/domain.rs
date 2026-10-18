@@ -156,6 +156,8 @@ pub struct SpeakerAnalysis {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Project {
+    #[serde(default, skip_serializing_if = "HashMap::is_empty")]
+    pub translation_approvals: HashMap<String, TranslationApproval>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub dubbing_timing: Option<DubbingTiming>,
     pub format_version: u32,
@@ -191,9 +193,48 @@ pub struct DubbingTiming {
     #[serde(default)]
     pub durations_ms: HashMap<String, HashMap<String, u64>>,
 }
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TranslationApproval {
+    pub source_language: String,
+    pub target_language: String,
+    pub source_text: String,
+    pub target_text: String,
+}
 impl Project {
+    pub fn clean_translation_approvals(&mut self) {
+        let source: HashMap<_, _> = self
+            .source_cues
+            .iter()
+            .map(|c| (&c.id, c.text.as_str()))
+            .collect();
+        let target: HashMap<_, _> = self
+            .target_cues
+            .iter()
+            .map(|c| (&c.id, c.text.as_str()))
+            .collect();
+        let lines: HashMap<_, _> = self.dialogues.iter().map(|l| (&l.id, l)).collect();
+        self.translation_approvals.retain(|id, approval| {
+            let Some(line) = lines.get(id) else {
+                return false;
+            };
+            let text = |ids: &[String], cues: &HashMap<&String, &str>| {
+                ids.iter()
+                    .map(|id| cues.get(id).copied().unwrap_or(""))
+                    .collect::<Vec<_>>()
+                    .join("\n")
+            };
+            approval.source_language == self.languages.source
+                && approval.target_language == self.languages.target
+                && approval.source_text == text(&line.source_cue_ids, &source)
+                && !approval.target_text.trim().is_empty()
+                && approval.target_text == text(&line.target_cue_ids, &target)
+        });
+    }
+
     pub fn new(name: String, source: String, target: String) -> Self {
         Self {
+            translation_approvals: HashMap::new(),
             dubbing_timing: None,
             format_version: 1,
             app_version: env!("CARGO_PKG_VERSION").into(),
@@ -225,8 +266,19 @@ impl Project {
         references.iter().find(|r| r.id == id)
     }
     pub fn validate(&self) -> Result<(), String> {
-        if ![1, 2, 3, 4, 5, 6, 7, 8, 9].contains(&self.format_version) {
+        if ![1, 2, 3, 4, 5, 6, 7, 8, 9, 10].contains(&self.format_version) {
             return Err("UNSUPPORTED_PROJECT_VERSION".into());
+        }
+        if !self.translation_approvals.is_empty()
+            && (self.format_version < 10
+                || self.translation_approvals.iter().any(|(id, a)| {
+                    !self.dialogues.iter().any(|l| &l.id == id)
+                        || a.source_language.is_empty()
+                        || a.target_language.is_empty()
+                        || a.target_text.trim().is_empty()
+                }))
+        {
+            return Err("INVALID_PROJECT".into());
         }
         if let Some(timing) = &self.dubbing_timing {
             if timing

@@ -4,7 +4,7 @@ import { validVoiceVariant } from './modelVariants';
 import { validVoiceSettings } from './tts';
 import { validateAudioPatches } from './audioPatch';
 import { validateLipVideos } from './inpaint';
-export const APP_VERSION = '0.11.0';
+export const APP_VERSION = '0.12.0';
 
 export function blankProject(name = 'Untitled', source = 'ja', target = 'fr'): Project {
   const now = new Date().toISOString();
@@ -94,8 +94,28 @@ export function validateProject(value: unknown): Project {
   const preferences = project.modelPreferences;
   if (preferences && !validVoiceVariant(preferences.ttsProviderId, preferences.voiceVariantId))
     throw new Error('INVALID_PROJECT');
-  if (![1, 2, 3, 4, 5, 6, 7, 8, 9].includes(project.formatVersion))
+  if (![1, 2, 3, 4, 5, 6, 7, 8, 9, 10].includes(project.formatVersion))
     throw new Error('UNSUPPORTED_PROJECT_VERSION');
+  if (project.translationApprovals !== undefined) {
+    if (
+      !project.translationApprovals ||
+      typeof project.translationApprovals !== 'object' ||
+      Array.isArray(project.translationApprovals)
+    )
+      throw Error('INVALID_PROJECT');
+    for (const [id, approval] of Object.entries(project.translationApprovals)) {
+      if (
+        project.formatVersion < 10 ||
+        !project.dialogues.some((line) => line.id === id) ||
+        !approval ||
+        ['sourceLanguage', 'targetLanguage', 'sourceText', 'targetText'].some(
+          (key) => typeof approval[key as keyof typeof approval] !== 'string',
+        ) ||
+        !approval.targetText.trim()
+      )
+        throw Error('INVALID_PROJECT');
+    }
+  }
   if (project.dubbingTiming) {
     const timing = project.dubbingTiming;
     if (

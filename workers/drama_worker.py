@@ -117,7 +117,7 @@ def validate(request):
         raise ValueError('TTS_FP8_CUDA_REQUIRED')
 
 
-def generate_audio(request):
+def generate_audio(request, session=None):
     validate(request)
     requested = request.get('device', 'auto')
     # Remap before importing torch/Comfy: every operation uses the selected GPU.
@@ -130,16 +130,17 @@ def generate_audio(request):
     torch.cuda.set_device(0)
     torch.set_num_threads(6)
     ram = psutil.virtual_memory()
-    cache = memory_profile(ram.total, ram.available, torch.cuda.mem_get_info(0)[0])
+    cache = session['cache'] if session and 'model' in session else memory_profile(ram.total, ram.available, torch.cuda.mem_get_info(0)[0])
     directory = Path(request['modelDir'])
-    verify_models(directory)
+    if not session or 'model' not in session:
+        verify_models(directory)
     from voice_reference import prepare_reference
     report(stage='ttsReference', progress=None, log=f'Drama 3: FP8 experts in memory-mapped host RAM (unpinned); {cache} GiB GPU cache; {torch.cuda.get_device_name(0)}; RAM available {ram.available/GIB:.1f} GiB')
     with prepare_reference(request['referenceAudio'], report, request.get('preparedReferenceAudio')) as reference:
-        synthesize(request, directory, reference, cache)
+        synthesize(request, directory, reference, cache, session)
 
 
-def synthesize(request, directory, reference, cache):
+def synthesize(request, directory, reference, cache, session=None):
     import torch
     import numpy as np
     import soundfile as sf
@@ -152,7 +153,9 @@ def synthesize(request, directory, reference, cache):
     torch.cuda.reset_peak_memory_stats(device)
     # Load, use and release the codec before loading the 35B model.
     report(stage='ttsReference', progress=None, log='Drama 3: encoding the reference; codec FP32 on selected GPU')
-    codec = load_codec(str(directory / 'drama3_codec.safetensors'))
+    codec = session['codec'] if session and 'codec' in session else load_codec(str(directory / 'drama3_codec.safetensors'))
+    if session is not None:
+        session['codec'] = codec
     audio, rate = sf.read(str(reference), dtype='float32')
     from math import gcd
     factor = gcd(rate, SAMPLE_RATE)
@@ -160,15 +163,25 @@ def synthesize(request, directory, reference, cache):
     with torch.inference_mode(), mm.cuda_device_context(device):
         mm.load_models_gpu([codec.patcher])
         codes = codec.model.encode(torch.from_numpy(audio).to(device)[None])[0].cpu()
-    mm.unload_all_models()
-    del codec
-    gc.collect()
-    mm.soft_empty_cache()
+    if session is None:
+        mm.unload_all_models()
+        del codec
+        gc.collect()
+        mm.soft_empty_cache()
     import psutil
     ram = psutil.virtual_memory()
-    memory_profile(ram.total, ram.available, torch.cuda.mem_get_info(device)[0])
-    report(stage='ttsLoad', progress=None, log='Drama 3: mapping FP8 weights (about 38.6 GB) without a full pinned RAM copy; first load can take several minutes')
-    model = load_model(str(directory / 'drama3_fp8experts_bf16.safetensors'), experts_in_ram=True, expert_cache_gb=cache)
+    if not session or 'model' not in session:
+        # Codec may stay resident in a batch: its allocation is already accounted for by Comfy.
+        if session is None:
+            memory_profile(ram.total, ram.available, torch.cuda.mem_get_info(device)[0])
+    if session and 'model' in session:
+        model = session['model']
+        report(stage='ttsReuse', progress=None, log='Drama 3: reusing mapped FP8 weights and codec; GPU residency is managed within the selected device budget.')
+    else:
+        report(stage='ttsLoad', progress=None, log='Drama 3: mapping FP8 weights (about 38.6 GB) without a full pinned RAM copy; first load can take several minutes')
+        model = load_model(str(directory / 'drama3_fp8experts_bf16.safetensors'), experts_in_ram=True, expert_cache_gb=cache)
+        if session is not None:
+            session.update(model=model, cache=cache)
     chunks = split_text(request['promptText']) or [request['promptText']]
     reference_pair = (request['referenceTranscript'], codes)
     first = latest = None
@@ -198,19 +211,22 @@ def synthesize(request, directory, reference, cache):
                 latest = turn
             if sum(f.shape[-1] for f in frames) > 2500:
                 raise ValueError('TTS_DRAMA_FRAME_LIMIT')
-    mm.unload_all_models()
-    del model, prompt, result
-    gc.collect()
-    mm.soft_empty_cache()
+    if session is None:
+        mm.unload_all_models()
+        del model
+        gc.collect()
+        mm.soft_empty_cache()
+    del prompt, result
     output_codes = torch.cat(frames, dim=-1)
     if output_codes.shape[-1] == 0:
         raise ValueError('TTS_EMPTY_AUDIO')
-    report(stage='ttsGenerate', progress=None, log='Drama 3: model released; decoding audio with codec FP32')
-    codec = load_codec(str(directory / 'drama3_codec.safetensors'))
+    report(stage='ttsGenerate', progress=None, log='Drama 3: batch weights retained; decoding with codec FP32' if session is not None else 'Drama 3: model released; decoding audio with codec FP32')
+    codec = session['codec'] if session is not None else load_codec(str(directory / 'drama3_codec.safetensors'))
     with torch.inference_mode(), mm.cuda_device_context(device):
         mm.load_models_gpu([codec.patcher])
         audio = codec.model.decode(output_codes[None].to(device), torch.float32).float().cpu().numpy().reshape(-1)
-    mm.unload_all_models()
+    if session is None:
+        mm.unload_all_models()
     if not np.isfinite(audio).all() or not len(audio) or np.max(np.abs(audio)) < 0.001:
         raise ValueError('TTS_EMPTY_AUDIO')
     audio = resample_poly(audio, 80, 147)  # 44.1 kHz -> 24 kHz
@@ -222,7 +238,11 @@ def synthesize(request, directory, reference, cache):
     sf.write(request['outputPath'], np.clip(audio, -1, 1), 24000, subtype='PCM_16')
     metadata = {'device': request.get('device', 'auto') if request.get('device') != 'auto' else 'cuda:0', 'deviceName': torch.cuda.get_device_name(0), 'peakVramMb': round(torch.cuda.max_memory_allocated(0)/1024**2), 'expertCacheGiB': cache, 'expertsInRam': True, 'expertMemoryMode': 'mapped'}
     Path(request['resultPath']).write_text(json.dumps(metadata), encoding='utf-8')
-    report(stage='ttsGenerate', progress=1, log='Drama 3: WAV ready; GPU model released')
+    report(stage='ttsGenerate', progress=1, log='Drama 3: WAV ready; batch weights retained' if session is not None else 'Drama 3: WAV ready; GPU model released')
+
+
+def generate(request, session=None):
+    generate_audio(request, session)
 
 
 def main():

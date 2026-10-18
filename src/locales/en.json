@@ -168,7 +168,9 @@
     "inpaintGenerate": "Generating lips",
     "inpaintCompose": "Compositing retouched video",
     "audioTransfer": "Audio range transfer",
-    "ttsBatch": "Batch dubbing"
+    "ttsBatch": "Batch dubbing",
+    "ttsReuse": "Reusing loaded model",
+    "ttsRelease": "Releasing model memory"
   },
   "shortcuts": "Space: play · J/K/L: transport · O: original · Ctrl+S: save · Ctrl+Z/Y: undo/redo",
   "errors": {
@@ -288,7 +290,8 @@
     "INVALID_REFERENCE_RANGE": "The excerpt must last 1 to 20 seconds and stay within the file.",
     "INVALID_TTS_BATCH": "Choose the lines to dub.",
     "TTS_BATCH_EMPTY": "No translated line is ready to generate in this batch.",
-    "TTS_BATCH_PARTIAL": "Some lines failed. Successful takes are kept; Retry resumes the remaining lines."
+    "TTS_BATCH_PARTIAL": "Some lines failed. Successful takes are kept; Retry resumes the remaining lines.",
+    "TRANSLATION_REQUIRED": "A translation is required."
   },
   "preparingVideo": "Preparing video…",
   "loadingVideo": "Loading video…",
@@ -798,5 +801,15 @@
   "referenceMarkEnd": "End at player position",
   "referencePlayRange": "Listen to this excerpt",
   "referenceUseRange": "Use this excerpt",
-  "referenceRangeHint": "Selected duration: {{seconds}} s. Choose between 1 and 20 seconds within the file."
+  "referenceRangeHint": "Selected duration: {{seconds}} s. Choose between 1 and 20 seconds within the file.",
+  "translationApprove": "Approve translation for line {{number}}",
+  "translationUnapprove": "Remove translation approval for line {{number}}",
+  "translationReviewHint": "Translation approval is independent of voice-take approval. Editing the source, translation or language removes approval.",
+  "translationLegend": "Translation status",
+  "translationState": {
+    "untranslated": "Untranslated",
+    "translated": "Translated · pending approval",
+    "approved": "Translation approved"
+  },
+  "ttsBatchLocalHint": "The model stays loaded for this batch and is released when it ends, is cancelled, or the engine fails. Lines are generated one at a time."
 }

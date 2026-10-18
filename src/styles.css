@@ -2339,3 +2339,60 @@ pre {
 .audio-transfer .runtime-card {
   margin-top: 10px;
 }
+
+.dialogue-card.translation-untranslated {
+  border-left: 4px solid #7d8491;
+}
+.dialogue-card.translation-translated {
+  border-left: 4px solid #b8e8ba;
+}
+.dialogue-card.translation-approved {
+  border-left: 4px solid #20b763;
+}
+.translation-review {
+  margin: 6px 0;
+}
+.target-text .text-label {
+  display: block;
+}
+.dialogue-card .translation-badge:disabled {
+  opacity: 1;
+  cursor: default;
+}
+.translation-badge {
+  font-size: 10px;
+  color: #a2a8b3;
+  background: #7d849111;
+  padding: 3px 6px;
+  border-radius: 4px;
+}
+.translation-badge.translated {
+  color: #c0efc2;
+  background: #b8e8ba18;
+}
+.translation-badge.approved {
+  color: #39dc7f;
+  background: #20b76325;
+}
+.translation-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 7px 10px;
+  border-top: 1px solid var(--border);
+}
+
+.dialogue-card.translation-untranslated {
+  --translation-color: #7d8491;
+}
+.dialogue-card.translation-translated {
+  --translation-color: #b8e8ba;
+  background: color-mix(in srgb, var(--surface) 97%, #b8e8ba);
+}
+.dialogue-card.translation-approved {
+  --translation-color: #20b763;
+  background: color-mix(in srgb, var(--surface) 92%, #20b763);
+}
+.dialogue-card.selected:before {
+  background: var(--translation-color, var(--accent));
+}

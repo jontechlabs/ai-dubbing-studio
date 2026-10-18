@@ -168,7 +168,9 @@
     "inpaintGenerate": "Génération des lèvres",
     "inpaintCompose": "Composition de la vidéo retouchée",
     "audioTransfer": "Transfert de portions audio",
-    "ttsBatch": "Doublage par lot"
+    "ttsBatch": "Doublage par lot",
+    "ttsReuse": "Réutilisation du modèle chargé",
+    "ttsRelease": "Libération de la mémoire du modèle"
   },
   "shortcuts": "Espace : lecture · J/K/L : transport · O : original · Ctrl+S : sauvegarde · Ctrl+Z/Y : annuler/rétablir",
   "errors": {
@@ -288,7 +290,8 @@
     "INVALID_REFERENCE_RANGE": "L’extrait doit durer entre 1 et 20 secondes et rester dans le fichier.",
     "INVALID_TTS_BATCH": "Choisissez les répliques à doubler.",
     "TTS_BATCH_EMPTY": "Aucune réplique traduite prête à générer dans ce lot.",
-    "TTS_BATCH_PARTIAL": "Certaines répliques ont échoué. Les réussites sont conservées ; Réessayer reprend les répliques restantes."
+    "TTS_BATCH_PARTIAL": "Certaines répliques ont échoué. Les réussites sont conservées ; Réessayer reprend les répliques restantes.",
+    "TRANSLATION_REQUIRED": "Une traduction est nécessaire."
   },
   "preparingVideo": "Préparation de la vidéo…",
   "loadingVideo": "Chargement de la vidéo…",
@@ -798,5 +801,15 @@
   "referenceMarkEnd": "Fin à la position du lecteur",
   "referencePlayRange": "Écouter cet extrait",
   "referenceUseRange": "Utiliser cet extrait",
-  "referenceRangeHint": "Durée sélectionnée : {{seconds}} s. Choisissez entre 1 et 20 secondes, dans les limites du fichier."
+  "referenceRangeHint": "Durée sélectionnée : {{seconds}} s. Choisissez entre 1 et 20 secondes, dans les limites du fichier.",
+  "translationApprove": "Valider la traduction de la réplique {{number}}",
+  "translationUnapprove": "Retirer la validation de la traduction de la réplique {{number}}",
+  "translationReviewHint": "Validation de la traduction, indépendante de la validation de la voix. Un changement du texte original, traduit ou de langue retire cette validation.",
+  "translationLegend": "État des traductions",
+  "translationState": {
+    "untranslated": "Non traduite",
+    "translated": "Traduite · à valider",
+    "approved": "Traduction validée"
+  },
+  "ttsBatchLocalHint": "Le modèle reste chargé pendant ce lot. Il est libéré à la fin, lors de l’annulation ou d’une erreur du moteur. Une seule réplique est générée à la fois."
 }

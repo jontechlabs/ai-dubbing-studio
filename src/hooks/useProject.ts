@@ -3,6 +3,7 @@ import type { Job, Project } from '../domain/types';
 import * as bridge from '../services/bridge';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { rebaseProject } from '../domain/rebase';
+import { cleanTranslationApprovals } from '../domain/translation';
 
 export function useProject() {
   const [project, setProject] = useState<Project | null>(null);
@@ -18,6 +19,7 @@ export function useProject() {
   const inFlight = useRef<Promise<void> | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const load = useCallback((value: Project) => {
+    value = cleanTranslationApprovals(value);
     if (latest.current?.id === value.id && latest.current.revision > value.revision) return;
     if (
       latest.current?.id === value.id &&
@@ -74,7 +76,7 @@ export function useProject() {
     (update: (value: Project) => Project) => {
       if (!latest.current) return;
       try {
-        latest.current = update(latest.current);
+        latest.current = cleanTranslationApprovals(update(latest.current));
       } catch (error) {
         setError(String(error));
         return;

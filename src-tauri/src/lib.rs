@@ -21,6 +21,7 @@ mod subtitles;
 mod transcription;
 mod tts;
 mod tts_batch;
+mod tts_session;
 mod voice_accent;
 mod voice_engines;
 mod voice_fit;

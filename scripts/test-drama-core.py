@@ -63,9 +63,11 @@ with tempfile.TemporaryDirectory() as directory:
  with torch.inference_mode():
   mm.load_models_gpu(loaded.patchers())
   frames=generate(loaded,prompt,2,1.0,10,.9,42)
+  again=generate(loaded,prompt,2,1.0,10,.9,42)
+  torch.testing.assert_close(frames,again,rtol=0,atol=0)
  assert frames.shape[1]==11
  assert frames.shape[0]==2
- print('PASS: meta loading + assigned state, FP8 expert offload, full/linear attention and autoregressive codebook generation',tuple(frames.shape))
+ print('PASS: meta loading + assigned state, FP8 expert offload, full/linear attention and repeatable autoregressive codebook generation on the same loaded model',tuple(frames.shape))
 
 # Validate all real checkpoint tensor names/shapes against the full meta architecture.
 headers=json.loads((repo/'workers/vendor/drama3/checkpoint-headers.json').read_text(encoding='utf-8'))
