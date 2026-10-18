@@ -852,7 +852,9 @@ export function DubPanel({
                     className="text-button"
                     disabled={busy}
                     onClick={() =>
-                      void bridge.exportGeneration(generation.id).catch((e) => onError(String(e)))
+                      void bridge
+                        .exportGeneration(generation.id, project.voiceEdits?.[generation.id])
+                        .catch((e) => onError(String(e)))
                     }
                   >
                     <Download size={13} />

@@ -163,7 +163,12 @@ export function InpaintPanel({
     void bridge.mediaUrl(project).then(accept(setSource)).catch(fail);
     if (chosenTake)
       void bridge
-        .dubbingUrl(chosenTake.id, chosenTake.slot, chosenTake.exact)
+        .dubbingUrl(
+          chosenTake.id,
+          chosenTake.slot,
+          chosenTake.exact,
+          project.voiceEdits?.[chosenTake.id],
+        )
         .then(accept(setVoice))
         .catch(fail);
     if (edit) void bridge.inpaintUrl(edit.id).then(accept(setRetouched)).catch(fail);

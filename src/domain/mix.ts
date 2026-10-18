@@ -1,3 +1,4 @@
+import { editDuration } from './voiceEdit';
 import type { Project } from './types';
 import { voiceGenerations, staleGeneration, spokenText } from './tts';
 export function dubbingOffset(project: Project, lineId: string) {
@@ -60,6 +61,8 @@ export function dubbingClips(project: Project) {
         0,
         Math.min(project.media!.durationMs - 1, line.startMs + dubbingOffset(project, line.id)),
       );
+      const edit = project.voiceEdits?.[generation.id];
+      const naturalDuration = edit ? editDuration(edit) : generation.durationMs;
       const durationMs = dubbingDuration(project, line.id);
       return [
         {
@@ -71,7 +74,7 @@ export function dubbingClips(project: Project) {
             project.media!.durationMs,
             startMs + (durationMs ?? line.endMs - line.startMs),
           ),
-          endMs: Math.min(project.media!.durationMs, startMs + generation.durationMs),
+          endMs: Math.min(project.media!.durationMs, startMs + naturalDuration),
         },
       ];
     })
@@ -91,8 +94,15 @@ export function dubbingClips(project: Project) {
         slotMs,
         endMs:
           clip.startMs +
-          (clip.exactDuration ? slotMs : Math.min(slotMs, clip.generation.durationMs)),
-        cacheKey: `${project.id}:${clip.generation.id}:${clip.startMs}:${slotMs}:${clip.exactDuration}`,
+          (clip.exactDuration
+            ? slotMs
+            : Math.min(
+                slotMs,
+                project.voiceEdits?.[clip.generation.id]
+                  ? editDuration(project.voiceEdits[clip.generation.id])
+                  : clip.generation.durationMs,
+              )),
+        cacheKey: `${project.id}:${clip.generation.id}:${clip.startMs}:${slotMs}:${clip.exactDuration}:${JSON.stringify(project.voiceEdits?.[clip.generation.id] ?? null)}`,
       };
     });
 }
@@ -106,8 +116,22 @@ export function mixReport(project: Project) {
     clips,
     missing,
     stale: clips.filter((c) => staleGeneration(project, c.line, c.generation)).length,
-    adjusted: clips.filter((c) => c.slotMs > 0 && c.generation.durationMs > c.slotMs).length,
-    fast: clips.filter((c) => c.slotMs > 0 && c.generation.durationMs / c.slotMs > 1.5).length,
+    adjusted: clips.filter(
+      (c) =>
+        c.slotMs > 0 &&
+        (project.voiceEdits?.[c.generation.id]
+          ? editDuration(project.voiceEdits[c.generation.id])
+          : c.generation.durationMs) > c.slotMs,
+    ).length,
+    fast: clips.filter(
+      (c) =>
+        c.slotMs > 0 &&
+        (project.voiceEdits?.[c.generation.id]
+          ? editDuration(project.voiceEdits[c.generation.id])
+          : c.generation.durationMs) /
+          c.slotMs >
+          1.5,
+    ).length,
     conflicts: clips.filter((c) => c.slotMs === 0).length,
   };
 }

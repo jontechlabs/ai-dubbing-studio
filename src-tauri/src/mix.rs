@@ -110,8 +110,11 @@ pub(crate) fn clips(p: &Project) -> Vec<Clip> {
                     .saturating_add(duration.unwrap_or(line.end_ms - line.start_ms))
                     .min(media.info.duration_ms),
                 start: start_ms * 24,
-                frames: g["durationMs"]
-                    .as_u64()?
+                frames: p
+                    .voice_edits
+                    .get(id)
+                    .map(|e| e.duration())
+                    .or_else(|| g["durationMs"].as_u64())?
                     .min(media.info.duration_ms - start_ms)
                     * 24,
             })
@@ -297,7 +300,12 @@ fn validate(p: &Project, options: &Options) -> Result<(), String> {
                         .find(|c| c.id == g["id"].as_str().unwrap_or(""))
                         .is_none_or(|c| {
                             c.slot_ms == 0
-                                || g["durationMs"].as_f64().unwrap_or(0.0) / c.slot_ms as f64 > 1.5
+                                || p.voice_edits
+                                    .get(&c.id)
+                                    .map(|e| e.duration() as f64)
+                                    .unwrap_or_else(|| g["durationMs"].as_f64().unwrap_or(0.0))
+                                    / c.slot_ms as f64
+                                    > 1.5
                         })
             }) {
                 return Err("MIX_REVIEW_REQUIRED".into());
@@ -421,9 +429,22 @@ async fn export<R: tauri::Runtime>(
         });
         let total = selected.len().max(1);
         for (index, clip) in selected.iter_mut().enumerate() {
-            let fitted = crate::voice_fit::take_with_duration(
+            let edited = crate::voice_edit::render(
                 &root,
                 &clip.path,
+                p.voice_edits.get(&clip.id),
+                &executable,
+                flag,
+            )
+            .await?;
+            let relative = edited
+                .strip_prefix(&root)
+                .map_err(io_error)?
+                .to_string_lossy()
+                .replace('\\', "/");
+            let fitted = crate::voice_fit::take_with_duration(
+                &root,
+                &relative,
                 clip.slot_ms,
                 clip.exact_duration,
                 &executable,

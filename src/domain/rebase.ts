@@ -15,6 +15,7 @@ export function rebaseProject(base: Project, local: Project, incoming: Project):
     'subtitleDisplay',
     'dubbingTiming',
     'translationApprovals',
+    'voiceEdits',
   ] as const)
     if (changed(base[key], local[key])) Object.assign(next, { [key]: structuredClone(local[key]) });
   if (changed(base.dialogues, local.dialogues))

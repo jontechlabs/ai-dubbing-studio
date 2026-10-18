@@ -157,6 +157,8 @@ pub struct SpeakerAnalysis {
 #[serde(rename_all = "camelCase")]
 pub struct Project {
     #[serde(default, skip_serializing_if = "HashMap::is_empty")]
+    pub voice_edits: HashMap<String, crate::voice_edit::Edit>,
+    #[serde(default, skip_serializing_if = "HashMap::is_empty")]
     pub translation_approvals: HashMap<String, TranslationApproval>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub dubbing_timing: Option<DubbingTiming>,
@@ -234,6 +236,7 @@ impl Project {
 
     pub fn new(name: String, source: String, target: String) -> Self {
         Self {
+            voice_edits: HashMap::new(),
             translation_approvals: HashMap::new(),
             dubbing_timing: None,
             format_version: 1,
@@ -266,7 +269,7 @@ impl Project {
         references.iter().find(|r| r.id == id)
     }
     pub fn validate(&self) -> Result<(), String> {
-        if ![1, 2, 3, 4, 5, 6, 7, 8, 9, 10].contains(&self.format_version) {
+        if ![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].contains(&self.format_version) {
             return Err("UNSUPPORTED_PROJECT_VERSION".into());
         }
         if !self.translation_approvals.is_empty()
@@ -502,6 +505,7 @@ impl Project {
             }
         }
         crate::tts::validate_generations(self)?;
+        crate::voice_edit::validate(self)?;
         crate::inpaint::validate(self)?;
         crate::audio_patch::validate(self)?;
         Ok(())

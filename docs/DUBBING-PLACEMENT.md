@@ -42,3 +42,8 @@ Le calage existant utilise la voix complète et un changement de tempo avec cons
 Une fin active et brusque a été reproduite sur « Il était craint par tous les gangsters... », avec le modèle officiel et un autre extrait vocal de référence. Le décodeur causal recevait une frontière de log-mels nuls ; zéro en log-mel ne représente pas du silence. À sa finalisation, le studio fournit désormais huit trames de contexte acoustique silencieux (`log(1e-5)`, 160 ms), après le réglage de vitesse, et conserve toute la sortie du vocodeur. Le texte, la graine, les tokens du LLM et les anciens WAV ne sont pas modifiés. Aucun fondu n’est appliqué au dernier mot.
 
 Cette correction traite une frontière de décodage audio ; elle ne reconstruit pas un phonème que le modèle de langage n’aurait pas généré. **Générez un nouvel essai après la mise à jour** et comparez son WAV. Les essais existants restent inchangés. Si un mot est encore incomplet, vérifiez la référence et sa transcription et comparez une autre graine. Le contexte final est inclus dans la durée du nouveau WAV et dans le calage automatique.
+
+
+## Retoucher seulement une zone de la voix
+
+Depuis v0.14.0, double-cliquez le bloc Doublage pour ouvrir sa forme d’onde dans la timeline. Ajoutez du silence, supprimez une portion, réglez son volume ou étirez-la avec ↔. [Guide détaillé](VOICE-REGION-EDITING.md). Les sous-titres et les autres répliques restent en place.

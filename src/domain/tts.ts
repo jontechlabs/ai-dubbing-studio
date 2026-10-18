@@ -108,6 +108,7 @@ export function selectGeneration(project: Project, id: string): Project {
 export function deleteGeneration(project: Project, id: string): Project {
   const next = structuredClone(project);
   next.generations = next.generations.filter((g) => g.id !== id);
+  delete next.voiceEdits?.[id];
   for (const line of next.dialogues)
     for (const [language, selected] of Object.entries(line.selectedGenerationIds))
       if (selected === id) {

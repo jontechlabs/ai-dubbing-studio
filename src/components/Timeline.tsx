@@ -12,6 +12,7 @@ import {
   Volume2,
   VolumeX,
   MousePointer2,
+  Scissors,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { AudioSelection, Dialogue, Project, Track } from '../domain/types';
@@ -26,6 +27,7 @@ import { trackPatches } from '../domain/audioPatch';
 import { subtitleDisplay, toggleSubtitles } from '../domain/subtitleDisplay';
 import { dubbingClips, dubbingOffset, moveDubbing, resizeDubbing } from '../domain/mix';
 import { useTimelineZoom } from '../hooks/useTimelineZoom';
+import { VoiceRegionEditor } from './VoiceRegionEditor';
 import { TimelineAudioSelection } from './TimelineAudioSelection';
 
 export const Timeline = memo(function Timeline({
@@ -55,6 +57,10 @@ export const Timeline = memo(function Timeline({
   const scroll = useRef<HTMLDivElement>(null);
   const head = useRef<HTMLDivElement>(null);
   const [audioTool, setAudioTool] = useState(false);
+  const [voiceEditor, setVoiceEditor] = useState<string | null>(null);
+  const selectedVoice = project && dubbingClips(project).find((c) => c.line.id === selected?.id);
+  const editingVoice =
+    project && dubbingClips(project).find((c) => c.generation.id === voiceEditor);
   const [audioDrag, setAudioDrag] = useState<{
     trackId: string;
     anchor: number;
@@ -212,6 +218,20 @@ export const Timeline = memo(function Timeline({
             <MousePointer2 size={15} />
           </IconButton>
           <IconButton
+            label={t('editVoiceRegion')}
+            active={!!editingVoice}
+            disabled={!selectedVoice || busy}
+            onClick={() =>
+              setVoiceEditor(
+                voiceEditor === selectedVoice?.generation.id
+                  ? null
+                  : (selectedVoice?.generation.id ?? null),
+              )
+            }
+          >
+            <Scissors size={15} />
+          </IconButton>
+          <IconButton
             label={t('trackHeight')}
             onClick={() => setRowHeight(rowHeight === 37 ? 64 : 37)}
           >
@@ -270,6 +290,16 @@ export const Timeline = memo(function Timeline({
           onEdit={onEdit}
           onSelection={onAudioSelection}
           onAdvanced={onAudioAdvanced}
+        />
+      )}
+      {project && editingVoice && (
+        <VoiceRegionEditor
+          key={`${project.id}:${editingVoice.generation.id}`}
+          project={project}
+          generation={editingVoice.generation}
+          busy={busy}
+          onEdit={onEdit}
+          onClose={() => setVoiceEditor(null)}
         />
       )}
       <div className="timeline-body">
@@ -587,6 +617,10 @@ export const Timeline = memo(function Timeline({
                               ),
                             );
                           }
+                        }}
+                        onDoubleClick={() => {
+                          onSelect(clip.line);
+                          setVoiceEditor(clip.generation.id);
                         }}
                         onClick={() => {
                           if (!suppressDubbingClick.current) {

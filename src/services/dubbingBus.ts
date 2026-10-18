@@ -34,7 +34,12 @@ export class DubbingBus {
     const id = clip.cacheKey;
     let promise = this.cache.get(id);
     if (!promise) {
-      promise = dubbingUrl(clip.generation.id, clip.slotMs, clip.exactDuration)
+      promise = dubbingUrl(
+        clip.generation.id,
+        clip.slotMs,
+        clip.exactDuration,
+        this.project?.voiceEdits?.[clip.generation.id],
+      )
         .then(async (url) => {
           const response = await fetch(url, { signal: this.controller.signal });
           if (!response.ok) throw Error('AUDIO_PLAYBACK_FAILED');

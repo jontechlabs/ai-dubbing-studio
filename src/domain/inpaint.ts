@@ -27,6 +27,7 @@ export interface LipVideo {
   slotMs: number;
   exactDuration: boolean;
   fingerprint: string;
+  voiceEditKey?: string;
   enabled: boolean;
   options: InpaintOptions;
   createdAt: string;
@@ -35,11 +36,20 @@ export interface LipVideo {
 export const lipVideos = (project: Project) =>
   project.generations.filter((g) => g.kind === 'lipVideo') as unknown as LipVideo[];
 export function currentLipVideo(project: Project, edit: LipVideo) {
+  let sameAudio = false;
+  try {
+    sameAudio =
+      JSON.stringify(JSON.parse(edit.voiceEditKey || 'null')) ===
+      JSON.stringify(project.voiceEdits?.[edit.generationId] ?? null);
+  } catch {
+    /* Malformed metadata cannot activate a retouched variant. */
+  }
   const clip = dubbingClips(project).find(
     (c) => c.line.id === edit.dialogueId && c.generation.id === edit.generationId,
   );
   return (
     !!clip &&
+    sameAudio &&
     edit.sourcePath === project.media?.path &&
     edit.language === project.languages.target &&
     edit.startMs === clip.startMs &&
@@ -64,7 +74,7 @@ export function selectLipVideo(project: Project, id: string, enabled: boolean): 
       )
         g.enabled = false;
     }
-  next.formatVersion = 8;
+  next.formatVersion = Math.max(8, next.formatVersion);
   validateLipVideos(next);
   return next;
 }

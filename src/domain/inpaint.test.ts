@@ -3,6 +3,7 @@ import { demoProject, validateProject } from './project';
 import { defaultVoiceSettings, spokenText } from './tts';
 import { dubbingClips, moveDubbing, resizeDubbing } from './mix';
 import { currentLipVideo, selectLipVideo, lipVideos, type LipVideo } from './inpaint';
+import { editVoice } from './voiceEdit';
 function fixture() {
   const p = demoProject(),
     line = p.dialogues[0];
@@ -67,6 +68,21 @@ function fixture() {
   p.generations.push(e as unknown as (typeof p.generations)[number]);
   return { p, e, line };
 }
+it('invalidates a retouched mouth after an audio edit, including equal-length gain changes', () => {
+  const { p, e } = fixture();
+  const changed = editVoice(p, 'take', 0, 500, { kind: 'gain', gain: 0.5 });
+  const clip = dubbingClips(changed)[0];
+  const edited = {
+    ...e,
+    startMs: clip.startMs,
+    slotMs: clip.slotMs,
+    exactDuration: clip.exactDuration,
+  };
+  expect(currentLipVideo(changed, edited)).toBe(false);
+  edited.voiceEditKey = JSON.stringify(changed.voiceEdits!.take).replace('"gain":1', '"gain":1.0');
+  expect(currentLipVideo(changed, edited)).toBe(true);
+  expect(selectLipVideo(changed, e.id, false).formatVersion).toBe(11);
+});
 it('activates one non-destructive variant and keeps it through project serialization', () => {
   const { p, e } = fixture();
   const q = selectLipVideo(p, e.id, true);

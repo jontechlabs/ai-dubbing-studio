@@ -516,7 +516,7 @@ pub async fn transfer<R: tauri::Runtime>(
             return Err("STALE_REVISION".into());
         }
         let mut next = s.project.clone();
-        next.format_version = 8;
+        next.format_version = next.format_version.max(8);
         next.generations.extend(added);
         let saved = s.replace(next, r.revision)?;
         drop(guard);

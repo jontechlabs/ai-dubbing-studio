@@ -81,6 +81,7 @@ export default function App() {
     transport.url ?? undefined,
     transport.volume,
     studio.setError,
+    studio.project?.voiceEdits,
   );
   const { stop: stopGeneration } = generationAudio;
   const { seek: seekVideo } = transport;
@@ -326,7 +327,7 @@ export default function App() {
               );
           }}
         />
-        <div style={{ height: timelineHeight, flexShrink: 0 }}>
+        <div className="timeline-container" style={{ height: timelineHeight, flexShrink: 0 }}>
           <Timeline
             audioSelection={audioSelection}
             onAudioAdvanced={openAudioAdvanced}

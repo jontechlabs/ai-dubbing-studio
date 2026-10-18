@@ -80,6 +80,8 @@ pub struct Edit {
     pub slot_ms: u64,
     pub exact_duration: bool,
     pub fingerprint: String,
+    #[serde(default)]
+    pub voice_edit_key: String,
     pub enabled: bool,
     pub options: Options,
     pub created_at: String,
@@ -145,7 +147,7 @@ fn signature(
         .into_iter()
         .find(|c| c.id == generation)
         .ok_or("INVALID_GENERATION")?;
-    let value = format!(
+    let mut value = format!(
         "{}|{}|{}|{}|{}|{}",
         media.path,
         p.languages.target,
@@ -154,6 +156,10 @@ fn signature(
         clip.slot_ms,
         clip.exact_duration
     );
+    if let Some(edit) = p.voice_edits.get(generation) {
+        value.push('|');
+        value.push_str(&crate::voice_edit::key(Some(edit)));
+    }
     Ok((format!("{:x}", Sha256::digest(value.as_bytes())), clip))
 }
 pub fn current(p: &Project, e: &Edit) -> bool {
@@ -546,9 +552,22 @@ async fn render<R: tauri::Runtime>(
         flag,
     )
     .await?;
-    let fitted = crate::voice_fit::take_with_duration(
+    let edited = crate::voice_edit::render(
         &request.root,
         &clip.path,
+        p.voice_edits.get(&clip.id),
+        &ff,
+        flag,
+    )
+    .await?;
+    let relative = edited
+        .strip_prefix(&request.root)
+        .map_err(io_error)?
+        .to_string_lossy()
+        .replace('\\', "/");
+    let fitted = crate::voice_fit::take_with_duration(
+        &request.root,
+        &relative,
         clip.slot_ms,
         clip.exact_duration,
         &ff,
@@ -689,6 +708,7 @@ async fn render<R: tauri::Runtime>(
         duration_ms: duration,
         slot_ms: clip.slot_ms,
         exact_duration: clip.exact_duration,
+        voice_edit_key: crate::voice_edit::key(p.voice_edits.get(&clip.id)),
         fingerprint: hash,
         enabled: false,
         options: request.options.clone(),
@@ -696,7 +716,7 @@ async fn render<R: tauri::Runtime>(
         model_revision: model.revision,
     };
     let mut next = s.project.clone();
-    next.format_version = 8;
+    next.format_version = next.format_version.max(8);
     next.generations
         .push(serde_json::to_value(edit).map_err(io_error)?);
     let revision = s.project.revision;

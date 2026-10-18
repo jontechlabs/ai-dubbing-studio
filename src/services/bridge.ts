@@ -84,20 +84,27 @@ export function installTtsRuntime(cuda: boolean) {
 export function generateLine(lineId: string, options: import('../domain/types').VoiceSettings) {
   return invoke<string>('generate_line', { lineId, options });
 }
-export async function generationUrl(id: string) {
+export async function generationUrl(id: string, edit?: import('../domain/voiceEdit').VoiceEdit) {
   if (!native) throw Error('DESKTOP_REQUIRED');
-  return convertFileSrc(await invoke<string>('generation_path', { id }));
+  return convertFileSrc(await invoke<string>('generation_path', { id, edit: edit ?? null }));
 }
-export async function dubbingUrl(id: string, slotMs: number, exactDuration = false) {
+export async function dubbingUrl(
+  id: string,
+  slotMs: number,
+  exactDuration = false,
+  edit?: import('../domain/voiceEdit').VoiceEdit,
+) {
   if (!native) throw Error('DESKTOP_REQUIRED');
-  return convertFileSrc(await invoke<string>('dubbing_path', { id, slotMs, exactDuration }));
+  return convertFileSrc(
+    await invoke<string>('dubbing_path', { id, slotMs, exactDuration, edit: edit ?? null }),
+  );
 }
-export async function exportGeneration(id: string) {
+export async function exportGeneration(id: string, edit?: import('../domain/voiceEdit').VoiceEdit) {
   const path = await save({
     defaultPath: `doublage-${id.slice(0, 8)}.wav`,
     filters: [{ name: 'WAV', extensions: ['wav'] }],
   });
-  if (path) await invoke('export_generation', { id, path });
+  if (path) await invoke('export_generation', { id, path, edit: edit ?? null });
 }
 export interface MkvOptions {
   includeRetouched?: boolean;

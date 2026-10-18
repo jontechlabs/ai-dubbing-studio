@@ -6,6 +6,7 @@ export function useGenerationAudio(
   mediaKey: string | undefined,
   volume: number,
   onError: (error: string) => void,
+  edits?: import('../domain/types').Project['voiceEdits'],
 ) {
   const audio = useRef<HTMLAudioElement | null>(null),
     token = useRef(0),
@@ -20,10 +21,11 @@ export function useGenerationAudio(
   const play = useCallback(
     (generation: Generation) => {
       stop();
+      document.dispatchEvent(new Event('studio-voice-preview'));
       const request = token.current;
       video.current?.pause();
       setActive(generation.id);
-      void generationUrl(generation.id)
+      void generationUrl(generation.id, edits?.[generation.id])
         .then((url) => {
           if (request !== token.current) return;
           const element = new Audio(url);
@@ -47,8 +49,12 @@ export function useGenerationAudio(
           }
         });
     },
-    [stop, video, volume, onError],
+    [stop, video, volume, onError, edits],
   );
+  const editKey = JSON.stringify(edits ?? {});
+  useEffect(() => {
+    stop();
+  }, [editKey, stop]);
   useEffect(() => {
     if (audio.current) audio.current.volume = volume;
   }, [volume]);
@@ -56,8 +62,10 @@ export function useGenerationAudio(
     stop();
     const element = video.current;
     element?.addEventListener('play', stop);
+    document.addEventListener('studio-voice-preview', stop);
     return () => {
       element?.removeEventListener('play', stop);
+      document.removeEventListener('studio-voice-preview', stop);
       stop();
     };
   }, [mediaKey, video, stop]);

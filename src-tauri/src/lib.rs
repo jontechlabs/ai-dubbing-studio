@@ -24,6 +24,7 @@ mod tts;
 mod tts_batch;
 mod tts_session;
 mod voice_accent;
+mod voice_edit;
 mod voice_engines;
 mod voice_fit;
 mod voice_space;
@@ -213,6 +214,7 @@ async fn dubbing_path(
     id: String,
     slot_ms: u64,
     exact_duration: Option<bool>,
+    edit: Option<voice_edit::Edit>,
 ) -> Result<String, String> {
     let (root, path) = {
         let session = core.session.lock().map_err(io_error)?;
@@ -244,9 +246,17 @@ async fn dubbing_path(
     };
     // Timings may still be in the editor's autosave queue. The renderer supplies
     // its current slot, while the native side owns and validates every file path.
+    let ffmpeg = media::binary(&app, "ffmpeg")?;
+    let flag = AtomicBool::new(false);
+    let edited = voice_edit::render(&root, &path, edit.as_ref(), &ffmpeg, &flag).await?;
+    let relative = edited
+        .strip_prefix(&root)
+        .map_err(io_error)?
+        .to_string_lossy()
+        .replace('\\', "/");
     let path = voice_fit::take_with_duration(
         &root,
-        &path,
+        &relative,
         slot_ms,
         exact_duration.unwrap_or(false),
         &media::binary(&app, "ffmpeg")?,
@@ -256,32 +266,74 @@ async fn dubbing_path(
     Ok(path.to_string_lossy().into_owned())
 }
 #[tauri::command]
-fn generation_path(core: State<'_, Shared>, id: String) -> Result<String, String> {
-    let session = core.session.lock().map_err(io_error)?;
-    let s = session.as_ref().ok_or("NO_PROJECT")?;
-    let generation = s
-        .project
-        .generations
-        .iter()
-        .find(|g| g["id"] == id)
-        .ok_or("INVALID_GENERATION")?;
-    Ok(project::asset(
-        &s.root,
-        generation["path"].as_str().ok_or("INVALID_GENERATION")?,
-    )?
+async fn generation_path(
+    app: tauri::AppHandle,
+    core: State<'_, Shared>,
+    id: String,
+    edit: Option<voice_edit::Edit>,
+) -> Result<String, String> {
+    let (root, path) = {
+        let session = core.session.lock().map_err(io_error)?;
+        let s = session.as_ref().ok_or("NO_PROJECT")?;
+        let g = s
+            .project
+            .generations
+            .iter()
+            .find(|g| g["id"] == id && g["kind"] == "tts")
+            .ok_or("INVALID_GENERATION")?;
+        (
+            s.root.clone(),
+            g["path"].as_str().ok_or("INVALID_GENERATION")?.to_owned(),
+        )
+    };
+    Ok(voice_edit::render(
+        &root,
+        &path,
+        edit.as_ref(),
+        &media::binary(&app, "ffmpeg")?,
+        &AtomicBool::new(false),
+    )
+    .await?
     .to_string_lossy()
     .into_owned())
 }
 #[tauri::command]
 async fn export_generation(
+    app: tauri::AppHandle,
+    edit: Option<voice_edit::Edit>,
     core: State<'_, Shared>,
     id: String,
     path: String,
 ) -> Result<(), String> {
+    let (root, source_path) = {
+        let session = core.session.lock().map_err(io_error)?;
+        let s = session.as_ref().ok_or("NO_PROJECT")?;
+        let g = s
+            .project
+            .generations
+            .iter()
+            .find(|g| g["id"] == id && g["kind"] == "tts")
+            .ok_or("INVALID_GENERATION")?;
+        (
+            s.root.clone(),
+            g["path"].as_str().ok_or("INVALID_GENERATION")?.to_owned(),
+        )
+    };
+    let rendered = voice_edit::render(
+        &root,
+        &source_path,
+        edit.as_ref(),
+        &media::binary(&app, "ffmpeg")?,
+        &AtomicBool::new(false),
+    )
+    .await?;
     let core = core.inner().clone();
     tauri::async_runtime::spawn_blocking(move || {
         let session = core.session.lock().map_err(io_error)?;
         let s = session.as_ref().ok_or("NO_PROJECT")?;
+        if s.root != root {
+            return Err("STALE_REVISION".into());
+        }
         let generation = s
             .project
             .generations
@@ -306,7 +358,7 @@ async fn export_generation(
         }
         project::atomic_write(
             &parent.join(output.file_name().ok_or("INVALID_PATH")?),
-            &std::fs::read(source).map_err(io_error)?,
+            &std::fs::read(rendered).map_err(io_error)?,
         )
     })
     .await

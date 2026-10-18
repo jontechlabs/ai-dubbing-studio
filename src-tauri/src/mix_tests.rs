@@ -1,6 +1,290 @@
 use super::*;
 use crate::audio_patch::{self, Snippet};
 use std::sync::Mutex;
+#[tokio::test]
+async fn voice_local_edits_render_silence_gain_deletion_and_preserve_original() {
+    let (_temp, root, mut p) = fixture().await;
+    let original = std::fs::read(root.join("generations/voice.wav")).unwrap();
+    let edit: crate::voice_edit::Edit = serde_json::from_value(serde_json::json!({"pieces":[
+        {"sourceStartMs":0,"sourceEndMs":400,"durationMs":400,"gain":1},
+        {"sourceStartMs":null,"sourceEndMs":null,"durationMs":250,"gain":1},
+        {"sourceStartMs":600,"sourceEndMs":1000,"durationMs":400,"gain":0.5},
+        {"sourceStartMs":1000,"sourceEndMs":1500,"durationMs":500,"gain":2}
+    ]}))
+    .unwrap();
+    let flag = AtomicBool::new(false);
+    let rendered = crate::voice_edit::render(
+        &root,
+        "generations/voice.wav",
+        Some(&edit),
+        &tool("ffmpeg"),
+        &flag,
+    )
+    .await
+    .unwrap();
+    assert_eq!(
+        audio_files::pcm_frames(&rendered, 1, 24000, "bad").unwrap(),
+        1550 * 24
+    );
+    let samples = pcm(&rendered, "0:a:0").await;
+    let level = |ms: usize| {
+        samples[ms * 96..(ms + 20) * 96]
+            .iter()
+            .map(|v| v.abs())
+            .sum::<f32>()
+            / (20. * 96.)
+    };
+    let mono_to_stereo = std::f32::consts::FRAC_1_SQRT_2;
+    assert!((level(100) - 0.2 * mono_to_stereo).abs() < 0.002);
+    assert_eq!(level(500), 0.0);
+    assert!((level(750) - 0.1 * mono_to_stereo).abs() < 0.002);
+    assert!((level(1200) - 0.4 * mono_to_stereo).abs() < 0.002);
+    assert_eq!(
+        std::fs::read(root.join("generations/voice.wav")).unwrap(),
+        original
+    );
+    assert_eq!(
+        crate::voice_edit::render(
+            &root,
+            "generations/voice.wav",
+            Some(&edit),
+            &tool("ffmpeg"),
+            &flag
+        )
+        .await
+        .unwrap(),
+        rendered
+    );
+    p.format_version = 11;
+    p.voice_edits.insert("voice".into(), edit);
+    p.validate().unwrap();
+    project::atomic_write(&root.join("project.json"), &serde_json::to_vec(&p).unwrap()).unwrap();
+    assert_eq!(
+        project::load(&root).unwrap().voice_edits["voice"].duration(),
+        1550
+    );
+    // Export review is based on the edited duration, not the old take length.
+    p.voice_edits.insert("voice".into(), serde_json::from_value(serde_json::json!({"pieces":[{"sourceStartMs":0,"sourceEndMs":500,"durationMs":500,"gain":1}]})).unwrap());
+    p.dubbing_timing = Some(crate::domain::DubbingTiming {
+        source_path: "media/source.mkv".into(),
+        offsets_ms: Default::default(),
+        durations_ms: std::collections::HashMap::from([(
+            "line".into(),
+            std::collections::HashMap::from([("fr".into(), 500)]),
+        )]),
+    });
+    validate(
+        &p,
+        &Options {
+            include_retouched: false,
+            include_original: false,
+            source_subtitles: false,
+            target_subtitles: false,
+            codec: "flac".into(),
+            allow_incomplete: false,
+        },
+    )
+    .unwrap();
+    let silent = crate::voice_edit::Edit {
+        pieces: vec![crate::voice_edit::Piece {
+            source_start_ms: None,
+            source_end_ms: None,
+            duration_ms: 120,
+            gain: 1.0,
+        }],
+    };
+    let silence = crate::voice_edit::render(
+        &root,
+        "generations/voice.wav",
+        Some(&silent),
+        &tool("ffmpeg"),
+        &flag,
+    )
+    .await
+    .unwrap();
+    assert_eq!(
+        audio_files::pcm_frames(&silence, 1, 24000, "bad").unwrap(),
+        2880
+    );
+    assert!(pcm(&silence, "0:a:0").await.iter().all(|v| *v == 0.0));
+}
+#[tokio::test]
+async fn voice_local_stretch_preserves_pitch_exact_length_and_does_not_stretch_other_regions() {
+    let (_temp, root, _p) = fixture().await;
+    ffmpeg(
+        &[
+            "-f",
+            "lavfi",
+            "-i",
+            "sine=frequency=440:sample_rate=24000:duration=1.5",
+            "-ac",
+            "1",
+            "-c:a",
+            "pcm_s16le",
+        ],
+        &root.join("generations/tone.wav"),
+    )
+    .await;
+    let edit: crate::voice_edit::Edit = serde_json::from_value(serde_json::json!({"pieces":[
+        {"sourceStartMs":0,"sourceEndMs":500,"durationMs":500,"gain":1},
+        {"sourceStartMs":500,"sourceEndMs":1000,"durationMs":1000,"gain":1},
+        {"sourceStartMs":1000,"sourceEndMs":1500,"durationMs":500,"gain":1}
+    ]}))
+    .unwrap();
+    let path = crate::voice_edit::render(
+        &root,
+        "generations/tone.wav",
+        Some(&edit),
+        &tool("ffmpeg"),
+        &AtomicBool::new(false),
+    )
+    .await
+    .unwrap();
+    assert_eq!(
+        audio_files::pcm_frames(&path, 1, 24000, "bad").unwrap(),
+        48000
+    );
+    let samples = pcm(&path, "0:a:0").await;
+    for start in [100, 800, 1700] {
+        let slice = &samples[start * 96..(start + 200) * 96];
+        let crossings = slice
+            .as_chunks::<2>()
+            .0
+            .windows(2)
+            .filter(|w| w[0][0] <= 0.0 && w[1][0] > 0.0)
+            .count();
+        assert!(
+            (crossings as i32 - 88).abs() <= 2,
+            "Pitch changed: {crossings}"
+        );
+    }
+    let changed = crate::voice_edit::Edit {
+        pieces: vec![crate::voice_edit::Piece {
+            source_start_ms: Some(0),
+            source_end_ms: Some(1500),
+            duration_ms: 750,
+            gain: 1.0,
+        }],
+    };
+    let shorter = crate::voice_edit::render(
+        &root,
+        "generations/tone.wav",
+        Some(&changed),
+        &tool("ffmpeg"),
+        &AtomicBool::new(false),
+    )
+    .await
+    .unwrap();
+    assert_ne!(shorter, path);
+    assert_eq!(
+        audio_files::pcm_frames(&shorter, 1, 24000, "bad").unwrap(),
+        18000
+    );
+}
+#[tokio::test]
+async fn voice_local_edits_are_used_by_real_mkv_export_and_cancel_before_render() {
+    let (_temporary, root, mut p) = fixture().await;
+    p.format_version = 11;
+    let edit = serde_json::from_value(serde_json::json!({"pieces":[
+      {"sourceStartMs":0,"sourceEndMs":500,"durationMs":500,"gain":0},
+      {"sourceStartMs":500,"sourceEndMs":1500,"durationMs":1000,"gain":0.5}
+    ]}))
+    .unwrap();
+    p.voice_edits.insert("voice".into(), edit);
+    for t in &mut p.tracks {
+        t.mute = t.kind != "dubbing";
+        t.gain = 1.0;
+        t.regions.clear();
+    }
+    let app = tauri::test::mock_app();
+    let app = app.handle().clone();
+    let core = core(&root, p.clone());
+    let output = root.join("exports/local-edit.mkv");
+    let request = Request {
+        root: root.clone(),
+        project_id: p.id.clone(),
+        revision: p.revision,
+        output: output.clone(),
+        options: Options {
+            include_retouched: false,
+            include_original: false,
+            source_subtitles: false,
+            target_subtitles: false,
+            codec: "flac".into(),
+            allow_incomplete: false,
+        },
+    };
+    let key = jobs::create(&core, &app, "mkvExport", p.id.clone(), None);
+    export(
+        &core,
+        &app,
+        &key,
+        &request,
+        &p,
+        &Arc::new(AtomicBool::new(false)),
+    )
+    .await
+    .unwrap();
+    let samples = pcm(&output, "0:a:0").await;
+    assert!(samples[1100 * 96..1400 * 96]
+        .iter()
+        .all(|v| v.abs() < 0.00001));
+    assert!(samples[1700 * 96..1900 * 96]
+        .iter()
+        .all(|v| (*v - 0.1).abs() < 0.002));
+    assert_eq!(
+        crate::voice_edit::render(
+            &root,
+            "generations/voice.wav",
+            p.voice_edits.get("voice"),
+            &tool("ffmpeg"),
+            &AtomicBool::new(true)
+        )
+        .await
+        .unwrap_err(),
+        "CANCELLED"
+    );
+}
+#[test]
+fn voice_local_edit_validation_rejects_corrupt_ranges_and_unbounded_plans() {
+    use crate::voice_edit::{Edit, Piece};
+    let piece = Piece {
+        source_start_ms: Some(0),
+        source_end_ms: Some(1000),
+        duration_ms: 1000,
+        gain: 1.0,
+    };
+    assert!(Edit {
+        pieces: vec![piece.clone()]
+    }
+    .validate(1000)
+    .is_ok());
+    for p in [
+        Piece {
+            source_end_ms: Some(1001),
+            ..piece.clone()
+        },
+        Piece {
+            gain: f64::NAN,
+            ..piece.clone()
+        },
+        Piece {
+            duration_ms: 0,
+            ..piece.clone()
+        },
+        Piece {
+            source_start_ms: None,
+            ..piece.clone()
+        },
+    ] {
+        assert!(Edit { pieces: vec![p] }.validate(1000).is_err());
+    }
+    assert!(Edit {
+        pieces: vec![piece; 257]
+    }
+    .validate(1000)
+    .is_err());
+}
 fn tool(name: &str) -> PathBuf {
     if cfg!(windows) {
         Path::new(env!("CARGO_MANIFEST_DIR"))

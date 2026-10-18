@@ -183,7 +183,7 @@ pub fn enqueue<R: tauri::Runtime>(
             jobs::update(&core,&app,&key,|j|{j.status="running".into();j.stage="lipsDecode".into();j.progress=Some(0.0);j.logs.push("Local mouth-region activity analysis, CPU/FFmpeg. This is a timing proposal, not phoneme recognition or generative video editing.".into());});
             let (p,root)={let session=core.session.lock().map_err(io_error)?;let s=session.as_ref().ok_or("NO_PROJECT")?;if s.root!=request.root || s.project.id!=request.project_id || s.project.revision!=request.revision{return Err("STALE_REVISION".into());}(s.project.clone(),s.root.clone())};
             let generation=p.generations.iter().find(|g|g["id"]==request.options.generation_id).ok_or("INVALID_GENERATION")?;
-            let audio=project::asset(&root,generation["path"].as_str().ok_or("INVALID_GENERATION")?)?;
+            let audio=crate::voice_edit::render(&root,generation["path"].as_str().ok_or("INVALID_GENERATION")?,p.voice_edits.get(&request.options.generation_id),&media::binary(&app,"ffmpeg")?,&flag).await?;
             let video=project::asset(&root,&request.source_path)?;
             let current=crate::mix::clips(&p).into_iter().find(|c|c.id==request.options.generation_id).ok_or("INVALID_GENERATION")?;
             let current_start=current.start_ms();let current_duration=current.duration_ms();
