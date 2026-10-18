@@ -1,11 +1,11 @@
 {
-  "version": "0.11.0",
-  "notes": "Choix du début et de la fin des références audio, écoute de la portion et copie locale. Doublage par lot de toutes les traductions ou des répliques cochées : configuration commune, conservation des prises à jour ou nouveaux essais forcés, progression, annulation et reprise sans refaire les réussites.",
-  "pub_date": "2026-10-17T09:25:01Z",
+  "version": "0.12.0",
+  "notes": "Modèles conservés pendant les lots CosyVoice3, Fish, Drama 3 et GGUF ; arrêt attendu du processus à la fin ou à l’annulation. Répliques grises sans traduction, vert clair avec traduction et vertes après validation explicite. Validation du texte indépendante des voix, sauvegardée au format 10 et retirée après modification du texte ou des langues.",
+  "pub_date": "2026-10-18T06:38:01Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSdFFyMUJGTFp3NkN3UXVTbFlCUDZaU204ZndvbVNCaTM1Y3FIOTBKeVIyNGl6YjhCRUNtb1ZSbi9mNEV6UFY3YXJlZXRDcXlNaEdZMzNja1ppN0dMcXNUYnFIa0k0VEE0PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkyMjI4NzA0CWZpbGU6QUkgRHViYmluZyBTdHVkaW9fMC4xMS4wX3g2NC1zZXR1cC5leGUJdmVyc2lvbjowLjExLjAKQjQrWEc1bmhrY2J4dExKRk9DSllNNnlaRHBYU0RKUEJNWDF4d0pKZkFjQ1Z2TnU2OW5MN2Rubmp6dDBUZEFQNU5iRHY1NmJoeFltQmpoQ0gyNWlWQUE9PQo=",
-      "url": "https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.11.0/AI-Dubbing-Studio-0.11.0-Setup.exe"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSdFFyMUJGTFp3Nk5yc0VwK25taFpvZ0NGMEt1Rm44VWNsaGd0bWN3ckNQSm42RU1CREFmT0pLejZMa09panJPdGVDWWowM1RuOE1tWFBuUWJ3VTY3MFNGUXpORHUrUUFFPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkyMzA1MDI5CWZpbGU6QUkgRHViYmluZyBTdHVkaW9fMC4xMi4wX3g2NC1zZXR1cC5leGUJdmVyc2lvbjowLjEyLjAKbmJtb2NkcEZxeEJXLzg0SnpPTmIvR2NDbDRES1Q0RGoxaS9vMDhma1IvU0VyNDYrVjI0TVYySElpRXJHOVphUjBGZk1QNzdTaFQ5WHRyYnhoWFVmQWc9PQo=",
+      "url": "https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.12.0/AI-Dubbing-Studio-0.12.0-Setup.exe"
     }
   }
 }

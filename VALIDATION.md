@@ -2,7 +2,9 @@
 
 ## v0.12.0 — 18 October 2026
 
-Windows workflow evidence will be recorded before publication.
+Windows checks and signed-update package production passed in [run 39102687217](https://github.com/jontechlabs/ai-dubbing-studio/actions/runs/39102687217), built from `7e7ba2de2c66def355d8e2c5ecfece1eea65cbca`. All 269 Windows suite checks passed (66 TypeScript, 84 Rust, 74 Chrome, 45 Python), plus actual unpinned-bank/FP8/cache/tiny-model/header diagnostics and the real causal-vocoder finalization diagnostic, plus two real Japanese ASR checks using the final Windows release executable. The setup and portable archive are copied unchanged from this workflow. Final metadata only records this evidence and the verified update feed.
+
+Packaged Windows worker timings for the 7.2-second Japanese fixture: auto: 223.77 s, ja: 113.98 s. These are CI CPU measurements, not performance estimates for the user’s PC.
 
 - The batch owns a private persistent Python worker or a loopback-only audio.cpp server. Identical model/device/profile ownership is enforced for Python requests. Sequential requests retain model objects; per-line text, reference, transcript and seeds are not cached as conversation history.
 - Native protocol checks assert the same PID across successive requests, verify that PID is no longer alive after successful or cancelled terminal status, and exercise partial failures, context replacement and durable retry without duplicate committed takes. The inference gate is held until process teardown is awaited. Timeouts and early batch errors also close the owned worker.
