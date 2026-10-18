@@ -15,6 +15,7 @@ import {
   Scissors,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import type { TimelineNavigation } from '../domain/timeline';
 import type { AudioSelection, Dialogue, Project, Track } from '../domain/types';
 import { AudioQuickControls } from './AudioQuickControls';
 import { timeToX, xToTime } from '../domain/time';
@@ -22,7 +23,13 @@ import { IconButton } from './IconButton';
 import { moveCue, type SubtitleRole } from '../domain/timing';
 import { Waveform } from './Waveform';
 import { formatTime } from '../domain/time';
-import { audioTracks, editTrack } from '../domain/audio';
+import {
+  audioTracks,
+  editTrack,
+  audioResizeLimits,
+  resizeAudioRegion,
+  trackLabel,
+} from '../domain/audio';
 import { trackPatches } from '../domain/audioPatch';
 import { subtitleDisplay, toggleSubtitles } from '../domain/subtitleDisplay';
 import { dubbingClips, dubbingOffset, moveDubbing, resizeDubbing } from '../domain/mix';
@@ -32,6 +39,7 @@ import { TimelineAudioSelection } from './TimelineAudioSelection';
 
 export const Timeline = memo(function Timeline({
   project,
+  navigation,
   selected,
   timeRef,
   onSeek,
@@ -43,10 +51,11 @@ export const Timeline = memo(function Timeline({
   onAudioAdvanced,
 }: {
   project: Project | null;
+  navigation?: TimelineNavigation | null;
   selected: Dialogue | undefined;
   timeRef: RefObject<number>;
   onSeek: (time: number) => void;
-  onSelect: (line: Dialogue) => void;
+  onSelect: (line: Dialogue, positionMs?: number) => void;
   onEdit: (update: (p: Project) => Project) => void;
   busy: boolean;
   onAudioSelection: (selection: AudioSelection | null) => void;
@@ -67,6 +76,25 @@ export const Timeline = memo(function Timeline({
     end: number;
     regionId?: string;
   } | null>(null);
+  const [audioResize, setAudioResize] = useState<{
+    selection: AudioSelection;
+    regionId?: string;
+  } | null>(null);
+  const audioResizeValue = useRef<AudioSelection | null>(null);
+  useEffect(() => {
+    if (!audioResize) return;
+    const cancel = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        e.stopPropagation();
+        onAudioSelection(audioResize.selection);
+        setAudioResize(null);
+        audioResizeValue.current = null;
+      }
+    };
+    window.addEventListener('keydown', cancel, true);
+    return () => window.removeEventListener('keydown', cancel, true);
+  }, [audioResize, onAudioSelection]);
   const associations = useMemo(() => {
     const source = new Map<string, Dialogue>(),
       target = new Map<string, Dialogue>(),
@@ -115,7 +143,32 @@ export const Timeline = memo(function Timeline({
     1000,
   );
   const view = useTimelineZoom(scroll, duration, viewport, timeRef, project?.id);
-  const { zoom } = view;
+  const { zoom, reveal } = view;
+  const revealedNavigation = useRef<TimelineNavigation | null>(null);
+  const selectedVoiceStart = selectedVoice?.startMs;
+  const selectedVoiceEnd = selectedVoice?.endMs;
+  useLayoutEffect(() => {
+    if (
+      navigation &&
+      navigation !== revealedNavigation.current &&
+      navigation.projectId === project?.id &&
+      navigation.lineId === selected?.id
+    ) {
+      reveal(
+        selectedVoiceStart !== undefined && selectedVoiceEnd !== undefined
+          ? {
+              ...navigation,
+              startMs: Math.min(navigation.startMs, selectedVoiceStart),
+              endMs: Math.max(navigation.endMs, selectedVoiceEnd),
+            }
+          : navigation,
+      );
+      revealedNavigation.current = navigation;
+    }
+  }, [navigation, project?.id, selected?.id, selectedVoiceStart, selectedVoiceEnd, reveal]);
+  useEffect(() => {
+    setVoiceEditor((current) => (current ? (selectedVoice?.generation.id ?? null) : null));
+  }, [selected?.id, selectedVoice?.generation.id]);
   useEffect(() => {
     if (!scroll.current) return;
     const observer = new ResizeObserver(([entry]) => setViewport(entry.contentRect.width));
@@ -137,6 +190,36 @@ export const Timeline = memo(function Timeline({
     draw();
     return () => cancelAnimationFrame(frame);
   }, [scale, timeRef]);
+  const resizePoint = (
+    selection: AudioSelection,
+    edge: 'start' | 'end',
+    clientX: number,
+    row: HTMLElement,
+  ) => {
+    const bounds = audioResizeLimits(project!, selection.trackId, selection.regionId);
+    const point = Math.round((clientX - row.getBoundingClientRect().left) / scale);
+    return {
+      ...selection,
+      startMs:
+        edge === 'start'
+          ? Math.max(bounds.min, Math.min(selection.endMs - 1, point))
+          : selection.startMs,
+      endMs:
+        edge === 'end'
+          ? Math.min(bounds.max, Math.max(selection.startMs + 1, point))
+          : selection.endMs,
+    };
+  };
+  const commitResize = (selection: AudioSelection, initial: AudioSelection) => {
+    if (selection.startMs === initial.startMs && selection.endMs === initial.endMs) return;
+    const region = audioResizeLimits(project!, initial.trackId, initial.regionId).region;
+    if (region)
+      onEdit((p) => {
+        if (p.id !== project!.id || p.media?.id !== initial.mediaId) throw Error('STALE_REVISION');
+        return resizeAudioRegion(p, initial.trackId, region.id, selection.startMs, selection.endMs);
+      });
+    onAudioSelection(selection);
+  };
   const width = Math.max(viewport, duration * scale);
   const interval =
     [10, 20, 40, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 30000, 60000, 120000, 300000].find(
@@ -283,7 +366,7 @@ export const Timeline = memo(function Timeline({
       </div>
       {project && audioSelection && (
         <TimelineAudioSelection
-          key={`${project.id}:${audioSelection.mediaId}:${audioSelection.trackId}:${audioSelection.startMs}:${audioSelection.endMs}`}
+          key={`${project.id}:${audioSelection.mediaId}:${audioSelection.trackId}`}
           project={project}
           selection={audioSelection}
           busy={busy}
@@ -619,13 +702,12 @@ export const Timeline = memo(function Timeline({
                           }
                         }}
                         onDoubleClick={() => {
-                          onSelect(clip.line);
+                          onSelect(clip.line, clip.startMs);
                           setVoiceEditor(clip.generation.id);
                         }}
                         onClick={() => {
                           if (!suppressDubbingClick.current) {
-                            onSelect(clip.line);
-                            onSeek(clip.startMs);
+                            onSelect(clip.line, clip.startMs);
                           }
                           suppressDubbingClick.current = false;
                         }}
@@ -845,7 +927,93 @@ export const Timeline = memo(function Timeline({
                         left: audioSelection.startMs * scale,
                         width: Math.max(2, (audioSelection.endMs - audioSelection.startMs) * scale),
                       }}
-                    />
+                    >
+                      {(['start', 'end'] as const).map((edge) => (
+                        <button
+                          key={edge}
+                          className={`audio-selection-edge ${edge}`}
+                          disabled={busy}
+                          aria-label={t(edge === 'start' ? 'audioResizeStart' : 'audioResizeEnd', {
+                            track: t(trackLabel(track)),
+                          })}
+                          onClick={(e) => e.stopPropagation()}
+                          onPointerDown={(e) => {
+                            if (e.button !== 0) return;
+                            e.preventDefault();
+                            e.stopPropagation();
+                            e.currentTarget.setPointerCapture(e.pointerId);
+                            setAudioResize({
+                              selection: { ...audioSelection },
+                              regionId: audioSelection.regionId,
+                            });
+                            audioResizeValue.current = { ...audioSelection };
+                          }}
+                          onPointerMove={(e) => {
+                            if (!audioResize || !e.currentTarget.hasPointerCapture(e.pointerId))
+                              return;
+                            e.stopPropagation();
+                            const value = resizePoint(
+                              audioResize.selection,
+                              edge,
+                              e.clientX,
+                              e.currentTarget.closest('.timeline-track') as HTMLElement,
+                            );
+                            audioResizeValue.current = value;
+                            onAudioSelection(value);
+                          }}
+                          onPointerUp={(e) => {
+                            if (!audioResize || !e.currentTarget.hasPointerCapture(e.pointerId))
+                              return;
+                            e.stopPropagation();
+                            if (audioResizeValue.current)
+                              commitResize(audioResizeValue.current, audioResize.selection);
+                            setAudioResize(null);
+                            audioResizeValue.current = null;
+                            e.currentTarget.releasePointerCapture(e.pointerId);
+                          }}
+                          onPointerCancel={() => {
+                            if (audioResize) onAudioSelection(audioResize.selection);
+                            setAudioResize(null);
+                            audioResizeValue.current = null;
+                          }}
+                          onKeyDown={(e) => {
+                            if (!['ArrowLeft', 'ArrowRight'].includes(e.key)) return;
+                            e.preventDefault();
+                            e.stopPropagation();
+                            const bounds = audioResizeLimits(
+                                project!,
+                                track.id,
+                                audioSelection.regionId,
+                              ),
+                              delta = (e.key === 'ArrowLeft' ? -1 : 1) * (e.shiftKey ? 1 : 10);
+                            const value = {
+                              ...audioSelection,
+                              startMs:
+                                edge === 'start'
+                                  ? Math.max(
+                                      bounds.min,
+                                      Math.min(
+                                        audioSelection.endMs - 1,
+                                        audioSelection.startMs + delta,
+                                      ),
+                                    )
+                                  : audioSelection.startMs,
+                              endMs:
+                                edge === 'end'
+                                  ? Math.min(
+                                      bounds.max,
+                                      Math.max(
+                                        audioSelection.startMs + 1,
+                                        audioSelection.endMs + delta,
+                                      ),
+                                    )
+                                  : audioSelection.endMs,
+                            };
+                            commitResize(value, audioSelection);
+                          }}
+                        />
+                      ))}
+                    </div>
                   )}
                 {track && audioDrag?.trackId === track.id && (
                   <div

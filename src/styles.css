@@ -2318,6 +2318,54 @@ pre {
 .audio-range-selection.persistent {
   background: #b491f025;
 }
+.audio-selection-edge {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 9px;
+  padding: 0;
+  pointer-events: auto;
+  touch-action: none;
+  cursor: ew-resize;
+  border-radius: 2px;
+  background: var(--accent);
+  border: 1px solid var(--bg);
+  z-index: 5;
+  opacity: 0.85;
+}
+.audio-selection-edge.start {
+  left: 0;
+  transform: translateX(-100%);
+}
+.audio-selection-edge.end {
+  right: 0;
+  transform: translateX(100%);
+}
+.audio-selection-edge:focus-visible,
+.voice-range-edge:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}
+.timeline-audio-selection input[type='number'] {
+  width: 100px;
+  font-size: 10px;
+  padding: 4px;
+}
+.voice-range-edge {
+  position: absolute;
+  top: 0;
+  width: 8px;
+  height: 20px;
+  padding: 0;
+  background: #c5a4ff;
+  cursor: ew-resize;
+  touch-action: none;
+  z-index: 2;
+  border: 1px solid var(--bg);
+}
+.voice-range-edge.start {
+  transform: translateX(-100%);
+}
 .drama-install {
   margin: 12px 0 16px;
 }

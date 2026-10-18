@@ -50,7 +50,7 @@ pub fn load(root: &Path) -> Result<Project, String> {
         let value: serde_json::Value =
             serde_json::from_slice(&std::fs::read(path).map_err(io_error)?)
                 .map_err(|_| "INVALID_PROJECT".to_string())?;
-        if !matches!(value["formatVersion"].as_u64(), Some(1..=11)) {
+        if !matches!(value["formatVersion"].as_u64(), Some(1..=12)) {
             return Err("UNSUPPORTED_PROJECT_VERSION".into());
         }
         let mut p: Project =

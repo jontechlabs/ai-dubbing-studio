@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type RefObject } from 'react';
 
+import { navigationLeft, type TimelineNavigation } from '../domain/timeline';
+
 export function useTimelineZoom(
   scroll: RefObject<HTMLDivElement | null>,
   duration: number,
@@ -55,6 +57,17 @@ export function useTimelineZoom(
     setZoom(1);
     if (scroll.current) scroll.current.scrollLeft = 0;
   }, [projectId, scroll]);
+  const reveal = useCallback(
+    (request: TimelineNavigation) => {
+      const scale = (viewport * current.current) / duration;
+      change(
+        current.current,
+        0,
+        navigationLeft(duration, viewport, current.current, request) / scale,
+      );
+    },
+    [change, duration, viewport],
+  );
   const fit = useCallback(() => change(1, 0, 0), [change]);
   useEffect(() => {
     if (zoom > maxZoom) change(maxZoom);
@@ -109,5 +122,5 @@ export function useTimelineZoom(
       window.removeEventListener('keydown', key);
     };
   }, [change, fit, projectId, scroll, viewport]);
-  return { zoom, maxZoom, change, fit, focus };
+  return { zoom, maxZoom, change, fit, focus, reveal };
 }

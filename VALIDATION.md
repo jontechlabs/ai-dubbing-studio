@@ -1,4 +1,14 @@
-# v0.13.0 — 18 octobre 2026
+# Validation
+
+
+## v0.15.0 — 18 October 2026
+
+Windows workflow evidence will be recorded before publication.
+
+- Real FFmpeg renders check sample amplitudes at fade start, midpoint, full level, a source-piece boundary and fade-out endpoint. They verify exact PCM duration, immutable originals, format 12 persistence, malformed-envelope rejection and a real FLAC/MKV export with the same fade levels at their video positions. The actual pinned Windows FFmpeg 9 executable also verifies per-sample fade amplitudes and zero endpoints using extended Unicode paths.
+- TypeScript checks cover continuous envelopes across gain/source boundaries, interpolation when slicing, deletion/stretch preservation, explicit zero fades, downgrade rejection, audio region bounds and preserved gain/mute/bypass, plus navigation math on a long film.
+- Browser checks cover fade application/removal, undo/reopen and forwarding to playback; resizing a free selection without changing audio; all five audio tracks retaining their treatment during resize; numeric/keyboard bounds, Escape cancellation and undo/reopen; and repeated dialogue clicks bringing the video playhead back into view while retaining zoom and switching an open voice editor. Screenshots use actual React UI, synthetic media and mocked native commands.
+- Existing take editing, zoom shortcuts, waveform playback, translation, batch generation, mixing and model checks remain in the suite. No model weights, inference workers or dependency versions changed. Fondus use CPU audio processing and require no extra VRAM; no GPU speed claims are made.
 
 
 ## v0.14.0 — 18 October 2026

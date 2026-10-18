@@ -14,6 +14,7 @@ import { useProject } from './hooks/useProject';
 import { useShortcuts } from './hooks/useShortcuts';
 import { useTransport } from './hooks/useTransport';
 import * as bridge from './services/bridge';
+import type { TimelineNavigation } from './domain/timeline';
 import { useUpdater } from './hooks/useUpdater';
 
 export default function App() {
@@ -21,6 +22,7 @@ export default function App() {
   const studio = useProject();
   const updater = useUpdater(studio.flush);
   const [panel, setPanel] = useState<Panel>(null);
+  const [timelineNavigation, setTimelineNavigation] = useState<TimelineNavigation | null>(null);
   const [audioSelection, setAudioSelection] = useState<AudioSelection | null>(null);
   const selectAudio = useCallback((value: AudioSelection | null) => {
     setAudioSelection(value);
@@ -94,12 +96,22 @@ export default function App() {
   const showCharacters = useCallback(() => setPanel('characters'), []);
   const showAlignment = useCallback(() => setPanel('alignment'), []);
   const select = useCallback(
-    (line: Dialogue) => {
+    (line: Dialogue, positionMs?: number) => {
       stopGeneration();
+      document.dispatchEvent(new Event('studio-voice-preview'));
+      const timeMs = positionMs ?? Math.max(0, line.startMs - padding);
       setSelectedId(line.id);
-      seekVideo(Math.max(0, line.startMs - padding));
+      setAudioSelection(null);
+      setTimelineNavigation({
+        projectId: studio.project?.id ?? '',
+        lineId: line.id,
+        startMs: line.startMs,
+        endMs: line.endMs,
+        timeMs,
+      });
+      seekVideo(timeMs);
     },
-    [padding, seekVideo, stopGeneration],
+    [padding, seekVideo, stopGeneration, studio.project?.id],
   );
   const importSubtitles = useCallback((role: 'source' | 'target') => {
     setSubtitleRole(role);
@@ -329,6 +341,7 @@ export default function App() {
         />
         <div className="timeline-container" style={{ height: timelineHeight, flexShrink: 0 }}>
           <Timeline
+            navigation={timelineNavigation}
             audioSelection={audioSelection}
             onAudioAdvanced={openAudioAdvanced}
             onAudioSelection={selectAudio}

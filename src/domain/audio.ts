@@ -126,6 +126,54 @@ export function paintAudioRegion(
   regions.push({ ...range, id: editingId ?? crypto.randomUUID() });
   return setAudioRegions(project, trackId, regions);
 }
+// Resizing a saved region keeps its treatment and protects its neighbours.
+export function audioResizeLimits(project: Project, trackId: string, regionId?: string) {
+  const track = audioTracks(project).find((t) => t.id === trackId);
+  if (!track || !project.media) throw Error('INVALID_AUDIO_REGION');
+  const region = track.regions?.find((r) => r.id === regionId);
+  const min = region
+    ? Math.max(
+        0,
+        ...(track.regions ?? [])
+          .filter((r) => r.id !== region.id && r.endMs <= region.startMs)
+          .map((r) => r.endMs),
+      )
+    : 0;
+  const max = region
+    ? Math.min(
+        track.durationMs ?? project.media.durationMs,
+        ...(track.regions ?? [])
+          .filter((r) => r.id !== region.id && r.startMs >= region.endMs)
+          .map((r) => r.startMs),
+      )
+    : (track.durationMs ?? project.media.durationMs);
+  return { min, max, region };
+}
+export function resizeAudioRegion(
+  project: Project,
+  trackId: string,
+  regionId: string,
+  startMs: number,
+  endMs: number,
+) {
+  const { min, max, region } = audioResizeLimits(project, trackId, regionId);
+  const track = audioTracks(project).find((t) => t.id === trackId)!;
+  if (
+    !region ||
+    !Number.isSafeInteger(startMs) ||
+    !Number.isSafeInteger(endMs) ||
+    startMs < min ||
+    endMs > max ||
+    endMs <= startMs
+  )
+    throw Error('INVALID_AUDIO_REGION');
+  return setAudioRegions(
+    project,
+    trackId,
+    (track.regions ?? []).map((r) => (r.id === regionId ? { ...r, startMs, endMs } : r)),
+    track.regionsEnabled ?? true,
+  );
+}
 export function setAllAudio(project: Project, audible: boolean, trackId?: string) {
   let next = project;
   for (const track of audioTracks(project)) next = editTrack(next, track.id, {});

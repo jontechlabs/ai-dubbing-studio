@@ -869,5 +869,16 @@
   "VOICE_EDIT_NO_ROOM": "The edit would cross the next dubbing clip or the end of the video. Shorten it or move the next clip first.",
   "VOICE_EDIT_FAILED": "Could not prepare edited dubbing audio.",
   "voicePreparing": "Preparing playback…",
-  "voiceStopPreview": "Stop listening"
+  "voiceStopPreview": "Stop listening",
+  "voiceFadeIn": "Fade in (ms)",
+  "voiceFadeOut": "Fade out (ms)",
+  "voiceApplyFades": "Apply fades",
+  "voiceClearFades": "Remove fades",
+  "INVALID_VOICE_FADE": "Fade lengths must be zero or positive and must fit within the selection.",
+  "audioSelectionStart": "Audio region start (ms)",
+  "audioSelectionEnd": "Audio region end (ms)",
+  "audioResizeStart": "Resize start: {{track}}",
+  "audioResizeEnd": "Resize end: {{track}}",
+  "voiceResizeSelectionStart": "Resize voice selection start",
+  "voiceResizeSelectionEnd": "Resize voice selection end"
 }

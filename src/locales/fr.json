@@ -869,5 +869,16 @@
   "VOICE_EDIT_NO_ROOM": "La modification dépasserait la réplique suivante ou la fin de la vidéo. Réduisez la durée ou déplacez d’abord la réplique suivante.",
   "VOICE_EDIT_FAILED": "Impossible de préparer le doublage modifié.",
   "voicePreparing": "Préparation de l’écoute…",
-  "voiceStopPreview": "Arrêter l’écoute"
+  "voiceStopPreview": "Arrêter l’écoute",
+  "voiceFadeIn": "Fondu d’entrée (ms)",
+  "voiceFadeOut": "Fondu de sortie (ms)",
+  "voiceApplyFades": "Appliquer les fondus",
+  "voiceClearFades": "Retirer les fondus",
+  "INVALID_VOICE_FADE": "Les durées de fondu doivent être positives ou nulles, et leur somme ne doit pas dépasser la sélection.",
+  "audioSelectionStart": "Début de la zone audio (ms)",
+  "audioSelectionEnd": "Fin de la zone audio (ms)",
+  "audioResizeStart": "Redimensionner le début : {{track}}",
+  "audioResizeEnd": "Redimensionner la fin : {{track}}",
+  "voiceResizeSelectionStart": "Redimensionner le début de la sélection vocale",
+  "voiceResizeSelectionEnd": "Redimensionner la fin de la sélection vocale"
 }

@@ -11,11 +11,19 @@ use tokio::io::AsyncReadExt;
 static EDIT_GATE: tokio::sync::Semaphore = tokio::sync::Semaphore::const_new(2);
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct Point {
+    pub at_ms: f64,
+    pub level: f64,
+}
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct Piece {
     pub source_start_ms: Option<u64>,
     pub source_end_ms: Option<u64>,
     pub duration_ms: u64,
     pub gain: f64,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub envelope: Option<Vec<Point>>,
 }
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -37,7 +45,20 @@ impl Edit {
                 (Some(start), Some(end)) => start < end && end <= source_ms,
                 _ => false,
             };
-            if !valid_source
+            let valid_envelope = p.envelope.as_ref().is_none_or(|points| {
+                (2..=16).contains(&points.len())
+                    && points[0].at_ms == 0.0
+                    && points.last().unwrap().at_ms == p.duration_ms as f64
+                    && points.iter().enumerate().all(|(i, point)| {
+                        point.at_ms.is_finite()
+                            && point.level.is_finite()
+                            && (0.0..=p.duration_ms as f64).contains(&point.at_ms)
+                            && (0.0..=1.0).contains(&point.level)
+                            && (i == 0 || point.at_ms > points[i - 1].at_ms)
+                    })
+            });
+            if !valid_envelope
+                || !valid_source
                 || !(1..=120000).contains(&p.duration_ms)
                 || !p.gain.is_finite()
                 || !(0.0..=2.0).contains(&p.gain)
@@ -69,6 +90,9 @@ pub fn validate(p: &crate::domain::Project) -> Result<(), String> {
             .find(|g| g["kind"] == "tts" && g["id"] == *id)
             .ok_or("INVALID_VOICE_EDIT")?;
         edit.validate(g["durationMs"].as_u64().ok_or("INVALID_VOICE_EDIT")?)?;
+        if p.format_version < 12 && edit.pieces.iter().any(|p| p.envelope.is_some()) {
+            return Err("INVALID_VOICE_EDIT".into());
+        }
     }
     Ok(())
 }
@@ -148,7 +172,28 @@ pub async fn render(
                     }
                     chain.push_str(&format!(",rubberband=tempo={ratio:.12}:pitch=1"));
                 }
-                chain.push_str(&format!(",volume={:.9},apad=whole_len={n},atrim=end_sample={n},afade=t=in:ss=0:ns={},afade=t=out:ss={}:ns={},asetpts=PTS-STARTPTS[p{i}]", p.gain, 48.min(n / 2), n.saturating_sub(48.min(n / 2)), 48.min(n / 2)));
+                chain.push_str(&format!(
+                    ",volume={:.9},apad=whole_len={n},atrim=end_sample={n}",
+                    p.gain
+                ));
+                if let Some(points) = &p.envelope {
+                    let mut expression = points.last().unwrap().level.to_string();
+                    for pair in points.windows(2).rev() {
+                        let start = pair[0].at_ms / p.duration_ms as f64 * (n - 1) as f64;
+                        let end = pair[1].at_ms / p.duration_ms as f64 * (n - 1) as f64;
+                        let span = (end - start).max(1e-9);
+                        expression=format!("if(lt(n,{end:.9}),{a:.12}+({b:.12}-{a:.12})*(n-{start:.9})/{span:.9},{expression})",a=pair[0].level,b=pair[1].level);
+                    }
+                    chain.push_str(&format!(",aeval=exprs='val(0)*({expression})':c=same"));
+                } else {
+                    chain.push_str(&format!(
+                        ",afade=t=in:ss=0:ns={},afade=t=out:ss={}:ns={}",
+                        48.min(n / 2),
+                        n.saturating_sub(48.min(n / 2)),
+                        48.min(n / 2)
+                    ));
+                }
+                chain.push_str(&format!(",asetpts=PTS-STARTPTS[p{i}]"));
                 filters.push(chain);
                 continue;
             }

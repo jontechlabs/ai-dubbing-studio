@@ -5,6 +5,7 @@ import { dubbingClips, resizeDubbing, mixReport } from './mix';
 import { editVoice, editDuration, voicePlan, resetVoiceEdit } from './voiceEdit';
 import { rebaseProject } from './rebase';
 import type { Generation } from './types';
+import { envelopeLevel } from './voiceEnvelope';
 function fixture() {
   const p = demoProject();
   p.formatVersion = 5;
@@ -37,6 +38,59 @@ function fixture() {
   ];
   return p;
 }
+it('applies adjustable fades to a selection without changing duration or original files', () => {
+  const base = fixture(),
+    p = editVoice(base, 'take', 500, 1500, { kind: 'fade', fadeInMs: 100, fadeOutMs: 200 });
+  const envelope = p.voiceEdits!.take.pieces[1].envelope!;
+  expect(p.formatVersion).toBe(12);
+  expect(editDuration(p.voiceEdits!.take)).toBe(2000);
+  expect(envelopeLevel(envelope, 0)).toBe(0);
+  expect(envelopeLevel(envelope, 50)).toBe(0.5);
+  expect(envelopeLevel(envelope, 900)).toBe(0.5);
+  expect(envelopeLevel(envelope, 1000)).toBe(0);
+  expect(validateProject(JSON.parse(JSON.stringify(p)))).toEqual(p);
+  expect(p.generations).toEqual(base.generations);
+  const bad = structuredClone(p);
+  bad.formatVersion = 11;
+  expect(() => validateProject(bad)).toThrow('INVALID_VOICE_EDIT');
+});
+it('keeps one continuous fade across existing split and gain boundaries', () => {
+  let p = editVoice(fixture(), 'take', 500, 1000, { kind: 'gain', gain: 0.5 });
+  p = editVoice(p, 'take', 0, 2000, { kind: 'fade', fadeInMs: 1000, fadeOutMs: 500 });
+  const pieces = p.voiceEdits!.take.pieces;
+  expect(envelopeLevel(pieces[0].envelope, 500)).toBe(0.5);
+  expect(envelopeLevel(pieces[1].envelope, 0)).toBe(0.5);
+  expect(envelopeLevel(pieces[1].envelope, 500)).toBe(1);
+  expect(envelopeLevel(pieces[2].envelope, 1000)).toBe(0);
+});
+it('preserves fade levels when splitting, deleting and stretching an already faded range', () => {
+  let p = editVoice(fixture(), 'take', 0, 2000, { kind: 'fade', fadeInMs: 1000, fadeOutMs: 500 });
+  p = editVoice(p, 'take', 250, 750, { kind: 'gain', gain: 0.5 });
+  const middle = p.voiceEdits!.take.pieces[1];
+  expect(envelopeLevel(middle.envelope, 0)).toBe(0.25);
+  expect(envelopeLevel(middle.envelope, 500)).toBe(0.75);
+  p = editVoice(p, 'take', 250, 750, { kind: 'stretch', durationMs: 1000 });
+  expect(envelopeLevel(p.voiceEdits!.take.pieces[1].envelope, 500)).toBe(0.5);
+  p = editVoice(p, 'take', 0, 250, { kind: 'delete' });
+  expect(envelopeLevel(p.voiceEdits!.take.pieces[0].envelope, 0)).toBe(0.25);
+  expect(validateProject(p)).toEqual(p);
+});
+it('zero fades restore full region volume, while invalid fades leave the project unchanged', () => {
+  const base = fixture(),
+    faded = editVoice(base, 'take', 0, 2000, { kind: 'fade', fadeInMs: 300, fadeOutMs: 300 });
+  const clear = editVoice(faded, 'take', 0, 2000, { kind: 'fade', fadeInMs: 0, fadeOutMs: 0 });
+  expect(clear.voiceEdits!.take.pieces[0].envelope).toEqual([
+    { atMs: 0, level: 1 },
+    { atMs: 2000, level: 1 },
+  ]);
+  expect(() =>
+    editVoice(base, 'take', 0, 100, { kind: 'fade', fadeInMs: 100, fadeOutMs: 1 }),
+  ).toThrow('INVALID_VOICE_FADE');
+  expect(base.voiceEdits).toBeUndefined();
+  const invalid = structuredClone(faded);
+  invalid.voiceEdits!.take.pieces[0].envelope![0].level = 2;
+  expect(() => validateProject(invalid)).toThrow('INVALID_VOICE_EDIT');
+});
 it('inserts actual silence at a point and preserves original/subtitles/other onsets', () => {
   const p = fixture(),
     next = editVoice(p, 'take', 500, 500, { kind: 'silence', durationMs: 300 });

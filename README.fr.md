@@ -1,5 +1,12 @@
 # AI Dubbing Studio — phases 1–7
 
+**v0.15.0 — Fondus réglables, redimensionnement des zones audio et navigation cohérente.** Appliquez des fondus d’entrée/sortie à une portion de voix, redimensionnez une sélection ou une zone de volume/silence avec ses poignées, et retrouvez automatiquement la réplique choisie dans la timeline sans changer votre zoom. [Guide illustré](docs/FADES-SELECTION-NAVIGATION.md).
+
+![Adjustable voice fades](docs/screenshots/voice-fades-fr.png)
+
+*Actual React interface with synthetic demo audio and simulated native commands; separate real FFmpeg sample and MKV checks.*
+
+
 **v0.14.0 — Retoucher une partie d’un doublage directement dans la timeline.** Double-cliquez un bloc Doublage pour ouvrir sa forme d’onde : sélectionnez une zone, ajoutez du silence, rendez-la muette, supprimez-la en rapprochant la suite, réglez son volume ou étirez-la avec la poignée ↔ sans changer la hauteur de voix. Originaux conservés, annulation, sauvegarde et rendu identique dans la lecture et le MKV. [Guide illustré](docs/VOICE-REGION-EDITING.md).
 
 ![Édition locale du doublage](docs/screenshots/voice-region-editor-fr.png)
@@ -43,7 +50,7 @@
 
 *Interface React réelle avec audio de démonstration synthétique et inventaire natif simulé.*
 
-[Version anglaise et captures de l’interface](README.md) · [Téléchargements Windows](https://github.com/jontechlabs/ai-dubbing-studio/releases/tag/v0.14.0)
+[Version anglaise et captures de l’interface](README.md) · [Téléchargements Windows](https://github.com/jontechlabs/ai-dubbing-studio/releases/tag/v0.15.0)
 
 Studio desktop local de travail texte, voix et vidéo. Tauri 2, React, TypeScript strict et Rust.
 

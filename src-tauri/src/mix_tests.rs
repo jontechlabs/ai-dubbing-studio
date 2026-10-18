@@ -2,6 +2,187 @@ use super::*;
 use crate::audio_patch::{self, Snippet};
 use std::sync::Mutex;
 #[tokio::test]
+async fn voice_fades_are_sample_accurate_and_continuous_across_piece_boundaries() {
+    let (_temporary, root, mut p) = fixture().await;
+    let original = std::fs::read(root.join("generations/voice.wav")).unwrap();
+    let edit:crate::voice_edit::Edit=serde_json::from_value(serde_json::json!({"pieces":[
+      {"sourceStartMs":0,"sourceEndMs":500,"durationMs":500,"gain":1,"envelope":[{"atMs":0,"level":0},{"atMs":200,"level":1},{"atMs":500,"level":1}]},
+      {"sourceStartMs":500,"sourceEndMs":1500,"durationMs":1000,"gain":1,"envelope":[{"atMs":0,"level":1},{"atMs":700,"level":1},{"atMs":1000,"level":0}]}
+    ]})).unwrap();
+    let rendered = crate::voice_edit::render(
+        &root,
+        "generations/voice.wav",
+        Some(&edit),
+        &tool("ffmpeg"),
+        &AtomicBool::new(false),
+    )
+    .await
+    .unwrap();
+    assert_eq!(
+        audio_files::pcm_frames(&rendered, 1, 24000, "bad").unwrap(),
+        36000
+    );
+    let data = pcm(&rendered, "0:a:0").await;
+    let sample = |ms: usize| data[ms * 96] / std::f32::consts::FRAC_1_SQRT_2;
+    for (ms, expected) in [
+        (0, 0.0),
+        (50, 0.05),
+        (100, 0.1),
+        (300, 0.2),
+        (499, 0.2),
+        (500, 0.2),
+        (501, 0.2),
+        (1350, 0.1),
+    ] {
+        assert!(
+            (sample(ms) - expected).abs() < 0.002,
+            "{ms}: {} expected {expected}",
+            sample(ms)
+        );
+    }
+    assert!(data[data.len() - 1].abs() < 0.0001);
+    assert_eq!(
+        std::fs::read(root.join("generations/voice.wav")).unwrap(),
+        original
+    );
+    p.voice_edits.insert("voice".into(), edit);
+    p.format_version = 11;
+    assert_eq!(p.validate().unwrap_err(), "INVALID_VOICE_EDIT");
+    p.format_version = 12;
+    p.validate().unwrap();
+    project::atomic_write(&root.join("project.json"), &serde_json::to_vec(&p).unwrap()).unwrap();
+    assert_eq!(project::load(&root).unwrap().format_version, 12);
+}
+#[tokio::test]
+async fn voice_fades_reach_real_mkv_export_without_changing_other_timing() {
+    let (_temporary, root, mut p) = fixture().await;
+    p.format_version = 12;
+    p.voice_edits.insert("voice".into(),serde_json::from_value(serde_json::json!({"pieces":[{"sourceStartMs":0,"sourceEndMs":1500,"durationMs":1500,"gain":1,"envelope":[{"atMs":0,"level":0},{"atMs":200,"level":1},{"atMs":1200,"level":1},{"atMs":1500,"level":0}]}]})).unwrap());
+    for track in &mut p.tracks {
+        track.mute = track.kind != "dubbing";
+        track.gain = 1.0;
+        track.regions.clear();
+    }
+    let app = tauri::test::mock_app();
+    let app = app.handle().clone();
+    let core = core(&root, p.clone());
+    let output = root.join("exports/fades.mkv");
+    let request = Request {
+        root: root.clone(),
+        project_id: p.id.clone(),
+        revision: p.revision,
+        output: output.clone(),
+        options: Options {
+            include_retouched: false,
+            include_original: false,
+            source_subtitles: false,
+            target_subtitles: false,
+            codec: "flac".into(),
+            allow_incomplete: false,
+        },
+    };
+    let key = jobs::create(&core, &app, "mkvExport", p.id.clone(), None);
+    export(
+        &core,
+        &app,
+        &key,
+        &request,
+        &p,
+        &Arc::new(AtomicBool::new(false)),
+    )
+    .await
+    .unwrap();
+    let samples = pcm(&output, "0:a:0").await;
+    for (ms, expected) in [
+        (900, 0.0),
+        (1100, 0.1),
+        (1500, 0.2),
+        (2350, 0.1),
+        (2600, 0.0),
+    ] {
+        assert!(
+            (samples[ms * 96] - expected).abs() < 0.002,
+            "{ms}: {} expected {expected}",
+            samples[ms * 96]
+        );
+    }
+}
+#[test]
+fn voice_fades_reject_non_finite_out_of_bounds_and_unordered_envelopes() {
+    use crate::voice_edit::{Edit, Piece, Point};
+    let good = Piece {
+        source_start_ms: Some(0),
+        source_end_ms: Some(1000),
+        duration_ms: 1000,
+        gain: 1.0,
+        envelope: Some(vec![
+            Point {
+                at_ms: 0.0,
+                level: 0.0,
+            },
+            Point {
+                at_ms: 1000.0,
+                level: 1.0,
+            },
+        ]),
+    };
+    assert!(Edit {
+        pieces: vec![good.clone()]
+    }
+    .validate(1000)
+    .is_ok());
+    for points in [
+        vec![],
+        vec![
+            Point {
+                at_ms: 0.0,
+                level: 2.0,
+            },
+            Point {
+                at_ms: 1000.0,
+                level: 0.0,
+            },
+        ],
+        vec![
+            Point {
+                at_ms: 0.0,
+                level: 0.0,
+            },
+            Point {
+                at_ms: f64::NAN,
+                level: 0.0,
+            },
+        ],
+        vec![
+            Point {
+                at_ms: 0.0,
+                level: 0.0,
+            },
+            Point {
+                at_ms: 500.0,
+                level: 0.0,
+            },
+            Point {
+                at_ms: 400.0,
+                level: 1.0,
+            },
+            Point {
+                at_ms: 1000.0,
+                level: 0.0,
+            },
+        ],
+    ] {
+        assert!(Edit {
+            pieces: vec![Piece {
+                envelope: Some(points),
+                ..good.clone()
+            }]
+        }
+        .validate(1000)
+        .is_err());
+    }
+}
+#[tokio::test]
 async fn voice_local_edits_render_silence_gain_deletion_and_preserve_original() {
     let (_temp, root, mut p) = fixture().await;
     let original = std::fs::read(root.join("generations/voice.wav")).unwrap();
@@ -91,6 +272,7 @@ async fn voice_local_edits_render_silence_gain_deletion_and_preserve_original() 
             source_end_ms: None,
             duration_ms: 120,
             gain: 1.0,
+            envelope: None,
         }],
     };
     let silence = crate::voice_edit::render(
@@ -164,6 +346,7 @@ async fn voice_local_stretch_preserves_pitch_exact_length_and_does_not_stretch_o
             source_end_ms: Some(1500),
             duration_ms: 750,
             gain: 1.0,
+            envelope: None,
         }],
     };
     let shorter = crate::voice_edit::render(
@@ -253,6 +436,7 @@ fn voice_local_edit_validation_rejects_corrupt_ranges_and_unbounded_plans() {
         source_end_ms: Some(1000),
         duration_ms: 1000,
         gain: 1.0,
+        envelope: None,
     };
     assert!(Edit {
         pieces: vec![piece.clone()]

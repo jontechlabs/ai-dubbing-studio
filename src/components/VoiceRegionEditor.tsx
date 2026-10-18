@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Scissors, X, Play, Square, VolumeX, RotateCcw } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { Generation, Project } from '../domain/types';
@@ -9,6 +9,7 @@ import {
   voicePlan,
   type VoiceOperation,
 } from '../domain/voiceEdit';
+import { envelopeLevel } from '../domain/voiceEnvelope';
 import { generationUrl } from '../services/bridge';
 
 function releaseAudio(
@@ -36,7 +37,7 @@ export function VoiceRegionEditor({
   onClose: () => void;
 }) {
   const { t } = useTranslation();
-  const plan = voicePlan(project, generation),
+  const plan = useMemo(() => voicePlan(project, generation), [project, generation]),
     total = editDuration(plan);
   const key = JSON.stringify(plan);
   const [range, setRange] = useState({ start: 0, end: 0 });
@@ -45,6 +46,8 @@ export function VoiceRegionEditor({
     length = end - start;
   const [amount, setAmount] = useState(250),
     [gain, setGain] = useState(1);
+  const [fadeIn, setFadeIn] = useState(50),
+    [fadeOut, setFadeOut] = useState(50);
   const [error, setError] = useState(''),
     [samples, setSamples] = useState<Float32Array | null>(null);
   const [playing, setPlaying] = useState(false),
@@ -56,7 +59,7 @@ export function VoiceRegionEditor({
     ),
     request = useRef(0);
   const [drag, setDrag] = useState<{
-    kind: 'select' | 'stretch';
+    kind: 'select' | 'stretch' | 'start' | 'end';
     anchor: number;
     x: number;
     duration: number;
@@ -175,7 +178,13 @@ export function VoiceRegionEditor({
               ),
             );
             for (let j = at; j < Math.min(samples.length, at + n); j++)
-              peak = Math.max(peak, Math.abs(samples[j]) * piece.gain * normalize);
+              peak = Math.max(
+                peak,
+                Math.abs(samples[j]) *
+                  piece.gain *
+                  normalize *
+                  envelopeLevel(piece.envelope, local * piece.durationMs),
+              );
           }
           const h = Math.max(0.5, Math.min(1, peak) * 31);
           context.moveTo(x, 35 - h);
@@ -286,7 +295,11 @@ export function VoiceRegionEditor({
           if (drag.kind === 'select') {
             const p = position(e.clientX);
             setRange({ start: Math.min(drag.anchor, p), end: Math.max(drag.anchor, p) });
-          } else
+          } else if (drag.kind === 'start')
+            setRange({ start: Math.min(drag.anchor - 1, position(e.clientX)), end: drag.anchor });
+          else if (drag.kind === 'end')
+            setRange({ start: drag.anchor, end: Math.max(drag.anchor + 1, position(e.clientX)) });
+          else
             setDrag({
               ...drag,
               duration: Math.max(
@@ -314,6 +327,30 @@ export function VoiceRegionEditor({
           className="voice-wave-selection"
           style={{ left: `${(start / total) * 100}%`, width: `${(length / total) * 100}%` }}
         />
+        {length > 0 &&
+          (['start', 'end'] as const).map((edge) => (
+            <button
+              key={edge}
+              className={`voice-range-edge ${edge}`}
+              style={{ left: `${((edge === 'start' ? start : end) / total) * 100}%` }}
+              disabled={busy}
+              aria-label={t(
+                edge === 'start' ? 'voiceResizeSelectionStart' : 'voiceResizeSelectionEnd',
+              )}
+              onPointerDown={(e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                surface.current!.setPointerCapture(e.pointerId);
+                setDrag({
+                  kind: edge,
+                  anchor: edge === 'start' ? end : start,
+                  x: e.clientX,
+                  duration: length,
+                  width,
+                });
+              }}
+            />
+          ))}
         {length > 0 && (
           <button
             type="button"
@@ -383,6 +420,46 @@ export function VoiceRegionEditor({
         </label>
         <button disabled={busy || !length} onClick={() => apply({ kind: 'gain', gain })}>
           {t('voiceApplyVolume')}
+        </button>
+        <label>
+          {t('voiceFadeIn')}
+          <input
+            type="number"
+            aria-label={t('voiceFadeIn')}
+            min={0}
+            max={Math.max(0, length - fadeOut)}
+            value={fadeIn}
+            disabled={busy || !length}
+            onChange={(e) => setFadeIn(Number(e.target.value))}
+          />
+        </label>
+        <label>
+          {t('voiceFadeOut')}
+          <input
+            type="number"
+            aria-label={t('voiceFadeOut')}
+            min={0}
+            max={Math.max(0, length - fadeIn)}
+            value={fadeOut}
+            disabled={busy || !length}
+            onChange={(e) => setFadeOut(Number(e.target.value))}
+          />
+        </label>
+        <button
+          disabled={busy || !length}
+          onClick={() => apply({ kind: 'fade', fadeInMs: fadeIn, fadeOutMs: fadeOut })}
+        >
+          {t('voiceApplyFades')}
+        </button>
+        <button
+          disabled={busy || !length}
+          onClick={() => {
+            apply({ kind: 'fade', fadeInMs: 0, fadeOutMs: 0 });
+            setFadeIn(0);
+            setFadeOut(0);
+          }}
+        >
+          {t('voiceClearFades')}
         </button>
         <button disabled={busy || !length} onClick={() => apply({ kind: 'gain', gain: 0 })}>
           <VolumeX size={13} />

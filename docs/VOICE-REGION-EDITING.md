@@ -42,3 +42,8 @@ Les changements se sauvegardent automatiquement et s’annulent avec **Ctrl+Z**,
 Les étirements extrêmes peuvent dégrader la diction ; réécoutez les jonctions et préférez une nouvelle génération si nécessaire. Limites : 120 secondes par voix retouchée et 256 segments internes. Une très petite sélection peut ne pas contenir assez de son pour produire un étirement utile.
 
 Les projets existants restent lisibles. La première retouche locale utilise le **format de projet 11**, qui nécessite v0.14.0 ou plus récente. Conservez une copie du dossier si vous souhaitez le rouvrir avec une ancienne version.
+
+
+## Nouveautés v0.15.0
+
+Les portions de voix acceptent des **fondus d’entrée et de sortie réglables**. Les sélections peuvent être redimensionnées par leurs bords, dans la forme d’onde et sur les pistes. La timeline suit la réplique choisie sans changer le zoom. [Guide et captures](FADES-SELECTION-NAVIGATION.md). Une première utilisation des fondus nécessite le format de projet 12 et v0.15.0 ou plus récente.

@@ -1,3 +1,10 @@
+import {
+  validEnvelope,
+  sliceEnvelope,
+  scaleEnvelope,
+  fadeEnvelope,
+  type VoicePoint,
+} from './voiceEnvelope';
 import type { Generation, Project } from './types';
 import { dubbingClips, resizeDubbing } from './mix';
 
@@ -8,6 +15,7 @@ export interface VoicePiece {
   sourceEndMs: number | null;
   durationMs: number;
   gain: number;
+  envelope?: VoicePoint[];
 }
 export interface VoiceEdit {
   pieces: VoicePiece[];
@@ -26,6 +34,7 @@ export function validateVoiceEdit(edit: VoiceEdit, duration: number) {
         !Number.isFinite(p.gain) ||
         p.gain < 0 ||
         p.gain > 2 ||
+        !validEnvelope(p.envelope, p.durationMs) ||
         (p.sourceStartMs === null
           ? p.sourceEndMs !== null
           : !Number.isSafeInteger(p.sourceStartMs) ||
@@ -59,7 +68,7 @@ export function voicePlan(project: Project, generation: Generation): VoiceEdit {
         );
         const durationMs = end - assigned;
         assigned = end;
-        return { ...p, durationMs };
+        return { ...p, durationMs, envelope: scaleEnvelope(p.envelope, p.durationMs, durationMs) };
       }),
     };
   }
@@ -97,12 +106,14 @@ function split(pieces: VoicePiece[], at: number): [VoicePiece[], VoicePiece[]] {
         sourceStartMs: boundary === p.sourceStartMs ? null : p.sourceStartMs,
         sourceEndMs: boundary === p.sourceStartMs ? null : boundary,
         durationMs: left,
+        envelope: sliceEnvelope(p.envelope, 0, left),
       });
       after.push({
         ...p,
         sourceStartMs: boundary === p.sourceEndMs ? null : boundary,
         sourceEndMs: boundary === p.sourceEndMs ? null : p.sourceEndMs,
         durationMs: end - at,
+        envelope: sliceEnvelope(p.envelope, left, p.durationMs),
       });
     }
     offset = end;
@@ -113,7 +124,8 @@ export type VoiceOperation =
   | { kind: 'silence'; durationMs: number }
   | { kind: 'delete' }
   | { kind: 'gain'; gain: number }
-  | { kind: 'stretch'; durationMs: number };
+  | { kind: 'stretch'; durationMs: number }
+  | { kind: 'fade'; fadeInMs: number; fadeOutMs: number };
 export function editVoice(
   project: Project,
   generationId: string,
@@ -149,7 +161,29 @@ export function editVoice(
   } else if (operation.kind === 'delete') pieces = [...before, ...after];
   else if (operation.kind === 'gain')
     pieces = [...before, ...selected.map((p) => ({ ...p, gain: operation.gain })), ...after];
-  else {
+  else if (operation.kind === 'fade') {
+    if (
+      ![operation.fadeInMs, operation.fadeOutMs].every((n) => Number.isSafeInteger(n) && n >= 0) ||
+      operation.fadeInMs + operation.fadeOutMs > endMs - startMs
+    )
+      throw Error('INVALID_VOICE_FADE');
+    let offset = 0;
+    pieces = [
+      ...before,
+      ...selected.map((p) => {
+        const envelope = fadeEnvelope(
+          offset,
+          p.durationMs,
+          endMs - startMs,
+          operation.fadeInMs,
+          operation.fadeOutMs,
+        );
+        offset += p.durationMs;
+        return { ...p, envelope };
+      }),
+      ...after,
+    ];
+  } else {
     if (!Number.isSafeInteger(operation.durationMs) || operation.durationMs < selected.length)
       throw Error('INVALID_VOICE_EDIT');
     let assigned = 0,
@@ -159,7 +193,7 @@ export function editVoice(
       const boundary = Math.round((old * operation.durationMs) / (endMs - startMs));
       const durationMs = boundary - assigned;
       assigned = boundary;
-      return { ...p, durationMs };
+      return { ...p, durationMs, envelope: scaleEnvelope(p.envelope, p.durationMs, durationMs) };
     });
     pieces = [...before, ...stretched, ...after];
   }
@@ -170,6 +204,8 @@ export function editVoice(
     const last = merged.at(-1);
     if (
       last &&
+      !last.envelope &&
+      !p.envelope &&
       last.gain === p.gain &&
       ((last.sourceStartMs === null && p.sourceStartMs === null) ||
         (last.sourceEndMs === p.sourceStartMs &&
@@ -192,7 +228,7 @@ export function editVoice(
     .reduce((n, c) => Math.min(n, c.startMs), project.media!.durationMs);
   if (duration > total && duration > nextStart - clip.startMs) throw Error('VOICE_EDIT_NO_ROOM');
   const next = resizeDubbing(project, clip.line.id, duration);
-  next.formatVersion = Math.max(11, next.formatVersion);
+  next.formatVersion = Math.max(pieces.some((p) => p.envelope) ? 12 : 11, next.formatVersion);
   (next.voiceEdits ??= {})[generationId] = edit;
   const line = next.dialogues.find((l) => l.id === clip.line.id)!;
   if (line.status === 'validated') line.status = 'review';
