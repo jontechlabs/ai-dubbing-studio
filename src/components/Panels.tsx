@@ -456,6 +456,8 @@ function JobsPanel({ jobs, onError }: { jobs: Job[]; onError: (s: string) => voi
             'ttsBatch',
             'mkvExport',
             'referenceTranscription',
+            'translationInstall',
+            'translationSuggest',
             'lipAnalysis',
             'inpaint',
             'inpaintInstall',

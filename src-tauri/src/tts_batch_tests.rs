@@ -47,6 +47,7 @@ fn core(root: &Path, p: Project) -> Arc<Core> {
 fn selection() -> Selection {
     Selection {
         scope: "all".into(),
+        approved_only: false,
         line_ids: vec![],
         force: false,
         options: options(),
@@ -110,6 +111,7 @@ fn request(p: &Project, root: &Path) -> Request {
     let (preview, items) = plan(p, root, &selection()).unwrap();
     Request {
         root: root.into(),
+        approved_only: false,
         project_id: p.id.clone(),
         language: "fr".into(),
         items,
@@ -138,6 +140,70 @@ else:
             .success(),
         "worker still alive after terminal job state"
     );
+}
+
+fn approve(p: &mut Project, index: usize) {
+    let line = &p.dialogues[index];
+    p.format_version = 10;
+    p.translation_approvals.insert(
+        line.id.clone(),
+        crate::domain::TranslationApproval {
+            source_language: p.languages.source.clone(),
+            target_language: p.languages.target.clone(),
+            source_text: String::new(),
+            target_text: p.target_cues[index].text.clone(),
+        },
+    );
+}
+#[test]
+fn approved_only_intersects_all_or_selection_and_force_does_not_bypass_approval() {
+    let tmp = tempfile::tempdir().unwrap();
+    let root = tmp.path();
+    let mut p = fixture(root, &["Un", "Deux", "Trois", ""]);
+    approve(&mut p, 0);
+    approve(&mut p, 2);
+    let mut s = selection();
+    s.approved_only = true;
+    s.force = true;
+    let (preview, items) = plan(&p, root, &s).unwrap();
+    assert_eq!(preview.ready.len(), 2);
+    assert_eq!(preview.unapproved, 1);
+    assert_eq!(preview.untranslated, 1);
+    assert_eq!(items.len(), 2);
+    s.scope = "selected".into();
+    s.line_ids = vec![p.dialogues[0].id.clone(), p.dialogues[1].id.clone()];
+    let (preview, _) = plan(&p, root, &s).unwrap();
+    assert_eq!(preview.ready, vec![p.dialogues[0].id.clone()]);
+    assert_eq!(preview.unapproved, 1);
+    p.target_cues[0].text = "Correction".into();
+    let (preview, _) = plan(&p, root, &s).unwrap();
+    assert!(preview.ready.is_empty());
+    assert_eq!(preview.unapproved, 2);
+    s.approved_only = false;
+    assert_eq!(plan(&p, root, &s).unwrap().0.ready.len(), 2);
+}
+#[tokio::test]
+async fn withdrawn_approval_stops_a_resumed_batch_before_loading_the_model() {
+    let tmp = tempfile::tempdir().unwrap();
+    let root = tmp.path().canonicalize().unwrap();
+    let mut p = fixture(&root, &["Un", "Deux"]);
+    approve(&mut p, 0);
+    approve(&mut p, 1);
+    let mut req = request(&p, &root);
+    req.approved_only = true;
+    p.translation_approvals.remove(&p.dialogues[0].id);
+    let core = core(&root, p);
+    let app = tauri::test::mock_app();
+    let launch = worker(&root);
+    let key =
+        start_with_launch(core.clone(), app.handle().clone(), req, None, Some(launch)).unwrap();
+    let job = finished(&core, &key).await;
+    assert_eq!(
+        job.error.as_deref(),
+        Some("TTS_BATCH_TRANSLATION_UNAPPROVED")
+    );
+    assert!(!root.join("calls.jsonl").exists());
+    assert_eq!(core.gate.available_permits(), 1);
 }
 #[tokio::test]
 async fn successful_lot_reuses_one_process_and_releases_it_before_terminal_status() {

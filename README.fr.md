@@ -1,5 +1,12 @@
 # AI Dubbing Studio — phases 1–7
 
+
+**v0.13.0 — Filtres par statut de traduction, doublage par lot réservé aux traductions validées et propositions locales avec Qwen3-4B-Instruct-2507 GGUF Q4_K_M.** Dans l’éditeur de sous-titres, ouvrez « Aide à la traduction », installez le modèle puis choisissez la RTX dans « Périphérique de traduction ». Relisez la proposition, appliquez-la, puis validez la traduction manuellement. [Guide détaillé](docs/TRANSLATION-ASSISTANT.md).
+
+![Proposition de traduction locale à relire](docs/screenshots/translation-assistant.png)
+
+*Interface React réelle ; inventaire natif et proposition affichée simulés pour la capture. Les essais réels du modèle local sont consignés dans VALIDATION.md.*
+
 **v0.12.0** conserve le modèle chargé pendant le doublage par lot, puis arrête son processus à la fin ou à l’annulation pour libérer sa mémoire. Les répliques sont grises sans traduction, vert clair avec traduction et vertes après validation explicite. La validation du texte reste indépendante de celle des voix. [Guide avec capture](docs/BATCH-CACHE-AND-TRANSLATION-REVIEW.md).
 
 
@@ -29,7 +36,7 @@
 
 *Interface React réelle avec audio de démonstration synthétique et inventaire natif simulé.*
 
-[Version anglaise et captures de l’interface](README.md) · [Téléchargements Windows](https://github.com/jontechlabs/ai-dubbing-studio/releases/tag/v0.12.0)
+[Version anglaise et captures de l’interface](README.md) · [Téléchargements Windows](https://github.com/jontechlabs/ai-dubbing-studio/releases/tag/v0.13.0)
 
 Studio desktop local de travail texte, voix et vidéo. Tauri 2, React, TypeScript strict et Rust.
 

@@ -296,6 +296,8 @@ export default function App() {
               busy={busy}
               time={transport.time}
               translationFocus={translationFocus}
+              jobs={studio.jobs}
+              snapshot={studio.snapshot}
             />
           </div>
         </div>

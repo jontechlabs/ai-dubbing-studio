@@ -51,3 +51,8 @@ Les changements de projet, de langue, de texte, de référence ou de sélection 
 ![Résultat du lot](screenshots/batch-progress.png)
 
 Les captures utilisent l’interface React réelle, des commandes natives simulées et de l’audio synthétique. Les tests natifs distincts utilisent FFmpeg pour vérifier les échantillons d’une portion située après la vingtième seconde, et un worker de protocole pour tester les lots, échecs, annulations et reprises. Ils ne mesurent pas les performances ni la qualité d’un modèle complet sur RTX.
+
+
+Depuis v0.13.0, cochez **Uniquement les traductions validées** pour limiter le lot entier ou la sélection cochée aux traductions explicitement approuvées (vert). Les répliques vert clair sont exclues. Le nombre de traductions non validées est affiché dans l’aperçu. Forcer un nouvel essai ne contourne pas cette exigence. La validation est vérifiée à nouveau avant chaque réplique et lors d’une reprise ; retirer une validation arrête le lot avant cette réplique, en conservant les essais réussis.
+
+Le filtre de traduction de la liste ne limite pas automatiquement le lot « Toutes les répliques traduites » : utilisez la portée « Sélection cochée » après **Tout cocher (filtre actuel)**, ou activez l’option des traductions validées dans la configuration du lot.

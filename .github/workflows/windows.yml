@@ -56,6 +56,9 @@ jobs:
           python -m pip install numpy==2.2.6 scipy==1.15.3 soundfile==0.13.1
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
           python -m unittest discover -s workers -p "test_*.py"
+      - name: Real local Japanese to French translation
+        # Pinned 4B Q4_K_M model, CPU inference; no NVIDIA benchmark claim.
+        run: ./scripts/test-translation-model.ps1
       - name: Drama 3 actual FP8 offload and tiny autoregressive diagnostic
         # CPU diagnostic only: no large model weights and no GPU qualification claim.
         run: |

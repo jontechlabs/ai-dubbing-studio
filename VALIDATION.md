@@ -1,3 +1,11 @@
+# v0.13.0 — 18 octobre 2026
+
+Filtres des trois statuts de traduction, lot validé uniquement (tout/sélection/forçage/reprise), propositions locales avec Qwen3-4B-Instruct-2507 Q4_K_M et llama.cpp b11718/Vulkan.
+
+Local : vrais poids et moteur Windows vérifiés par SHA-256 ; deux traductions japonais → français générées par l’API privée sur CPU, processus arrêté et attendu à la fin. Résultats observés : « Son nom est Sakamoto Tarō. » et « Il faisait peur à tous les gangsters. ». Vérification de l’authentification du serveur local. Aucune mesure de performance RTX 5060 Ti n’a été faite sur ce poste.
+
+Windows workflow evidence will be recorded before publication.
+
 # Validation - 18 October 2026
 
 ## v0.12.0 — 18 October 2026

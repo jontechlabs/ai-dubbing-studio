@@ -103,7 +103,7 @@ fn budget(
     }
 }
 #[cfg(windows)]
-fn available(path: &Path) -> Result<u64, String> {
+pub(crate) fn available(path: &Path) -> Result<u64, String> {
     use std::os::windows::ffi::OsStrExt;
     #[link(name = "kernel32")]
     extern "system" {
@@ -137,7 +137,7 @@ fn available(path: &Path) -> Result<u64, String> {
     Ok(bytes)
 }
 #[cfg(not(windows))]
-fn available(_path: &Path) -> Result<u64, String> {
+pub(crate) fn available(_path: &Path) -> Result<u64, String> {
     Err("RUNTIME_PLATFORM_UNSUPPORTED".into())
 }
 

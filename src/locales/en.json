@@ -170,7 +170,13 @@
     "audioTransfer": "Audio range transfer",
     "ttsBatch": "Batch dubbing",
     "ttsReuse": "Reusing loaded model",
-    "ttsRelease": "Releasing model memory"
+    "ttsRelease": "Releasing model memory",
+    "translationInstall": "Translation model installation",
+    "translationSuggest": "Translation proposal",
+    "translationDownload": "Downloading translation model",
+    "translationLoad": "Loading translation model",
+    "translationGenerate": "Generating translation proposal",
+    "translationRelease": "Releasing translation model"
   },
   "shortcuts": "Space: play · J/K/L: transport · O: original · Ctrl+S: save · Ctrl+Z/Y: undo/redo",
   "errors": {
@@ -291,7 +297,18 @@
     "INVALID_TTS_BATCH": "Choose the lines to dub.",
     "TTS_BATCH_EMPTY": "No translated line is ready to generate in this batch.",
     "TTS_BATCH_PARTIAL": "Some lines failed. Successful takes are kept; Retry resumes the remaining lines.",
-    "TRANSLATION_REQUIRED": "A translation is required."
+    "TRANSLATION_REQUIRED": "A translation is required.",
+    "TTS_BATCH_TRANSLATION_UNAPPROVED": "A translation approval was withdrawn. The batch stopped; approve the line again before resuming.",
+    "TRANSLATION_DISK_REQUIRED": "Insufficient or unavailable disk space for the translation model.",
+    "TRANSLATION_DEVICE_PROBE_FAILED": "GPU detection failed. CPU remains available. Check Vulkan drivers.",
+    "TRANSLATION_RUNTIME_FAILED": "Local translation failed. Read the job logs, then retry or select CPU.",
+    "TRANSLATION_MODEL_REQUIRED": "Install the translation model before requesting a proposal.",
+    "TRANSLATION_SOURCE_REQUIRED": "This line needs original text to translate.",
+    "TRANSLATION_INPUT_TOO_LONG": "This line is too long for a local proposal. Split it into shorter lines.",
+    "TRANSLATION_LANGUAGE_INVALID": "Choose different source and target languages.",
+    "TRANSLATION_OUTPUT_INVALID": "The proposal is empty, truncated or malformed. No subtitle was changed. Retry.",
+    "TRANSLATION_STALE": "The text, language or cue associations changed. Request a new proposal to preserve your edits.",
+    "TRANSLATION_TIMEOUT": "Model loading exceeded three minutes. Check the device and retry."
   },
   "preparingVideo": "Preparing video…",
   "loadingVideo": "Loading video…",
@@ -788,7 +805,7 @@
   "batchSelected": "Checked lines ({{count}}), with translations only",
   "batchForce": "Force a new take, even when an up-to-date take exists",
   "batchPolicyHint": "Without forcing, current selected takes are kept. Each successful generation creates and selects a new take; previous takes remain available. An imported reference is shared; character defaults and current-line audio are resolved for each line. Generation runs sequentially on the chosen device.",
-  "batchPreview": "{{ready}} to generate · {{existing}} already dubbed · {{untranslated}} untranslated · {{blocked}} excluded (configuration/reference)",
+  "batchPreview": "{{ready}} to generate · {{existing}} already dubbed · {{untranslated}} untranslated · {{blocked}} excluded (configuration/reference) · {{unapproved}} unapproved",
   "batchExcluded": "Show {{count}} excluded lines",
   "batchLine": "Line {{number}}",
   "batchChecking": "Checking lines…",
@@ -811,5 +828,23 @@
     "translated": "Translated · pending approval",
     "approved": "Translation approved"
   },
-  "ttsBatchLocalHint": "The model stays loaded for this batch and is released when it ends, is cancelled, or the engine fails. Lines are generated one at a time."
+  "ttsBatchLocalHint": "The model stays loaded for this batch and is released when it ends, is cancelled, or the engine fails. Lines are generated one at a time.",
+  "translationFilter": "Translation status",
+  "translationFilterAll": "All translation states",
+  "translationFilterCount": "Visible lines",
+  "batchApprovedOnly": "Approved translations only",
+  "llmOpen": "Translation assistant",
+  "llmHint": "Local proposal using neighbouring dialogue as context. Review and edit before applying. The model is released after each proposal or cancellation.",
+  "llmChecking": "Checking model…",
+  "llmInstallHint": "2.33 GiB Q4_K_M model. Self-contained llama.cpp/Vulkan installation, without Python or Ollama. Supports CPU and Vulkan GPUs; select the RTX in the list. Apache 2.0 model, MIT runtime.",
+  "llmDisk": "Space to reserve: {{required}} GiB · available: {{available}} GiB",
+  "llmInstall": "Install translation model",
+  "llmDevice": "Translation device",
+  "llmSuggest": "Suggest a translation",
+  "llmProposal": "Proposal to review",
+  "llmSlot": "Subtitle proposal {{number}}",
+  "llmApplyHint": "Applying replaces translated text while preserving timing. Translation approval remains manual.",
+  "llmApply": "Apply proposal",
+  "llmDiscard": "Discard",
+  "llmApplied": "Proposal applied. Review it and approve the translation when satisfied."
 }

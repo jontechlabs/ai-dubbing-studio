@@ -25,13 +25,20 @@ export function BatchDubbingAction({
   const { t } = useTranslation();
   const [scope, setScope] = useState(selectedIds.length ? 'selected' : 'all'),
     [force, setForce] = useState(false),
+    [approvedOnly, setApprovedOnly] = useState(false),
     [working, setWorking] = useState(false);
   const [result, setResult] = useState<{
     key: string;
     plan: bridge.DubbingBatchPreview | null;
     error?: string;
   } | null>(null);
-  const selectionKey = JSON.stringify({ scope, lineIds: selectedIds, force, options: settings });
+  const selectionKey = JSON.stringify({
+    scope,
+    lineIds: selectedIds,
+    force,
+    approvedOnly,
+    options: settings,
+  });
   const key = selectionKey + ':' + project.revision;
   useEffect(() => {
     let disposed = false;
@@ -63,6 +70,15 @@ export function BatchDubbingAction({
       <label className="checkbox-field">
         <input
           type="checkbox"
+          checked={approvedOnly}
+          disabled={busy || working}
+          onChange={(e) => setApprovedOnly(e.target.checked)}
+        />
+        {t('batchApprovedOnly')}
+      </label>
+      <label className="checkbox-field">
+        <input
+          type="checkbox"
           checked={force}
           disabled={busy || working}
           onChange={(e) => setForce(e.target.checked)}
@@ -77,6 +93,7 @@ export function BatchDubbingAction({
               ready: plan.ready.length,
               existing: plan.existing,
               untranslated: plan.untranslated,
+              unapproved: plan.unapproved,
               blocked: plan.blocked.length,
             })}
           </p>

@@ -293,7 +293,8 @@ h3 {
 .pane-heading svg {
   color: var(--muted);
 }
-.count-badge {
+.count-badge,
+.translation-filter-count {
   font-size: 10px;
   color: var(--muted);
   background: var(--raised);
@@ -2029,7 +2030,7 @@ pre {
   width: 100%;
 }
 .voice-variant-detail {
-  border: 1px solid var(--border);
+  border: 1px solid var(--line);
   padding: 12px;
   border-radius: 8px;
 }
@@ -2144,7 +2145,7 @@ pre {
   gap: 8px;
   padding: 5px 12px;
   flex-shrink: 0;
-  border-block: 1px solid var(--border);
+  border-block: 1px solid var(--line);
   background: var(--surface);
   font-size: 11px;
 }
@@ -2181,7 +2182,7 @@ pre {
   margin: 12px 0 16px;
 }
 .drama-space {
-  border: 1px solid var(--border);
+  border: 1px solid var(--line);
   padding: 12px;
   border-radius: 6px;
   margin-bottom: 12px;
@@ -2379,7 +2380,7 @@ pre {
   flex-wrap: wrap;
   gap: 8px;
   padding: 7px 10px;
-  border-top: 1px solid var(--border);
+  border-top: 1px solid var(--line);
 }
 
 .dialogue-card.translation-untranslated {
@@ -2395,4 +2396,66 @@ pre {
 }
 .dialogue-card.selected:before {
   background: var(--translation-color, var(--accent));
+}
+
+.translation-filter {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin: 0 16px 10px;
+  font-size: 11px;
+  color: var(--muted);
+  flex-wrap: wrap;
+}
+.translation-filter select {
+  flex: 1;
+  min-width: 130px;
+  max-width: 260px;
+  padding: 6px;
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
+
+.translation-suggestion {
+  padding: 10px 16px;
+  border-top: 1px solid var(--line);
+}
+.translation-suggestion-body {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
+  padding-top: 12px;
+}
+.translation-suggestion-body .panel-description {
+  margin: 0;
+}
+.translation-suggestion-body .button {
+  align-self: flex-start;
+}
+.translation-suggestion-body textarea {
+  min-height: 64px;
+  resize: vertical;
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--input);
+  color: var(--text);
+  padding: 8px;
+}
+.translation-proposal {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+  background: var(--accent-soft);
+}
+.translation-working {
+  display: flex;
+  gap: 8px;
+  align-items: center;
 }

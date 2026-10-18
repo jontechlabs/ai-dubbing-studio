@@ -71,3 +71,25 @@ export function approveTranslation(project: Project, id: string, approved: boole
   } else delete next.translationApprovals[id];
   return next;
 }
+
+export type TranslationState = 'untranslated' | 'translated' | 'approved';
+export function translationStates(project: Project): Map<string, TranslationState> {
+  const source = new Map(project.sourceCues.map((cue) => [cue.id, cue.text]));
+  const target = new Map(project.targetCues.map((cue) => [cue.id, cue.text]));
+  return new Map(
+    project.dialogues.map((line) => {
+      const current = snapshot(
+        project,
+        line,
+        line.sourceCueIds.map((id) => source.get(id) ?? '').join('\n'),
+        line.targetCueIds.map((id) => target.get(id) ?? '').join('\n'),
+      );
+      const state: TranslationState = !current.targetText.replace(/<[^>]*>/g, '').trim()
+        ? 'untranslated'
+        : matches(project.translationApprovals?.[line.id], current)
+          ? 'approved'
+          : 'translated';
+      return [line.id, state];
+    }),
+  );
+}

@@ -2,7 +2,7 @@ import { Mic2, Play, Type, Scissors, Combine } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { dialogueText, editDialogue } from '../domain/subtitles';
-import type { Dialogue, Project } from '../domain/types';
+import type { Dialogue, Job, Project } from '../domain/types';
 import {
   cueBounds,
   editCueText,
@@ -11,6 +11,7 @@ import {
   splitDialogue,
   type TimingRole,
 } from '../domain/timing';
+import { TranslationSuggestion } from './TranslationSuggestion';
 import { formatTime, parseTime } from '../domain/time';
 
 export function Editor({
@@ -21,6 +22,8 @@ export function Editor({
   busy,
   time,
   translationFocus,
+  jobs,
+  snapshot,
 }: {
   project: Project | null;
   selected: Dialogue | undefined;
@@ -29,6 +32,8 @@ export function Editor({
   busy: boolean;
   time: number;
   translationFocus: number;
+  jobs: Job[];
+  snapshot: () => Promise<Project>;
 }) {
   const { t } = useTranslation();
   const [tab, setTab] = useState<'text' | 'tts'>('text');
@@ -75,6 +80,17 @@ export function Editor({
         busy={busy}
         time={time}
       />
+      {tab === 'text' && (
+        <TranslationSuggestion
+          key={`${project.id}:${selected.id}`}
+          project={project}
+          line={selected}
+          jobs={jobs}
+          snapshot={snapshot}
+          onEdit={onEdit}
+          busy={busy}
+        />
+      )}
       {tab === 'text' ? (
         <div className="editor-fields">
           {(['source', 'target'] as const).map((role) => {

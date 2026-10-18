@@ -17,6 +17,8 @@ use std::{
 #[serde(rename_all = "camelCase")]
 pub struct Selection {
     pub scope: String,
+    #[serde(default)]
+    pub approved_only: bool,
     pub line_ids: Vec<String>,
     pub force: bool,
     pub options: tts::Options,
@@ -32,6 +34,7 @@ pub struct Problem {
 pub struct Preview {
     pub requested: usize,
     pub untranslated: usize,
+    pub unapproved: usize,
     pub existing: usize,
     pub ready: Vec<String>,
     pub blocked: Vec<Problem>,
@@ -55,6 +58,8 @@ pub struct Item {
 #[derive(Clone, Serialize, Deserialize)]
 pub struct Request {
     pub root: PathBuf,
+    #[serde(default)]
+    pub approved_only: bool,
     pub project_id: String,
     pub language: String,
     pub items: Vec<Item>,
@@ -170,11 +175,14 @@ pub fn plan(
     let mut preview = Preview {
         requested: 0,
         untranslated: 0,
+        unapproved: 0,
         existing: 0,
         ready: vec![],
         blocked: vec![],
     };
     let mut items = vec![];
+    let mut approved = p.clone();
+    approved.clean_translation_approvals();
     for line in &p.dialogues {
         if selection.scope == "selected" && !ids.contains(&line.id) {
             continue;
@@ -182,6 +190,10 @@ pub fn plan(
         preview.requested += 1;
         if !translated(p, line) {
             preview.untranslated += 1;
+            continue;
+        }
+        if selection.approved_only && !approved.translation_approvals.contains_key(&line.id) {
+            preview.unapproved += 1;
             continue;
         }
         if !selection.force && usable(p, root, line) {
@@ -232,10 +244,14 @@ pub fn enqueue<R: tauri::Runtime>(
         (
             Request {
                 root: s.root.clone(),
+                approved_only: selection.approved_only,
                 project_id: s.project.id.clone(),
                 language: s.project.languages.target.clone(),
                 items,
-                skipped: preview.existing + preview.untranslated + preview.blocked.len(),
+                skipped: preview.existing
+                    + preview.untranslated
+                    + preview.unapproved
+                    + preview.blocked.len(),
             },
             preview,
         )
@@ -405,7 +421,7 @@ fn start_with_launch<R: tauri::Runtime>(
     jobs::update(&core, &app, &key, |j| {
         j.stage = "ttsBatch".into();
         if let Some(p) = preview {
-            j.logs.push(format!("Batch: {} ready; {} already dubbed; {} without translation; {} invalid references/options excluded.",p.ready.len(),p.existing,p.untranslated,p.blocked.len()));
+            j.logs.push(format!("Batch: {} ready; {} already dubbed; {} without translation; {} unapproved; {} invalid references/options excluded.",p.ready.len(),p.existing,p.untranslated,p.unapproved,p.blocked.len()));
             for problem in p.blocked {
                 j.logs
                     .push(format!("Excluded {}: {}", problem.line_id, problem.error));
@@ -426,6 +442,11 @@ fn start_with_launch<R: tauri::Runtime>(
                 let committed={let session=core.session.lock().map_err(io_error)?;let s=session.as_ref().ok_or("NO_PROJECT")?;if s.root!=request.root||s.project.id!=request.project_id||s.project.languages.target!=request.language{return Err("STALE_REVISION".into());}already_committed(&s.project,&s.root,&request.items[index])};
                 if committed{request.items[index].status="succeeded".into();record_item(&core,&key,index,&request.items[index])?;persist(&core,&app,&key,&request,None);continue;}
                 let item=&request.items[index];let line_id=item.request.line_id.clone();
+                if request.approved_only {
+                    let session=core.session.lock().map_err(io_error)?;let s=session.as_ref().ok_or("NO_PROJECT")?;
+                    let mut current=s.project.clone();current.clean_translation_approvals();
+                    if !current.translation_approvals.contains_key(&line_id) { return Err("TTS_BATCH_TRANSLATION_UNAPPROVED".into()); }
+                }
                 persist(&core,&app,&key,&request,Some(line_id.clone()));
                 jobs::update(&core,&app,&key,|j|{j.stage="ttsReference".into();j.progress=None;j.logs.push(format!("Dubbing {}/{}: {}",index+1,request.items.len(),line_id));});
                 let default_launch;let launch=if let Some(launch)=launch.as_ref(){launch}else{default_launch=tts::worker_launch(&core,&app,&item.request);&default_launch};let result=tts::execute_with_session(&core,&app,&key,&item.request,&flag,launch,Some(&mut hot)).await;

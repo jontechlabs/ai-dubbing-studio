@@ -170,7 +170,13 @@
     "audioTransfer": "Transfert de portions audio",
     "ttsBatch": "Doublage par lot",
     "ttsReuse": "Réutilisation du modèle chargé",
-    "ttsRelease": "Libération de la mémoire du modèle"
+    "ttsRelease": "Libération de la mémoire du modèle",
+    "translationInstall": "Installation du modèle de traduction",
+    "translationSuggest": "Proposition de traduction",
+    "translationDownload": "Téléchargement du modèle de traduction",
+    "translationLoad": "Chargement du modèle de traduction",
+    "translationGenerate": "Proposition de traduction en cours",
+    "translationRelease": "Libération du modèle de traduction"
   },
   "shortcuts": "Espace : lecture · J/K/L : transport · O : original · Ctrl+S : sauvegarde · Ctrl+Z/Y : annuler/rétablir",
   "errors": {
@@ -291,7 +297,18 @@
     "INVALID_TTS_BATCH": "Choisissez les répliques à doubler.",
     "TTS_BATCH_EMPTY": "Aucune réplique traduite prête à générer dans ce lot.",
     "TTS_BATCH_PARTIAL": "Certaines répliques ont échoué. Les réussites sont conservées ; Réessayer reprend les répliques restantes.",
-    "TRANSLATION_REQUIRED": "Une traduction est nécessaire."
+    "TRANSLATION_REQUIRED": "Une traduction est nécessaire.",
+    "TTS_BATCH_TRANSLATION_UNAPPROVED": "La validation d’une traduction a été retirée. Le lot est arrêté ; validez à nouveau la réplique avant de reprendre.",
+    "TRANSLATION_DISK_REQUIRED": "Espace disque insuffisant ou indisponible pour installer le modèle de traduction.",
+    "TRANSLATION_DEVICE_PROBE_FAILED": "Les GPU n’ont pas pu être détectés. Le CPU reste utilisable. Vérifiez les pilotes Vulkan.",
+    "TRANSLATION_RUNTIME_FAILED": "Le moteur local de traduction a échoué. Consultez les logs du traitement, puis réessayez ou choisissez le CPU.",
+    "TRANSLATION_MODEL_REQUIRED": "Installez le modèle de traduction avant de demander une proposition.",
+    "TRANSLATION_SOURCE_REQUIRED": "Cette réplique doit contenir un texte original à traduire.",
+    "TRANSLATION_INPUT_TOO_LONG": "Cette réplique est trop longue pour une proposition locale. Découpez-la en répliques plus courtes.",
+    "TRANSLATION_LANGUAGE_INVALID": "Choisissez des langues source et cible différentes.",
+    "TRANSLATION_OUTPUT_INVALID": "La proposition est vide, incomplète ou mal formée. Aucun sous-titre n’a été modifié. Réessayez.",
+    "TRANSLATION_STALE": "Le texte, la langue ou l’association de cette réplique a changé. Demandez une nouvelle proposition pour conserver vos corrections.",
+    "TRANSLATION_TIMEOUT": "Le chargement du modèle a dépassé trois minutes. Vérifiez le périphérique et réessayez."
   },
   "preparingVideo": "Préparation de la vidéo…",
   "loadingVideo": "Chargement de la vidéo…",
@@ -788,7 +805,7 @@
   "batchSelected": "Répliques cochées ({{count}}), avec traduction uniquement",
   "batchForce": "Forcer un nouvel essai, même si une prise à jour existe",
   "batchPolicyHint": "Sans forçage, les prises sélectionnées à jour sont conservées. Chaque réussite crée un nouvel essai et le sélectionne ; les anciens essais restent disponibles. Une référence importée est commune au lot ; la référence par défaut du personnage et l’audio actuel sont résolus pour chaque réplique. Traitement séquentiel sur le périphérique choisi.",
-  "batchPreview": "{{ready}} à générer · {{existing}} déjà doublées · {{untranslated}} sans traduction · {{blocked}} exclues (configuration/référence)",
+  "batchPreview": "{{ready}} à générer · {{existing}} déjà doublées · {{untranslated}} sans traduction · {{blocked}} exclues (configuration/référence) · {{unapproved}} non validées",
   "batchExcluded": "Voir les {{count}} répliques exclues",
   "batchLine": "Réplique {{number}}",
   "batchChecking": "Vérification des répliques…",
@@ -811,5 +828,23 @@
     "translated": "Traduite · à valider",
     "approved": "Traduction validée"
   },
-  "ttsBatchLocalHint": "Le modèle reste chargé pendant ce lot. Il est libéré à la fin, lors de l’annulation ou d’une erreur du moteur. Une seule réplique est générée à la fois."
+  "ttsBatchLocalHint": "Le modèle reste chargé pendant ce lot. Il est libéré à la fin, lors de l’annulation ou d’une erreur du moteur. Une seule réplique est générée à la fois.",
+  "translationFilter": "Statut de traduction",
+  "translationFilterAll": "Toutes les traductions",
+  "translationFilterCount": "Répliques affichées",
+  "batchApprovedOnly": "Uniquement les traductions validées",
+  "llmOpen": "Aide à la traduction",
+  "llmHint": "Proposition locale avec le contexte des répliques voisines. Relisez et corrigez le résultat avant de l’appliquer. Le modèle est libéré après chaque proposition ou annulation.",
+  "llmChecking": "Vérification du modèle…",
+  "llmInstallHint": "Modèle de 2,33 Gio, quantification Q4_K_M. Installation autonome avec llama.cpp/Vulkan, sans Python ni Ollama. Compatible CPU et GPU Vulkan ; choisissez la RTX dans la liste. Licence Apache 2.0 pour le modèle, MIT pour le moteur.",
+  "llmDisk": "Espace à prévoir : {{required}} Gio · disponible : {{available}} Gio",
+  "llmInstall": "Installer le modèle de traduction",
+  "llmDevice": "Périphérique de traduction",
+  "llmSuggest": "Proposer une traduction",
+  "llmProposal": "Proposition à relire",
+  "llmSlot": "Proposition de sous-titre {{number}}",
+  "llmApplyHint": "Appliquer remplace le texte traduit en conservant les créneaux. La traduction restera à valider manuellement.",
+  "llmApply": "Appliquer la proposition",
+  "llmDiscard": "Écarter",
+  "llmApplied": "Proposition appliquée. Relisez-la puis validez la traduction si elle vous convient."
 }

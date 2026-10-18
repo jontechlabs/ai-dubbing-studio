@@ -187,6 +187,7 @@ export async function importDubbingReference(
 export type ReferenceAudioInfo = { path: string; durationMs: number; url: string };
 export type DubbingBatchSelection = {
   scope: 'all' | 'selected';
+  approvedOnly?: boolean;
   lineIds: string[];
   force: boolean;
   options: import('../domain/types').VoiceSettings;
@@ -194,6 +195,7 @@ export type DubbingBatchSelection = {
 export type DubbingBatchPreview = {
   requested: number;
   untranslated: number;
+  unapproved: number;
   existing: number;
   ready: string[];
   blocked: { lineId: string; error: string }[];
@@ -549,4 +551,34 @@ export async function subscribe(
     a();
     b();
   };
+}
+
+export interface TranslationStatus {
+  installed: boolean;
+  modelName: string;
+  sizeBytes: number;
+  path: string;
+  availableBytes: number | null;
+  requiredBytes: number;
+  enough: boolean;
+  devices: { id: string; name: string }[];
+  warning: string | null;
+}
+export function translationStatus() {
+  return invoke<TranslationStatus>('translation_status');
+}
+export function installTranslationModel() {
+  return invoke<string>('install_translation_model');
+}
+export function suggestTranslation(lineId: string, device: string) {
+  return invoke<string>('suggest_translation', { lineId, device });
+}
+export function translationResult(id: string) {
+  return invoke<import('../domain/translationProposal').TranslationProposal | null>(
+    'translation_result',
+    { id },
+  );
+}
+export function latestTranslation(lineId: string) {
+  return invoke<string | null>('latest_translation', { lineId });
 }

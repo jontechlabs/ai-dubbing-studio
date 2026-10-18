@@ -16,7 +16,12 @@ import { formatTime } from '../domain/time';
 import type { Dialogue, Project } from '../domain/types';
 import { assignCharacter } from '../domain/characters';
 import { selectedGeneration, staleGeneration } from '../domain/tts';
-import { approveTranslation, translationState } from '../domain/translation';
+import {
+  approveTranslation,
+  translationState,
+  translationStates,
+  type TranslationState,
+} from '../domain/translation';
 
 function DialoguesPane({
   checkedIds,
@@ -54,6 +59,8 @@ function DialoguesPane({
   const { t } = useTranslation();
   const [search, setSearch] = useState('');
   const [review, setReview] = useState(false);
+  const [translationFilter, setTranslationFilter] = useState<'all' | TranslationState>('all');
+  const states = useMemo(() => (project ? translationStates(project) : new Map()), [project]);
   const scrollRef = useRef<HTMLDivElement>(null);
   const checkedAnchor = useRef<string | null>(null);
   const numbers = useMemo(
@@ -66,6 +73,7 @@ function DialoguesPane({
     const target = new Map(project.targetCues.map((cue) => [cue.id, cue.text]));
     return project.dialogues.filter(
       (d) =>
+        (translationFilter === 'all' || states.get(d.id) === translationFilter) &&
         (!review ||
           d.warnings.length > 0 ||
           d.status === 'review' ||
@@ -79,7 +87,7 @@ function DialoguesPane({
           .toLocaleLowerCase()
           .includes(search.toLocaleLowerCase()),
     );
-  }, [project, review, search]);
+  }, [project, review, search, translationFilter, states]);
   const virtual = useVirtualizer({
     count: lines.length,
     getScrollElement: () => scrollRef.current,
@@ -103,6 +111,24 @@ function DialoguesPane({
           <ChevronDown size={13} />
         </button>
       </div>
+      <label className="translation-filter">
+        <span>{t('translationFilter')}</span>
+        <select
+          aria-label={t('translationFilter')}
+          value={translationFilter}
+          onChange={(e) => setTranslationFilter(e.target.value as typeof translationFilter)}
+        >
+          <option value="all">{t('translationFilterAll')}</option>
+          {(['untranslated', 'translated', 'approved'] as const).map((state) => (
+            <option key={state} value={state}>
+              {t(`translationState.${state}`)}
+            </option>
+          ))}
+        </select>
+        <span className="translation-filter-count" aria-label={t('translationFilterCount')}>
+          {lines.length} / {project?.dialogues.length ?? 0}
+        </span>
+      </label>
       <label className="search-field">
         <Search size={15} />
         <input

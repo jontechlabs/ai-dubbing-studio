@@ -19,6 +19,7 @@ mod smoke;
 mod speakers;
 mod subtitles;
 mod transcription;
+mod translation_llm;
 mod tts;
 mod tts_batch;
 mod tts_session;
@@ -60,6 +61,37 @@ pub struct Core {
     model_dir: Mutex<PathBuf>,
 }
 type Shared = Arc<Core>;
+#[tauri::command]
+async fn translation_status(core: State<'_, Shared>) -> Result<translation_llm::Status, String> {
+    translation_llm::status(core.inner().clone()).await
+}
+#[tauri::command]
+fn install_translation_model(
+    app: tauri::AppHandle,
+    core: State<'_, Shared>,
+) -> Result<String, String> {
+    translation_llm::install(core.inner().clone(), app)
+}
+#[tauri::command]
+fn suggest_translation(
+    app: tauri::AppHandle,
+    core: State<'_, Shared>,
+    line_id: String,
+    device: String,
+) -> Result<String, String> {
+    translation_llm::enqueue(core.inner().clone(), app, line_id, device)
+}
+#[tauri::command]
+fn translation_result(
+    core: State<'_, Shared>,
+    id: String,
+) -> Result<Option<translation_llm::Proposal>, String> {
+    translation_llm::result(&core, &id)
+}
+#[tauri::command]
+fn latest_translation(core: State<'_, Shared>, line_id: String) -> Result<Option<String>, String> {
+    translation_llm::latest(&core, &line_id)
+}
 #[tauri::command]
 fn analyze_lips(
     app: tauri::AppHandle,
@@ -909,6 +941,25 @@ fn retry_job(app: tauri::AppHandle, core: State<'_, Shared>, id: String) -> Resu
         .ok_or("INVALID_PROJECT")?
         .saved
         .clone();
+    if record.translation_install {
+        return translation_llm::install(core.inner().clone(), app);
+    }
+    if let Some(request) = record.translation_request {
+        let session = core.session.lock().map_err(io_error)?;
+        if session
+            .as_ref()
+            .is_none_or(|s| s.project.id != request.basis.project_id)
+        {
+            return Err("STALE_REVISION".into());
+        }
+        drop(session);
+        return translation_llm::enqueue(
+            core.inner().clone(),
+            app,
+            request.basis.line_id,
+            request.device,
+        );
+    }
     if let Some(key) = record.tts_batch {
         return tts_batch::resume(core.inner().clone(), app, tts_batch::load(&core, &key)?);
     }
@@ -1139,6 +1190,11 @@ pub fn run() {
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
+            translation_status,
+            install_translation_model,
+            suggest_translation,
+            translation_result,
+            latest_translation,
             inpaint_status,
             install_inpaint,
             inpaint_lips,

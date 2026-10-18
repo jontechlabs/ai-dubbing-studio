@@ -19,6 +19,7 @@ const INSTALLATIONS: &[&str] = &[
     "cosyvoice3-runtime",
     "voice-engines",
     "whisper-reference",
+    "translation-llm",
 ];
 const CONFIG: &str = "model-storage.json";
 type FileEntry = (PathBuf, u64, Option<std::time::SystemTime>);
@@ -394,6 +395,8 @@ pub fn change<R: tauri::Runtime>(
                 "ttsInstall",
                 "tts",
                 "ttsBatch",
+                "translationInstall",
+                "translationSuggest",
                 "speakers",
                 "modelMove",
                 "referenceTranscription",
@@ -498,6 +501,7 @@ mod tests {
             "cosyvoice3-runtime",
             "voice-engines",
             "whisper-reference",
+            "translation-llm",
             "musetalk-runtime",
         ] {
             fs::create_dir_all(source.join(name)).unwrap();
@@ -529,6 +533,7 @@ mod tests {
             "cosyvoice3-runtime",
             "voice-engines",
             "whisper-reference",
+            "translation-llm",
             "musetalk-runtime",
         ] {
             assert_eq!(
