@@ -1,11 +1,11 @@
 {
-  "version": "0.14.0",
-  "notes": "Éditeur de forme d’onde dans la timeline : sélection, ajout de silence, suppression avec rapprochement, volume local de 0 à 200 %, étirement de la zone sans changer la hauteur de voix, annulation et conservation des originaux. Lecture vidéo et exports WAV/MKV utilisent les retouches.",
-  "pub_date": "2026-10-18T13:15:24Z",
+  "version": "0.15.0",
+  "notes": "Fondus d’entrée et de sortie réglables sur les portions de doublage, conservés à la lecture et aux exports. Poignées et bornes précises pour redimensionner les sélections audio. Cliquer une réplique recentre la timeline au même zoom et fait suivre l’éditeur de voix.",
+  "pub_date": "2026-10-18T15:14:11Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSdFFyMUJGTFp3Nkp0bU5EZWxGQ01xSm9sS3BIcXBGNzRGSjR2VWVKbmlFZ2xVZUE4OEx3OGNqSW5sMW9aWkZQS3lDdUxrMnZvQ1dWekNJeVNqSWgvUVRreC9NTFgwZndBPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkyMzI5MDYyCWZpbGU6QUkgRHViYmluZyBTdHVkaW9fMC4xNC4wX3g2NC1zZXR1cC5leGUJdmVyc2lvbjowLjE0LjAKN1I5Y2VkeEljZXNac0ZEYkxOWkp4QmlLVWIzMVVoUEVXTXdGcFlzZ09ISUM5aHMxKzR4UkZHR2JPOVQ0TWZqdFFwQ3VkbjJmMGVBbEJJRi9WM1pXQmc9PQo=",
-      "url": "https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.14.0/AI-Dubbing-Studio-0.14.0-Setup.exe"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSdFFyMUJGTFp3NkdmZ216TFRyUmIrR2xQeFRMZFVwWHJobnV2dytpclJNbUJnTHgxcEZwbnJZOS94VmNJQ0VLc0hSTFNrbmN4bVNoVWdQUU5FOTdIelBveWR3ZGZYSHdZPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkyMzM1OTg0CWZpbGU6QUkgRHViYmluZyBTdHVkaW9fMC4xNS4wX3g2NC1zZXR1cC5leGUJdmVyc2lvbjowLjE1LjAKeTRyYVI4anp6NHBEWDk5Z29nSzJDYi84THE3dldlQVdjNlY0czJnaE80TGNqS0lBQkMrV2pMQUNROWUvSWM3STlaWmpteEtiSEdKbmJPN1EzYnE1Qmc9PQo=",
+      "url": "https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.15.0/AI-Dubbing-Studio-0.15.0-Setup.exe"
     }
   }
 }

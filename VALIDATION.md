@@ -3,7 +3,9 @@
 
 ## v0.15.0 — 18 October 2026
 
-Windows workflow evidence will be recorded before publication.
+Windows checks and signed-update package production passed in [run 39136599852](https://github.com/jontechlabs/ai-dubbing-studio/actions/runs/39136599852), built from `3eeae3a0ffa73f2e8e797c5c777820ecad1c7942`. All 322 Windows suite checks passed (91 TypeScript, 97 Rust, 89 Chrome, 45 Python), plus actual unpinned-bank/FP8/cache/tiny-model/header diagnostics and the real causal-vocoder finalization diagnostic, plus a real native Japanese-to-French LLM proposal and cancellation/process-release checks under a Unicode model path, plus two real Japanese ASR checks using the final Windows release executable. The setup and portable archive are copied unchanged from this workflow. Final metadata only records this evidence and the verified update feed.
+
+Packaged Windows worker timings for the 7.2-second Japanese fixture: auto: 235.71 s, ja: 114.13 s. These are CI CPU measurements, not performance estimates for the user’s PC.
 
 - Real FFmpeg renders check sample amplitudes at fade start, midpoint, full level, a source-piece boundary and fade-out endpoint. They verify exact PCM duration, immutable originals, format 12 persistence, malformed-envelope rejection and a real FLAC/MKV export with the same fade levels at their video positions. The actual pinned Windows FFmpeg 9 executable also verifies per-sample fade amplitudes and zero endpoints using extended Unicode paths.
 - TypeScript checks cover continuous envelopes across gain/source boundaries, interpolation when slicing, deletion/stretch preservation, explicit zero fades, downgrade rejection, audio region bounds and preserved gain/mute/bypass, plus navigation math on a long film.
