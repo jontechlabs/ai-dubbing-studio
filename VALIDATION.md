@@ -3,7 +3,9 @@
 
 ## v0.14.0 — 18 October 2026
 
-Windows workflow evidence will be recorded before publication.
+Windows checks and signed-update package production passed in [run 39128960613](https://github.com/jontechlabs/ai-dubbing-studio/actions/runs/39128960613), built from `5e4ddcf16f90073705d2e3c6558bceeafde7630f`. All 305 Windows suite checks passed (82 TypeScript, 94 Rust, 84 Chrome, 45 Python), plus actual unpinned-bank/FP8/cache/tiny-model/header diagnostics and the real causal-vocoder finalization diagnostic, plus a real native Japanese-to-French LLM proposal and cancellation/process-release checks under a Unicode model path, plus two real Japanese ASR checks using the final Windows release executable. The setup and portable archive are copied unchanged from this workflow. Final metadata only records this evidence and the verified update feed.
+
+Packaged Windows worker timings for the 7.2-second Japanese fixture: auto: 111.93 s, ja: 56.56 s. These are CI CPU measurements, not performance estimates for the user’s PC.
 
 - Real FFmpeg checks inspect exact PCM samples/durations for inserted silence, deleted source intervals, independent 50%/200% gains, original WAV preservation, content-cache reuse and persistence/reopening. Rubber Band stretches/compresses selected 440 Hz source intervals with exact target lengths; frequency is checked in unchanged and stretched sections.
 - A real FLAC/MKV export checks silent and audible samples at their expected video positions. It also checks cancellation before rendering. Corrupt ranges, non-finite gains and excessive edit plans are rejected by native validation.

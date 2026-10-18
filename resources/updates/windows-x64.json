@@ -1,11 +1,11 @@
 {
-  "version": "0.13.0",
-  "notes": "Filtres des répliques par statut de traduction et option de doublage par lot limitée aux traductions validées. Aide à la traduction locale : Qwen3-4B-Instruct-2507 GGUF Q4_K_M, installation autonome, choix du GPU Vulkan ou CPU, propositions modifiables avant application, préservation des créneaux et validation manuelle. Modèle libéré après proposition ou annulation.",
-  "pub_date": "2026-10-18T10:20:33Z",
+  "version": "0.14.0",
+  "notes": "Éditeur de forme d’onde dans la timeline : sélection, ajout de silence, suppression avec rapprochement, volume local de 0 à 200 %, étirement de la zone sans changer la hauteur de voix, annulation et conservation des originaux. Lecture vidéo et exports WAV/MKV utilisent les retouches.",
+  "pub_date": "2026-10-18T13:15:24Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSdFFyMUJGTFp3Nk9lMVhQdkRWUFRwNkZEaFZSS0VWbml5UDdoM3JmU3IvcUZaK21USTZRSlorUm8vQVhpcjdZbGt6UTdLUHVDRG56QXZkSWVTTkxxUGRBbUNaRkd4TVFFPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkyMzE4NDg4CWZpbGU6QUkgRHViYmluZyBTdHVkaW9fMC4xMy4wX3g2NC1zZXR1cC5leGUJdmVyc2lvbjowLjEzLjAKc25HZ01LaWxuZ3ovSDkzZ3NBQWU1Y2tyU3lhTmZadWNXOXBqZmlvRkNpQm9lR3BxM3NQSWp4ZkFpbXhJdkVJc013a0sxTmJvRm0vaVNGaDI3b0poQUE9PQo=",
-      "url": "https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.13.0/AI-Dubbing-Studio-0.13.0-Setup.exe"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSdFFyMUJGTFp3Nkp0bU5EZWxGQ01xSm9sS3BIcXBGNzRGSjR2VWVKbmlFZ2xVZUE4OEx3OGNqSW5sMW9aWkZQS3lDdUxrMnZvQ1dWekNJeVNqSWgvUVRreC9NTFgwZndBPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkyMzI5MDYyCWZpbGU6QUkgRHViYmluZyBTdHVkaW9fMC4xNC4wX3g2NC1zZXR1cC5leGUJdmVyc2lvbjowLjE0LjAKN1I5Y2VkeEljZXNac0ZEYkxOWkp4QmlLVWIzMVVoUEVXTXdGcFlzZ09ISUM5aHMxKzR4UkZHR2JPOVQ0TWZqdFFwQ3VkbjJmMGVBbEJJRi9WM1pXQmc9PQo=",
+      "url": "https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.14.0/AI-Dubbing-Studio-0.14.0-Setup.exe"
     }
   }
 }
