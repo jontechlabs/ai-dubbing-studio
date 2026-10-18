@@ -180,7 +180,7 @@ pub async fn render(
             "-i",
         ])
         .arg(&source)
-        .arg("-filter_complex_script")
+        .arg("-/filter_complex")
         .arg(script.path())
         .args([
             "-map",
