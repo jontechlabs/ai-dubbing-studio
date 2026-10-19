@@ -887,5 +887,11 @@
   "voiceTimingLimited": "The saved timing exceeds its available slot or leaves too little room for its pieces. Move this take into a free interval or reduce its duration. Your edits remain recoverable.",
   "voiceRecoverTiming": "Move into available space",
   "VOICE_DURATION_OUT_OF_RANGE": "This duration exceeds the available limits. Respect the displayed maximum and keep at least 1 ms per piece.",
-  "voiceTimingCommitHint": "Press Enter or leave the field to apply; Escape cancels typing."
+  "voiceTimingCommitHint": "Press Enter or leave the field to apply; Escape cancels typing.",
+  "contextApplication": "Application",
+  "contextUndo": "Undo last change",
+  "contextRedo": "Redo change",
+  "contextAudioTrack": "Track: {{name}}",
+  "contextDeleteRegion": "Delete region",
+  "contextRegionHint": "Right-click to remove this region and restore the track volume."
 }

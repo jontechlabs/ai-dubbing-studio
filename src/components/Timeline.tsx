@@ -29,7 +29,9 @@ import {
   audioResizeLimits,
   resizeAudioRegion,
   trackLabel,
+  removeAudioRegion,
 } from '../domain/audio';
+import type { OpenContextMenu } from './ContextMenu';
 import { trackPatches } from '../domain/audioPatch';
 import { subtitleDisplay, toggleSubtitles } from '../domain/subtitleDisplay';
 import {
@@ -55,6 +57,7 @@ export const Timeline = memo(function Timeline({
   onAudioSelection,
   audioSelection,
   onAudioAdvanced,
+  onContextMenu,
 }: {
   project: Project | null;
   navigation?: TimelineNavigation | null;
@@ -67,6 +70,7 @@ export const Timeline = memo(function Timeline({
   onAudioSelection: (selection: AudioSelection | null) => void;
   audioSelection: AudioSelection | null;
   onAudioAdvanced: () => void;
+  onContextMenu: OpenContextMenu;
 }) {
   const { t } = useTranslation();
   const scroll = useRef<HTMLDivElement>(null);
@@ -479,6 +483,7 @@ export const Timeline = memo(function Timeline({
             className="timeline-content"
             style={{ width }}
             onPointerDown={(event) => {
+              if (event.button !== 0) return;
               if (!(event.target as HTMLElement).closest('button')) {
                 event.currentTarget.setPointerCapture(event.pointerId);
                 seek(event);
@@ -505,6 +510,71 @@ export const Timeline = memo(function Timeline({
                 className={`timeline-track ${style} ${audioTool && track ? 'audio-selection-tool' : ''}`}
                 data-track-id={track?.id}
                 style={{ height: rowHeight }}
+                onContextMenu={(event) => {
+                  if (!track || !project?.media) return;
+                  const point = xToTime(
+                    event.clientX - event.currentTarget.getBoundingClientRect().left,
+                    0,
+                    scale,
+                    track.durationMs ?? project.media.durationMs,
+                  );
+                  const selectionHandle = !!(event.target as Element).closest(
+                    '.audio-selection-edge',
+                  );
+                  const directId =
+                    (event.target as Element)
+                      .closest('[data-region-id]')
+                      ?.getAttribute('data-region-id') ??
+                    (selectionHandle ? audioSelection?.regionId : undefined);
+                  const region = directId
+                    ? track.regions?.find((r) => r.id === directId)
+                    : track.regions?.find((r) => r.startMs <= point && point < r.endMs);
+                  const selection = region
+                    ? {
+                        mediaId: project.media.id,
+                        trackId: track.id,
+                        regionId: region.id,
+                        startMs: region.startMs,
+                        endMs: region.endMs,
+                      }
+                    : audioSelection?.mediaId === project.media.id &&
+                        audioSelection.trackId === track.id &&
+                        (selectionHandle ||
+                          (audioSelection.startMs <= point && point < audioSelection.endMs))
+                      ? audioSelection
+                      : null;
+                  if (selection) onAudioSelection(selection);
+                  onContextMenu(event, t('contextAudioTrack', { name: t(trackLabel(track)) }), [
+                    ...(region
+                      ? [
+                          {
+                            label: t('contextDeleteRegion'),
+                            danger: true,
+                            disabled: busy,
+                            run: () => {
+                              onEdit((p) => {
+                                if (p.id !== project.id || p.media?.id !== project.media!.id)
+                                  throw Error('STALE_REVISION');
+                                return removeAudioRegion(p, track.id, region.id);
+                              });
+                              onAudioSelection(null);
+                            },
+                          },
+                        ]
+                      : []),
+                    ...(selection
+                      ? [{ label: t('timelineSelectionClear'), run: () => onAudioSelection(null) }]
+                      : []),
+                    {
+                      label: t(track.mute ? 'enableTrack' : 'muteTrack', {
+                        name: t(trackLabel(track)),
+                      }),
+                      disabled: busy,
+                      run: () => onEdit((p) => editTrack(p, track.id, { mute: !track.mute })),
+                    },
+                    { label: t('timelineSelectionAdvanced'), run: onAudioAdvanced },
+                  ]);
+                }}
                 onPointerDown={(event) => {
                   if (!track || busy || event.button !== 0 || (!audioTool && !event.shiftKey))
                     return;
@@ -774,6 +844,7 @@ export const Timeline = memo(function Timeline({
                             width: Math.max(3, (range.endMs - range.startMs) * scale),
                           }}
                           onPointerDown={(event) => {
+                            if (event.button !== 0) return;
                             event.stopPropagation();
                             event.currentTarget.setPointerCapture(event.pointerId);
                             onSelect(line);
@@ -872,7 +943,7 @@ export const Timeline = memo(function Timeline({
                           left: region.startMs * scale,
                           width: Math.max(3, (region.endMs - region.startMs) * scale),
                         }}
-                        title={`${formatTime(region.startMs)} → ${formatTime(region.endMs)} · ${region.mute ? t('regionMuted') : Math.round(region.gain * 100) + '%'}`}
+                        title={`${formatTime(region.startMs)} → ${formatTime(region.endMs)} · ${region.mute ? t('regionMuted') : Math.round(region.gain * 100) + '%'}\n${t('contextRegionHint')}`}
                         aria-label={t('timelineAudioRegion', { name: t(key), index: index + 1 })}
                         disabled={busy}
                         onPointerDown={(event) => {

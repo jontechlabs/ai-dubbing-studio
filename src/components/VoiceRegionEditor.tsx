@@ -355,6 +355,7 @@ export function VoiceRegionEditor({
                 edge === 'start' ? 'voiceResizeSelectionStart' : 'voiceResizeSelectionEnd',
               )}
               onPointerDown={(e) => {
+                if (e.button !== 0) return;
                 e.stopPropagation();
                 e.preventDefault();
                 surface.current!.setPointerCapture(e.pointerId);
@@ -377,6 +378,7 @@ export function VoiceRegionEditor({
             title={t('stretchVoiceHint')}
             aria-label={t('stretchVoiceHint')}
             onPointerDown={(e) => {
+              if (e.button !== 0) return;
               e.stopPropagation();
               e.preventDefault();
               surface.current!.setPointerCapture(e.pointerId);

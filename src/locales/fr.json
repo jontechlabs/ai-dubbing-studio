@@ -887,5 +887,11 @@
   "voiceTimingLimited": "Le calage enregistré dépasse le créneau disponible ou ne laisse pas assez de place aux segments. Repositionnez ce doublage dans un espace libre, ou réduisez sa durée. Les retouches restent récupérables.",
   "voiceRecoverTiming": "Replacer dans un espace disponible",
   "VOICE_DURATION_OUT_OF_RANGE": "Cette durée est hors des limites disponibles. Respectez le maximum affiché et conservez au moins 1 ms par segment.",
-  "voiceTimingCommitHint": "Entrée ou sortie du champ pour appliquer ; Échap pour annuler la saisie."
+  "voiceTimingCommitHint": "Entrée ou sortie du champ pour appliquer ; Échap pour annuler la saisie.",
+  "contextApplication": "Application",
+  "contextUndo": "Annuler la dernière modification",
+  "contextRedo": "Rétablir la modification",
+  "contextAudioTrack": "Piste : {{name}}",
+  "contextDeleteRegion": "Supprimer la zone",
+  "contextRegionHint": "Clic droit : supprimer cette zone pour retrouver le volume de la piste."
 }

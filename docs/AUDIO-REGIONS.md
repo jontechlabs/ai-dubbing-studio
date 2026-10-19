@@ -63,3 +63,6 @@ Cet export concerne les pistes PCM stéréo 48 kHz produites par Bandit. L’ori
 ## Compatibilité du projet
 
 Les zones utilisent le **format de projet 4**. Le studio ouvre toujours les formats 1 à 3. Les versions 0.4.1 et antérieures refusent les projets de format 4 pour éviter de perdre leurs zones. Les réglages de sous-titres, personnages et modèles conservent le nouveau format. Remplacer la vidéo réinitialise les zones de sa piste originale ; préparer un proxy du même média les conserve.
+
+
+Depuis v0.16.0, un **clic droit → Supprimer la zone** retire une zone de volume/silence directement sur la timeline, avec annulation. [Guide des menus contextuels](CONTEXT-MENUS.md).

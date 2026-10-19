@@ -16,6 +16,7 @@ import { useTransport } from './hooks/useTransport';
 import * as bridge from './services/bridge';
 import type { TimelineNavigation } from './domain/timeline';
 import { useUpdater } from './hooks/useUpdater';
+import { ContextMenu, type ContextRequest, type OpenContextMenu } from './components/ContextMenu';
 
 export default function App() {
   const { t, i18n } = useTranslation();
@@ -68,6 +69,49 @@ export default function App() {
       (job) =>
         ['import', 'subtitles'].includes(job.kind) && ['queued', 'running'].includes(job.status),
     );
+  const contextScope = `${studio.project?.id}:${busy}:${panel}`;
+  const [context, setContext] = useState<
+    (ContextRequest & { scope: string; basis: Project | null }) | null
+  >(null);
+  const contextCurrent = useMemo(() => {
+    if (!context) return false;
+    if (context.basis === studio.project) return true;
+    // Autosave only changes metadata. It must not close a menu just opened
+    // after adjusting a level, while actual edits still invalidate its actions.
+    const content = (p: Project | null) =>
+      p && { ...p, revision: 0, updatedAt: '', appVersion: '' };
+    return JSON.stringify(content(context.basis)) === JSON.stringify(content(studio.project));
+  }, [context, studio.project]);
+  const closeContext = useCallback(() => setContext(null), []);
+  useEffect(() => {
+    if (context && (context.scope !== contextScope || !contextCurrent)) setContext(null);
+  }, [context, contextScope, contextCurrent]);
+  const openContext: OpenContextMenu = useCallback(
+    (event, label, actions) => {
+      event.preventDefault();
+      event.stopPropagation();
+      const bounds = event.currentTarget.getBoundingClientRect();
+      const scrollOffsets: ContextRequest['scrollOffsets'] = [];
+      for (
+        let element: Element | null = event.target as Element;
+        element;
+        element = element.parentElement
+      ) {
+        scrollOffsets.push({ element, left: element.scrollLeft, top: element.scrollTop });
+      }
+      setContext({
+        x: event.clientX || bounds.left + Math.min(20, bounds.width / 2),
+        y: event.clientY || bounds.top + Math.min(20, bounds.height / 2),
+        label,
+        actions,
+        opener: document.activeElement instanceof HTMLElement ? document.activeElement : null,
+        scrollOffsets,
+        scope: contextScope,
+        basis: studio.project,
+      });
+    },
+    [contextScope, studio.project],
+  );
   const transport = useTransport(studio.project, selected, padding, studio.setError);
   const { endOriginal } = transport;
   const { edit: editProject } = studio;
@@ -209,7 +253,46 @@ export default function App() {
       .split(':')[0]
       .trim() ?? 'UNKNOWN';
   return (
-    <div className="app-shell">
+    <div
+      className="app-shell"
+      onContextMenu={(event) => {
+        // Keep the platform's text editing menu (copy, paste, spelling, etc.).
+        if (
+          event.defaultPrevented ||
+          (event.target as Element).closest(
+            'input, textarea, select, [contenteditable]:not([contenteditable="false"])',
+          )
+        )
+          return;
+        openContext(event, t('contextApplication'), [
+          {
+            label: t('contextUndo'),
+            shortcut: 'Ctrl+Z',
+            disabled: !studio.project || busy,
+            run: () => {
+              void studio.run(() => bridge.history('undo'));
+            },
+          },
+          {
+            label: t('contextRedo'),
+            shortcut: 'Ctrl+Y',
+            disabled: !studio.project || busy,
+            run: () => {
+              void studio.run(() => bridge.history('redo'));
+            },
+          },
+          {
+            label: t('save'),
+            shortcut: 'Ctrl+S',
+            disabled: !studio.project || busy,
+            run: () => {
+              void studio.save();
+            },
+          },
+          { label: t('settings'), run: () => setPanel('settings') },
+        ]);
+      }}
+    >
       <Header
         project={studio.project}
         saveState={studio.saveState}
@@ -341,6 +424,7 @@ export default function App() {
         />
         <div className="timeline-container" style={{ height: timelineHeight, flexShrink: 0 }}>
           <Timeline
+            onContextMenu={openContext}
             navigation={timelineNavigation}
             audioSelection={audioSelection}
             onAudioAdvanced={openAudioAdvanced}
@@ -414,6 +498,9 @@ export default function App() {
             <X size={16} />
           </button>
         </div>
+      )}
+      {context?.scope === contextScope && contextCurrent && (
+        <ContextMenu request={context} onClose={closeContext} />
       )}
     </div>
   );

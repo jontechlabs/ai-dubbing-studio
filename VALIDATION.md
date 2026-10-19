@@ -1,6 +1,16 @@
 # Validation
 
 
+## v0.16.0 — 19 October 2026
+
+Windows workflow evidence will be recorded before publication.
+
+- TypeScript regressions verify atomic region removal, restored half-open default gain, preserved neighbouring regions, independent track levels/solo/mute and bypass state, empty region persistence and rejection of stale track/region IDs without mutation.
+- Browser regressions cover removal on all five audio tracks, undo/redo and reload; clearing unapplied selections via handles without modifying the project; general menu actions, keyboard navigation, Escape/outside dismissal and native text fields; right-click preserving playback position, cues and generated audio; viewport bounds, scroll/resize/project-change dismissal; targeting after zoom and scroll; and measured browser audio recovery after deleting a silent region.
+- Screenshots use the actual React interface, synthetic media and mocked native commands. Existing native render/export and worker regression suites remain enabled. No inference worker, model, dependency or project format changed. No GPU performance claim is made.
+
+
+
 ## v0.15.1 — 19 October 2026
 
 Windows checks and signed-update package production passed in [run 39200976135](https://github.com/jontechlabs/ai-dubbing-studio/actions/runs/39200976135), built from `025a7541d0632925e2be1ccc9f85e3aaa980a35b`. All 341 Windows suite checks passed (102 TypeScript, 100 Rust, 94 Chrome, 45 Python), plus actual unpinned-bank/FP8/cache/tiny-model/header diagnostics and the real causal-vocoder finalization diagnostic, plus a real native Japanese-to-French LLM proposal and cancellation/process-release checks under a Unicode model path, plus two real Japanese ASR checks using the final Windows release executable. The setup and portable archive are copied unchanged from this workflow. Final metadata only records this evidence and the verified update feed.

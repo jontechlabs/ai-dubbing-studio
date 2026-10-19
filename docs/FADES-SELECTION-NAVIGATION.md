@@ -44,3 +44,6 @@ Les projets existants restent lisibles. La première application d’un fondu ut
 
 
 Depuis v0.15.1, les durées et déplacements sont protégés par les limites réellement disponibles. Les saisies de calage se valident avec Entrée ou en quittant le champ. Voir le [guide des limites et de la récupération](VOICE-DURATION-SAFETY.md).
+
+
+Depuis v0.16.0, un **clic droit → Supprimer la zone** retire une zone de volume/silence directement sur la timeline, avec annulation. [Guide des menus contextuels](CONTEXT-MENUS.md).

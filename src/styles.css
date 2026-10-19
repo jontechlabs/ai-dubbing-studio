@@ -2653,3 +2653,52 @@ pre {
   gap: 12px;
   margin: 4px 0;
 }
+.app-context-menu {
+  position: fixed;
+  z-index: 100;
+  width: max-content;
+  min-width: 230px;
+  max-width: calc(100vw - 16px);
+  max-height: calc(100vh - 16px);
+  overflow: auto;
+  padding: 5px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: var(--panel);
+  color: var(--text);
+  box-shadow: 0 8px 28px #0005;
+}
+.context-menu-title {
+  padding: 7px 10px;
+  color: var(--muted);
+  font-size: 11px;
+}
+.app-context-menu button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  width: 100%;
+  padding: 9px 10px;
+  border: 0;
+  border-radius: 5px;
+  text-align: left;
+  background: transparent;
+}
+.app-context-menu button:enabled:hover,
+.app-context-menu button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+  background: var(--surface);
+}
+.app-context-menu button.danger {
+  color: #ed969e;
+}
+:root[data-theme='light'] .app-context-menu button.danger {
+  color: #a52636;
+}
+.app-context-menu kbd {
+  color: var(--muted);
+  font: inherit;
+  font-size: 11px;
+}

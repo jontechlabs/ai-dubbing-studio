@@ -8,6 +8,7 @@ import {
   setAudioRegions,
   setAllAudio,
   trackLabel,
+  removeAudioRegion,
 } from '../domain/audio';
 import {
   audioPatches,
@@ -267,14 +268,7 @@ export function AudioRegionsEditor({
               className="icon-button"
               aria-label={t('deleteRegion', { index: index + 1 })}
               onClick={() => {
-                onEdit((p) =>
-                  setAudioRegions(
-                    p,
-                    track.id,
-                    (track.regions ?? []).filter((item) => item.id !== region.id),
-                    track.regionsEnabled !== false,
-                  ),
-                );
+                onEdit((p) => removeAudioRegion(p, track.id, region.id));
                 if (editingId === region.id) setEditingId(undefined);
               }}
             >

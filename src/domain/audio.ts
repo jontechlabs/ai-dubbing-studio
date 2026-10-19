@@ -126,6 +126,17 @@ export function paintAudioRegion(
   regions.push({ ...range, id: editingId ?? crypto.randomUUID() });
   return setAudioRegions(project, trackId, regions);
 }
+// Removing an envelope restores the track level without cutting source audio.
+export function removeAudioRegion(project: Project, trackId: string, regionId: string) {
+  const track = audioTracks(project).find((t) => t.id === trackId);
+  if (!track?.regions?.some((r) => r.id === regionId)) throw Error('INVALID_AUDIO_REGION');
+  return setAudioRegions(
+    project,
+    trackId,
+    track.regions.filter((r) => r.id !== regionId),
+    track.regionsEnabled ?? true,
+  );
+}
 // Resizing a saved region keeps its treatment and protects its neighbours.
 export function audioResizeLimits(project: Project, trackId: string, regionId?: string) {
   const track = audioTracks(project).find((t) => t.id === trackId);
