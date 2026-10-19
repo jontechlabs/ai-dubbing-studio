@@ -464,6 +464,7 @@ function JobsPanel({ jobs, onError }: { jobs: Job[]; onError: (s: string) => voi
             'inpaint',
             'inpaintInstall',
             'inpaintBatch',
+            'faceDetection',
             'audioTransfer',
           ].includes(job.kind) &&
             ['failed', 'cancelled', 'interrupted'].includes(job.status) && (

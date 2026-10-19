@@ -6,11 +6,27 @@
 2. Dans **Dialogues**, cochez les répliques souhaitées si nécessaire, puis ouvrez **Synchronisation labiale par lot**.
 3. Choisissez **Toutes les répliques doublées** ou **Répliques cochées uniquement**. Les répliques sans essai sélectionné sont ignorées, même si leur texte est traduit.
 4. Choisissez MuseTalk, LatentSync 1.5 ou 1.6, installez le moteur et sélectionnez votre GPU. Les paramètres de génération sont communs au lot.
-5. Dans **Réplique utilisée pour le cadrage**, sélectionnez une réplique, dessinez le visage et le masque puis cliquez sur **Conserver ce cadrage pour la réplique … dans le lot**. Répétez pour les autres plans.
+5. Utilisez **Détecter les visages du lot**, puis vérifiez et appliquez les propositions. Dans **Réplique utilisée pour le cadrage**, vous pouvez aussi sélectionner une réplique, dessiner le visage et le masque puis cliquer sur **Conserver ce cadrage pour la réplique … dans le lot**. Répétez pour les plans à corriger.
 6. Vous pouvez réutiliser les cadrages des variantes déjà enregistrées. Leur priorité est inférieure aux cadrages préparés dans ce panneau. Un cadrage commun pour les autres répliques exige de cocher explicitement **Utiliser le cadrage affiché…**.
 7. Vérifiez le bilan : prêtes, sans doublage, déjà synchronisées, sans cadrage, exclues. Les motifs d’exclusion sont consultables. Lancez le lot.
 
-Les cadrages préparés sont conservés dans le panneau jusqu’à sa fermeture, puis dans le journal du lot lorsqu’il démarre et dans les variantes produites. Un cadrage commun ne détecte pas les changements de plan. Aucune détection automatique de visage n’est ajoutée dans cette version.
+Les cadrages préparés sont conservés dans le panneau jusqu’à sa fermeture, puis dans le journal du lot lorsqu’il démarre et dans les variantes produites. Un cadrage commun ne détecte pas les changements de plan.
+
+## Détection automatique : film et anime
+
+La détection analyse localement **cinq images de chaque dialogue** sur CPU, sans charger le modèle labial en VRAM. Choisissez le mode automatique, **personnes filmées (YuNet)** ou **animes/dessins (LBP animeface)**. Les cadrages manuels préparés et les cadrages enregistrés sont prioritaires ; seuls les éléments encore à cadrer sont analysés.
+
+Au premier usage, environ **40 Mo** sont téléchargés : OpenCV 4.11 et deux petits détecteurs, avec versions, tailles et empreintes SHA-256 vérifiées. Ils utilisent le runtime du moteur labial installé et suivent le dossier de stockage des modèles. Aucun serveur ComfyUI ni nouvel environnement CUDA n’est nécessaire. Un contrôle d’espace libre précède les téléchargements.
+
+Après l’analyse, cliquez sur **Utiliser les … cadrages proposés**. Le sélecteur de réplique permet de vérifier les cadres et de modifier le visage, le masque de bouche ou le déplacement simple. Le masque de bouche est une proposition géométrique ajustable, pas une segmentation automatique des lèvres.
+
+Les images sans visage net, plusieurs visages, les changements de plan repérés et les déplacements ou zooms trop complexes sont signalés pour correction manuelle. La détection **n’identifie pas le personnage qui parle**, ne suit pas toutes les images du film et peut manquer une coupure entre les cinq échantillons. Examinez toujours les variantes avant activation. Les propositions devenues obsolètes après une modification du projet ne sont pas appliquées ; une annulation ne publie aucun cadrage partiel.
+
+![Propositions de cadrage à vérifier](screenshots/face-detection-batch-fr.png)
+
+*Interface réelle avec résultats natifs simulés pour illustrer les cas ambigus. Les deux détecteurs et le protocole du worker sont vérifiés séparément sur de véritables images filmée et anime, dans des chemins Windows accentués.*
+
+Sources des détecteurs : [OpenCV Zoo / YuNet](https://github.com/opencv/opencv_zoo/tree/47534e27c9851bb1128ccc0102f1145e27f23f98/models/face_detection_yunet) et [nagadomi / lbpcascade_animeface](https://github.com/nagadomi/lbpcascade_animeface/tree/4433ab1ae1166ea75acfe99eb0f18709dac329a0). Les licences MIT sont incluses dans `workers/FACE-DETECTION-LICENSES.txt`. Les images de diagnostic sont téléchargées temporairement et ne sont pas distribuées avec l’application.
 
 ![Configuration du lot](screenshots/lip-batch-fr.png)
 

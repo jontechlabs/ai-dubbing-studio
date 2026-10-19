@@ -177,7 +177,9 @@
     "translationLoad": "Loading translation model",
     "translationGenerate": "Generating translation proposal",
     "translationRelease": "Releasing translation model",
-    "inpaintBatch": "Batch lip synchronization"
+    "inpaintBatch": "Batch lip synchronization",
+    "faceDetection": "Detecting faces…",
+    "faceInstall": "Preparing face detectors"
   },
   "shortcuts": "Space: play · J/K/L: transport · O: original · Ctrl+S: save · Ctrl+Z/Y: undo/redo",
   "errors": {
@@ -318,7 +320,15 @@
     "INVALID_INPAINT_BATCH": "The batch selection or crops are invalid.",
     "INPAINT_BATCH_EMPTY": "No dialogue is ready: select dubbed lines and check their framing.",
     "INPAINT_BATCH_PARTIAL": "The batch is incomplete. Completed sequences are retained; review the logs and resume.",
-    "VOICE_EDIT_STALE": "The dialogue changed during validation. Retry the edit."
+    "VOICE_EDIT_STALE": "The dialogue changed during validation. Retry the edit.",
+    "FACE_PROFILE_INVALID": "Invalid face detection profile.",
+    "FACE_BATCH_EMPTY": "No faces to analyze: framing already exists or no dubbed lines are eligible.",
+    "FACE_RUNTIME_FAILED": "Cannot prepare or run the face detector. Check logs and retry.",
+    "FACE_RESULT_INVALID": "Invalid detected crop. Frame manually.",
+    "FACE_SCENE_CHANGE": "Shot change detected: manual framing required.",
+    "FACE_MULTIPLE": "Multiple faces: choose the speaking character manually.",
+    "FACE_NOT_FOUND": "Face missing or occluded on some frames: manual framing required.",
+    "FACE_MOVEMENT": "Complex movement or zoom: manual framing required."
   },
   "preparingVideo": "Preparing video…",
   "loadingVideo": "Loading video…",
@@ -932,10 +942,22 @@
   "inpaintBatchFramingHint": "Set the batch options. Use the dialogue selector to frame individual dialogues for this batch. Framing from existing variants can also be reused.",
   "inpaintBatchFrameLine": "Dialogue used for framing",
   "inpaintBatchSaveCrop": "Keep this crop for dialogue {{number}} in this batch",
-  "inpaintBatchCropCount": "{{count}} crops prepared for this batch",
+  "inpaintBatchCropCount": "Crops prepared for this batch: {{count}}",
   "voiceOriginalPreview": "Listen to the original take",
   "voiceOriginalKept": "The original take is retained. Edits render into working copies; you can audition or restore the original.",
   "voiceEditValidating": "Checking the audio render before saving the edit…",
   "voiceEditRenderFailedKept": "This edit could not be rendered. The previous version and original take are retained. See diagnostics.",
-  "VOICE_EDIT_STALE": "The dialogue changed during validation. Retry the edit."
+  "VOICE_EDIT_STALE": "The dialogue changed during validation. Retry the edit.",
+  "faceDetection": "Automatic face detection",
+  "faceDetectionHint": "Local CPU analysis of five frames per dialogue. First use adds OpenCV and two verified small detectors (about 40 MB download). Manual and saved framing take priority.",
+  "faceProfile": "Face detection profile",
+  "faceProfileAuto": "Automatic: filmed people and anime",
+  "faceProfileLive": "Filmed people · YuNet",
+  "faceProfileAnime": "Anime / drawings · LBP animeface",
+  "faceDetectBatch": "Detect faces in this batch",
+  "faceDetectProgress": "Detecting faces…",
+  "faceDetectionResults": "Proposals: {{found}} · Need manual framing: {{rejected}}",
+  "faceManualRequired": "View crops requiring attention",
+  "faceApplyProposals": "Use proposed crops ({{count}})",
+  "faceReviewHint": "Review framing in the dialogue selector before synchronizing. Multiple faces, shot cuts, occlusions and complex movement require manual framing. Detection does not identify the speaker."
 }

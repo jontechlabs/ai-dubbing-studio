@@ -1,6 +1,6 @@
 # AI Dubbing Studio — phases 1–7
 
-**v0.18.0 — Synchronisation labiale par lot et éditions audio fiabilisées.** Traitez toutes les répliques doublées ou les répliques cochées, avec des cadrages par dialogue, annulation et reprise. Chaque résultat est une séquence indépendante ; la vidéo principale reste intacte. Les découpes et étirements sont vérifiés avant enregistrement, l’essai d’origine reste écoutable, et les cartes multilignes ne se chevauchent plus. [Guide et captures](docs/LIP-BATCHES-AND-AUDIO-RECOVERY.md).
+**v0.18.0 — Synchronisation labiale par lot et éditions audio fiabilisées.** Traitez toutes les répliques doublées ou les répliques cochées, avec détection des visages filmés et animes sur CPU, cadrages corrigibles par dialogue, annulation et reprise. Chaque résultat est une séquence indépendante ; la vidéo principale reste intacte. Les découpes et étirements sont vérifiés avant enregistrement, l’essai d’origine reste écoutable, et les cartes multilignes ne se chevauchent plus. [Guide et captures](docs/LIP-BATCHES-AND-AUDIO-RECOVERY.md).
 
 ![Batch lip synchronization](docs/screenshots/lip-batch-fr.png)
 

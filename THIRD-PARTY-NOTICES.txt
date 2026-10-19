@@ -77,3 +77,13 @@ No translation model weights or inference binaries are bundled in this applicati
 
 LatentSync 1.5 / 1.6 dialogue lip synchronization (v0.17.0)
 LatentSync by ByteDance, Apache-2.0, official revision a229c3948406bc2cf6eaf4873e662e70c6a04746: https://github.com/bytedance/LatentSync. ShmuelRonen/ComfyUI-LatentSyncWrapper revision 360d5283d7276aee68b4237b1387e594e4ce640e declares Apache-2.0 in its README; the wrapper has no separate LICENSE file. Its neural UNet/attention/resnet/motion module sources retain their copyright notices and are vendored in workers/vendor/latentsync, with the official Apache-2.0 license and provenance. AnimateDiff temporal module code retains its original comments. The studio adapter replaces video/face detector dependencies with manual face crops, staged VAE placement, sequential guidance and bounded temporal windows; it does not run a ComfyUI server or redistribute ComfyUI through this integration. Official ByteDance 1.5/1.6 weights, stabilityai/sd-vae-ft-mse VAE and openai/whisper-tiny audio weights download on request, under their upstream terms. Exact pinned revisions/sizes/SHA-256 are in workers/latentsync-model.json; wheel pins in workers/latentsync-runtime.json. PyTorch, diffusers and transformers retain original wheel metadata/licenses. No model weights are bundled. See docs/LATENTSYNC.md and workers/vendor/latentsync/UPSTREAM.json.
+Automatic face framing (optional CPU component)
+---------------------------------------------
+OpenCV Python headless 4.11.0.86 is downloaded from PyPI with verified size and
+SHA-256. Its license and third-party notices are retained in the installed wheel.
+YuNet 2023mar: OpenCV Zoo revision 47534e27c9851bb1128ccc0102f1145e27f23f98,
+MIT License. Anime LBP cascade: nagadomi/lbpcascade_animeface revision
+4433ab1ae1166ea75acfe99eb0f18709dac329a0, MIT License.
+Full detector license texts: workers/FACE-DETECTION-LICENSES.txt.
+Detector weights download separately; validation images are temporary and are
+not redistributed with the application.

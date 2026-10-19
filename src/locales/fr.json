@@ -177,7 +177,9 @@
     "translationLoad": "Chargement du modèle de traduction",
     "translationGenerate": "Proposition de traduction en cours",
     "translationRelease": "Libération du modèle de traduction",
-    "inpaintBatch": "Synchronisation labiale par lot"
+    "inpaintBatch": "Synchronisation labiale par lot",
+    "faceDetection": "Détection des visages en cours…",
+    "faceInstall": "Préparation des détecteurs de visages"
   },
   "shortcuts": "Espace : lecture · J/K/L : transport · O : original · Ctrl+S : sauvegarde · Ctrl+Z/Y : annuler/rétablir",
   "errors": {
@@ -318,7 +320,15 @@
     "INVALID_INPAINT_BATCH": "La sélection du lot ou ses cadrages sont invalides.",
     "INPAINT_BATCH_EMPTY": "Aucune réplique prête : choisissez des doublages et vérifiez leurs cadrages.",
     "INPAINT_BATCH_PARTIAL": "Le lot est incomplet. Les séquences terminées sont conservées ; consultez les logs puis reprenez le lot.",
-    "VOICE_EDIT_STALE": "La réplique a changé pendant la vérification. Réessayez la modification."
+    "VOICE_EDIT_STALE": "La réplique a changé pendant la vérification. Réessayez la modification.",
+    "FACE_PROFILE_INVALID": "Le profil de détection est invalide.",
+    "FACE_BATCH_EMPTY": "Aucun visage à analyser : les cadrages existent déjà, ou aucune réplique doublée n’est éligible.",
+    "FACE_RUNTIME_FAILED": "Impossible de préparer ou lancer le détecteur. Consultez les logs, puis réessayez.",
+    "FACE_RESULT_INVALID": "Le cadrage détecté est invalide. Réglez-le manuellement.",
+    "FACE_SCENE_CHANGE": "Changement de plan détecté : cadrage manuel requis.",
+    "FACE_MULTIPLE": "Plusieurs visages : choisissez celui du personnage qui parle.",
+    "FACE_NOT_FOUND": "Visage absent ou masqué sur certaines images : cadrage manuel requis.",
+    "FACE_MOVEMENT": "Mouvement ou zoom complexe : cadrage manuel requis."
   },
   "preparingVideo": "Préparation de la vidéo…",
   "loadingVideo": "Chargement de la vidéo…",
@@ -932,10 +942,22 @@
   "inpaintBatchFramingHint": "Réglez les options communes du lot. Vous pouvez cadrer plusieurs répliques avec le sélecteur et conserver leurs cadrages pour ce lot. Les cadrages des variantes existantes peuvent aussi être réutilisés.",
   "inpaintBatchFrameLine": "Réplique utilisée pour le cadrage",
   "inpaintBatchSaveCrop": "Conserver ce cadrage pour la réplique {{number}} dans le lot",
-  "inpaintBatchCropCount": "{{count}} cadrages préparés pour ce lot",
+  "inpaintBatchCropCount": "Cadrages préparés pour ce lot : {{count}}",
   "voiceOriginalPreview": "Écouter l’essai d’origine",
   "voiceOriginalKept": "L’essai d’origine est conservé. Les modifications sont rendues dans des copies de travail ; vous pouvez écouter ou rétablir l’original.",
   "voiceEditValidating": "Vérification du rendu avant d’enregistrer la modification…",
   "voiceEditRenderFailedKept": "Le rendu de cette modification a échoué. La version précédente et l’essai d’origine sont conservés. Consultez le diagnostic.",
-  "VOICE_EDIT_STALE": "La réplique a changé pendant la vérification. Réessayez la modification."
+  "VOICE_EDIT_STALE": "La réplique a changé pendant la vérification. Réessayez la modification.",
+  "faceDetection": "Détection automatique des visages",
+  "faceDetectionHint": "Analyse locale sur CPU de cinq images par dialogue. Ajout d’OpenCV et de deux petits détecteurs vérifiés au premier usage (environ 40 Mo à télécharger). Les cadrages préparés manuellement ou déjà enregistrés sont prioritaires.",
+  "faceProfile": "Type de détection des visages",
+  "faceProfileAuto": "Automatique : personnes filmées et animes",
+  "faceProfileLive": "Personnes filmées · YuNet",
+  "faceProfileAnime": "Animes / dessins · LBP animeface",
+  "faceDetectBatch": "Détecter les visages du lot",
+  "faceDetectProgress": "Détection des visages en cours…",
+  "faceDetectionResults": "Propositions : {{found}} · À cadrer manuellement : {{rejected}}",
+  "faceManualRequired": "Voir les cadrages à reprendre",
+  "faceApplyProposals": "Utiliser les cadrages proposés ({{count}})",
+  "faceReviewHint": "Vérifiez les cadrages avec le sélecteur de réplique avant de synchroniser. Plusieurs visages, coupures de plan, occlusions et déplacements complexes exigent un cadrage manuel. La détection ne reconnaît pas qui parle."
 }

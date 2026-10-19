@@ -74,6 +74,9 @@
       "../workers/drama-runtime.json": "workers/drama-runtime.json",
       "../workers/vendor/drama3/": "workers/vendor/drama3/",
       "../workers/latentsync_worker.py": "workers/latentsync_worker.py",
+      "../workers/face_detection_worker.py": "workers/face_detection_worker.py",
+      "../workers/face-detection.json": "workers/face-detection.json",
+      "../workers/FACE-DETECTION-LICENSES.txt": "workers/FACE-DETECTION-LICENSES.txt",
       "../workers/latentsync-model.json": "workers/latentsync-model.json",
       "../workers/latentsync-runtime.json": "workers/latentsync-runtime.json",
       "../workers/vendor/latentsync/": "workers/vendor/latentsync/"

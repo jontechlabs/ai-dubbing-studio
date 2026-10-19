@@ -249,7 +249,7 @@ pub fn active(p: &Project) -> Result<Vec<Edit>, String> {
 pub fn root(core: &Core) -> PathBuf {
     runtime_root(core, MUSE)
 }
-fn runtime_root(core: &Core, id: &str) -> PathBuf {
+pub(crate) fn runtime_root(core: &Core, id: &str) -> PathBuf {
     crate::model_storage::root(core).join(if id == MUSE {
         "musetalk-runtime"
     } else {

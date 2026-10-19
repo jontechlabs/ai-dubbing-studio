@@ -174,6 +174,16 @@ export function InpaintPanel({
   const clips = useMemo(() => dubbingClips(project), [project]);
   const [frameLineId, setFrameLineId] = useState(initialLine?.id ?? clips[0]?.line.id ?? '');
   const [crops, setCrops] = useState<bridge.InpaintBatchSelection['crops']>({});
+  const [detected, setDetected] = useState<{
+    revision: number;
+    sourcePath: string;
+    values: bridge.InpaintBatchSelection['crops'];
+  } | null>(null);
+  const detectedCrops =
+    detected?.revision === project.revision && detected.sourcePath === project.media?.path
+      ? detected.values
+      : {};
+  const preparedCrops = { ...detectedCrops, ...crops };
   const line = batch
     ? (clips.find((c) => c.line.id === frameLineId) ?? clips[0])?.line
     : initialLine;
@@ -339,7 +349,7 @@ export function InpaintPanel({
                 setFrameLineId(event.target.value);
                 setMode('original');
                 const saved =
-                  crops[event.target.value] ??
+                  preparedCrops[event.target.value] ??
                   lipVideos(project)
                     .filter(
                       (e) =>
@@ -774,12 +784,28 @@ export function InpaintPanel({
               number: project.dialogues.findIndex((l) => l.id === line.id) + 1,
             })}
           </button>
-          <p>{t('inpaintBatchCropCount', { count: Object.keys(crops).length })}</p>
+          <p>{t('inpaintBatchCropCount', { count: Object.keys(preparedCrops).length })}</p>
           <BatchInpaintAction
             project={project}
             selectedIds={batch.selectedIds}
             options={options}
-            crops={crops}
+            crops={preparedCrops}
+            jobs={jobs}
+            onDetectedCrops={(proposals) => {
+              setDetected({
+                revision: project.revision,
+                sourcePath: project.media!.path,
+                values: { ...detectedCrops, ...proposals },
+              });
+              const saved = proposals[line.id];
+              if (saved && !crops[line.id]) {
+                setFace(saved.face);
+                setMask(saved.mask);
+                setEndX(saved.endX);
+                setEndY(saved.endY);
+                setTrack(saved.endX !== saved.face.x || saved.endY !== saved.face.y);
+              }
+            }}
             busy={busy}
             ready={!!runtime.status?.installed && !!device}
             commonReady={commonReady}

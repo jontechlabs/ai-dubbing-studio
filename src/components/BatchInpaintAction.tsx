@@ -1,14 +1,17 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { Project } from '../domain/types';
+import type { Job, Project } from '../domain/types';
 import type { InpaintOptions } from '../domain/inpaint';
 import * as bridge from '../services/bridge';
+import { FaceDetectionAction } from './FaceDetectionAction';
 
 export function BatchInpaintAction({
   project,
   selectedIds,
   options,
   crops,
+  jobs,
+  onDetectedCrops,
   busy,
   ready,
   commonReady,
@@ -20,6 +23,8 @@ export function BatchInpaintAction({
   selectedIds: string[];
   options: InpaintOptions;
   crops: bridge.InpaintBatchSelection['crops'];
+  jobs: Job[];
+  onDetectedCrops: (crops: bridge.InpaintBatchSelection['crops']) => void;
   busy: boolean;
   ready: boolean;
   commonReady: boolean;
@@ -86,6 +91,16 @@ export function BatchInpaintAction({
           </option>
         </select>
       </label>
+      <FaceDetectionAction
+        project={project}
+        jobs={jobs}
+        selection={JSON.parse(selectionKey)}
+        busy={locked}
+        ready={ready}
+        snapshot={snapshot}
+        onApply={onDetectedCrops}
+        onError={onError}
+      />
       <label className="checkbox-field">
         <input
           type="checkbox"

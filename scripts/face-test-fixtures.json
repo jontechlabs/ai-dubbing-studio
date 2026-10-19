@@ -1,0 +1,14 @@
+[
+  {
+    "name": "human.jpg",
+    "url": "https://raw.githubusercontent.com/opencv/opencv/f2be0a0a28ab4f7dd70c7b49e4fa6553b94a7b76/samples/data/lena.jpg",
+    "sha256": "7de7ed51a1594fff247f4cae2301eceacf5313d6011e37b4a4c8733f7bb72c07",
+    "size": 91814
+  },
+  {
+    "name": "anime.png",
+    "url": "https://raw.githubusercontent.com/hysts/anime-face-detector/98a9fb480fa04bdd96acbe4d98da191a898267f3/tests/golden/images/crop.png",
+    "sha256": "6176c35cbece43666cd66c83f27b83412a6fdd5ded5a6e971af9e691a5a03eb6",
+    "size": 456424
+  }
+]

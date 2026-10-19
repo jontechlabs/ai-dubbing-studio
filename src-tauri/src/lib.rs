@@ -4,6 +4,7 @@ mod audio_patch;
 mod domain;
 mod downloads;
 mod embedded;
+mod face_detection;
 mod graphics;
 mod inpaint;
 mod inpaint_batch;
@@ -155,6 +156,22 @@ fn start_inpaint_batch(
     selection: inpaint_batch::Selection,
 ) -> Result<String, String> {
     inpaint_batch::enqueue(core.inner().clone(), app, selection)
+}
+#[tauri::command]
+fn detect_inpaint_faces(
+    app: tauri::AppHandle,
+    core: State<'_, Shared>,
+    selection: inpaint_batch::Selection,
+    profile: String,
+) -> Result<String, String> {
+    face_detection::enqueue(core.inner().clone(), app, selection, profile)
+}
+#[tauri::command]
+fn face_detection_result(
+    core: State<'_, Shared>,
+    id: String,
+) -> Result<Option<face_detection::ResultSet>, String> {
+    face_detection::result(&core, &id)
 }
 #[tauri::command]
 fn transfer_audio(
@@ -1050,6 +1067,9 @@ fn retry_job(app: tauri::AppHandle, core: State<'_, Shared>, id: String) -> Resu
     if let Some(key) = record.tts_batch {
         return tts_batch::resume(core.inner().clone(), app, tts_batch::load(&core, &key)?);
     }
+    if let Some(request) = record.face_detection {
+        return face_detection::start(core.inner().clone(), app, request);
+    }
     if let Some(key) = record.inpaint_batch {
         return inpaint_batch::resume(core.inner().clone(), app, inpaint_batch::load(&core, &key)?);
     }
@@ -1295,6 +1315,8 @@ pub fn run() {
             inpaint_path,
             preview_inpaint_batch,
             start_inpaint_batch,
+            detect_inpaint_faces,
+            face_detection_result,
             transfer_audio,
             audio_patch_path,
             analyze_lips,

@@ -1,6 +1,169 @@
 use super::*;
 use crate::mix::tests::{core, fixture, tool};
 use std::time::Duration;
+#[tokio::test]
+async fn face_proposals_respect_manual_framing_scope_and_reject_changed_timings() {
+    let (_temp, root, p) = setup().await;
+    let core = core(&root, p);
+    let mut s = selection();
+    s.use_common_crop = false;
+    assert_eq!(
+        crate::face_detection::snapshot(&core, &s, "auto")
+            .unwrap()
+            .items
+            .len(),
+        2
+    );
+    s.crops.insert(
+        "line".into(),
+        Crop {
+            face: s.options.face.clone(),
+            end_x: s.options.end_x,
+            end_y: s.options.end_y,
+            mask: s.options.mask.clone(),
+        },
+    );
+    let request = crate::face_detection::snapshot(&core, &s, "anime").unwrap();
+    assert_eq!(request.items.len(), 1);
+    assert_eq!(request.items[0].options.line_id, "line2");
+    s.scope = "selected".into();
+    s.line_ids = vec!["line".into()];
+    assert_eq!(
+        crate::face_detection::snapshot(&core, &s, "auto")
+            .err()
+            .unwrap(),
+        "FACE_BATCH_EMPTY"
+    );
+    assert!(crate::face_detection::snapshot(&core, &s, "unknown").is_err());
+    let key = crate::domain::id();
+    let folder = core.data_dir.join("face-detections");
+    std::fs::create_dir_all(&folder).unwrap();
+    let proposal = crate::face_detection::ResultSet {
+        project_id: request.project_id,
+        source_path: request.source_path,
+        items: vec![crate::face_detection::Proposal {
+            line_id: "line2".into(),
+            generation_id: "voice2".into(),
+            fingerprint: request.items[0].fingerprint.clone(),
+            crop: Some(Crop {
+                face: s.options.face.clone(),
+                end_x: s.options.end_x,
+                end_y: s.options.end_y,
+                mask: s.options.mask.clone(),
+            }),
+            reason: None,
+        }],
+    };
+    std::fs::write(
+        folder.join(format!("{key}.json")),
+        serde_json::to_vec(&proposal).unwrap(),
+    )
+    .unwrap();
+    assert!(crate::face_detection::result(&core, &key)
+        .unwrap()
+        .unwrap()
+        .items[0]
+        .crop
+        .is_some());
+    core.session
+        .lock()
+        .unwrap()
+        .as_mut()
+        .unwrap()
+        .project
+        .dialogues[1]
+        .start_ms += 40;
+    let stale = crate::face_detection::result(&core, &key).unwrap().unwrap();
+    assert!(stale.items[0].crop.is_none());
+    assert_eq!(stale.items[0].reason.as_deref(), Some("INPAINT_STALE"));
+}
+#[tokio::test]
+async fn face_job_extracts_only_dialogue_samples_keeps_source_intact_and_cancel_publishes_no_proposals(
+) {
+    let (_temp, root, p) = setup().await;
+    let original = std::fs::read(root.join("media/source.mkv")).unwrap();
+    let core = core(&root, p);
+    let mut req = crate::face_detection::snapshot(&core, &selection(), "auto").unwrap();
+    let model = root.join("face-protocol");
+    std::fs::create_dir_all(&model).unwrap();
+    let script = model.join("worker.py");
+    std::fs::write(&script,r#"import sys,json,time
+from pathlib import Path
+r=json.loads(Path(sys.argv[-1]).read_text(encoding='utf-8-sig'))
+assert set(r)=={'profile','models','inputDirectory','output'}
+images=list(Path(r['inputDirectory']).glob('*.png'))
+assert len(images)==5
+assert all(p.read_bytes().startswith(b'\x89PNG') for p in images)
+if Path(r['models'],'slow').exists():
+    Path(r['models'],'waiting').write_text('waiting')
+    time.sleep(60)
+Path(r['output']).write_text(json.dumps({'crop':{'face':{'x':.1,'y':.1,'width':.6,'height':.8},'endX':.1,'endY':.1,'mask':{'x':.2,'y':.55,'width':.6,'height':.4}},'reason':None}))
+"#).unwrap();
+    let launch = inpaint::WorkerLaunch {
+        python: PathBuf::from(if cfg!(windows) { "python" } else { "python3" }),
+        script,
+        model,
+    };
+    let app = tauri::test::mock_app();
+    let before =
+        serde_json::to_value(&core.session.lock().unwrap().as_ref().unwrap().project).unwrap();
+    let key = crate::face_detection::start_with_launch(
+        core.clone(),
+        app.handle().clone(),
+        req.clone(),
+        Some(launch.clone()),
+    )
+    .unwrap();
+    let job = finished(&core, &key).await;
+    assert_eq!(job.status, "succeeded", "{:?}", job.logs);
+    assert_eq!(
+        crate::face_detection::result(&core, &key)
+            .unwrap()
+            .unwrap()
+            .items
+            .len(),
+        2
+    );
+    assert_eq!(
+        std::fs::read(root.join("media/source.mkv")).unwrap(),
+        original
+    );
+    assert_eq!(
+        serde_json::to_value(&core.session.lock().unwrap().as_ref().unwrap().project).unwrap(),
+        before
+    );
+    std::fs::write(launch.model.join("slow"), b"").unwrap();
+    req.items.truncate(1);
+    let cancelled = crate::face_detection::start_with_launch(
+        core.clone(),
+        app.handle().clone(),
+        req,
+        Some(launch.clone()),
+    )
+    .unwrap();
+    for _ in 0..6000 {
+        if launch.model.join("waiting").exists() {
+            break;
+        }
+        tokio::time::sleep(Duration::from_millis(50)).await;
+    }
+    assert!(launch.model.join("waiting").exists());
+    core.jobs
+        .lock()
+        .unwrap()
+        .get(&cancelled)
+        .unwrap()
+        .cancel
+        .store(true, Ordering::Relaxed);
+    assert_eq!(finished(&core, &cancelled).await.status, "cancelled");
+    assert!(crate::face_detection::result(&core, &cancelled)
+        .unwrap()
+        .is_none());
+    assert_eq!(
+        std::fs::read(root.join("media/source.mkv")).unwrap(),
+        original
+    );
+}
 
 fn selection() -> Selection {
     serde_json::from_value(serde_json::json!({

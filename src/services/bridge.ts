@@ -61,6 +61,23 @@ export function previewInpaintBatch(selection: InpaintBatchSelection) {
 export function startInpaintBatch(selection: InpaintBatchSelection) {
   return invoke<string>('start_inpaint_batch', { selection });
 }
+export interface FaceProposals {
+  projectId: string;
+  sourcePath: string;
+  items: {
+    lineId: string;
+    generationId: string;
+    fingerprint: string;
+    crop: InpaintBatchSelection['crops'][string] | null;
+    reason: string | null;
+  }[];
+}
+export function detectInpaintFaces(selection: InpaintBatchSelection, profile: string) {
+  return invoke<string>('detect_inpaint_faces', { selection, profile });
+}
+export function faceDetectionResult(id: string) {
+  return invoke<FaceProposals | null>('face_detection_result', { id });
+}
 export async function inpaintUrl(id: string) {
   return convertFileSrc(await invoke<string>('inpaint_path', { id }));
 }

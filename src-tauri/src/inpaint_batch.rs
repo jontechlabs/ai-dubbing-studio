@@ -24,7 +24,7 @@ pub struct Crop {
     pub mask: crate::lips::Region,
 }
 impl Crop {
-    fn apply(&self, options: &mut inpaint::Options) {
+    pub(crate) fn apply(&self, options: &mut inpaint::Options) {
         options.face = self.face.clone();
         options.end_x = self.end_x;
         options.end_y = self.end_y;

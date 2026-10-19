@@ -12,7 +12,7 @@ permissions:
 jobs:
   windows:
     runs-on: windows-latest
-    timeout-minutes: 45
+    timeout-minutes: 60
     env:
       PYTHONDONTWRITEBYTECODE: '1'
       LIBCLANG_PATH: 'C:\Program Files\LLVM\bin'
@@ -60,6 +60,13 @@ jobs:
       - name: Real local Japanese to French translation
         # Pinned 4B Q4_K_M model, CPU inference; no NVIDIA benchmark claim.
         run: ./scripts/test-translation-model.ps1
+      - name: Actual human and anime face detection on CPU
+        run: |
+          python -m pip install --no-deps opencv-python-headless==4.11.0.86
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          New-Item -ItemType Directory -Force artifacts | Out-Null
+          python scripts/test-face-detection.py | Tee-Object artifacts/face-detection-validation.txt
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
       - name: Drama 3 actual FP8 offload and tiny autoregressive diagnostic
         # CPU diagnostic only: no large model weights and no GPU qualification claim.
         run: |

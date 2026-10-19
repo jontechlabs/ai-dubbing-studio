@@ -27,6 +27,13 @@ export async function nativeMock(page: Page, large = false) {
     host.__completeTranslation=(translations=['Une traduction proposée.'])=>{if(job.status==='cancelled')return;const row=proposals.find((p:any)=>p.id===job.id);row.result={basis:row.basis,translations,model:'Qwen3-4B-Instruct-2507 · GGUF Q4_K_M'};localStorage.setItem('nativeMockProposals',JSON.stringify(proposals));job={...job,status:'succeeded',stage:'done',progress:1};emit('job-changed',job);};
     host.__completeTranslationInstall=()=>{host.__llmReady=true;job={...job,status:'succeeded',stage:'done',progress:1};emit('job-changed',job);};
     host.__inpaintReady=true;
+    host.__completeFaceDetection=(ambiguous=false)=>{
+      if(job.status==='cancelled')return;
+      const s=host.__pendingFaceDetection.selection;
+      const rows=project.dialogues.filter((l:any)=>(s.scope!=='selected'||s.lineIds.includes(l.id))&&l.selectedGenerationIds.fr&&!s.crops[l.id]);
+      host.__faceResult={projectId:project.id,sourcePath:project.media.path,items:rows.map((l:any,i:number)=>({lineId:l.id,generationId:l.selectedGenerationIds.fr,fingerprint:'a'.repeat(64),crop:ambiguous&&i>0?null:{face:{x:.15,y:.1,width:.5,height:.8},endX:.15,endY:.1,mask:{x:.2,y:.55,width:.6,height:.4}},reason:ambiguous&&i>0?'FACE_MULTIPLE':null}))};
+      job={...job,status:'succeeded',stage:'done',progress:1};emit('job-changed',job);
+    };
     host.__multilineCards=()=>{
       for(let i=0;i<project.sourceCues.length;i++)project.sourceCues[i].text=Array.from({length:i%5+1},(_,n)=>'ほらね　みんな今　私が死んだら悲しいって思ったでしょ？ '+n).join('\n');
       for(let i=0;i<project.targetCues.length;i++)project.targetCues[i].text=Array.from({length:i%7+1},(_,n)=>'Tu vois ? Tu as eu de la peine à l’idée que j’allais mourir, non ? '+n).join('\n');
@@ -165,6 +172,8 @@ export async function nativeMock(page: Page, large = false) {
       if(command==='reference_audio_info')return {path:'C:/Audio/reference-source.wav',durationMs:60000};
       if(command==='preview_dubbing_batch')return batchPlan(args.selection);
       if(command==='preview_inpaint_batch')return lipBatchPlan(args.selection);
+      if(command==='detect_inpaint_faces'){host.__pendingFaceDetection=structuredClone(args);host.__faceBasis=project.revision;host.__faceResult=null;job={id:'face-job',projectId:project.id,kind:'faceDetection',status:'running',stage:'faceDetection',progress:0,logs:[],error:null};emit('job-changed',job);return job.id;}
+      if(command==='face_detection_result'){const result=structuredClone(host.__faceResult);if(result&&host.__faceBasis!==project.revision)for(const row of result.items){row.crop=null;row.reason='INPAINT_STALE';}return result;}
       if(command==='start_inpaint_batch'){const s=args.selection,p=lipBatchPlan(s);host.__pendingLipBatch=structuredClone(s);host.__lipRows=p.ready.map((id:string)=>({id,status:'pending'}));host.__lipSkipped=p.requested-p.ready.length;job={id:'lip-batch-job',projectId:project.id,kind:'inpaintBatch',logs:[],error:null};lipBatchUpdate();return job.id;}
       if(command==='retry_job'&&job.kind==='inpaintBatch'){for(const row of host.__lipRows)if(row.status!=='succeeded')row.status='pending';lipBatchUpdate();return job.id;}
       if(command==='generate_dubbing_batch') {const plan=batchPlan(args.selection);host.__pendingBatch=structuredClone(args.selection);host.__batchRows=plan.ready.map((id:string)=>({id,status:'pending'}));host.__batchSkipped=plan.existing+plan.untranslated+plan.unapproved+plan.blocked.length;job={id:'batch-job',projectId:project.id,kind:'ttsBatch',logs:[],error:null};batchJobUpdate();return job.id;}
