@@ -1,11 +1,11 @@
 {
-  "version": "0.16.0",
-  "notes": "Menus au clic droit : suppression des zones de volume ou de silence sur toutes les pistes audio, annulation et sauvegarde. Effacement des sélections, activation des pistes et options audio. Menu général Annuler, Rétablir, Sauvegarder et Paramètres. Navigation clavier et respect de la position de lecture.",
-  "pub_date": "2026-10-19T07:42:46Z",
+  "version": "0.17.0",
+  "notes": "LatentSync 1.5 et 1.6 : adaptation ShmuelRonen, profil mémoire réduit, vérification disque avant installation et choix explicite du GPU. Séquences indépendantes par dialogue ; vidéo principale intacte, préchargement des retouches pendant la lecture. 1.6 : profil candidat 16 Go, sans garantie OOM ; animes expérimentaux.",
+  "pub_date": "2026-10-19T11:29:24Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSdFFyMUJGTFp3NkVPbHhIeTlYTzB2MzZwMitPdTE2UGtldHV4dVFIVVkyd1czOXlsV0ZDb09KdzA2c2ZVZW9LME5MWFpRN2Vnai85OHZWMlpINEhlZkZ6NURhdTJLcWc0PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkyMzk1NDAyCWZpbGU6QUkgRHViYmluZyBTdHVkaW9fMC4xNi4wX3g2NC1zZXR1cC5leGUJdmVyc2lvbjowLjE2LjAKdnhEdkZxMFJOalJnSzhHa3c3UUVCVlhxWDE4b0E3VnhRMk9kL2VuMmE0Q3dSdlBJK3NVY3JZTlV5M2p0RnIwK0d6bFY2TklkdDNSY2tLQzlqOEkvQXc9PQo=",
-      "url": "https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.16.0/AI-Dubbing-Studio-0.16.0-Setup.exe"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSdFFyMUJGTFp3NklGWkxPaG03L3JDUEtCN0xIU0w1U0xHTmJFM3NBUmc3ZmdaMWkvVGtEdndEK3Qwb0JKUlBwT1RXL1ZCejU0SXVDNkt2a2dIK25DdGh4MElySHFzcmdzPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkyNDA5MDc4CWZpbGU6QUkgRHViYmluZyBTdHVkaW9fMC4xNy4wX3g2NC1zZXR1cC5leGUJdmVyc2lvbjowLjE3LjAKUEZxV3R2V2prZ0hwMWFwMjZXaHNMOEVGVXl2N05EZ2tPRG9hbTVIbS9iaGloOFVvWHNHcDRLZEgwYW1TTTB1QkNEem1ZYi9xb3htWVgrclBETEg2QXc9PQo=",
+      "url": "https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.17.0/AI-Dubbing-Studio-0.17.0-Setup.exe"
     }
   }
 }

@@ -2,7 +2,9 @@
 
 ## v0.17.0 — 19 October 2026
 
-Windows workflow evidence will be recorded before publication.
+Windows checks and signed-update package production passed in [run 39241670568](https://github.com/jontechlabs/ai-dubbing-studio/actions/runs/39241670568), built from `291e2098d81732d0137b2d301c43f910f54518bf`. All 369 Windows suite checks passed (109 TypeScript, 102 Rust, 107 Chrome, 51 Python), plus seven actual LatentSync neural-core/checkpoint-header diagnostics, plus actual unpinned-bank/FP8/cache/tiny-model/header diagnostics and the real causal-vocoder finalization diagnostic, plus a real native Japanese-to-French LLM proposal and cancellation/process-release checks under a Unicode model path, plus two real Japanese ASR checks using the final Windows release executable. The setup and portable archive are copied unchanged from this workflow. Final metadata only records this evidence and the verified update feed.
+
+Packaged Windows worker timings for the 7.2-second Japanese fixture: auto: 112.5 s, ja: 57.11 s. These are CI CPU measurements, not performance estimates for the user’s PC.
 
 - Local actual CPU neural diagnostics pass: both official checkpoint headers (1,246 keys/shapes each), Whisper pre-LayerNorm conditioning, actual temporal UNet/SDPA sequential-versus-batched guidance, strict checkpoint loading under Unicode paths and missing-layer rejection, deterministic overlapping DDIM windows and single-frame VAE encode/decode/CPU conversion. No full pretrained model render or RTX peak VRAM/quality/speed measurement was performed.
 - Worker regressions cover explicit GPU indices, VRAM reserve, CUDA-only OOM retry, 120-second frame windows, exact long audio coverage, settings and pinned components. Native FFmpeg checks retain the source SHA-256, check 512 px crops and interval-only output pixels, and refuse stale variants.
