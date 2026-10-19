@@ -2,6 +2,7 @@
 from pathlib import Path
 import json
 import sys
+sys.dont_write_bytecode = True
 import tempfile
 import gc
 root = Path(__file__).resolve().parents[1]
