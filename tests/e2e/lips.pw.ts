@@ -13,7 +13,7 @@ test('visual analysis previews before applying, preserves subtitles and takes, u
   const after=await page.evaluate(()=>JSON.parse(localStorage.getItem('nativeMockProject')!)),id=before.dialogues[0].id;
   expect(after.dubbingTiming.offsetsMs[id].fr).toBe(250);expect(after.dubbingTiming.durationsMs[id].fr).toBe(2500);expect(after.sourceCues).toEqual(before.sourceCues);expect(after.targetCues).toEqual(before.targetCues);expect(after.dialogues).toEqual(before.dialogues);expect(after.generations).toEqual(before.generations);
   await page.getByRole('button',{name:'Fermer',exact:true}).click();await page.keyboard.press('Control+z');await expect.poll(()=>page.evaluate(()=>JSON.parse(localStorage.getItem('nativeMockProject')!).dubbingTiming)).toBeUndefined();await page.keyboard.press('Control+y');
-  await page.locator('.dialogue-card').first().getByRole('button',{name:'Régénérer',exact:true}).click();const dub=page.getByRole('dialog',{name:'Doublage'});await dub.getByRole('spinbutton',{name:'Décalage du doublage (ms)'}).fill('-100');await expect(page.locator('.save-indicator')).toHaveText('Sauvegardé');
+  await page.locator('.dialogue-card').first().getByRole('button',{name:'Régénérer',exact:true}).click();const dub=page.getByRole('dialog',{name:'Doublage'});await dub.getByRole('spinbutton',{name:'Décalage du doublage (ms)'}).fill('-100');await dub.getByRole('spinbutton',{name:'Décalage du doublage (ms)'}).press('Enter');await expect(page.locator('.save-indicator')).toHaveText('Sauvegardé');
   expect(await page.evaluate((id)=>JSON.parse(localStorage.getItem('nativeMockProject')!).dubbingTiming.offsetsMs[id].fr,id)).toBe(-100);
 });
 test('uncertain proposals need review and a changed project cannot apply an older analysis',async({page})=>{

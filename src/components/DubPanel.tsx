@@ -20,13 +20,7 @@ import { ReferenceTranscription } from './ReferenceTranscription';
 import { accentSupported, voiceAccents } from '../domain/voiceAccents';
 import { ReferenceFileImport } from './ReferenceFileImport';
 import { BatchDubbingAction } from './BatchDubbingAction';
-import {
-  dubbingOffset,
-  moveDubbing,
-  dubbingClips,
-  dubbingDuration,
-  resizeDubbing,
-} from '../domain/mix';
+import { DubbingTimingControls } from './DubbingTimingControls';
 
 export function CosyModel({
   jobs,
@@ -322,59 +316,13 @@ export function DubPanel({
           <button className="button subtle wide" onClick={onInpaint} disabled={busy}>
             {t('inpaintOpen')}
           </button>
-          <label className="field">
-            <span>{t('dubbingOffset')}</span>
-            <input
-              type="number"
-              step="10"
-              min={-line.startMs}
-              max={project.media.durationMs - 1 - line.startMs}
-              value={dubbingOffset(project, line.id)}
-              disabled={busy}
-              onChange={(event) => {
-                if (event.target.value !== '')
-                  onEdit((p) => moveDubbing(p, line.id, Number(event.target.value)));
-              }}
-            />
-          </label>
-          <button
-            className="text-button"
-            disabled={busy || dubbingOffset(project, line.id) === 0}
-            onClick={() => onEdit((p) => moveDubbing(p, line.id, 0))}
-          >
-            {t('dubbingResetOffset')}
-          </button>
-          <p className="panel-description">{t('dubbingOffsetHint')}</p>
-          <label className="field">
-            <span>{t('dubbingDuration')}</span>
-            <input
-              type="number"
-              min="1"
-              max="120000"
-              step="10"
-              disabled={busy}
-              value={
-                dubbingDuration(project, line.id) ??
-                (() => {
-                  const clip = dubbingClips(project).find((c) => c.line.id === line.id);
-                  return clip ? clip.endMs - clip.startMs : undefined;
-                })() ??
-                chosen.durationMs
-              }
-              onChange={(event) => {
-                const value = Number(event.target.value);
-                if (value >= 1 && value <= 120000) onEdit((p) => resizeDubbing(p, line.id, value));
-              }}
-            />
-          </label>
-          <button
-            className="text-button"
-            disabled={busy || dubbingDuration(project, line.id) === undefined}
-            onClick={() => onEdit((p) => resizeDubbing(p, line.id, null))}
-          >
-            {t('dubbingAutoDuration')}
-          </button>
-          <p className="panel-description">{t('dubbingDurationHint')}</p>
+          <DubbingTimingControls
+            key={project.id + line.id + project.languages.target}
+            project={project}
+            line={line}
+            busy={busy}
+            onEdit={onEdit}
+          />
         </div>
       )}
       <label className="field">

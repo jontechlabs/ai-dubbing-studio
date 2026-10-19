@@ -308,7 +308,9 @@
     "TRANSLATION_LANGUAGE_INVALID": "Choisissez des langues source et cible différentes.",
     "TRANSLATION_OUTPUT_INVALID": "La proposition est vide, incomplète ou mal formée. Aucun sous-titre n’a été modifié. Réessayez.",
     "TRANSLATION_STALE": "Le texte, la langue ou l’association de cette réplique a changé. Demandez une nouvelle proposition pour conserver vos corrections.",
-    "TRANSLATION_TIMEOUT": "Le chargement du modèle a dépassé trois minutes. Vérifiez le périphérique et réessayez."
+    "TRANSLATION_TIMEOUT": "Le chargement du modèle a dépassé trois minutes. Vérifiez le périphérique et réessayez.",
+    "VOICE_DURATION_OUT_OF_RANGE": "Cette durée est hors des limites disponibles. Respectez le maximum affiché et conservez au moins 1 ms par segment.",
+    "VOICE_EDIT_NO_ROOM": "La modification dépasserait la réplique suivante ou la fin de la vidéo. Réduisez la durée ou déplacez d’abord la réplique suivante."
   },
   "preparingVideo": "Préparation de la vidéo…",
   "loadingVideo": "Chargement de la vidéo…",
@@ -638,7 +640,7 @@
   "dubbingOffsetHint": "Négatif : voix plus tôt ; positif : plus tard. Le déplacement est appliqué à la lecture et à l’export. Les sous-titres et le WAV original gardent leurs timings.",
   "dubbingDuration": "Durée demandée du doublage (ms)",
   "dubbingAutoDuration": "Durée automatique",
-  "dubbingDurationHint": "Étirez le bord droit du bloc ou saisissez une durée. La voix est accélérée ou ralentie en conservant sa hauteur ; le créneau peut être réduit à la voix suivante ou à la fin de la vidéo. Vérifiez les fortes variations à l’écoute.",
+  "dubbingDurationHint": "Étirez le bord droit ou saisissez une durée dans les limites affichées. Le bord s’arrête à la prochaine voix, à la fin de la vidéo et à 120 s. Un déplacement conserve la durée audible et s’arrête devant les autres voix. Réécoutez les fortes variations.",
   "dubbingResizeHint": "Glissez ce bord pour allonger ou raccourcir la voix, sans changer sa hauteur.",
   "ttsMood": "Humeur / interprétation",
   "ttsMoodHint": "Consigne d’interprétation envoyée au moteur. Son intensité dépend du modèle et de la référence ; comparez les essais. Le texte des sous-titres reste identique.",
@@ -880,5 +882,10 @@
   "audioResizeStart": "Redimensionner le début : {{track}}",
   "audioResizeEnd": "Redimensionner la fin : {{track}}",
   "voiceResizeSelectionStart": "Redimensionner le début de la sélection vocale",
-  "voiceResizeSelectionEnd": "Redimensionner la fin de la sélection vocale"
+  "voiceResizeSelectionEnd": "Redimensionner la fin de la sélection vocale",
+  "voiceDurationLimits": "Durée audible : {{duration}} ms · maximum disponible ici : {{max}} ms (120 s au plus).",
+  "voiceTimingLimited": "Le calage enregistré dépasse le créneau disponible ou ne laisse pas assez de place aux segments. Repositionnez ce doublage dans un espace libre, ou réduisez sa durée. Les retouches restent récupérables.",
+  "voiceRecoverTiming": "Replacer dans un espace disponible",
+  "VOICE_DURATION_OUT_OF_RANGE": "Cette durée est hors des limites disponibles. Respectez le maximum affiché et conservez au moins 1 ms par segment.",
+  "voiceTimingCommitHint": "Entrée ou sortie du champ pour appliquer ; Échap pour annuler la saisie."
 }

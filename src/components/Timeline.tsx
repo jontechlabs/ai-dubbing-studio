@@ -32,7 +32,13 @@ import {
 } from '../domain/audio';
 import { trackPatches } from '../domain/audioPatch';
 import { subtitleDisplay, toggleSubtitles } from '../domain/subtitleDisplay';
-import { dubbingClips, dubbingOffset, moveDubbing, resizeDubbing } from '../domain/mix';
+import {
+  dubbingClips,
+  dubbingOffset,
+  dubbingBounds,
+  moveDubbing,
+  resizeDubbing,
+} from '../domain/mix';
 import { useTimelineZoom } from '../hooks/useTimelineZoom';
 import { VoiceRegionEditor } from './VoiceRegionEditor';
 import { TimelineAudioSelection } from './TimelineAudioSelection';
@@ -136,6 +142,18 @@ export const Timeline = memo(function Timeline({
     originDuration: number;
     duration: number;
   } | null>(null);
+  // Drag previews are never allowed to throw during React rendering. A stale
+  // project or a legacy collision may temporarily have no legal placement.
+  const dubbingPreview = useMemo(() => {
+    if (!project || !dubbingDrag) return project;
+    try {
+      return dubbingDrag.edge === 'end'
+        ? resizeDubbing(project, dubbingDrag.lineId, dubbingDrag.duration)
+        : moveDubbing(project, dubbingDrag.lineId, dubbingDrag.offset);
+    } catch {
+      return project;
+    }
+  }, [project, dubbingDrag]);
   const suppressDubbingClick = useRef(false);
   const duration = Math.max(
     project?.media?.durationMs ?? 0,
@@ -561,13 +579,7 @@ export const Timeline = memo(function Timeline({
                 onPointerCancel={() => setAudioDrag(null)}
               >
                 {track?.kind === 'dubbing' && project ? (
-                  dubbingClips(
-                    dubbingDrag
-                      ? dubbingDrag.edge === 'end'
-                        ? resizeDubbing(project, dubbingDrag.lineId, dubbingDrag.duration)
-                        : moveDubbing(project, dubbingDrag.lineId, dubbingDrag.offset)
-                      : project,
-                  )
+                  dubbingClips(dubbingPreview ?? project)
                     .filter(
                       (c) =>
                         c.line.id === dubbingDrag?.lineId ||
@@ -620,13 +632,14 @@ export const Timeline = memo(function Timeline({
                           if (Math.abs(event.clientX - dubbingDrag.x) > 3)
                             suppressDubbingClick.current = true;
                           if (dubbingDrag.edge === 'end') {
+                            const bounds = dubbingBounds(project, clip.line.id);
+                            if (bounds.max < bounds.min) return;
                             setDubbingDrag({
                               ...dubbingDrag,
                               duration: Math.max(
-                                1,
+                                bounds.min,
                                 Math.min(
-                                  120000,
-                                  project.media!.durationMs - clip.startMs,
+                                  bounds.max,
                                   dubbingDrag.originDuration +
                                     Math.round((event.clientX - dubbingDrag.x) / scale),
                                 ),

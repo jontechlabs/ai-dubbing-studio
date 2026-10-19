@@ -1,5 +1,8 @@
 # AI Dubbing Studio — phases 1–7
 
+**v0.15.1 — Durées et déplacements des doublages sécurisés.** Maximum disponible affiché, arrêt à la prochaine voix et à la fin de la vidéo, limite de traitement de 120 secondes. Les déplacements conservent la durée audible ; les champs de calage se valident avec Entrée ou en les quittant. Les anciens calages trop longs ou sans créneau disposent d’une action de récupération qui conserve les retouches. [Guide illustré](docs/VOICE-DURATION-SAFETY.md).
+
+
 **v0.15.0 — Fondus réglables, redimensionnement des zones audio et navigation cohérente.** Appliquez des fondus d’entrée/sortie à une portion de voix, redimensionnez une sélection ou une zone de volume/silence avec ses poignées, et retrouvez automatiquement la réplique choisie dans la timeline sans changer votre zoom. [Guide illustré](docs/FADES-SELECTION-NAVIGATION.md).
 
 ![Adjustable voice fades](docs/screenshots/voice-fades-fr.png)
@@ -50,7 +53,7 @@
 
 *Interface React réelle avec audio de démonstration synthétique et inventaire natif simulé.*
 
-[Version anglaise et captures de l’interface](README.md) · [Téléchargements Windows](https://github.com/jontechlabs/ai-dubbing-studio/releases/tag/v0.15.0)
+[Version anglaise et captures de l’interface](README.md) · [Téléchargements Windows](https://github.com/jontechlabs/ai-dubbing-studio/releases/tag/v0.15.1)
 
 Studio desktop local de travail texte, voix et vidéo. Tauri 2, React, TypeScript strict et Rust.
 

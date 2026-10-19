@@ -2,6 +2,95 @@ use super::*;
 use crate::audio_patch::{self, Snippet};
 use std::sync::Mutex;
 #[tokio::test]
+async fn voice_duration_rejects_oversize_fit_before_file_access_or_rendering() {
+    let root = tempfile::tempdir().unwrap();
+    for exact in [false, true] {
+        assert_eq!(
+            crate::voice_fit::take_with_duration(
+                root.path(),
+                "missing.wav",
+                120001,
+                exact,
+                &tool("ffmpeg"),
+                &AtomicBool::new(false)
+            )
+            .await
+            .unwrap_err(),
+            "VOICE_DURATION_OUT_OF_RANGE"
+        );
+    }
+    assert!(!root.path().join("cache").exists());
+}
+#[tokio::test]
+async fn voice_duration_caps_automatic_and_legacy_exact_slots_consistently() {
+    let (_temporary, _root, mut p) = fixture().await;
+    p.media.as_mut().unwrap().info.duration_ms = 300000;
+    p.dialogues[0].end_ms = 250000;
+    assert_eq!(clips(&p)[0].slot_ms, 120000);
+    assert_eq!(clips(&p)[0].duration_ms(), 1500);
+    p.format_version = 7;
+    p.dubbing_timing = Some(crate::domain::DubbingTiming {
+        source_path: p.media.as_ref().unwrap().path.clone(),
+        offsets_ms: Default::default(),
+        durations_ms: std::collections::HashMap::from([(
+            "line".into(),
+            std::collections::HashMap::from([("fr".into(), 120000)]),
+        )]),
+    });
+    assert_eq!(clips(&p)[0].slot_ms, 120000);
+    assert_eq!(clips(&p)[0].duration_ms(), 120000);
+    p.dubbing_timing.as_mut().unwrap().offsets_ms.insert(
+        "line".into(),
+        std::collections::HashMap::from([("fr".into(), 298000)]),
+    );
+    assert_eq!(clips(&p)[0].slot_ms, 1000);
+    assert_eq!(clips(&p)[0].duration_ms(), 1000);
+}
+#[tokio::test]
+async fn voice_duration_renders_exact_upper_limit_and_rejects_one_more_millisecond_without_mutation(
+) {
+    let (_temporary, root, _p) = fixture().await;
+    let original = std::fs::read(root.join("generations/voice.wav")).unwrap();
+    let edit:crate::voice_edit::Edit=serde_json::from_value(serde_json::json!({"pieces":[{"sourceStartMs":0,"sourceEndMs":1000,"durationMs":1000,"gain":1},{"sourceStartMs":null,"sourceEndMs":null,"durationMs":119000,"gain":1}]})).unwrap();
+    let flag = AtomicBool::new(false);
+    let rendered = crate::voice_edit::render(
+        &root,
+        "generations/voice.wav",
+        Some(&edit),
+        &tool("ffmpeg"),
+        &flag,
+    )
+    .await
+    .unwrap();
+    assert_eq!(
+        audio_files::pcm_frames(&rendered, 1, 24000, "INVALID_GENERATION").unwrap(),
+        120000 * 24
+    );
+    let mut invalid = edit.clone();
+    invalid.pieces[1].duration_ms += 1;
+    let count = std::fs::read_dir(root.join("cache")).unwrap().count();
+    assert_eq!(
+        crate::voice_edit::render(
+            &root,
+            "generations/voice.wav",
+            Some(&invalid),
+            &tool("ffmpeg"),
+            &flag
+        )
+        .await
+        .unwrap_err(),
+        "INVALID_VOICE_EDIT"
+    );
+    assert_eq!(
+        std::fs::read_dir(root.join("cache")).unwrap().count(),
+        count
+    );
+    assert_eq!(
+        std::fs::read(root.join("generations/voice.wav")).unwrap(),
+        original
+    );
+}
+#[tokio::test]
 async fn voice_fades_are_sample_accurate_and_continuous_across_piece_boundaries() {
     let (_temporary, root, mut p) = fixture().await;
     let original = std::fs::read(root.join("generations/voice.wav")).unwrap();
@@ -1064,6 +1153,17 @@ async fn export_fits_to_next_take_and_flags_zero_slots() {
     p.tracks[1].mute = true;
     p.tracks[2].gain = 1.0;
     p.tracks[2].regions.clear();
+    // Old versions could persist 120 s although only 1 s is available before
+    // the next take. Reopening and export must remain safe and recoverable.
+    p.format_version = 7;
+    p.dubbing_timing = Some(crate::domain::DubbingTiming {
+        source_path: p.media.as_ref().unwrap().path.clone(),
+        offsets_ms: Default::default(),
+        durations_ms: std::collections::HashMap::from([(
+            "line".into(),
+            std::collections::HashMap::from([("fr".into(), 120000)]),
+        )]),
+    });
     let mut second = p.dialogues[0].clone();
     second.id = "second".into();
     second.start_ms = 2000;

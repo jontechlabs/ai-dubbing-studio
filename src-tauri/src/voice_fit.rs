@@ -33,6 +33,9 @@ pub(crate) async fn take_with_duration(
     if slot_ms == 0 {
         return Err("MIX_SLOT_CONFLICT".into());
     }
+    if slot_ms > crate::voice_edit::MAX_DURATION_MS {
+        return Err("VOICE_DURATION_OUT_OF_RANGE".into());
+    }
     let source = project::asset(root, path)?;
     let frames = audio_files::pcm_frames(&source, 1, 24000, "INVALID_GENERATION")?;
     if frames > 120 * 24000 {

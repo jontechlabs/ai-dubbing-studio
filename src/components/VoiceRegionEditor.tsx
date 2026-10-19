@@ -9,6 +9,7 @@ import {
   voicePlan,
   type VoiceOperation,
 } from '../domain/voiceEdit';
+import { dubbingBounds, recoverDubbing } from '../domain/mix';
 import { envelopeLevel } from '../domain/voiceEnvelope';
 import { generationUrl } from '../services/bridge';
 
@@ -39,11 +40,23 @@ export function VoiceRegionEditor({
   const { t } = useTranslation();
   const plan = useMemo(() => voicePlan(project, generation), [project, generation]),
     total = editDuration(plan);
+  const limits = dubbingBounds(project, generation.dialogueId);
+  const blocked = limits.duration < limits.min;
+  const maxInsert = Math.max(0, limits.max - total);
   const key = JSON.stringify(plan);
   const [range, setRange] = useState({ start: 0, end: 0 });
   const start = Math.min(range.start, total),
     end = Math.min(range.end, total),
     length = end - start;
+  const minimumStretch = useMemo(() => {
+    let offset = 0,
+      count = 0;
+    for (const p of plan.pieces) {
+      if (start < offset + p.durationMs && end > offset) count++;
+      offset += p.durationMs;
+    }
+    return Math.max(1, count);
+  }, [plan, start, end]);
   const [amount, setAmount] = useState(250),
     [gain, setGain] = useState(1);
   const [fadeIn, setFadeIn] = useState(50),
@@ -199,6 +212,7 @@ export function VoiceRegionEditor({
   }, [samples, width, key, total, generation.durationMs]);
   const apply = (operation: VoiceOperation) => {
     try {
+      if (blocked) throw Error('VOICE_EDIT_NO_ROOM');
       // Validate synchronously so a failed operation leaves selection/project intact.
       editVoice(project, generation.id, start, end, operation);
       onEdit((p) => editVoice(p, generation.id, start, end, operation));
@@ -303,8 +317,11 @@ export function VoiceRegionEditor({
             setDrag({
               ...drag,
               duration: Math.max(
-                1,
-                Math.min(120000, length + Math.round(((e.clientX - drag.x) / drag.width) * total)),
+                minimumStretch,
+                Math.min(
+                  limits.max - total + length,
+                  length + Math.round(((e.clientX - drag.x) / drag.width) * total),
+                ),
               ),
             });
         }}
@@ -373,6 +390,20 @@ export function VoiceRegionEditor({
           <output className="voice-stretch-preview">{drag.duration} ms</output>
         )}
       </div>
+      <p className="voice-duration-limits" role="status">
+        {t('voiceDurationLimits', { duration: limits.duration, max: limits.max })}
+      </p>
+      {limits.limited && (
+        <div role="alert">
+          <p>{t('voiceTimingLimited')}</p>
+          <button
+            disabled={busy}
+            onClick={() => onEdit((p) => recoverDubbing(p, generation.dialogueId))}
+          >
+            {t('voiceRecoverTiming')}
+          </button>
+        </div>
+      )}
       <div className="voice-edit-controls">
         <label>
           {t('voiceSelectionStart')}
@@ -478,7 +509,7 @@ export function VoiceRegionEditor({
             type="number"
             aria-label={t('voiceDurationAmount')}
             min={1}
-            max={120000}
+            max={Math.max(maxInsert, limits.max - total + length)}
             value={amount}
             disabled={busy}
             onChange={(e) => setAmount(Number(e.target.value))}

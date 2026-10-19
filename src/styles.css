@@ -2647,3 +2647,9 @@ pre {
   gap: 8px;
   align-items: center;
 }
+.voice-timing-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 4px 0;
+}

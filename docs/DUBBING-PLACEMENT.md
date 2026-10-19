@@ -47,3 +47,6 @@ Cette correction traite une frontière de décodage audio ; elle ne reconstruit 
 ## Retoucher seulement une zone de la voix
 
 Depuis v0.14.0, double-cliquez le bloc Doublage pour ouvrir sa forme d’onde dans la timeline. Ajoutez du silence, supprimez une portion, réglez son volume ou étirez-la avec ↔. [Guide détaillé](VOICE-REGION-EDITING.md). Les sous-titres et les autres répliques restent en place.
+
+
+Depuis v0.15.1, les durées et déplacements sont protégés par les limites réellement disponibles. Les saisies de calage se valident avec Entrée ou en quittant le champ. Voir le [guide des limites et de la récupération](VOICE-DURATION-SAFETY.md).

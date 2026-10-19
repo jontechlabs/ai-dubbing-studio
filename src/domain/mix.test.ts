@@ -56,7 +56,7 @@ describe('synchronized mix', () => {
     expect(extended.endMs).toBeLessThanOrEqual(dubbingClips(long)[1].startMs);
     expect(validateProject(JSON.parse(JSON.stringify(long)))).toEqual(long);
     expect(dubbingClips(resizeDubbing(long, line.id, null))[0].exactDuration).toBe(false);
-    expect(() => resizeDubbing(p, line.id, 0)).toThrow('INVALID_PROJECT');
+    expect(() => resizeDubbing(p, line.id, 0)).toThrow('VOICE_DURATION_OUT_OF_RANGE');
   });
   it('moves only the chosen language voice, preserves subtitles and takes, and roundtrips safely', () => {
     const p = fixture(),
@@ -82,13 +82,14 @@ describe('synchronized mix', () => {
     moved.media!.path = 'media/replaced.mkv';
     expect(dubbingOffset(moved, p.dialogues[0].id)).toBe(0);
   });
-  it('reorders moved voices and fits them to the next actual onset', () => {
+  it('stops a moved voice before the next onset without shortening it', () => {
     const p = fixture(),
       id = p.dialogues[0].id;
     const moved = moveDubbing(p, id, 3600),
       clips = dubbingClips(moved),
       clip = clips.find((c) => c.line.id === id)!;
-    expect(clip.startMs).toBe(4350);
+    expect(clip.startMs).toBe(2500);
+    expect(clip.endMs - clip.startMs).toBe(2000);
     expect(clip.slotMs).toBeLessThanOrEqual(p.dialogues[0].endMs - p.dialogues[0].startMs);
     expect(clips.every((c, i) => i === 0 || clips[i - 1].endMs <= c.startMs)).toBe(true);
     const invalid = structuredClone(moved);

@@ -216,6 +216,9 @@ async fn dubbing_path(
     exact_duration: Option<bool>,
     edit: Option<voice_edit::Edit>,
 ) -> Result<String, String> {
+    if slot_ms > voice_edit::MAX_DURATION_MS {
+        return Err("VOICE_DURATION_OUT_OF_RANGE".into());
+    }
     let (root, path) = {
         let session = core.session.lock().map_err(io_error)?;
         let s = session.as_ref().ok_or("NO_PROJECT")?;

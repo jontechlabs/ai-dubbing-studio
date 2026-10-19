@@ -104,3 +104,12 @@ Format 12 adds optional bounded per-piece `envelope` control points (`atMs`, `le
 FFmpeg [aeval](https://ffmpeg.org/ffmpeg-filters.html#aeval) evaluates the bounded linear envelope for each output sample after source trimming/tempo processing, before concatenation. First and last output samples map to their envelope endpoints. The source hash and serialized plan already invalidate WAV, decoded-audio and lip-video caches. All existing consumers share this renderer; no model or runtime dependencies change.
 
 Audio range handles preview local selection state, commit one saved-region resize on release and restore on Escape. Saved regions retain ID/gain/mute/bypass and cannot cross neighbours; free selections never write audio settings. Numeric and keyboard bounds use the same domain limits. Explicit dialogue navigation carries a fresh request even for a repeated click, seeks the video and reveals the range at the current zoom. A consumed-request guard prevents autosave, layout changes and manual panning from repeatedly taking over the viewport. An open take editor follows the chosen dialogue; stale audio selections and isolated auditions are cleared.
+
+
+## Voice duration safety (v0.15.1)
+
+`dubbingBounds` supplies the current onset, available maximum (next onset, film end, 120 s) and the minimum needed to represent an existing millisecond-based edit plan. Explicit duration changes validate before cloning/mutating project state. `fitPieceDurations` reserves at least 1 ms per remaining piece while preserving the exact requested total, shared by local stretching and whole-take editor fitting.
+
+Moves preserve audible duration and choose the nearest legal placement among free intervals, bounded by the film and signed-offset format range. Collapsed neighbours reserve their intended interval rather than a zero-width obstacle. A pure drag preview catches an unavailable placement instead of throwing during React rendering. Numeric controls keep drafts until Enter/blur, cancel locally on Escape and do not autosave intermediate digits. Recovery normalizes a truncated explicit duration or relocates a collapsed take without deleting its original WAV/edit plan; no-room errors are atomic.
+
+Native and frontend mix planners cap slots at 120 s. IPC and the shared fitting worker reject larger requests before rendering. Structural loading validation deliberately continues to accept old relative timing conflicts, so affected projects remain openable and the repair UI can resolve them; validation is not tightened in a way that prevents recovery.

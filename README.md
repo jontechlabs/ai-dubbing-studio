@@ -1,5 +1,8 @@
 # AI Dubbing Studio
 
+**v0.15.1 — Protected voice duration and movement.** Editing shows the actual available maximum, stops at neighbouring voices and the video end, and enforces the 120-second processing limit. Moves preserve audible duration; numeric timing applies on Enter/blur. Existing oversize or collapsed timings have a recovery action that retains edits. [Illustrated guide (French)](docs/VOICE-DURATION-SAFETY.md).
+
+
 **v0.15.0 — Adjustable voice fades, audio selection resizing and coherent navigation.** Apply fade-in/out to a voice region, resize audio selections or saved gain/mute regions with their edge handles, and reveal the chosen dialogue and playhead without changing timeline zoom. [Illustrated guide (French)](docs/FADES-SELECTION-NAVIGATION.md).
 
 ![Adjustable voice fades](docs/screenshots/voice-fades-fr.png)
@@ -74,7 +77,7 @@ CosyVoice3, Fish S2 FP8/GGUF and Qwen3-TTS GGUF remain available. [Models and GP
 
 *Actual React browser UI with a simulated reference and transcription result. Separate native checks transcribe real Japanese speech. These are not RTX performance measurements.*
 
-[Windows downloads](https://github.com/jontechlabs/ai-dubbing-studio/releases/tag/v0.15.0) · [User guide](docs/GETTING-STARTED.md) · [Build instructions](docs/BUILDING.md) · [Français](README.fr.md)
+[Windows downloads](https://github.com/jontechlabs/ai-dubbing-studio/releases/tag/v0.15.1) · [User guide](docs/GETTING-STARTED.md) · [Build instructions](docs/BUILDING.md) · [Français](README.fr.md)
 
 ![Studio with bilingual dialogue, video preview, text editor and timeline](docs/screenshots/studio.png)
 
@@ -88,8 +91,8 @@ Audio regions with independent silence and volume, timeline range selection, fas
 
 | Package | Purpose |
 | --- | --- |
-| [Windows x64 setup](https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.15.0/AI-Dubbing-Studio-0.15.0-Setup.exe) | NSIS installer for the current user, with English/French installer interface |
-| [Portable ZIP](https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.15.0/AI-Dubbing-Studio-Windows-Portable.zip) | Extract the whole folder and launch `AI Dubbing Studio.exe` |
+| [Windows x64 setup](https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.15.1/AI-Dubbing-Studio-0.15.1-Setup.exe) | NSIS installer for the current user, with English/French installer interface |
+| [Portable ZIP](https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.15.1/AI-Dubbing-Studio-Windows-Portable.zip) | Extract the whole folder and launch `AI Dubbing Studio.exe` |
 | [SHA-256 checksums](https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.10.3/SHA256SUMS.txt) | Verify the setup and ZIP downloads |
 
 Target: **Windows 10/11 x64**, with **Microsoft Edge WebView2 Runtime**. FFmpeg and FFprobe are included. Python, CUDA and AI model downloads are not required for editing and playback. Installation may need Internet access if WebView2 is missing; local project editing does not require a cloud account.

@@ -47,3 +47,6 @@ Les projets existants restent lisibles. La première retouche locale utilise le 
 ## Nouveautés v0.15.0
 
 Les portions de voix acceptent des **fondus d’entrée et de sortie réglables**. Les sélections peuvent être redimensionnées par leurs bords, dans la forme d’onde et sur les pistes. La timeline suit la réplique choisie sans changer le zoom. [Guide et captures](FADES-SELECTION-NAVIGATION.md). Une première utilisation des fondus nécessite le format de projet 12 et v0.15.0 ou plus récente.
+
+
+Depuis v0.15.1, les durées et déplacements sont protégés par les limites réellement disponibles. Les saisies de calage se valident avec Entrée ou en quittant le champ. Voir le [guide des limites et de la récupération](VOICE-DURATION-SAFETY.md).

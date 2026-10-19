@@ -9,6 +9,7 @@ use std::{
 };
 use tokio::io::AsyncReadExt;
 static EDIT_GATE: tokio::sync::Semaphore = tokio::sync::Semaphore::const_new(2);
+pub(crate) const MAX_DURATION_MS: u64 = 120_000;
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct Point {
@@ -59,7 +60,7 @@ impl Edit {
             });
             if !valid_envelope
                 || !valid_source
-                || !(1..=120000).contains(&p.duration_ms)
+                || !(1..=MAX_DURATION_MS).contains(&p.duration_ms)
                 || !p.gain.is_finite()
                 || !(0.0..=2.0).contains(&p.gain)
             {
@@ -68,7 +69,7 @@ impl Edit {
             duration = duration
                 .checked_add(p.duration_ms)
                 .ok_or("INVALID_VOICE_EDIT")?;
-            if duration > 120000 {
+            if duration > MAX_DURATION_MS {
                 return Err("INVALID_VOICE_EDIT".into());
             }
         }

@@ -1,4 +1,5 @@
 import { editDuration } from './voiceEdit';
+import { MAX_VOICE_DURATION_MS, freeVoiceStart } from './voiceLimits';
 import type { Project } from './types';
 import { voiceGenerations, staleGeneration, spokenText } from './tts';
 export function dubbingOffset(project: Project, lineId: string) {
@@ -11,38 +12,162 @@ export function dubbingDuration(project: Project, lineId: string) {
     ? project.dubbingTiming?.durationsMs?.[lineId]?.[project.languages.target]
     : undefined;
 }
+function timingProject(project: Project) {
+  if (!project.media) throw Error('MEDIA_MISSING');
+  const next = structuredClone(project);
+  next.formatVersion = Math.max(7, next.formatVersion);
+  if (next.dubbingTiming?.sourcePath !== next.media!.path)
+    next.dubbingTiming = { sourcePath: next.media!.path, offsetsMs: {} };
+  return next;
+}
+export function dubbingBounds(project: Project, lineId: string) {
+  const clips = dubbingClips(project),
+    clip = clips.find((c) => c.line.id === lineId);
+  const line = project.dialogues.find((l) => l.id === lineId);
+  if (!line || !project.media) throw Error('INVALID_PROJECT');
+  const startMs =
+    clip?.startMs ??
+    Math.max(
+      0,
+      Math.min(project.media.durationMs - 1, line.startMs + dubbingOffset(project, lineId)),
+    );
+  const others = clips.filter((c) => c.line.id !== lineId);
+  const next = others.reduce(
+    (end, c) => (c.startMs >= startMs ? Math.min(end, c.startMs) : end),
+    project.media.durationMs,
+  );
+  const min = Math.max(1, project.voiceEdits?.[clip?.generation.id ?? '']?.pieces.length ?? 1);
+  const max = Math.max(0, Math.min(MAX_VOICE_DURATION_MS, next - startMs));
+  const duration = clip ? clip.endMs - clip.startMs : 0;
+  const requested = dubbingDuration(project, lineId);
+  const natural = clip
+    ? project.voiceEdits?.[clip.generation.id]
+      ? editDuration(project.voiceEdits[clip.generation.id])
+      : clip.generation.durationMs
+    : 0;
+  return {
+    min,
+    max,
+    startMs,
+    duration,
+    limited:
+      !!clip &&
+      (duration < min ||
+        (requested !== undefined && requested > max) ||
+        (requested === undefined && dubbingOffset(project, lineId) !== 0 && natural > max)),
+  };
+}
 export function resizeDubbing(
   project: Project,
   lineId: string,
   durationMs: number | null,
 ): Project {
+  const bounds = dubbingBounds(project, lineId);
   if (
     durationMs !== null &&
-    (!Number.isFinite(durationMs) || durationMs < 1 || durationMs > 120000)
+    (!Number.isSafeInteger(durationMs) || durationMs < bounds.min || durationMs > bounds.max)
   )
-    throw Error('INVALID_PROJECT');
-  const next = moveDubbing(project, lineId, dubbingOffset(project, lineId));
-  const durations = (next.dubbingTiming!.durationsMs ??= {});
-  const values = (durations[lineId] ??= {});
+    throw Error('VOICE_DURATION_OUT_OF_RANGE');
+  const next = timingProject(project);
+  next.dubbingTiming!.offsetsMs[lineId] = {
+    ...next.dubbingTiming!.offsetsMs[lineId],
+    [next.languages.target]: dubbingOffset(project, lineId),
+  };
+  const values = ((next.dubbingTiming!.durationsMs ??= {})[lineId] ??= {});
   if (durationMs === null) delete values[next.languages.target];
-  else values[next.languages.target] = Math.round(durationMs);
+  else values[next.languages.target] = durationMs;
+  return next;
+}
+function placeDubbing(
+  project: Project,
+  lineId: string,
+  offsetMs: number,
+  restore: boolean,
+  preferNatural = false,
+): Project {
+  const line = project.dialogues.find((l) => l.id === lineId);
+  if (!line || !project.media || !Number.isSafeInteger(offsetMs)) throw Error('INVALID_PROJECT');
+  const clips = dubbingClips(project),
+    clip = clips.find((c) => c.line.id === lineId);
+  const generation = voiceGenerations(project).find(
+    (g) =>
+      g.id === line.selectedGenerationIds[project.languages.target] &&
+      g.sourcePath === project.media!.path,
+  );
+  const natural = generation
+    ? project.voiceEdits?.[generation.id]
+      ? editDuration(project.voiceEdits[generation.id])
+      : generation.durationMs
+    : line.endMs - line.startMs;
+  const wanted = Math.min(
+    MAX_VOICE_DURATION_MS,
+    project.media.durationMs,
+    restore
+      ? Math.max(
+          dubbingBounds(project, lineId).min,
+          preferNatural ? natural : (dubbingDuration(project, lineId) ?? natural),
+        )
+      : Math.max(
+          dubbingBounds(project, lineId).min,
+          clip ? clip.endMs - clip.startMs || natural : natural,
+        ),
+  );
+  if (wanted < dubbingBounds(project, lineId).min) throw Error('VOICE_EDIT_NO_ROOM');
+  const start = freeVoiceStart(
+    line.startMs + offsetMs,
+    wanted,
+    project.media.durationMs,
+    clips
+      .filter((c) => c.line.id !== lineId)
+      .map((c) => ({
+        startMs: c.startMs,
+        endMs:
+          c.endMs > c.startMs
+            ? c.endMs
+            : Math.min(
+                project.media!.durationMs,
+                c.startMs +
+                  Math.max(
+                    1,
+                    Math.min(
+                      MAX_VOICE_DURATION_MS,
+                      dubbingDuration(project, c.line.id) ??
+                        (project.voiceEdits?.[c.generation.id]
+                          ? editDuration(project.voiceEdits[c.generation.id])
+                          : Math.min(c.generation.durationMs, c.line.endMs - c.line.startMs)),
+                    ),
+                  ),
+              ),
+      })),
+    Math.max(0, line.startMs - 86_400_000),
+    Math.min(project.media.durationMs - wanted, line.startMs + 86_400_000),
+  );
+  const next = timingProject(project);
+  next.dubbingTiming!.offsetsMs[lineId] = {
+    ...next.dubbingTiming!.offsetsMs[lineId],
+    [next.languages.target]: start - line.startMs,
+  };
+  if (restore || dubbingDuration(project, lineId) !== undefined)
+    ((next.dubbingTiming!.durationsMs ??= {})[lineId] ??= {})[next.languages.target] = wanted;
   return next;
 }
 export function moveDubbing(project: Project, lineId: string, offsetMs: number): Project {
-  const line = project.dialogues.find((line) => line.id === lineId);
-  if (!line || !project.media || !Number.isFinite(offsetMs)) throw Error('INVALID_PROJECT');
-  const offset = Math.max(
-    -86_400_000,
-    -line.startMs,
-    Math.min(86_400_000, project.media.durationMs - 1 - line.startMs, Math.round(offsetMs)),
-  );
-  const next = structuredClone(project);
-  next.formatVersion = Math.max(7, next.formatVersion);
-  if (next.dubbingTiming?.sourcePath !== next.media!.path)
-    next.dubbingTiming = { sourcePath: next.media!.path, offsetsMs: {} };
-  const offsets = next.dubbingTiming!.offsetsMs;
-  offsets[lineId] = { ...offsets[lineId], [next.languages.target]: offset };
-  return next;
+  return placeDubbing(project, lineId, offsetMs, false);
+}
+export function recoverDubbing(project: Project, lineId: string): Project {
+  const bounds = dubbingBounds(project, lineId),
+    requested = dubbingDuration(project, lineId);
+  if (requested !== undefined && requested > bounds.max && bounds.duration >= bounds.min)
+    return resizeDubbing(project, lineId, bounds.duration);
+  try {
+    return placeDubbing(project, lineId, dubbingOffset(project, lineId), true);
+  } catch (error) {
+    if (!(error instanceof Error) || error.message !== 'VOICE_EDIT_NO_ROOM') throw error;
+    // A legacy request may be both oversized and collapsed by a collision.
+    // Recover using its complete original/edited audio duration if the saved
+    // request itself cannot fit anywhere. No source samples are removed.
+    return placeDubbing(project, lineId, dubbingOffset(project, lineId), true, true);
+  }
 }
 export function dubbingClips(project: Project) {
   const generations = new Map(voiceGenerations(project).map((g) => [g.id, g]));
@@ -86,8 +211,12 @@ export function dubbingClips(project: Project) {
         ? 0
         : Math.max(
             0,
-            Math.min(clip.slotEndMs, next?.startMs ?? Infinity, project.media!.durationMs) -
-              clip.startMs,
+            Math.min(
+              MAX_VOICE_DURATION_MS + clip.startMs,
+              clip.slotEndMs,
+              next?.startMs ?? Infinity,
+              project.media!.durationMs,
+            ) - clip.startMs,
           );
       return {
         ...clip,

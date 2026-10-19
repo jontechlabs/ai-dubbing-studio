@@ -6,7 +6,8 @@ import {
   type VoicePoint,
 } from './voiceEnvelope';
 import type { Generation, Project } from './types';
-import { dubbingClips, resizeDubbing } from './mix';
+import { dubbingClips, dubbingBounds, resizeDubbing } from './mix';
+import { MAX_VOICE_DURATION_MS, fitPieceDurations } from './voiceLimits';
 
 // Source coordinates always refer to the immutable generated WAV. Output
 // durations describe the edited take; null coordinates are inserted silence.
@@ -43,7 +44,7 @@ export function validateVoiceEdit(edit: VoiceEdit, duration: number) {
             p.sourceEndMs! <= p.sourceStartMs ||
             p.sourceEndMs! > duration),
     ) ||
-    editDuration(edit) > 120000
+    editDuration(edit) > MAX_VOICE_DURATION_MS
   )
     throw Error('INVALID_VOICE_EDIT');
 }
@@ -54,22 +55,16 @@ export function voicePlan(project: Project, generation: Generation): VoiceEdit {
     const target = clip ? Math.max(1, clip.endMs - clip.startMs) : editDuration(existing);
     const total = editDuration(existing);
     if (target === total || target < existing.pieces.length) return existing;
-    let offset = 0,
-      assigned = 0;
+    const durations = fitPieceDurations(
+      existing.pieces.map((p) => p.durationMs),
+      target,
+    );
     return {
-      pieces: existing.pieces.map((p, i) => {
-        offset += p.durationMs;
-        const end = Math.max(
-          assigned + 1,
-          Math.min(
-            target - (existing.pieces.length - i - 1),
-            Math.round((offset / total) * target),
-          ),
-        );
-        const durationMs = end - assigned;
-        assigned = end;
-        return { ...p, durationMs, envelope: scaleEnvelope(p.envelope, p.durationMs, durationMs) };
-      }),
+      pieces: existing.pieces.map((p, i) => ({
+        ...p,
+        durationMs: durations[i],
+        envelope: scaleEnvelope(p.envelope, p.durationMs, durations[i]),
+      })),
     };
   }
   return {
@@ -138,6 +133,8 @@ export function editVoice(
   const clip = dubbingClips(project).find((c) => c.generation.id === generationId);
   if (!generation || !clip || !Number.isSafeInteger(startMs) || !Number.isSafeInteger(endMs))
     throw Error('INVALID_VOICE_EDIT');
+  if (dubbingBounds(project, clip.line.id).duration < dubbingBounds(project, clip.line.id).min)
+    throw Error('VOICE_EDIT_NO_ROOM');
   const plan = voicePlan(project, generation),
     total = editDuration(plan);
   if (
@@ -186,15 +183,15 @@ export function editVoice(
   } else {
     if (!Number.isSafeInteger(operation.durationMs) || operation.durationMs < selected.length)
       throw Error('INVALID_VOICE_EDIT');
-    let assigned = 0,
-      old = 0;
-    const stretched = selected.map((p) => {
-      old += p.durationMs;
-      const boundary = Math.round((old * operation.durationMs) / (endMs - startMs));
-      const durationMs = boundary - assigned;
-      assigned = boundary;
-      return { ...p, durationMs, envelope: scaleEnvelope(p.envelope, p.durationMs, durationMs) };
-    });
+    const durations = fitPieceDurations(
+      selected.map((p) => p.durationMs),
+      operation.durationMs,
+    );
+    const stretched = selected.map((p, i) => ({
+      ...p,
+      durationMs: durations[i],
+      envelope: scaleEnvelope(p.envelope, p.durationMs, durations[i]),
+    }));
     pieces = [...before, ...stretched, ...after];
   }
   // Coalesce adjacent silence and unchanged contiguous source pieces, keeping
@@ -223,11 +220,10 @@ export function editVoice(
   const edit = { pieces: merged };
   validateVoiceEdit(edit, generation.durationMs);
   const duration = editDuration(edit);
-  const nextStart = dubbingClips(project)
-    .filter((c) => c.line.id !== clip.line.id && c.startMs > clip.startMs)
-    .reduce((n, c) => Math.min(n, c.startMs), project.media!.durationMs);
-  if (duration > total && duration > nextStart - clip.startMs) throw Error('VOICE_EDIT_NO_ROOM');
-  const next = resizeDubbing(project, clip.line.id, duration);
+  if (duration > dubbingBounds(project, clip.line.id).max) throw Error('VOICE_EDIT_NO_ROOM');
+  const changed = structuredClone(project);
+  (changed.voiceEdits ??= {})[generationId] = edit;
+  const next = resizeDubbing(changed, clip.line.id, duration);
   next.formatVersion = Math.max(pieces.some((p) => p.envelope) ? 12 : 11, next.formatVersion);
   (next.voiceEdits ??= {})[generationId] = edit;
   const line = next.dialogues.find((l) => l.id === clip.line.id)!;

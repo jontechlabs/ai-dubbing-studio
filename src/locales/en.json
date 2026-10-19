@@ -308,7 +308,9 @@
     "TRANSLATION_LANGUAGE_INVALID": "Choose different source and target languages.",
     "TRANSLATION_OUTPUT_INVALID": "The proposal is empty, truncated or malformed. No subtitle was changed. Retry.",
     "TRANSLATION_STALE": "The text, language or cue associations changed. Request a new proposal to preserve your edits.",
-    "TRANSLATION_TIMEOUT": "Model loading exceeded three minutes. Check the device and retry."
+    "TRANSLATION_TIMEOUT": "Model loading exceeded three minutes. Check the device and retry.",
+    "VOICE_DURATION_OUT_OF_RANGE": "This duration exceeds the available limits. Respect the displayed maximum and keep at least 1 ms per piece.",
+    "VOICE_EDIT_NO_ROOM": "The edit would cross the next dubbing clip or the end of the video. Shorten it or move the next clip first."
   },
   "preparingVideo": "Preparing video…",
   "loadingVideo": "Loading video…",
@@ -638,7 +640,7 @@
   "dubbingOffsetHint": "Negative: earlier voice; positive: later. Placement applies to playback and export. Subtitles and the original WAV keep their timings.",
   "dubbingDuration": "Requested dubbing duration (ms)",
   "dubbingAutoDuration": "Automatic duration",
-  "dubbingDurationHint": "Drag the right edge or enter a duration. The voice speeds up or slows down while preserving pitch; the slot may be reduced at the next voice or video end. Listen to large changes.",
+  "dubbingDurationHint": "Drag the right edge or enter a duration within the displayed bounds. The edge stops at the next voice, video end and 120 s. Moving preserves audible duration and stops before other voices. Listen to large changes.",
   "dubbingResizeHint": "Drag this edge to lengthen or shorten the voice while preserving pitch.",
   "ttsMood": "Mood / delivery",
   "ttsMoodHint": "Delivery guidance is sent to the engine. Its strength depends on the model and reference; compare takes. Subtitle text stays the same.",
@@ -880,5 +882,10 @@
   "audioResizeStart": "Resize start: {{track}}",
   "audioResizeEnd": "Resize end: {{track}}",
   "voiceResizeSelectionStart": "Resize voice selection start",
-  "voiceResizeSelectionEnd": "Resize voice selection end"
+  "voiceResizeSelectionEnd": "Resize voice selection end",
+  "voiceDurationLimits": "Audible duration: {{duration}} ms · available maximum here: {{max}} ms (up to 120 s).",
+  "voiceTimingLimited": "The saved timing exceeds its available slot or leaves too little room for its pieces. Move this take into a free interval or reduce its duration. Your edits remain recoverable.",
+  "voiceRecoverTiming": "Move into available space",
+  "VOICE_DURATION_OUT_OF_RANGE": "This duration exceeds the available limits. Respect the displayed maximum and keep at least 1 ms per piece.",
+  "voiceTimingCommitHint": "Press Enter or leave the field to apply; Escape cancels typing."
 }

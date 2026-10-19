@@ -128,7 +128,8 @@ pub(crate) fn clips(p: &Project) -> Vec<Clip> {
         clip.slot_ms = if duplicate {
             0
         } else {
-            (clip.end_ms * 24).min(next).saturating_sub(clip.start) / 24
+            ((clip.end_ms * 24).min(next).saturating_sub(clip.start) / 24)
+                .min(crate::voice_edit::MAX_DURATION_MS)
         };
         clip.frames = if clip.exact_duration {
             clip.slot_ms * 24

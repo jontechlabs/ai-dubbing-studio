@@ -41,3 +41,6 @@ Si l’éditeur de doublage est ouvert, il suit l’essai actif de la nouvelle r
 *Captures de l’interface React avec audio de démonstration synthétique et commandes natives simulées. Les tests audio et MKV utilisent séparément le véritable FFmpeg.*
 
 Les projets existants restent lisibles. La première application d’un fondu utilise le **format de projet 12**, qui nécessite v0.15.0 ou plus récente. Les anciennes retouches sans fondus conservent leur format précédent.
+
+
+Depuis v0.15.1, les durées et déplacements sont protégés par les limites réellement disponibles. Les saisies de calage se valident avec Entrée ou en quittant le champ. Voir le [guide des limites et de la récupération](VOICE-DURATION-SAFETY.md).
