@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type RefObject } from 'react';
 import type { Generation } from '../domain/types';
 import { generationUrl } from '../services/bridge';
+import { beginVoicePlayback } from '../services/voicePlayback';
 export function useGenerationAudio(
   video: RefObject<HTMLVideoElement | null>,
   mediaKey: string | undefined,
@@ -9,9 +10,12 @@ export function useGenerationAudio(
   edits?: import('../domain/types').Project['voiceEdits'],
 ) {
   const audio = useRef<HTMLAudioElement | null>(null),
+    finishPlayback = useRef<(() => void) | null>(null),
     token = useRef(0),
     [active, setActive] = useState<string | null>(null);
   const stop = useCallback(() => {
+    finishPlayback.current?.();
+    finishPlayback.current = null;
     token.current++;
     audio.current?.pause();
     if (audio.current) audio.current.src = '';
@@ -31,6 +35,15 @@ export function useGenerationAudio(
           const element = new Audio(url);
           audio.current = element;
           element.volume = volume;
+          finishPlayback.current = beginVoicePlayback(() => ({
+            generationId: generation.id,
+            positionMs: element.currentTime * 1000,
+            durationMs: Number.isFinite(element.duration)
+              ? element.duration * 1000
+              : generation.durationMs,
+            original: false,
+            playing: !element.paused,
+          }));
           element.onended = () => {
             if (request === token.current) stop();
           };

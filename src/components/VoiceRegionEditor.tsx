@@ -12,6 +12,8 @@ import {
 import { dubbingBounds, dubbingClips, recoverDubbing } from '../domain/mix';
 import { envelopeLevel } from '../domain/voiceEnvelope';
 import { generationUrl, dubbingUrl } from '../services/bridge';
+import { beginVoicePlayback } from '../services/voicePlayback';
+import { VoicePlayhead } from './VoicePlayhead';
 
 function releaseAudio(
   playback: { context: AudioContext; source: AudioBufferSourceNode | null } | null,
@@ -82,7 +84,8 @@ export function VoiceRegionEditor({
   const audio = useRef<{ context: AudioContext; source: AudioBufferSourceNode | null } | null>(
       null,
     ),
-    request = useRef(0);
+    request = useRef(0),
+    finishPlayback = useRef<(() => void) | null>(null);
   const [drag, setDrag] = useState<{
     kind: 'select' | 'stretch' | 'start' | 'end';
     anchor: number;
@@ -104,6 +107,8 @@ export function VoiceRegionEditor({
     return () => window.removeEventListener('keydown', cancel, true);
   }, [drag]);
   const stop = () => {
+    finishPlayback.current?.();
+    finishPlayback.current = null;
     request.current++;
     releaseAudio(audio.current);
     audio.current = null;
@@ -146,6 +151,8 @@ export function VoiceRegionEditor({
   useEffect(() => {
     // A changed edit/undo must stop the old audio, including pending renders.
     const release = () => {
+      finishPlayback.current?.();
+      finishPlayback.current = null;
       request.current++;
       releaseAudio(audio.current);
       audio.current = null;
@@ -309,12 +316,39 @@ export function VoiceRegionEditor({
       source.buffer = buffer;
       source.connect(context.destination);
       audio.current = { context, source };
+      let completed = false;
       source.onended = () => {
+        completed = true;
         if (request.current === token) stop();
       };
       // Schedule exactly the selected samples, independent of timeupdate cadence.
       if (original) source.start(0);
       else source.start(0, start / 1000, (length > 0 ? length : total - start) / 1000);
+      const began = context.currentTime;
+      const offset = original ? 0 : start;
+      const until = original
+        ? buffer.duration * 1000
+        : Math.min(buffer.duration * 1000, length > 0 ? end : total);
+      finishPlayback.current = beginVoicePlayback(() => {
+        // Prefer the device output clock to account for its audio buffer latency.
+        const stamp = context.getOutputTimestamp?.();
+        const clock =
+          stamp && stamp.performanceTime && stamp.contextTime
+            ? Math.min(
+                context.currentTime,
+                stamp.contextTime + (performance.now() - stamp.performanceTime) / 1000,
+              )
+            : context.currentTime;
+        return {
+          generationId: generation.id,
+          positionMs: completed
+            ? until
+            : Math.min(until, offset + Math.max(0, clock - began) * 1000),
+          durationMs: original ? buffer.duration * 1000 : total,
+          original,
+          playing: !completed,
+        };
+      });
       setPlaying(true);
       setLoading(false);
     } catch (e) {
@@ -444,6 +478,20 @@ export function VoiceRegionEditor({
         {drag?.kind === 'stretch' && (
           <output className="voice-stretch-preview">{drag.duration} ms</output>
         )}
+        <VoicePlayhead
+          generationId={generation.id}
+          plan={plan}
+          clipStartMs={
+            dubbingClips(project).find((c) => c.generation.id === generation.id)?.startMs
+          }
+          busy={busy}
+          onPlace={(positionMs) => {
+            stop();
+            document.dispatchEvent(new Event('studio-voice-preview'));
+            document.querySelector('video')?.pause();
+            setRange({ start: positionMs, end: positionMs });
+          }}
+        />
       </div>
       <p className="voice-duration-limits" role="status">
         {t('voiceDurationLimits', { duration: limits.duration, max: limits.max })}

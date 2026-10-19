@@ -54,6 +54,18 @@ L’éditeur vérifie le rendu audio et son ajustement au créneau **avant d’e
 
 Les anciennes éditions enregistrées peuvent être recalculées avec le nouveau moteur. Une portion volontairement rendue muette ou supprimée reste une édition valide ; utilisez la restauration si vous souhaitez retrouver tout l’essai.
 
+## Situer le son pendant l’édition
+
+Double-cliquez un bloc **Doublage** pour ouvrir sa forme d’onde. Pendant **Écouter la sélection**, une ligne jaune suit le son et un compteur affiche la position à la milliseconde dans le doublage édité. Le repère suit également l’écoute lancée depuis la carte de réplique et la lecture de la vidéo pendant le créneau du doublage. Il utilise l’horloge audio ou vidéo, et non une estimation par minuterie.
+
+Après l’arrêt, le repère reste visible. **Placer le curseur ici** arrête la lecture et place les deux bornes de sélection à cette position : vous pouvez insérer du silence ou démarrer une nouvelle sélection pour couper, étirer, régler le volume ou appliquer un fondu. Cette action ne modifie pas l’audio.
+
+**Écouter l’essai d’origine** affiche aussi son horloge propre. Sa position est reportée dans le montage en tenant compte des coupes, silences et étirements. Un passage supprimé du montage est signalé sans ligne jaune ; le placement est alors indisponible. Une nouvelle édition invalide le repère de l’ancien rendu. La précision visible dépend de la cadence d’affichage et du périphérique de sortie.
+
+![Tête de lecture dans l’éditeur de doublage](screenshots/voice-playhead-fr.png)
+
+*Interface réelle avec audio synthétique et commandes natives simulées. Le repère affiché provient de l’horloge Web Audio de Chrome.*
+
 ## Affichage des répliques
 
 La liste mesure les hauteurs réelles des cartes multilignes et les recalcule au changement de largeur, de texte ou de filtre. Les identifiants des répliques stabilisent leur position dans la liste virtualisée.

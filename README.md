@@ -1,6 +1,6 @@
 # AI Dubbing Studio
 
-**v0.18.0 — Batch lip sync and safer audio editing.** Process all dubbed or checked dialogue lines with CPU face detection for filmed people and anime, editable individual framing, cancellation and resume. Each result is an independent clip; the main video stays intact. Cuts and stretches render before committing, the original take remains auditionable, and multiline dialogue cards no longer overlap. [Guide and screenshots (French)](docs/LIP-BATCHES-AND-AUDIO-RECOVERY.md).
+**v0.18.0 — Batch lip sync and safer audio editing.** Process all dubbed or checked dialogue lines with CPU face detection for filmed people and anime, editable individual framing, cancellation and resume. Each result is an independent clip; the main video stays intact. Cuts and stretches render before committing, the original take remains auditionable, and multiline dialogue cards no longer overlap. An audio-clock playhead and precise counter help locate the sound and place the editing cursor. [Guide and screenshots (French)](docs/LIP-BATCHES-AND-AUDIO-RECOVERY.md).
 
 ![Batch lip synchronization](docs/screenshots/lip-batch-fr.png)
 
