@@ -3,7 +3,9 @@
 
 ## v0.15.1 — 19 October 2026
 
-Windows workflow evidence will be recorded before publication.
+Windows checks and signed-update package production passed in [run 39200976135](https://github.com/jontechlabs/ai-dubbing-studio/actions/runs/39200976135), built from `025a7541d0632925e2be1ccc9f85e3aaa980a35b`. All 341 Windows suite checks passed (102 TypeScript, 100 Rust, 94 Chrome, 45 Python), plus actual unpinned-bank/FP8/cache/tiny-model/header diagnostics and the real causal-vocoder finalization diagnostic, plus a real native Japanese-to-French LLM proposal and cancellation/process-release checks under a Unicode model path, plus two real Japanese ASR checks using the final Windows release executable. The setup and portable archive are copied unchanged from this workflow. Final metadata only records this evidence and the verified update feed.
+
+Packaged Windows worker timings for the 7.2-second Japanese fixture: auto: 114.4 s, ja: 56.57 s. These are CI CPU measurements, not performance estimates for the user’s PC.
 
 - Duration regression cases cover exact available maximum and +1 ms; invalid/non-finite/fractional numeric requests; the global 120-second boundary; partial stretching and inserted silence with the rest of the take included; highly unequal split pieces; movement at both film edges, over occupied intervals and into another free gap; legacy duplicate starts, film-end collapse, oversized saved requests and sub-piece-length timings; and failure without mutation when no gap can contain a take.
 - Browser checks exercise atomic timing drafts, Enter/blur/Escape, rejected overflow, timeline edge clamps at a neighbour and the video end, duration-preserving movement, local stretch clamps and refused silence, persisted fades at the boundary, reopening, repair of old timings, undo/redo and preservation of take edits. Screenshots use real React UI with synthetic media and mocked native commands.

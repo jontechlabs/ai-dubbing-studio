@@ -1,11 +1,11 @@
 {
-  "version": "0.15.0",
-  "notes": "Fondus d’entrée et de sortie réglables sur les portions de doublage, conservés à la lecture et aux exports. Poignées et bornes précises pour redimensionner les sélections audio. Cliquer une réplique recentre la timeline au même zoom et fait suivre l’éditeur de voix.",
-  "pub_date": "2026-10-18T15:14:11Z",
+  "version": "0.15.1",
+  "notes": "Durées et déplacements des doublages sécurisés : maximum disponible affiché, arrêt aux voix voisines et à la fin du film, plafond 120 s. Saisie validée avec Entrée ou à la sortie du champ. Déplacements sans raccourcir les voix. Récupération des anciens calages trop longs ou sans créneau et correction des segments nuls après compression.",
+  "pub_date": "2026-10-19T05:10:34Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSdFFyMUJGTFp3NkdmZ216TFRyUmIrR2xQeFRMZFVwWHJobnV2dytpclJNbUJnTHgxcEZwbnJZOS94VmNJQ0VLc0hSTFNrbmN4bVNoVWdQUU5FOTdIelBveWR3ZGZYSHdZPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkyMzM1OTg0CWZpbGU6QUkgRHViYmluZyBTdHVkaW9fMC4xNS4wX3g2NC1zZXR1cC5leGUJdmVyc2lvbjowLjE1LjAKeTRyYVI4anp6NHBEWDk5Z29nSzJDYi84THE3dldlQVdjNlY0czJnaE80TGNqS0lBQkMrV2pMQUNROWUvSWM3STlaWmpteEtiSEdKbmJPN1EzYnE1Qmc9PQo=",
-      "url": "https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.15.0/AI-Dubbing-Studio-0.15.0-Setup.exe"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSdFFyMUJGTFp3NkE4Q3VhdWszOVFsamhidEZmOEhkUjQ1RnB0aUNKNUZyQUw2QjQ3VDdselZxem1iVHg5Z0hTZzFMUUx4MjZ6OFMwMGwzellFZUE0MTNQQ0cyL2djdkFzPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkyMzg2MzQ1CWZpbGU6QUkgRHViYmluZyBTdHVkaW9fMC4xNS4xX3g2NC1zZXR1cC5leGUJdmVyc2lvbjowLjE1LjEKWVF2R1pSMXlISEN0bHc2aWRaZk9HeVVONHpwV3RiaE9kdFpTTk5iVW05N2pNaXQ1VWpSa3JzdHRHRVlTWUh5cmNSNnhON3FSQldzZzRGb040THFFRHc9PQo=",
+      "url": "https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.15.1/AI-Dubbing-Studio-0.15.1-Setup.exe"
     }
   }
 }
