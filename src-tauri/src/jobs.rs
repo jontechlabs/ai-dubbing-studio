@@ -41,6 +41,8 @@ pub struct ImportRequest {
 #[derive(Clone, Serialize, Deserialize)]
 pub struct PersistedJob {
     #[serde(default)]
+    pub inpaint_batch: Option<String>,
+    #[serde(default)]
     pub translation_install: bool,
     #[serde(default)]
     pub translation_request: Option<crate::translation_llm::Request>,
@@ -115,6 +117,7 @@ pub fn create<R: tauri::Runtime>(
             key.clone(),
             Control {
                 saved: PersistedJob {
+                    inpaint_batch: None,
                     translation_install: false,
                     translation_request: None,
                     tts_batch: None,

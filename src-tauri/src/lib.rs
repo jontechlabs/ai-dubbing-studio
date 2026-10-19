@@ -6,6 +6,7 @@ mod downloads;
 mod embedded;
 mod graphics;
 mod inpaint;
+mod inpaint_batch;
 #[cfg(test)]
 mod integration_tests;
 mod jobs;
@@ -137,6 +138,23 @@ fn inpaint_lips(
 #[tauri::command]
 fn inpaint_path(core: State<'_, Shared>, id: String) -> Result<String, String> {
     inpaint::media_path(&core, &id)
+}
+#[tauri::command]
+fn preview_inpaint_batch(
+    core: State<'_, Shared>,
+    selection: inpaint_batch::Selection,
+) -> Result<inpaint_batch::Preview, String> {
+    let guard = core.session.lock().map_err(io_error)?;
+    let s = guard.as_ref().ok_or("NO_PROJECT")?;
+    inpaint_batch::plan(&s.project, &s.root, &selection).map(|(preview, _)| preview)
+}
+#[tauri::command]
+fn start_inpaint_batch(
+    app: tauri::AppHandle,
+    core: State<'_, Shared>,
+    selection: inpaint_batch::Selection,
+) -> Result<String, String> {
+    inpaint_batch::enqueue(core.inner().clone(), app, selection)
 }
 #[tauri::command]
 fn transfer_audio(
@@ -1032,6 +1050,9 @@ fn retry_job(app: tauri::AppHandle, core: State<'_, Shared>, id: String) -> Resu
     if let Some(key) = record.tts_batch {
         return tts_batch::resume(core.inner().clone(), app, tts_batch::load(&core, &key)?);
     }
+    if let Some(key) = record.inpaint_batch {
+        return inpaint_batch::resume(core.inner().clone(), app, inpaint_batch::load(&core, &key)?);
+    }
     if record.inpaint_install {
         return inpaint::install_model(
             core.inner().clone(),
@@ -1272,6 +1293,8 @@ pub fn run() {
             install_inpaint,
             inpaint_lips,
             inpaint_path,
+            preview_inpaint_batch,
+            start_inpaint_batch,
             transfer_audio,
             audio_patch_path,
             analyze_lips,

@@ -1,4 +1,4 @@
-import { memo, useEffect, useMemo, useRef, useState } from 'react';
+import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import {
   AlertTriangle,
@@ -27,6 +27,7 @@ function DialoguesPane({
   checkedIds,
   onCheck,
   onBatch,
+  onLipBatch,
   project,
   selectedId,
   onSelect,
@@ -43,6 +44,7 @@ function DialoguesPane({
   checkedIds: string[];
   onCheck: (ids: string[]) => void;
   onBatch: () => void;
+  onLipBatch: () => void;
   project: Project | null;
   selectedId: string | null;
   onSelect: (line: Dialogue) => void;
@@ -88,12 +90,41 @@ function DialoguesPane({
           .includes(search.toLocaleLowerCase()),
     );
   }, [project, review, search, translationFilter, states]);
+  const getItemKey = useCallback((index: number) => lines[index].id, [lines]);
   const virtual = useVirtualizer({
     count: lines.length,
     getScrollElement: () => scrollRef.current,
     estimateSize: () => 210,
+    getItemKey,
+    gap: 10,
     overscan: 4,
   });
+  const measureRows = useCallback(() => {
+    scrollRef.current?.querySelectorAll('[data-dialogue-row]').forEach(virtual.measureElement);
+  }, [virtual]);
+  // Measure the actual multiline content before paint, including reused rows
+  // whose index changed after filtering. ResizeObserver alone can deliver late.
+  useLayoutEffect(measureRows);
+  useEffect(() => {
+    const element = scrollRef.current;
+    if (!element) return;
+    let width = element.clientWidth;
+    const observer = new ResizeObserver(() => {
+      if (element.clientWidth === width) return;
+      width = element.clientWidth;
+      virtual.measure();
+      measureRows();
+    });
+    observer.observe(element);
+    let disposed = false;
+    void document.fonts.ready.then(() => {
+      if (!disposed) measureRows();
+    });
+    return () => {
+      disposed = true;
+      observer.disconnect();
+    };
+  }, [virtual, measureRows]);
   const selectionIndex = lines.findIndex((line) => line.id === selectedId);
   useEffect(() => {
     if (selectionIndex >= 0) virtual.scrollToIndex(selectionIndex, { align: 'auto' });
@@ -172,6 +203,13 @@ function DialoguesPane({
         >
           {t('batchDub')} {checkedIds.length > 0 && `(${checkedIds.length})`}
         </button>
+        <button
+          className="button subtle"
+          disabled={!project?.dialogues.length || busy}
+          onClick={onLipBatch}
+        >
+          {t('inpaintBatch')}
+        </button>
       </div>
       <div className="dialogue-scroll" ref={scrollRef}>
         {!lines.length ? (
@@ -190,6 +228,7 @@ function DialoguesPane({
                 <div
                   key={line.id}
                   data-index={item.index}
+                  data-dialogue-row={line.id}
                   ref={virtual.measureElement}
                   style={{
                     position: 'absolute',
@@ -197,7 +236,6 @@ function DialoguesPane({
                     left: 0,
                     width: '100%',
                     transform: `translateY(${item.start}px)`,
-                    paddingBottom: 10,
                   }}
                 >
                   <DialogueCard

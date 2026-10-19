@@ -16,7 +16,7 @@ use std::{
 use tokio::io::{AsyncBufReadExt, BufReader};
 #[cfg(test)]
 #[path = "mix_tests.rs"]
-mod tests;
+pub(crate) mod tests;
 
 #[derive(Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]

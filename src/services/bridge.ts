@@ -34,6 +34,33 @@ export function installInpaint(
 export function inpaintLips(options: import('../domain/inpaint').InpaintOptions) {
   return invoke<string>('inpaint_lips', { options });
 }
+export interface InpaintBatchSelection {
+  scope: 'all' | 'selected';
+  lineIds: string[];
+  force: boolean;
+  useSavedCrops: boolean;
+  useCommonCrop: boolean;
+  activate: boolean;
+  crops: Record<
+    string,
+    Pick<import('../domain/inpaint').InpaintOptions, 'face' | 'endX' | 'endY' | 'mask'>
+  >;
+  options: import('../domain/inpaint').InpaintOptions;
+}
+export interface InpaintBatchPreview {
+  requested: number;
+  undubbed: number;
+  existing: number;
+  missingCrop: number;
+  ready: string[];
+  blocked: { lineId: string; error: string }[];
+}
+export function previewInpaintBatch(selection: InpaintBatchSelection) {
+  return invoke<InpaintBatchPreview>('preview_inpaint_batch', { selection });
+}
+export function startInpaintBatch(selection: InpaintBatchSelection) {
+  return invoke<string>('start_inpaint_batch', { selection });
+}
 export async function inpaintUrl(id: string) {
   return convertFileSrc(await invoke<string>('inpaint_path', { id }));
 }

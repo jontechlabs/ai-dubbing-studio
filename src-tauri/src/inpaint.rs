@@ -102,6 +102,8 @@ impl Options {
 }
 #[derive(Clone, Serialize, Deserialize)]
 pub struct Request {
+    #[serde(default)]
+    pub output_id: Option<String>,
     pub root: PathBuf,
     pub project_id: String,
     pub fingerprint: String,
@@ -168,12 +170,11 @@ pub fn validate(p: &Project) -> Result<(), String> {
     }
     Ok(())
 }
-fn signature(
+pub(crate) fn signature(
     p: &Project,
     line: &str,
     generation: &str,
 ) -> Result<(String, crate::mix::Clip), String> {
-    let media = p.media.as_ref().ok_or("MEDIA_MISSING")?;
     let l = p
         .dialogues
         .iter()
@@ -190,6 +191,14 @@ fn signature(
         .into_iter()
         .find(|c| c.id == generation)
         .ok_or("INVALID_GENERATION")?;
+    Ok((fingerprint(p, generation, &clip)?, clip))
+}
+pub(crate) fn fingerprint(
+    p: &Project,
+    generation: &str,
+    clip: &crate::mix::Clip,
+) -> Result<String, String> {
+    let media = p.media.as_ref().ok_or("MEDIA_MISSING")?;
     let mut value = format!(
         "{}|{}|{}|{}|{}|{}",
         media.path,
@@ -203,13 +212,22 @@ fn signature(
         value.push('|');
         value.push_str(&crate::voice_edit::key(Some(edit)));
     }
-    Ok((format!("{:x}", Sha256::digest(value.as_bytes())), clip))
+    Ok(format!("{:x}", Sha256::digest(value.as_bytes())))
 }
 pub fn current(p: &Project, e: &Edit) -> bool {
+    let clips = crate::mix::clips(p);
+    current_from_clip(p, e, clips.iter().find(|c| c.id == e.generation_id))
+}
+pub(crate) fn current_from_clip(p: &Project, e: &Edit, clip: Option<&crate::mix::Clip>) -> bool {
     p.media.as_ref().is_some_and(|m| m.path == e.source_path)
         && p.languages.target == e.language
-        && signature(p, &e.dialogue_id, &e.generation_id).is_ok_and(|(s, c)| {
-            s == e.fingerprint
+        && p.dialogues.iter().any(|l| {
+            l.id == e.dialogue_id
+                && l.selected_generation_ids.get(&p.languages.target) == Some(&e.generation_id)
+        })
+        && clip.is_some_and(|c| {
+            c.id == e.generation_id
+                && fingerprint(p, &e.generation_id, c).is_ok_and(|s| s == e.fingerprint)
                 && c.start_ms() == e.start_ms
                 && c.duration_ms() / 40 * 40 == e.duration_ms
                 && c.slot_ms == e.slot_ms
@@ -218,7 +236,12 @@ pub fn current(p: &Project, e: &Edit) -> bool {
 }
 pub fn active(p: &Project) -> Result<Vec<Edit>, String> {
     let selected: Vec<_> = edits(p)?.into_iter().filter(|e| e.enabled).collect();
-    if selected.iter().any(|e| !current(p, e)) {
+    let clips = crate::mix::clips(p);
+    let by_id: std::collections::HashMap<_, _> = clips.iter().map(|c| (c.id.as_str(), c)).collect();
+    if selected
+        .iter()
+        .any(|e| !current_from_clip(p, e, by_id.get(e.generation_id.as_str()).copied()))
+    {
         return Err("INPAINT_STALE".into());
     }
     Ok(selected)
@@ -295,7 +318,7 @@ fn model_manifest<R: tauri::Runtime>(
     variant.files.extend(models.common);
     Ok(variant)
 }
-fn installed(core: &Core, id: &str) -> bool {
+pub(crate) fn installed(core: &Core, id: &str) -> bool {
     ready_path(core, id).is_file()
         && separation::python(&runtime_root(core, id)).is_file()
         && runtime_root(core, id)
@@ -491,6 +514,7 @@ pub fn enqueue<R: tauri::Runtime>(
             return Err("INPAINT_WINDOW_INVALID".into());
         }
         Request {
+            output_id: None,
             root: s.root.clone(),
             project_id: s.project.id.clone(),
             fingerprint,
@@ -562,12 +586,28 @@ pub(crate) fn overlay_expression(o: &Options, duration: u64, w: u32, h: u32) -> 
     let seconds = duration as f64 / 1000.0;
     format!("[1:v]scale={}:{}:flags=lanczos,format=rgba[patch];[0:v][patch]overlay=x='main_w*({}+({})*min(t/{seconds},1))':y='main_h*({}+({})*min(t/{seconds},1))':eof_action=pass:repeatlast=0,format=yuv420p[out]",(o.face.width*w as f64).round() as u32,(o.face.height*h as f64).round() as u32,o.face.x,o.end_x-o.face.x,o.face.y,o.end_y-o.face.y)
 }
-async fn render<R: tauri::Runtime>(
+#[derive(Clone)]
+pub(crate) struct WorkerLaunch {
+    pub python: PathBuf,
+    pub script: PathBuf,
+    pub model: PathBuf,
+}
+pub(crate) async fn render<R: tauri::Runtime>(
     core: &Arc<Core>,
     app: &tauri::AppHandle<R>,
     key: &str,
     request: &Request,
     flag: &Arc<AtomicBool>,
+) -> Result<(), String> {
+    render_with_launch(core, app, key, request, flag, None).await
+}
+pub(crate) async fn render_with_launch<R: tauri::Runtime>(
+    core: &Arc<Core>,
+    app: &tauri::AppHandle<R>,
+    key: &str,
+    request: &Request,
+    flag: &Arc<AtomicBool>,
+    launch: Option<&WorkerLaunch>,
 ) -> Result<(), String> {
     let p = {
         let guard = core.session.lock().map_err(io_error)?;
@@ -598,18 +638,27 @@ async fn render<R: tauri::Runtime>(
     let ff = media::binary(app, "ffmpeg")?;
     let model_id = request.options.model();
     let folder = runtime_root(core, model_id);
-    let model = model_manifest(app, model_id)?;
+    let model = if launch.is_some() {
+        Manifest {
+            revision: "protocol-fixture".into(),
+            files: vec![],
+        }
+    } else {
+        model_manifest(app, model_id)?
+    };
+    let launch = launch.cloned().unwrap_or_else(|| WorkerLaunch {
+        python: separation::python(&folder),
+        script: separation::resources(app).join(worker_name(model_id)),
+        model: folder.join("model"),
+    });
     jobs::update(core, app, key, |j| {
         j.stage = "inpaintDevice".into();
         j.progress = None;
     });
     let inventory = separation::probe(
-        &separation::python(&folder),
+        &launch.python,
         &[
-            separation::resources(app)
-                .join(worker_name(model_id))
-                .to_string_lossy()
-                .into_owned(),
+            launch.script.to_string_lossy().into_owned(),
             "--info".into(),
         ],
         flag,
@@ -778,19 +827,16 @@ async fn render<R: tauri::Runtime>(
     )
     .await?;
     let worker_request = temp.join("request.json");
-    project::atomic_write(&worker_request,&serde_json::to_vec(&serde_json::json!({"device":request.options.device,"modelDirectory":folder.join("model"),"modelId":model_id,"inferenceSteps":request.options.inference_steps.unwrap_or(20),"guidanceScale":request.options.guidance_scale.unwrap_or(1.5),"inputDirectory":input,"outputDirectory":output,"audioPath":audio,"frames":frames,"mask":request.options.mask,"feather":request.options.feather,"blend":request.options.blend,"seed":request.options.seed})).map_err(io_error)?)?;
+    project::atomic_write(&worker_request,&serde_json::to_vec(&serde_json::json!({"device":request.options.device,"modelDirectory":launch.model,"modelId":model_id,"inferenceSteps":request.options.inference_steps.unwrap_or(20),"guidanceScale":request.options.guidance_scale.unwrap_or(1.5),"inputDirectory":input,"outputDirectory":output,"audioPath":audio,"frames":frames,"mask":request.options.mask,"feather":request.options.feather,"blend":request.options.blend,"seed":request.options.seed})).map_err(io_error)?)?;
     tokio::time::timeout(
         Duration::from_secs(7200),
         separation::process(
             core,
             app,
             key,
-            &separation::python(&folder),
+            &launch.python,
             &[
-                separation::resources(app)
-                    .join(worker_name(model_id))
-                    .to_string_lossy()
-                    .into_owned(),
+                launch.script.to_string_lossy().into_owned(),
                 "--request".into(),
                 worker_request.to_string_lossy().into_owned(),
             ],
@@ -851,7 +897,8 @@ async fn render<R: tauri::Runtime>(
     {
         return Err("INPAINT_FRAME_INVALID".into());
     }
-    let id = crate::domain::id();
+    let id = request.output_id.clone().unwrap_or_else(crate::domain::id);
+    uuid::Uuid::parse_str(&id).map_err(|_| "INPAINT_INVALID_VARIANT")?;
     let path = format!("generations/lips-{id}.mp4");
     let mut session = core.session.lock().map_err(io_error)?;
     let s = session.as_mut().ok_or("NO_PROJECT")?;
@@ -871,6 +918,9 @@ async fn render<R: tauri::Runtime>(
             "INPAINT_STALE"
         }
         .into());
+    }
+    if s.project.generations.iter().any(|g| g["id"] == id) {
+        return Err("INPAINT_STALE".into());
     }
     std::fs::rename(&rendered, s.root.join(&path)).map_err(io_error)?;
     let destination = s.root.join(&path);

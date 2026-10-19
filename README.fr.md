@@ -1,5 +1,11 @@
 # AI Dubbing Studio — phases 1–7
 
+**v0.18.0 — Synchronisation labiale par lot et éditions audio fiabilisées.** Traitez toutes les répliques doublées ou les répliques cochées, avec des cadrages par dialogue, annulation et reprise. Chaque résultat est une séquence indépendante ; la vidéo principale reste intacte. Les découpes et étirements sont vérifiés avant enregistrement, l’essai d’origine reste écoutable, et les cartes multilignes ne se chevauchent plus. [Guide et captures](docs/LIP-BATCHES-AND-AUDIO-RECOVERY.md).
+
+![Batch lip synchronization](docs/screenshots/lip-batch-fr.png)
+
+*Actual React UI with synthetic media and simulated native commands / Interface réelle, commandes natives simulées.*
+
 **v0.17.0 — LatentSync 1.5 et 1.6, adaptation du wrapper ShmuelRonen.** Choisissez un moteur, vérifiez l’espace disque puis retouchez uniquement la séquence de chaque dialogue. La vidéo principale reste intacte ; les variantes activées sont préchargées pour la lecture et composées à l’export. Profil mémoire réduit pour 16 Go, avec fenêtres temporelles, guidance séquentielle et VAE séparé. 1.6 reste un profil candidat, sans garantie d’absence d’OOM sur la RTX 5060 Ti. [Guide détaillé](docs/LATENTSYNC.md).
 
 ![LatentSync engine selection](docs/screenshots/latentsync-profiles-fr.png)
@@ -61,7 +67,7 @@
 
 *Interface React réelle avec audio de démonstration synthétique et inventaire natif simulé.*
 
-[Version anglaise et captures de l’interface](README.md) · [Téléchargements Windows](https://github.com/jontechlabs/ai-dubbing-studio/releases/tag/v0.17.0)
+[Version anglaise et captures de l’interface](README.md) · [Téléchargements Windows](https://github.com/jontechlabs/ai-dubbing-studio/releases/tag/v0.18.0)
 
 Studio desktop local de travail texte, voix et vidéo. Tauri 2, React, TypeScript strict et Rust.
 

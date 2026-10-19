@@ -9,9 +9,9 @@ import {
   voicePlan,
   type VoiceOperation,
 } from '../domain/voiceEdit';
-import { dubbingBounds, recoverDubbing } from '../domain/mix';
+import { dubbingBounds, dubbingClips, recoverDubbing } from '../domain/mix';
 import { envelopeLevel } from '../domain/voiceEnvelope';
-import { generationUrl } from '../services/bridge';
+import { generationUrl, dubbingUrl } from '../services/bridge';
 
 function releaseAudio(
   playback: { context: AudioContext; source: AudioBufferSourceNode | null } | null,
@@ -27,7 +27,7 @@ function releaseAudio(
 export function VoiceRegionEditor({
   project,
   generation,
-  busy,
+  busy: externalBusy,
   onEdit,
   onClose,
 }: {
@@ -38,6 +38,18 @@ export function VoiceRegionEditor({
   onClose: () => void;
 }) {
   const { t } = useTranslation();
+  const [validating, setValidating] = useState(false);
+  const busy = externalBusy || validating;
+  const editToken = useRef(0);
+  const editLock = useRef(false);
+  useEffect(() => {
+    const lifetime = editToken;
+    editLock.current = false;
+    setValidating(false);
+    return () => {
+      lifetime.current++;
+    };
+  }, [generation.id]);
   const plan = useMemo(() => voicePlan(project, generation), [project, generation]),
     total = editDuration(plan);
   const limits = dubbingBounds(project, generation.dialogueId);
@@ -210,19 +222,59 @@ export function VoiceRegionEditor({
     // The serialized plan is stable during unrelated project edits.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [samples, width, key, total, generation.durationMs]);
-  const apply = (operation: VoiceOperation) => {
+  const editBasis = (p: Project) => {
+    const clip = dubbingClips(p).find((c) => c.generation.id === generation.id);
+    const take = p.generations.find((g) => g.id === generation.id);
+    return JSON.stringify([
+      p.id,
+      p.media?.path,
+      take,
+      p.voiceEdits?.[generation.id],
+      clip && [clip.startMs, clip.slotMs, clip.exactDuration],
+    ]);
+  };
+  const apply = async (operation: VoiceOperation) => {
+    if (editLock.current || externalBusy) return;
+    const token = editToken.current;
     try {
       if (blocked) throw Error('VOICE_EDIT_NO_ROOM');
-      // Validate synchronously so a failed operation leaves selection/project intact.
-      editVoice(project, generation.id, start, end, operation);
-      onEdit((p) => editVoice(p, generation.id, start, end, operation));
+      const candidate = editVoice(project, generation.id, start, end, operation);
+      const clip = dubbingClips(candidate).find((c) => c.generation.id === generation.id)!;
+      const expected = editBasis(candidate);
+      editLock.current = true;
+      setValidating(true);
       stop();
+      // Render and fit a private cache copy before making an undoable project edit.
+      await dubbingUrl(
+        generation.id,
+        clip.slotMs,
+        clip.exactDuration,
+        candidate.voiceEdits?.[generation.id],
+      );
+      if (editToken.current !== token) return;
+      onEdit((p) => {
+        const next = editVoice(p, generation.id, start, end, operation);
+        if (editBasis(next) !== expected) throw Error('VOICE_EDIT_STALE');
+        return next;
+      });
       setError('');
       if (operation.kind === 'silence') setRange({ start, end: start + operation.durationMs });
       if (operation.kind === 'delete') setRange({ start, end: start });
       if (operation.kind === 'stretch') setRange({ start, end: start + operation.durationMs });
     } catch (e) {
-      setError(String(e).replace(/^Error: /, ''));
+      if (editToken.current === token) {
+        const message = String(e).replace(/^Error: /, '');
+        setError(
+          message.includes('VOICE_EDIT_FAILED') || message.includes('MIX_FIT_FAILED')
+            ? 'voiceEditRenderFailedKept'
+            : message,
+        );
+      }
+    } finally {
+      if (editToken.current === token) {
+        editLock.current = false;
+        setValidating(false);
+      }
     }
   };
   const position = (clientX: number) =>
@@ -233,21 +285,21 @@ export function VoiceRegionEditor({
         Math.round(((clientX - surface.current!.getBoundingClientRect().left) / width) * total),
       ),
     );
-  const preview = async () => {
+  const preview = async (original = false) => {
     document.dispatchEvent(new Event('studio-voice-preview'));
     stop();
     const token = request.current;
     setLoading(true);
     document.querySelector('video')?.pause();
     try {
-      if (start >= total) {
+      if (!original && start >= total) {
         stop();
         return;
       }
       const context = new AudioContext();
       audio.current = { context, source: null };
       await context.resume();
-      const url = await generationUrl(generation.id, plan);
+      const url = await generationUrl(generation.id, original ? undefined : plan);
       if (request.current !== token) return;
       const response = await fetch(url);
       if (!response.ok) throw Error('TTS_AUDIO_MISSING');
@@ -261,7 +313,8 @@ export function VoiceRegionEditor({
         if (request.current === token) stop();
       };
       // Schedule exactly the selected samples, independent of timeupdate cadence.
-      source.start(0, start / 1000, (length > 0 ? length : total - start) / 1000);
+      if (original) source.start(0);
+      else source.start(0, start / 1000, (length > 0 ? length : total - start) / 1000);
       setPlaying(true);
       setLoading(false);
     } catch (e) {
@@ -438,6 +491,9 @@ export function VoiceRegionEditor({
           {playing ? <Square size={13} /> : <Play size={13} />}{' '}
           {t(loading ? 'voicePreparing' : playing ? 'voiceStopPreview' : 'voicePreview')}
         </button>
+        <button disabled={busy} onClick={() => void preview(true)}>
+          <Play size={13} /> {t('voiceOriginalPreview')}
+        </button>
         <label>
           {t('voiceVolume')}
           <input
@@ -542,6 +598,8 @@ export function VoiceRegionEditor({
           {t('voiceResetEdit')}
         </button>
       </div>
+      {validating && <p role="status">{t('voiceEditValidating')}</p>}
+      <small>{t('voiceOriginalKept')}</small>
       <small>{t('voiceEditHint')}</small>
       {error && <p role="alert">{t(error)}</p>}
     </section>

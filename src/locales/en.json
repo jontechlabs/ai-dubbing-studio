@@ -176,7 +176,8 @@
     "translationDownload": "Downloading translation model",
     "translationLoad": "Loading translation model",
     "translationGenerate": "Generating translation proposal",
-    "translationRelease": "Releasing translation model"
+    "translationRelease": "Releasing translation model",
+    "inpaintBatch": "Batch lip synchronization"
   },
   "shortcuts": "Space: play · J/K/L: transport · O: original · Ctrl+S: save · Ctrl+Z/Y: undo/redo",
   "errors": {
@@ -313,7 +314,11 @@
     "VOICE_EDIT_NO_ROOM": "The edit would cross the next dubbing clip or the end of the video. Shorten it or move the next clip first.",
     "INPAINT_MODEL_INVALID": "The lip synchronization model is unknown or incomplete. Repair its installation.",
     "INPAINT_SETTINGS_INVALID": "Choose 10–50 steps and guidance between 1 and 3.",
-    "INPAINT_DISK_REQUIRED": "Not enough disk space for this installation or sequence. Free space and refresh."
+    "INPAINT_DISK_REQUIRED": "Not enough disk space for this installation or sequence. Free space and refresh.",
+    "INVALID_INPAINT_BATCH": "The batch selection or crops are invalid.",
+    "INPAINT_BATCH_EMPTY": "No dialogue is ready: select dubbed lines and check their framing.",
+    "INPAINT_BATCH_PARTIAL": "The batch is incomplete. Completed sequences are retained; review the logs and resume.",
+    "VOICE_EDIT_STALE": "The dialogue changed during validation. Retry the edit."
   },
   "preparingVideo": "Preparing video…",
   "loadingVideo": "Loading video…",
@@ -910,5 +915,27 @@
   "inpaintRefresh": "Refresh installation and free space",
   "latentInstall": "Install LatentSync",
   "latentRepair": "Verify or repair LatentSync",
-  "latentRuntimeSize": "Shared CUDA runtime for 1.5 and 1.6; separate model weights. Installation budget below."
+  "latentRuntimeSize": "Shared CUDA runtime for 1.5 and 1.6; separate model weights. Installation budget below.",
+  "inpaintBatch": "Batch lip synchronization",
+  "inpaintBatchScope": "Lip synchronization scope",
+  "inpaintBatchAll": "All dubbed dialogues",
+  "inpaintBatchSelected": "Checked dialogues only ({{count}})",
+  "inpaintBatchSavedCrops": "Reuse each dialogue’s saved framing",
+  "inpaintBatchCommonCrop": "Use the displayed framing for dialogues without a crop",
+  "inpaintBatchCropWarning": "Common framing does not track shot or character changes. Set dialogue-specific crops where needed; dialogues without framing are skipped.",
+  "inpaintBatchForce": "Force new variants even when a current retouch exists",
+  "inpaintBatchActivate": "Enable new variants after generation",
+  "inpaintBatchSourceKept": "One independent sequence per dialogue; the main video and existing takes stay intact. Sequential processing releases VRAM between dialogues. Cancel and resume from Processing.",
+  "inpaintBatchPlan": "{{ready}} ready of {{requested}} · {{undubbed}} not dubbed · {{existing}} already retouched · {{crops}} missing crops · {{blocked}} excluded",
+  "inpaintBatchProblems": "View excluded dialogues",
+  "inpaintBatchStart": "Synchronize {{count}} dialogues",
+  "inpaintBatchFramingHint": "Set the batch options. Use the dialogue selector to frame individual dialogues for this batch. Framing from existing variants can also be reused.",
+  "inpaintBatchFrameLine": "Dialogue used for framing",
+  "inpaintBatchSaveCrop": "Keep this crop for dialogue {{number}} in this batch",
+  "inpaintBatchCropCount": "{{count}} crops prepared for this batch",
+  "voiceOriginalPreview": "Listen to the original take",
+  "voiceOriginalKept": "The original take is retained. Edits render into working copies; you can audition or restore the original.",
+  "voiceEditValidating": "Checking the audio render before saving the edit…",
+  "voiceEditRenderFailedKept": "This edit could not be rendered. The previous version and original take are retained. See diagnostics.",
+  "VOICE_EDIT_STALE": "The dialogue changed during validation. Retry the edit."
 }

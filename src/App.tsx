@@ -46,6 +46,7 @@ export default function App() {
     [batchProjectId],
   );
   const openBatch = useCallback(() => setPanel('batchDub'), []);
+  const openLipBatch = useCallback(() => setPanel('inpaintBatch'), []);
   const [translationFocus, setTranslationFocus] = useState(0);
   const [left, setLeft] = useState(Number(localStorage.getItem('studio.left') ?? 36));
   const [timelineHeight, setTimelineHeight] = useState(
@@ -330,6 +331,7 @@ export default function App() {
             checkedIds={batchIds}
             onCheck={checkBatch}
             onBatch={openBatch}
+            onLipBatch={openLipBatch}
             project={studio.project}
             selectedId={selectedId}
             onSelect={select}

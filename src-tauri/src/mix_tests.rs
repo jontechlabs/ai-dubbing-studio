@@ -2,6 +2,49 @@ use super::*;
 use crate::audio_patch::{self, Snippet};
 use std::sync::Mutex;
 #[tokio::test]
+async fn tiny_repeated_stretches_rebuild_sample_timestamps_and_keep_original_playable() {
+    let (_temporary, root, _p) = fixture().await;
+    let original = std::fs::read(root.join("generations/voice.wav")).unwrap();
+    // FFmpeg 9 used to fail concat with AV_NOPTS_VALUE after these two RubberBand branches.
+    let edit: crate::voice_edit::Edit = serde_json::from_value(serde_json::json!({"pieces":[
+      {"sourceStartMs":0,"sourceEndMs":146,"durationMs":1,"gain":1},
+      {"sourceStartMs":146,"sourceEndMs":442,"durationMs":2,"gain":1},
+      {"sourceStartMs":442,"sourceEndMs":1500,"durationMs":1058,"gain":1}
+    ]}))
+    .unwrap();
+    let path = crate::voice_edit::render(
+        &root,
+        "generations/voice.wav",
+        Some(&edit),
+        &tool("ffmpeg"),
+        &AtomicBool::new(false),
+    )
+    .await
+    .unwrap();
+    assert_eq!(
+        audio_files::pcm_frames(&path, 1, 24000, "bad").unwrap(),
+        1061 * 24
+    );
+    let data = pcm(&path, "0:a:0").await;
+    assert!(data[960..].iter().any(|x| x.abs() > 0.1));
+    assert_eq!(
+        crate::voice_edit::render(
+            &root,
+            "generations/voice.wav",
+            Some(&edit),
+            &tool("ffmpeg"),
+            &AtomicBool::new(false)
+        )
+        .await
+        .unwrap(),
+        path
+    );
+    assert_eq!(
+        std::fs::read(root.join("generations/voice.wav")).unwrap(),
+        original
+    );
+}
+#[tokio::test]
 async fn voice_duration_rejects_oversize_fit_before_file_access_or_rendering() {
     let root = tempfile::tempdir().unwrap();
     for exact in [false, true] {
@@ -558,7 +601,7 @@ fn voice_local_edit_validation_rejects_corrupt_ranges_and_unbounded_plans() {
     .validate(1000)
     .is_err());
 }
-fn tool(name: &str) -> PathBuf {
+pub(crate) fn tool(name: &str) -> PathBuf {
     if cfg!(windows) {
         Path::new(env!("CARGO_MANIFEST_DIR"))
             .join("binaries")
@@ -593,7 +636,7 @@ async fn ffmpeg(args: &[&str], output: &Path) {
         String::from_utf8_lossy(&result.stderr)
     );
 }
-async fn fixture() -> (tempfile::TempDir, PathBuf, Project) {
+pub(crate) async fn fixture() -> (tempfile::TempDir, PathBuf, Project) {
     let temporary = tempfile::tempdir().unwrap();
     let root = project::create_root(temporary.path(), "Mixed voices é").unwrap();
     ffmpeg(
@@ -677,7 +720,7 @@ async fn fixture() -> (tempfile::TempDir, PathBuf, Project) {
     p.validate().unwrap();
     (temporary, root, p)
 }
-fn core(root: &Path, p: Project) -> Arc<Core> {
+pub(crate) fn core(root: &Path, p: Project) -> Arc<Core> {
     Arc::new(Core {
         session: Mutex::new(Some(project::Session::new(root.into(), p))),
         jobs: Mutex::new(std::collections::HashMap::new()),

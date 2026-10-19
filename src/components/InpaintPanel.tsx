@@ -2,6 +2,8 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Download, LoaderCircle, Play, Pause, ScanFace } from 'lucide-react';
 import type { Dialogue, Job, Project } from '../domain/types';
+import { BatchInpaintAction } from './BatchInpaintAction';
+import type { InpaintOptions } from '../domain/inpaint';
 import type { MouthRegion } from '../domain/lips';
 import {
   currentLipVideo,
@@ -148,7 +150,9 @@ export function InpaintModel({ jobs, onError }: { jobs: Job[]; onError: (e: stri
 
 export function InpaintPanel({
   project,
-  line,
+  line: initialLine,
+  batch,
+  onStarted,
   jobs,
   snapshot,
   onEdit,
@@ -156,6 +160,8 @@ export function InpaintPanel({
 }: {
   project: Project;
   line: Dialogue | undefined;
+  batch?: { selectedIds: string[] };
+  onStarted?: () => void;
   jobs: Job[];
   snapshot: () => Promise<Project>;
   onEdit: (update: (p: Project) => Project) => void;
@@ -165,10 +171,13 @@ export function InpaintPanel({
     runtime = useRuntime(jobs, onError);
   const [inferenceSteps, setInferenceSteps] = useState(20),
     [guidanceScale, setGuidanceScale] = useState(1.5);
-  const clip = useMemo(
-    () => line && dubbingClips(project).find((c) => c.line.id === line.id),
-    [project, line],
-  );
+  const clips = useMemo(() => dubbingClips(project), [project]);
+  const [frameLineId, setFrameLineId] = useState(initialLine?.id ?? clips[0]?.line.id ?? '');
+  const [crops, setCrops] = useState<bridge.InpaintBatchSelection['crops']>({});
+  const line = batch
+    ? (clips.find((c) => c.line.id === frameLineId) ?? clips[0])?.line
+    : initialLine;
+  const clip = clips.find((c) => c.line.id === line?.id);
   const edits = lipVideos(project).filter((e) => e.dialogueId === line?.id),
     [chosen, setChosen] = useState<string | null>(null),
     [mode, setMode] = useState<'original' | 'retouched'>('original');
@@ -297,8 +306,65 @@ export function InpaintPanel({
         y: face.y + (track ? endY - face.y : 0) * fraction,
       }
     : null;
+  const commonReady = !!face && face.width >= 0.01 && face.height >= 0.01;
+  const options: InpaintOptions = {
+    ...(runtime.modelId === 'musetalk-15-fp16'
+      ? {}
+      : { modelId: runtime.modelId, inferenceSteps, guidanceScale }),
+    lineId: line.id,
+    generationId: clip.generation.id,
+    device,
+    face: face ?? { x: 0.1, y: 0.1, width: 0.6, height: 0.8 },
+    endX: track ? endX : (face?.x ?? 0.1),
+    endY: track ? endY : (face?.y ?? 0.1),
+    mask,
+    feather,
+    blend,
+    style,
+    seed,
+  };
   return (
     <div className="panel-body inpaint-panel">
+      {batch && (
+        <>
+          <p className="panel-description">{t('inpaintBatchFramingHint')}</p>
+          <label className="field">
+            <span>{t('inpaintBatchFrameLine')}</span>
+            <select
+              aria-label={t('inpaintBatchFrameLine')}
+              value={line.id}
+              disabled={busy}
+              onChange={(event) => {
+                pause();
+                setFrameLineId(event.target.value);
+                setMode('original');
+                const saved =
+                  crops[event.target.value] ??
+                  lipVideos(project)
+                    .filter(
+                      (e) =>
+                        e.dialogueId === event.target.value && e.sourcePath === project.media?.path,
+                    )
+                    .at(-1)?.options;
+                setFace(saved?.face ?? null);
+                if (saved) {
+                  setMask(saved.mask);
+                  setEndX(saved.endX);
+                  setEndY(saved.endY);
+                  setTrack(saved.endX !== saved.face.x || saved.endY !== saved.face.y);
+                } else setTrack(false);
+              }}
+            >
+              {clips.map((c) => (
+                <option key={c.line.id} value={c.line.id}>
+                  {project.dialogues.findIndex((l) => l.id === c.line.id) + 1} ·{' '}
+                  {formatTime(c.startMs)} · {c.generation.text.slice(0, 65)}
+                </option>
+              ))}
+            </select>
+          </label>
+        </>
+      )}
       <ModelCard runtime={runtime} />
       <p className="panel-description">
         {t('inpaintSequence', {
@@ -687,109 +753,150 @@ export function InpaintPanel({
       {runtime.status?.installed && !runtime.status.devices.length && !busy && (
         <p className="warning">{t('inpaintNoCuda')}</p>
       )}
-      <button
-        className="button accent wide"
-        disabled={
-          !bridge.native ||
-          busy ||
-          !runtime.status?.installed ||
-          !device ||
-          !face ||
-          face.width < 0.01 ||
-          face.height < 0.01 ||
-          limit < 200 ||
-          clip.endMs - clip.startMs > inpaintLimit(runtime.modelId) ||
-          (runtime.modelId !== 'musetalk-15-fp16' &&
-            (!Number.isSafeInteger(inferenceSteps) ||
-              inferenceSteps < 10 ||
-              inferenceSteps > 50 ||
-              !Number.isFinite(guidanceScale) ||
-              guidanceScale < 1 ||
-              guidanceScale > 3))
-        }
-        onClick={async () => {
-          if (!face) return;
-          pause();
-          setWorking(true);
-          try {
-            await snapshot();
-            setJobId(
-              await bridge.inpaintLips({
-                ...(runtime.modelId === 'musetalk-15-fp16'
-                  ? {}
-                  : { modelId: runtime.modelId, inferenceSteps, guidanceScale }),
-                lineId: line.id,
-                generationId: clip.generation.id,
-                device,
-                face,
-                endX: track ? endX : face.x,
-                endY: track ? endY : face.y,
-                mask,
-                feather,
-                blend,
-                style,
-                seed,
-              }),
-            );
-          } catch (e) {
-            onError(String(e));
-          } finally {
-            setWorking(false);
-          }
-        }}
-      >
-        {busy ? <LoaderCircle className="spin" size={15} /> : <ScanFace size={15} />}{' '}
-        {t('inpaintGenerate')}
-      </button>
-      {job && ['running', 'queued'].includes(job.status) && (
-        <div role="status">
-          <p>{t(`jobStages.${job.stage}`)}</p>
-          <progress value={job.progress ?? undefined} max="1" />
+      {batch ? (
+        <>
           <button
-            className="text-button"
-            onClick={() => void bridge.cancelJob(job.id).catch((e) => onError(String(e)))}
+            className="button subtle wide"
+            disabled={busy || !commonReady}
+            onClick={() => {
+              setCrops((previous) => ({
+                ...previous,
+                [line.id]: {
+                  face: face!,
+                  endX: track ? endX : face!.x,
+                  endY: track ? endY : face!.y,
+                  mask,
+                },
+              }));
+            }}
           >
-            {t('cancel')}
+            {t('inpaintBatchSaveCrop', {
+              number: project.dialogues.findIndex((l) => l.id === line.id) + 1,
+            })}
           </button>
-        </div>
-      )}
-      <p className="panel-description">
-        {t(runtime.modelId === 'musetalk-15-fp16' ? 'inpaintLimits' : 'latentLimits')}
-      </p>
-      <h3>{t('inpaintVariants', { count: edits.length })}</h3>
-      {edits.map((e, index) => (
-        <div className="runtime-card" key={e.id}>
-          <strong>
-            {t('inpaintVariant', { number: index + 1 })} · {(e.durationMs / 1000).toFixed(2)} s
-          </strong>
-          <p>
-            {inpaintModelLabel(e.options.modelId)} ·{' '}
-            {t(e.options.style === 'anime' ? 'inpaintAnime' : 'inpaintLive')} ·{' '}
-            {formatTime(e.startMs)}
+          <p>{t('inpaintBatchCropCount', { count: Object.keys(crops).length })}</p>
+          <BatchInpaintAction
+            project={project}
+            selectedIds={batch.selectedIds}
+            options={options}
+            crops={crops}
+            busy={busy}
+            ready={!!runtime.status?.installed && !!device}
+            commonReady={commonReady}
+            snapshot={snapshot}
+            onStarted={onStarted ?? (() => {})}
+            onError={onError}
+          />
+        </>
+      ) : (
+        <>
+          <button
+            className="button accent wide"
+            disabled={
+              !bridge.native ||
+              busy ||
+              !runtime.status?.installed ||
+              !device ||
+              !face ||
+              face.width < 0.01 ||
+              face.height < 0.01 ||
+              limit < 200 ||
+              clip.endMs - clip.startMs > inpaintLimit(runtime.modelId) ||
+              (runtime.modelId !== 'musetalk-15-fp16' &&
+                (!Number.isSafeInteger(inferenceSteps) ||
+                  inferenceSteps < 10 ||
+                  inferenceSteps > 50 ||
+                  !Number.isFinite(guidanceScale) ||
+                  guidanceScale < 1 ||
+                  guidanceScale > 3))
+            }
+            onClick={async () => {
+              if (!face) return;
+              pause();
+              setWorking(true);
+              try {
+                await snapshot();
+                setJobId(
+                  await bridge.inpaintLips({
+                    ...(runtime.modelId === 'musetalk-15-fp16'
+                      ? {}
+                      : { modelId: runtime.modelId, inferenceSteps, guidanceScale }),
+                    lineId: line.id,
+                    generationId: clip.generation.id,
+                    device,
+                    face,
+                    endX: track ? endX : face.x,
+                    endY: track ? endY : face.y,
+                    mask,
+                    feather,
+                    blend,
+                    style,
+                    seed,
+                  }),
+                );
+              } catch (e) {
+                onError(String(e));
+              } finally {
+                setWorking(false);
+              }
+            }}
+          >
+            {busy ? <LoaderCircle className="spin" size={15} /> : <ScanFace size={15} />}{' '}
+            {t('inpaintGenerate')}
+          </button>
+          {job && ['running', 'queued'].includes(job.status) && (
+            <div role="status">
+              <p>{t(`jobStages.${job.stage}`)}</p>
+              <progress value={job.progress ?? undefined} max="1" />
+              <button
+                className="text-button"
+                onClick={() => void bridge.cancelJob(job.id).catch((e) => onError(String(e)))}
+              >
+                {t('cancel')}
+              </button>
+            </div>
+          )}
+          <p className="panel-description">
+            {t(runtime.modelId === 'musetalk-15-fp16' ? 'inpaintLimits' : 'latentLimits')}
           </p>
-          <div className="inpaint-ab">
-            <button
-              className="button subtle"
-              onClick={() => {
-                pause();
-                setChosen(e.id);
-                setMode('retouched');
-              }}
-            >
-              {t('inpaintAfter')}
-            </button>
-            <button
-              className={`button ${e.enabled ? 'accent' : 'subtle'}`}
-              disabled={busy || (!e.enabled && !currentLipVideo(project, e))}
-              onClick={() => onEdit((p) => selectLipVideo(p, e.id, !e.enabled))}
-            >
-              {t(e.enabled ? 'inpaintDisable' : 'inpaintEnable')}
-            </button>
-          </div>
-          {!currentLipVideo(project, e) && <p className="warning">{t('inpaintStale')}</p>}
-        </div>
-      ))}
-      {edit && !current && mode === 'retouched' && <p className="warning">{t('inpaintStale')}</p>}
+          <h3>{t('inpaintVariants', { count: edits.length })}</h3>
+          {edits.map((e, index) => (
+            <div className="runtime-card" key={e.id}>
+              <strong>
+                {t('inpaintVariant', { number: index + 1 })} · {(e.durationMs / 1000).toFixed(2)} s
+              </strong>
+              <p>
+                {inpaintModelLabel(e.options.modelId)} ·{' '}
+                {t(e.options.style === 'anime' ? 'inpaintAnime' : 'inpaintLive')} ·{' '}
+                {formatTime(e.startMs)}
+              </p>
+              <div className="inpaint-ab">
+                <button
+                  className="button subtle"
+                  onClick={() => {
+                    pause();
+                    setChosen(e.id);
+                    setMode('retouched');
+                  }}
+                >
+                  {t('inpaintAfter')}
+                </button>
+                <button
+                  className={`button ${e.enabled ? 'accent' : 'subtle'}`}
+                  disabled={busy || (!e.enabled && !currentLipVideo(project, e))}
+                  onClick={() => onEdit((p) => selectLipVideo(p, e.id, !e.enabled))}
+                >
+                  {t(e.enabled ? 'inpaintDisable' : 'inpaintEnable')}
+                </button>
+              </div>
+              {!currentLipVideo(project, e) && <p className="warning">{t('inpaintStale')}</p>}
+            </div>
+          ))}
+          {edit && !current && mode === 'retouched' && (
+            <p className="warning">{t('inpaintStale')}</p>
+          )}
+        </>
+      )}
       <p className="panel-description">{t('inpaintExportHint')}</p>
     </div>
   );

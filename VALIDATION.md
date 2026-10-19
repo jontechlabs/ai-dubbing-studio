@@ -1,5 +1,15 @@
 # Validation
 
+## v0.18.0 — 19 October 2026
+
+Windows workflow evidence will be recorded before publication.
+
+- Real FFmpeg regressions reproduce concatenation failure after repeated tiny RubberBand stretches and verify the sample-clock fix, exact PCM length, cache reuse and untouched source WAV. An additional local stress experiment passed 200 varied valid multisegment graphs. The user’s diagnostic was from v0.16.0 and contained VOICE_EDIT_FAILED/filtergraph errors; their private source WAV was not supplied for this specific edit.
+- Native batch checks exercise actual FFmpeg extraction, 512 px crop/compose, fitted reference audio, independent intervals/files, original video/WAV byte preservation, per-line failure, cancellation, resume and the commit-before-journal crash window. The neural worker is a standard-library PNG protocol fixture in these orchestration tests, not a pretrained GPU render.
+- Chrome checks cover batch framing/scope/activation/cancel/resume, deferred audio validation and preserved original audition, and multiline card bounds on 6,000 dialogues after filtering, scrolling and pane resizing. All earlier playback/export/duration/selection/worker suites remain enabled.
+- Screenshots use the actual React interface with synthetic media and mocked native commands. Model runtimes, weights and project format are unchanged. No full pretrained LatentSync render, RTX peak VRAM, quality or throughput measurement is claimed.
+
+
 ## v0.17.0 — 19 October 2026
 
 Windows checks and signed-update package production passed in [run 39241670568](https://github.com/jontechlabs/ai-dubbing-studio/actions/runs/39241670568), built from `291e2098d81732d0137b2d301c43f910f54518bf`. All 369 Windows suite checks passed (109 TypeScript, 102 Rust, 107 Chrome, 51 Python), plus seven actual LatentSync neural-core/checkpoint-header diagnostics, plus actual unpinned-bank/FP8/cache/tiny-model/header diagnostics and the real causal-vocoder finalization diagnostic, plus a real native Japanese-to-French LLM proposal and cancellation/process-release checks under a Unicode model path, plus two real Japanese ASR checks using the final Windows release executable. The setup and portable archive are copied unchanged from this workflow. Final metadata only records this evidence and the verified update feed.

@@ -112,7 +112,7 @@ export function Panels({
       }}
     >
       <aside
-        className={`context-panel ${panel === 'alignment' || panel === 'lips' || panel === 'inpaint' ? 'wide-panel' : ''}`}
+        className={`context-panel ${panel === 'alignment' || panel === 'lips' || panel === 'inpaint' || panel === 'inpaintBatch' ? 'wide-panel' : ''}`}
         role="dialog"
         aria-modal="true"
         aria-label={t(title)}
@@ -160,11 +160,13 @@ export function Panels({
             onError={onError}
           />
         )}
-        {panel === 'inpaint' && project && (
+        {(panel === 'inpaint' || panel === 'inpaintBatch') && project && (
           <InpaintPanel
             key={`${project.id}:${selectedId}`}
             project={project}
             line={project.dialogues.find((d) => d.id === selectedId)}
+            batch={panel === 'inpaintBatch' ? { selectedIds: batchIds } : undefined}
+            onStarted={showJobs}
             jobs={jobs}
             snapshot={snapshot}
             onEdit={onEdit}
@@ -396,7 +398,7 @@ function JobsPanel({ jobs, onError }: { jobs: Job[]; onError: (s: string) => voi
               <Terminal size={16} />
             )}
             <strong>
-              {job.batch && `${t('batchDub')} · `}
+              {job.batch && `${t(job.kind === 'inpaintBatch' ? 'inpaintBatch' : 'batchDub')} · `}
               {t(
                 job.status === 'paused'
                   ? 'jobStages.separationPaused'
@@ -461,6 +463,7 @@ function JobsPanel({ jobs, onError }: { jobs: Job[]; onError: (s: string) => voi
             'lipAnalysis',
             'inpaint',
             'inpaintInstall',
+            'inpaintBatch',
             'audioTransfer',
           ].includes(job.kind) &&
             ['failed', 'cancelled', 'interrupted'].includes(job.status) && (

@@ -176,7 +176,8 @@
     "translationDownload": "Téléchargement du modèle de traduction",
     "translationLoad": "Chargement du modèle de traduction",
     "translationGenerate": "Proposition de traduction en cours",
-    "translationRelease": "Libération du modèle de traduction"
+    "translationRelease": "Libération du modèle de traduction",
+    "inpaintBatch": "Synchronisation labiale par lot"
   },
   "shortcuts": "Espace : lecture · J/K/L : transport · O : original · Ctrl+S : sauvegarde · Ctrl+Z/Y : annuler/rétablir",
   "errors": {
@@ -313,7 +314,11 @@
     "VOICE_EDIT_NO_ROOM": "La modification dépasserait la réplique suivante ou la fin de la vidéo. Réduisez la durée ou déplacez d’abord la réplique suivante.",
     "INPAINT_MODEL_INVALID": "Le modèle de synchronisation des lèvres est inconnu ou incomplet. Réparez son installation.",
     "INPAINT_SETTINGS_INVALID": "Choisissez 10 à 50 étapes et une intensité entre 1 et 3.",
-    "INPAINT_DISK_REQUIRED": "Espace disque insuffisant pour cette installation ou cette séquence. Libérez de la place puis actualisez."
+    "INPAINT_DISK_REQUIRED": "Espace disque insuffisant pour cette installation ou cette séquence. Libérez de la place puis actualisez.",
+    "INVALID_INPAINT_BATCH": "La sélection du lot ou ses cadrages sont invalides.",
+    "INPAINT_BATCH_EMPTY": "Aucune réplique prête : choisissez des doublages et vérifiez leurs cadrages.",
+    "INPAINT_BATCH_PARTIAL": "Le lot est incomplet. Les séquences terminées sont conservées ; consultez les logs puis reprenez le lot.",
+    "VOICE_EDIT_STALE": "La réplique a changé pendant la vérification. Réessayez la modification."
   },
   "preparingVideo": "Préparation de la vidéo…",
   "loadingVideo": "Chargement de la vidéo…",
@@ -910,5 +915,27 @@
   "inpaintRefresh": "Actualiser l’installation et l’espace libre",
   "latentInstall": "Installer LatentSync",
   "latentRepair": "Vérifier ou réparer LatentSync",
-  "latentRuntimeSize": "Runtime CUDA partagé pour 1.5 et 1.6 ; modèles séparés. Budget détaillé ci-dessous."
+  "latentRuntimeSize": "Runtime CUDA partagé pour 1.5 et 1.6 ; modèles séparés. Budget détaillé ci-dessous.",
+  "inpaintBatch": "Synchronisation labiale par lot",
+  "inpaintBatchScope": "Portée de la synchronisation labiale",
+  "inpaintBatchAll": "Toutes les répliques doublées",
+  "inpaintBatchSelected": "Répliques cochées uniquement ({{count}})",
+  "inpaintBatchSavedCrops": "Réutiliser les cadrages enregistrés pour chaque réplique",
+  "inpaintBatchCommonCrop": "Utiliser le cadrage affiché pour les répliques sans cadrage",
+  "inpaintBatchCropWarning": "Un cadrage commun ne suit pas les changements de plan ou de personnage. Réglez les cadrages par réplique si nécessaire ; les répliques sans cadrage sont ignorées.",
+  "inpaintBatchForce": "Forcer de nouvelles variantes, même si une synchronisation existe",
+  "inpaintBatchActivate": "Activer les nouvelles variantes après leur génération",
+  "inpaintBatchSourceKept": "Une séquence indépendante par dialogue ; la vidéo principale et les anciens essais restent intacts. Traitement séquentiel, libération de la VRAM entre les répliques. Annulation et reprise depuis Traitements.",
+  "inpaintBatchPlan": "{{ready}} prêtes sur {{requested}} · {{undubbed}} sans doublage · {{existing}} déjà synchronisées · {{crops}} sans cadrage · {{blocked}} exclues",
+  "inpaintBatchProblems": "Voir les répliques exclues",
+  "inpaintBatchStart": "Synchroniser {{count}} répliques",
+  "inpaintBatchFramingHint": "Réglez les options communes du lot. Vous pouvez cadrer plusieurs répliques avec le sélecteur et conserver leurs cadrages pour ce lot. Les cadrages des variantes existantes peuvent aussi être réutilisés.",
+  "inpaintBatchFrameLine": "Réplique utilisée pour le cadrage",
+  "inpaintBatchSaveCrop": "Conserver ce cadrage pour la réplique {{number}} dans le lot",
+  "inpaintBatchCropCount": "{{count}} cadrages préparés pour ce lot",
+  "voiceOriginalPreview": "Écouter l’essai d’origine",
+  "voiceOriginalKept": "L’essai d’origine est conservé. Les modifications sont rendues dans des copies de travail ; vous pouvez écouter ou rétablir l’original.",
+  "voiceEditValidating": "Vérification du rendu avant d’enregistrer la modification…",
+  "voiceEditRenderFailedKept": "Le rendu de cette modification a échoué. La version précédente et l’essai d’origine sont conservés. Consultez le diagnostic.",
+  "VOICE_EDIT_STALE": "La réplique a changé pendant la vérification. Réessayez la modification."
 }

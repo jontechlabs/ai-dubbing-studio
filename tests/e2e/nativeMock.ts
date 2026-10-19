@@ -27,6 +27,32 @@ export async function nativeMock(page: Page, large = false) {
     host.__completeTranslation=(translations=['Une traduction proposée.'])=>{if(job.status==='cancelled')return;const row=proposals.find((p:any)=>p.id===job.id);row.result={basis:row.basis,translations,model:'Qwen3-4B-Instruct-2507 · GGUF Q4_K_M'};localStorage.setItem('nativeMockProposals',JSON.stringify(proposals));job={...job,status:'succeeded',stage:'done',progress:1};emit('job-changed',job);};
     host.__completeTranslationInstall=()=>{host.__llmReady=true;job={...job,status:'succeeded',stage:'done',progress:1};emit('job-changed',job);};
     host.__inpaintReady=true;
+    host.__multilineCards=()=>{
+      for(let i=0;i<project.sourceCues.length;i++)project.sourceCues[i].text=Array.from({length:i%5+1},(_,n)=>'ほらね　みんな今　私が死んだら悲しいって思ったでしょ？ '+n).join('\n');
+      for(let i=0;i<project.targetCues.length;i++)project.targetCues[i].text=Array.from({length:i%7+1},(_,n)=>'Tu vois ? Tu as eu de la peine à l’idée que j’allais mourir, non ? '+n).join('\n');
+      project.revision++;localStorage.setItem('nativeMockProject',JSON.stringify(project));emit('project-changed',structuredClone(project));
+    };
+    const lipBatchPlan=(s:any)=>{
+      const r:any={requested:0,undubbed:0,existing:0,missingCrop:0,ready:[],blocked:[]};
+      for(const l of project.dialogues){if(s.scope==='selected'&&!s.lineIds.includes(l.id))continue;r.requested++;
+        const g=project.generations.find((g:any)=>g.kind==='tts'&&g.id===l.selectedGenerationIds.fr);if(!g){r.undubbed++;continue;}
+        const variants=project.generations.filter((v:any)=>v.kind==='lipVideo'&&v.dialogueId===l.id);
+        if(!s.force&&variants.some((v:any)=>v.generationId===g.id)){r.existing++;continue;}
+        if(!s.crops[l.id]&&!(s.useSavedCrops&&variants.length)&&!s.useCommonCrop){r.missingCrop++;continue;}
+        if(Math.min(g.durationMs,l.endMs-l.startMs)>(s.options.modelId?.startsWith('latentsync-')?120000:10000)){r.blocked.push({lineId:l.id,error:'INPAINT_WINDOW_INVALID'});continue;}
+        r.ready.push(l.id);
+      }return r;
+    };
+    const lipBatchUpdate=()=>{const rows=host.__lipRows,done=rows.filter((r:any)=>r.status!=='pending').length,succeeded=rows.filter((r:any)=>r.status==='succeeded').length,failed=done-succeeded;job={...job,kind:'inpaintBatch',status:done===rows.length?(failed?'failed':'succeeded'):'running',stage:done===rows.length?'done':'inpaintBatch',progress:null,error:failed?'INPAINT_BATCH_PARTIAL':null,batch:{total:rows.length,completed:done,succeeded,failed,skipped:host.__lipSkipped,currentLineId:rows.find((r:any)=>r.status==='pending')?.id??null}};emit('job-changed',job);};
+    host.__advanceLipBatch=(error:string|null=null)=>{
+      if(job.status==='cancelled')return;
+      const row=host.__lipRows.find((r:any)=>r.status==='pending');if(!row)return;
+      if(!error){const before=structuredClone(job),s=host.__pendingLipBatch,line=project.dialogues.find((l:any)=>l.id===row.id),saved=project.generations.filter((v:any)=>v.kind==='lipVideo'&&v.dialogueId===row.id).at(-1);
+        host.__pendingInpaint={...s.options,...(s.crops[row.id]??(s.useSavedCrops?saved?.options:null)),lineId:row.id,generationId:line.selectedGenerationIds.fr};host.__completeInpaint();
+        if(s.activate){const v=project.generations.at(-1);for(const g of project.generations)if(g.kind==='lipVideo'&&g.dialogueId===row.id)g.enabled=g.id===v.id;localStorage.setItem('nativeMockProject',JSON.stringify(project));emit('project-changed',structuredClone(project));}
+        job=before;row.status='succeeded';
+      }else row.status='failed';lipBatchUpdate();
+    };
     host.__latentReady=JSON.parse(localStorage.getItem('nativeMockLatentReady')||'{}');
     host.__completeInpaintInstall=()=>{host.__latentReady[host.__pendingInpaintInstall]=true;localStorage.setItem('nativeMockLatentReady',JSON.stringify(host.__latentReady));job={...job,status:'succeeded',stage:'done',progress:1};emit('job-changed',job);};
     host.__seedLipVariants=()=>{project.formatVersion=13;for(const line of project.dialogues){const take=project.generations.find((g:any)=>g.id===line.selectedGenerationIds.fr);if(!take)continue;const id=`lip-${project.generations.filter((g:any)=>g.kind==='lipVideo').length+1}`;project.generations.push({kind:'lipVideo',id,dialogueId:line.id,generationId:take.id,sourcePath:project.media.path,language:'fr',path:`generations/lips-${id}.mp4`,startMs:line.startMs,durationMs:2000,slotMs:Math.min(line.endMs-line.startMs,project.dialogues.find((l:any)=>l.startMs>line.startMs)?.startMs-line.startMs||999999),exactDuration:false,fingerprint:'a'.repeat(64),enabled:true,options:{modelId:'latentsync-16',inferenceSteps:20,guidanceScale:1.5,lineId:line.id,generationId:take.id,device:'cuda:0',face:{x:.1,y:.1,width:.5,height:.8},endX:.1,endY:.1,mask:{x:.2,y:.6,width:.6,height:.3},feather:.12,blend:1,style:'live',seed:0},createdAt:new Date().toISOString(),modelRevision:'mock'});}project.revision++;localStorage.setItem('nativeMockProject',JSON.stringify(project));emit('project-changed',structuredClone(project));};
@@ -112,7 +138,11 @@ export async function nativeMock(page: Page, large = false) {
       if(command==='install_tts_runtime'){job={id:'tts-install',projectId:'',kind:'ttsInstall',status:'running',stage:'dependencies',progress:null,logs:[],error:null};emit('job-changed',job);return job.id;}
       if(command==='generate_line'){host.__pendingTts=structuredClone(args);job={id:'tts-job',projectId:project.id,kind:'tts',status:'running',stage:'ttsGenerate',progress:null,logs:[],error:null};emit('job-changed',job);return job.id;}
       if(command==='generation_path')return `C:/Studio/generations/${args.id}.wav`;
-      if(command==='dubbing_path')return `C:/Studio/generations/${args.id}.wav`;
+      if(command==='dubbing_path'){
+        if(args.edit&&host.__deferEdit)await new Promise((resolve,reject)=>{host.__releaseEdit=(error=false)=>error?reject(Error('VOICE_EDIT_FAILED Invalid data found when processing input')):resolve(null);});
+        if(args.edit&&host.__editRenderFail)throw Error('VOICE_EDIT_FAILED Invalid data found when processing input');
+        return `C:/Studio/generations/${args.id}.wav`;
+      }
       if(command==='export_generation')return null;
       if(command==='list_jobs')return job?[job]:[];
       if(command==='media_path')return 'preview.mp4';
@@ -134,6 +164,9 @@ export async function nativeMock(page: Page, large = false) {
       if(command==='voice_reference_path')return `C:/Studio/characters/${args.referenceId}.wav`;
       if(command==='reference_audio_info')return {path:'C:/Audio/reference-source.wav',durationMs:60000};
       if(command==='preview_dubbing_batch')return batchPlan(args.selection);
+      if(command==='preview_inpaint_batch')return lipBatchPlan(args.selection);
+      if(command==='start_inpaint_batch'){const s=args.selection,p=lipBatchPlan(s);host.__pendingLipBatch=structuredClone(s);host.__lipRows=p.ready.map((id:string)=>({id,status:'pending'}));host.__lipSkipped=p.requested-p.ready.length;job={id:'lip-batch-job',projectId:project.id,kind:'inpaintBatch',logs:[],error:null};lipBatchUpdate();return job.id;}
+      if(command==='retry_job'&&job.kind==='inpaintBatch'){for(const row of host.__lipRows)if(row.status!=='succeeded')row.status='pending';lipBatchUpdate();return job.id;}
       if(command==='generate_dubbing_batch') {const plan=batchPlan(args.selection);host.__pendingBatch=structuredClone(args.selection);host.__batchRows=plan.ready.map((id:string)=>({id,status:'pending'}));host.__batchSkipped=plan.existing+plan.untranslated+plan.unapproved+plan.blocked.length;job={id:'batch-job',projectId:project.id,kind:'ttsBatch',logs:[],error:null};batchJobUpdate();return job.id;}
       if(command==='retry_job'&&job.kind==='ttsBatch'){for(const row of host.__batchRows)if(row.status!=='succeeded')row.status='pending';batchJobUpdate();return job.id;}
       if(command==='import_voice_reference') {if(host.__referenceImportError)throw Error('REFERENCE_FAILED');const character=project.characters.find((c:any)=>c.id===args.characterId);character.references.push({id:crypto.randomUUID(),label:args.label||'Excerpt',path:'characters/excerpt.wav',durationMs:args.range.endMs-args.range.startMs,transcript:'',sourceDialogueId:null});project.revision++;localStorage.setItem('nativeMockProject',JSON.stringify(project));return structuredClone(project);}

@@ -118,7 +118,7 @@ pub async fn render(
     edit.validate(frames / 24)?;
     let target = edit.duration() * 24;
     let mut hash = Sha256::new();
-    hash.update(b"voice-local-edit-v1");
+    hash.update(b"voice-local-edit-v2-sample-clock");
     hash.update(key(Some(edit)));
     hash.update(std::fs::read(&source).map_err(io_error)?);
     let name = format!("voice-edit-{:x}.wav", hash.finalize());
@@ -194,13 +194,16 @@ pub async fn render(
                         48.min(n / 2)
                     ));
                 }
-                chain.push_str(&format!(",asetpts=PTS-STARTPTS[p{i}]"));
+                // Rubber Band/apad can emit samples with unknown timestamps,
+                // especially after repeated tiny stretches. PTS-STARTPTS keeps
+                // AV_NOPTS_VALUE and concat then fails. Rebuild a PCM clock.
+                chain.push_str(&format!(",asetpts=N/SR/TB[p{i}]"));
                 filters.push(chain);
                 continue;
             }
         }
         filters.push(format!(
-            "anullsrc=r=24000:cl=mono,atrim=end_sample={n},asetpts=PTS-STARTPTS[p{i}]"
+            "anullsrc=r=24000:cl=mono,atrim=end_sample={n},asetpts=N/SR/TB[p{i}]"
         ));
     }
     filters.push(format!(

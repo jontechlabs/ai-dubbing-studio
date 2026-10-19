@@ -32,6 +32,7 @@ export type Panel =
   | 'batchDub'
   | 'lips'
   | 'inpaint'
+  | 'inpaintBatch'
   | null;
 export function Header({
   project,
