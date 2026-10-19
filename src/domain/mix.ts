@@ -74,8 +74,11 @@ export function resizeDubbing(
     [next.languages.target]: dubbingOffset(project, lineId),
   };
   const values = ((next.dubbingTiming!.durationsMs ??= {})[lineId] ??= {});
-  if (durationMs === null) delete values[next.languages.target];
-  else values[next.languages.target] = durationMs;
+  if (durationMs === null) {
+    delete values[next.languages.target];
+    if (dubbingBounds(next, lineId).duration < bounds.min)
+      throw Error('VOICE_DURATION_OUT_OF_RANGE');
+  } else values[next.languages.target] = durationMs;
   return next;
 }
 function placeDubbing(
@@ -84,6 +87,7 @@ function placeDubbing(
   offsetMs: number,
   restore: boolean,
   preferNatural = false,
+  durationOverride?: number,
 ): Project {
   const line = project.dialogues.find((l) => l.id === lineId);
   if (!line || !project.media || !Number.isSafeInteger(offsetMs)) throw Error('INVALID_PROJECT');
@@ -102,15 +106,16 @@ function placeDubbing(
   const wanted = Math.min(
     MAX_VOICE_DURATION_MS,
     project.media.durationMs,
-    restore
-      ? Math.max(
-          dubbingBounds(project, lineId).min,
-          preferNatural ? natural : (dubbingDuration(project, lineId) ?? natural),
-        )
-      : Math.max(
-          dubbingBounds(project, lineId).min,
-          clip ? clip.endMs - clip.startMs || natural : natural,
-        ),
+    durationOverride ??
+      (restore
+        ? Math.max(
+            dubbingBounds(project, lineId).min,
+            preferNatural ? natural : (dubbingDuration(project, lineId) ?? natural),
+          )
+        : Math.max(
+            dubbingBounds(project, lineId).min,
+            clip ? clip.endMs - clip.startMs || natural : natural,
+          )),
   );
   if (wanted < dubbingBounds(project, lineId).min) throw Error('VOICE_EDIT_NO_ROOM');
   const start = freeVoiceStart(
@@ -147,12 +152,30 @@ function placeDubbing(
     ...next.dubbingTiming!.offsetsMs[lineId],
     [next.languages.target]: start - line.startMs,
   };
-  if (restore || dubbingDuration(project, lineId) !== undefined)
+  if (
+    restore ||
+    dubbingDuration(project, lineId) !== undefined ||
+    (clip && clip.endMs - clip.startMs < wanted)
+  )
     ((next.dubbingTiming!.durationsMs ??= {})[lineId] ??= {})[next.languages.target] = wanted;
   return next;
 }
 export function moveDubbing(project: Project, lineId: string, offsetMs: number): Project {
   return placeDubbing(project, lineId, offsetMs, false);
+}
+export function retimeDubbing(
+  project: Project,
+  lineId: string,
+  offsetMs: number,
+  durationMs: number,
+): Project {
+  if (!Number.isSafeInteger(durationMs) || durationMs < 1 || durationMs > MAX_VOICE_DURATION_MS)
+    throw Error('VOICE_DURATION_OUT_OF_RANGE');
+  const next = placeDubbing(project, lineId, offsetMs, true, false, durationMs);
+  // An analysis proposal must keep its reviewed onset. Never silently snap a
+  // mouth-alignment proposal somewhere else to avoid a neighbouring voice.
+  if (dubbingOffset(next, lineId) !== offsetMs) throw Error('VOICE_EDIT_NO_ROOM');
+  return resizeDubbing(next, lineId, durationMs);
 }
 export function recoverDubbing(project: Project, lineId: string): Project {
   const bounds = dubbingBounds(project, lineId),

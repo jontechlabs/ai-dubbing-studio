@@ -9,6 +9,7 @@ Windows workflow evidence will be recorded before publication.
 - Browser checks exercise atomic timing drafts, Enter/blur/Escape, rejected overflow, timeline edge clamps at a neighbour and the video end, duration-preserving movement, local stretch clamps and refused silence, persisted fades at the boundary, reopening, repair of old timings, undo/redo and preservation of take edits. Screenshots use real React UI with synthetic media and mocked native commands.
 - Native checks render an exact 120-second PCM edit, reject +1 ms without changing originals or adding a cache file, reject oversize fits before file access, and compare automatic/exact/film-end slot limits. The real MKV export regression also opens an oversized legacy request and checks its actual voice boundaries and preserved following take. Existing audio/mixing tests remain enabled.
 - No model weights, runtime versions or project formats change. This is an editing and duration-validation correction, not a GPU performance qualification.
+- Automatic-duration reset cannot collapse a multi-piece edit, and moving an already collapsed automatic take materializes the minimum valid duration. Lip proposals apply onset and duration together: a short legal interval is accepted exactly; a colliding proposal is rejected without moving it elsewhere.
 
 
 ## v0.15.0 — 18 October 2026

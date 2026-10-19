@@ -74,6 +74,28 @@ describe('visual alignment proposals', () => {
     ).toBe(before);
     expect(validateProject(JSON.parse(JSON.stringify(after)))).toEqual(after);
     expect(project.dubbingTiming).toBeUndefined();
+    const second = project.dialogues[1];
+    second.selectedGenerationIds.fr = 'other';
+    project.generations.push({
+      ...project.generations[0],
+      id: 'other',
+      dialogueId: second.id,
+      path: 'generations/other.wav',
+    });
+    const nearby = {
+      ...analysis,
+      startMs: 4300,
+      durationMs: 100,
+      options: { ...analysis.options, endMs: 8000 },
+    };
+    const aligned = applyLipAnalysis(project, nearby);
+    expect(aligned.dubbingTiming!.offsetsMs[id].fr).toBe(3550);
+    expect(aligned.dubbingTiming!.durationsMs![id].fr).toBe(100);
+    const unchanged = JSON.stringify(project);
+    expect(() => applyLipAnalysis(project, { ...nearby, startMs: 4400, durationMs: 200 })).toThrow(
+      'VOICE_EDIT_NO_ROOM',
+    );
+    expect(JSON.stringify(project)).toBe(unchanged);
   });
   it('rejects stale projects, replaced media/languages/takes and invalid output windows', () => {
     const { project, analysis } = fixture();

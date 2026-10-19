@@ -14,6 +14,8 @@ Disponible depuis **v0.15.1**. La durée maximale est calculée à partir de la 
 | Ajouter du silence | La durée du silence s’ajoute à la durée totale de l’essai. L’opération est refusée si ce total dépasse le maximum. |
 | Étirer une sélection | Le contrôle porte sur **toute la voix après modification**, pas seulement sur la portion sélectionnée. La poignée est bornée ; une saisie trop longue est refusée. |
 | Comprimer une voix découpée | Chaque segment conserve au moins 1 ms. La répartition des arrondis respecte la durée totale, même si les segments sont très inégaux. |
+| Revenir à la durée automatique | Le retour est refusé si le créneau automatique ne peut pas contenir les segments existants ; le dernier calage valide est conservé. |
+| Appliquer une proposition d’alignement des lèvres | Position et durée sont contrôlées ensemble. Une proposition qui empiète sur une autre voix est refusée ; elle n’est pas déplacée silencieusement ailleurs. |
 | Supprimer, rendre muet, changer le volume ou les fondus | Les limites sont vérifiées avant l’écriture. Une opération refusée conserve le projet et les fichiers audio. |
 
 Exemple : une voix commence à 10,000 s et la suivante à 13,750 s. Le maximum est **3 750 ms**, même si le fichier généré ou la vidéo est plus long. Une voix de 2 000 ms dont on étire une portion de 500 ms peut donner à cette portion au plus **2 250 ms** : les 1 500 ms restantes doivent aussi tenir dans le créneau.

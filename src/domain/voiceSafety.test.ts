@@ -173,6 +173,17 @@ it('allocates at least one millisecond to highly unequal split pieces when compr
   expect(() => resizeDubbing(p, id, 2)).toThrow('VOICE_DURATION_OUT_OF_RANGE');
   const next = resizeDubbing(p, id, 4);
   expect(editDuration(voicePlan(next, next.generations[0] as Generation))).toBe(4);
+  const retimed = structuredClone(p);
+  retimed.dialogues[0].endMs = retimed.dialogues[0].startMs + 2;
+  const before = JSON.stringify(retimed);
+  expect(() => resizeDubbing(retimed, id, null)).toThrow('VOICE_DURATION_OUT_OF_RANGE');
+  expect(JSON.stringify(retimed)).toBe(before);
+  delete retimed.dubbingTiming!.durationsMs![id].fr;
+  expect(dubbingBounds(retimed, id).limited).toBe(true);
+  const moved = moveDubbing(retimed, id, 100);
+  expect(dubbingBounds(moved, id).duration).toBe(3);
+  expect(dubbingBounds(moved, id).limited).toBe(false);
+  expect(editDuration(voicePlan(moved, moved.generations[0] as Generation))).toBe(3);
 });
 it('enforces the whole take limit for partial stretching and inserted silence at its exact boundary', () => {
   const p = fixture(),

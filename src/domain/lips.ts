@@ -1,5 +1,5 @@
 import type { Project } from './types';
-import { moveDubbing, resizeDubbing } from './mix';
+import { retimeDubbing } from './mix';
 export interface MouthRegion {
   x: number;
   y: number;
@@ -48,9 +48,5 @@ export function applyLipAnalysis(project: Project, analysis: LipAnalysis): Proje
     analysis.durationMs > 120000
   )
     throw Error('LIPS_ANALYSIS_FAILED');
-  return resizeDubbing(
-    moveDubbing(project, line.id, analysis.startMs - line.startMs),
-    line.id,
-    analysis.durationMs,
-  );
+  return retimeDubbing(project, line.id, analysis.startMs - line.startMs, analysis.durationMs);
 }
