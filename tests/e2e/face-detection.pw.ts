@@ -1,5 +1,18 @@
 import {test,expect,type Page} from '@playwright/test';
 import {nativeMock} from './nativeMock';
+test('reopening while detection runs refreshes the CUDA inventory after it finishes',async({page})=>{
+ const panel=await open(page);
+ await page.evaluate(()=>(window as any).__faceBusyInventory=true);
+ await panel.getByRole('button',{name:'Détecter les visages du lot',exact:true}).click();
+ await panel.getByRole('button',{name:'Fermer',exact:true}).click();
+ await page.getByRole('button',{name:'Synchronisation labiale par lot',exact:true}).click();
+ const reopened=page.getByRole('dialog',{name:'Synchronisation labiale par lot',exact:true});
+ await expect(reopened.getByRole('combobox',{name:'Périphérique de génération',exact:true})).toHaveValue('');
+ await page.evaluate(()=>(window as any).__completeFaceDetection());
+ await expect(reopened.getByRole('combobox',{name:'Périphérique de génération',exact:true})).toHaveValue('cuda:0');
+ await reopened.getByRole('button',{name:'Utiliser les cadrages proposés (4)',exact:true}).click();
+ await expect(reopened.getByRole('button',{name:'Synchroniser 4 répliques',exact:true})).toBeEnabled();
+});
 async function open(page:Page){
  await nativeMock(page);await page.goto('/');await expect(page.getByRole('button',{name:'Lecture',exact:true})).toBeEnabled();await page.evaluate(()=>(window as any).__seedDubbing());
  await page.getByRole('button',{name:'Synchronisation labiale par lot',exact:true}).click();

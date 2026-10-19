@@ -13,6 +13,15 @@ def iou(a, b):
     intersection = max(0, min(a[0]+a[2], b[0]+b[2])-max(a[0], b[0])) * max(0, min(a[1]+a[3], b[1]+b[3])-max(a[1], b[1]))
     return intersection / max(1e-9, a[2]*a[3]+b[2]*b[3]-intersection)
 
+def normalized_boxes(faces, width, height):
+    result=[]
+    for x,y,w,h in faces:
+        if not all(math.isfinite(v) for v in (x,y,w,h)):continue
+        left=max(0,x);top=max(0,y);right=min(width,x+w);bottom=min(height,y+h)
+        if right-left>=24 and bottom-top>=24:
+            result.append((left/width,top/height,(right-left)/width,(bottom-top)/height))
+    return result
+
 def propose(detections, cuts=False):
     if cuts:
         return dict(crop=None, reason='FACE_SCENE_CHANGE')
@@ -74,7 +83,7 @@ class Detector:
             for box in self.anime.detectMultiScale(gray,scaleFactor=1.1,minNeighbors=5,minSize=(24,24)):
                 b=tuple(map(float,box))
                 if not any(iou(b,old)>.35 for old in faces):faces.append(b)
-        return [(max(0,x)/w,max(0,y)/h,min(width,w-max(0,x))/w,min(height,h-max(0,y))/h) for x,y,width,height in faces if width>=24 and height>=24]
+        return normalized_boxes(faces,w,h)
     def analyze(self, folder):
         import numpy as np
         cv=self.cv

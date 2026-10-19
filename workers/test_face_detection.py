@@ -1,7 +1,9 @@
 import unittest
-from face_detection_worker import propose, iou, plain
+from face_detection_worker import propose, iou, plain, normalized_boxes
 
 class FaceTests(unittest.TestCase):
+    def test_partly_visible_boxes_clip_to_image_and_invalid_offscreen_boxes_are_ignored(self):
+        self.assertEqual(normalized_boxes([(-10,-10,60,60),(110,10,40,40),(float('nan'),0,40,40)],100,100),[(0,0,.5,.5)])
     def test_static_face_pads_forehead_chin_and_stays_in_frame(self):
         p=propose([[ [.3,.2,.2,.3] ]] * 5)['crop']
         self.assertLess(p['face']['x'],.3);self.assertGreater(p['face']['height'],.3)

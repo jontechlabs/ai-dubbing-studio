@@ -33,8 +33,9 @@ function useRuntime(jobs: Job[], onError: (e: string) => void) {
   const completion = jobs
     .filter(
       (j) =>
-        ['inpaintInstall', 'inpaint', 'modelMove'].includes(j.kind) &&
-        ['succeeded', 'failed', 'cancelled', 'interrupted'].includes(j.status),
+        ['inpaintInstall', 'inpaint', 'inpaintBatch', 'faceDetection', 'modelMove'].includes(
+          j.kind,
+        ) && ['succeeded', 'failed', 'cancelled', 'interrupted'].includes(j.status),
     )
     .map((j) => j.id + j.status)
     .join('|');
