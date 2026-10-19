@@ -46,3 +46,8 @@ Un seul visage visible, plutôt frontal, sur un plan stable de **0,2 à 10 secon
 Les profils, mains devant la bouche, rotations, changements de plan, petits visages, style dessiné très abstrait ou mouvements rapides peuvent produire des dents, contours ou couleurs incorrects. Vérifiez particulièrement les animes. Il n’y a pas d’alignement phonème par phonème ni de garantie que chaque syllabe correspondra à un mouvement précis. Réduisez la force, resserrez le masque, corrigez le cadrage ou gardez la vidéo originale si le résultat dégrade l’image.
 
 Le traitement est local, sans téléversement de vidéo ou de voix. Le code MuseTalk et les composants retenus portent les licences MIT indiquées par l’amont ; le texte et les notices des dépendances sont dans `workers/MUSETALK-LICENSE.txt`. Les poids sont téléchargés sur demande et ne figurent pas dans l’installateur. Consultez [la validation](../VALIDATION.md) pour distinguer tests automatisés, inférence de contrôle et matériel non qualifié.
+
+
+## LatentSync 1.5 / 1.6 (v0.17.0)
+
+Le sélecteur de moteur propose maintenant les deux versions avec adaptation ShmuelRonen, vérification disque et profil mémoire réduit. Les retouches portent sur des séquences indépendantes des dialogues, préchargées pour la lecture ; la vidéo principale reste intacte. [Installation, limites 16 Go et lecture](LATENTSYNC.md).

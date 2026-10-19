@@ -1,7 +1,7 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "AI Dubbing Studio",
-  "version": "0.16.0",
+  "version": "0.17.0",
   "identifier": "studio.local.dubbing",
   "build": {
     "beforeDevCommand": "pnpm dev",
@@ -72,7 +72,11 @@
       "../workers/MUSETALK-LICENSE.txt": "workers/MUSETALK-LICENSE.txt",
       "../workers/drama_worker.py": "workers/drama_worker.py",
       "../workers/drama-runtime.json": "workers/drama-runtime.json",
-      "../workers/vendor/drama3/": "workers/vendor/drama3/"
+      "../workers/vendor/drama3/": "workers/vendor/drama3/",
+      "../workers/latentsync_worker.py": "workers/latentsync_worker.py",
+      "../workers/latentsync-model.json": "workers/latentsync-model.json",
+      "../workers/latentsync-runtime.json": "workers/latentsync-runtime.json",
+      "../workers/vendor/latentsync/": "workers/vendor/latentsync/"
     },
     "icon": ["icons/icon.ico", "icons/icon.png"],
     "windows": {

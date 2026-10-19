@@ -14,6 +14,7 @@ use std::{
 // Only application-owned model installations belong here. Project assets stay in projects.
 const INSTALLATIONS: &[&str] = &[
     "musetalk-runtime",
+    "latentsync-runtime",
     "bandit-runtime",
     "speaker-runtime",
     "cosyvoice3-runtime",
@@ -503,6 +504,7 @@ mod tests {
             "whisper-reference",
             "translation-llm",
             "musetalk-runtime",
+            "latentsync-runtime",
         ] {
             fs::create_dir_all(source.join(name)).unwrap();
             fs::write(source.join(name).join("model.bin"), b"voice model").unwrap();
@@ -535,6 +537,7 @@ mod tests {
             "whisper-reference",
             "translation-llm",
             "musetalk-runtime",
+            "latentsync-runtime",
         ] {
             assert_eq!(
                 fs::read(dest.join(name).join("model.bin")).unwrap(),

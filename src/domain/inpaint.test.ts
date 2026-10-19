@@ -68,6 +68,42 @@ function fixture() {
   p.generations.push(e as unknown as (typeof p.generations)[number]);
   return { p, e, line };
 }
+it('persists LatentSync profiles only in format 13 with distinct model and diffusion controls', () => {
+  for (const modelId of ['latentsync-15', 'latentsync-16'] as const) {
+    const { p, e } = fixture();
+    p.formatVersion = 13;
+    e.options = { ...e.options, modelId, inferenceSteps: 20, guidanceScale: 1.5 };
+    expect(validateProject(JSON.parse(JSON.stringify(p)))).toEqual(p);
+    expect(() => validateProject({ ...p, formatVersion: 12 })).toThrow('INPAINT_INVALID_VARIANT');
+    expect(currentLipVideo(p, e)).toBe(true);
+    expect(selectLipVideo(p, e.id, true).formatVersion).toBe(13);
+  }
+});
+it('validates model, numeric settings and per-engine duration without touching source media', () => {
+  const { p, e } = fixture();
+  const media = JSON.stringify(p.media);
+  p.formatVersion = 13;
+  e.options.modelId = 'latentsync-16';
+  e.durationMs = 120000;
+  expect(validateProject(p)).toEqual(p);
+  for (const options of [
+    { modelId: 'unknown' },
+    { inferenceSteps: 9 },
+    { inferenceSteps: 20.5 },
+    { guidanceScale: NaN },
+    { guidanceScale: 3.1 },
+  ]) {
+    const next = structuredClone(p);
+    Object.assign((next.generations.at(-1) as unknown as LipVideo).options, options);
+    expect(() => validateProject(next)).toThrow('INPAINT_INVALID_VARIANT');
+  }
+  e.durationMs = 120001;
+  expect(() => validateProject(p)).toThrow('INPAINT_INVALID_VARIANT');
+  e.durationMs = 10001;
+  delete e.options.modelId;
+  expect(() => validateProject(p)).toThrow('INPAINT_INVALID_VARIANT');
+  expect(JSON.stringify(p.media)).toBe(media);
+});
 it('invalidates a retouched mouth after an audio edit, including equal-length gain changes', () => {
   const { p, e } = fixture();
   const changed = editVoice(p, 'take', 0, 500, { kind: 'gain', gain: 0.5 });

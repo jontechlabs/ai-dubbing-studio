@@ -116,6 +116,7 @@ export function Player({
             <LipVideoOverlay
               project={project}
               base={contentRef}
+              sourceUrl={transport.url}
               enabled={!transport.originalOnly}
             />
             <div className="subtitle-overlay">{activeText}</div>

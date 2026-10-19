@@ -1,4 +1,4 @@
-//! MuseTalk 1.5, local CUDA inference and project-owned non-destructive variants.
+//! Local MuseTalk/LatentSync inference and project-owned non-destructive sequences.
 use crate::{
     domain::{io_error, Project},
     jobs, media, project, separation, Core,
@@ -18,6 +18,12 @@ use tauri::Emitter;
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Options {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub model_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub inference_steps: Option<u32>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub guidance_scale: Option<f64>,
     pub line_id: String,
     pub generation_id: String,
     pub device: String,
@@ -30,8 +36,44 @@ pub struct Options {
     pub style: String,
     pub seed: u32,
 }
+pub const MUSE: &str = "musetalk-15-fp16";
+pub fn valid_model(id: &str) -> Result<(), String> {
+    if [MUSE, "latentsync-15", "latentsync-16"].contains(&id) {
+        Ok(())
+    } else {
+        Err("INPAINT_MODEL_INVALID".into())
+    }
+}
 impl Options {
+    pub fn model(&self) -> &str {
+        self.model_id.as_deref().unwrap_or(MUSE)
+    }
+    pub fn resolution(&self) -> u32 {
+        if self.model() == "latentsync-16" {
+            512
+        } else {
+            256
+        }
+    }
+    pub fn max_duration(&self) -> u64 {
+        if self.model() == MUSE {
+            10000
+        } else {
+            120000
+        }
+    }
+
     pub fn validate(&self) -> Result<(), String> {
+        valid_model(self.model())?;
+        if self
+            .inference_steps
+            .is_some_and(|v| !(10..=50).contains(&v))
+            || self
+                .guidance_scale
+                .is_some_and(|v| !v.is_finite() || !(1.0..=3.0).contains(&v))
+        {
+            return Err("INPAINT_SETTINGS_INVALID".into());
+        }
         self.face.validate()?;
         self.mask.validate()?;
         let end = crate::lips::Region {
@@ -99,6 +141,7 @@ pub fn validate(p: &Project) -> Result<(), String> {
     for e in edits(p)? {
         e.options.validate()?;
         if p.format_version < 8
+            || (e.options.model() != MUSE && p.format_version < 13)
             || e.id.is_empty()
             || e.fingerprint.len() != 64
             || e.path != format!("generations/lips-{}.mp4", e.id)
@@ -106,7 +149,7 @@ pub fn validate(p: &Project) -> Result<(), String> {
             || e.options.generation_id != e.generation_id
             || !(1..=120000).contains(&e.slot_ms)
             || !e.fingerprint.bytes().all(|b| b.is_ascii_hexdigit())
-            || !(200..=10000).contains(&e.duration_ms)
+            || !(200..=e.options.max_duration()).contains(&e.duration_ms)
             || e.start_ms > 86_400_000
             || e.start_ms + e.duration_ms > 86_410_000
             || p.generations.iter().filter(|g| g["id"] == e.id).count() != 1
@@ -181,7 +224,35 @@ pub fn active(p: &Project) -> Result<Vec<Edit>, String> {
     Ok(selected)
 }
 pub fn root(core: &Core) -> PathBuf {
-    crate::model_storage::root(core).join("musetalk-runtime")
+    runtime_root(core, MUSE)
+}
+fn runtime_root(core: &Core, id: &str) -> PathBuf {
+    crate::model_storage::root(core).join(if id == MUSE {
+        "musetalk-runtime"
+    } else {
+        "latentsync-runtime"
+    })
+}
+fn worker_name(id: &str) -> &str {
+    if id == MUSE {
+        "musetalk_worker.py"
+    } else {
+        "latentsync_worker.py"
+    }
+}
+fn runtime_name(id: &str) -> &str {
+    if id == MUSE {
+        "musetalk-runtime.json"
+    } else {
+        "latentsync-runtime.json"
+    }
+}
+fn ready_path(core: &Core, id: &str) -> PathBuf {
+    runtime_root(core, id).join(if id == MUSE {
+        "ready.json".into()
+    } else {
+        format!("ready-{id}.json")
+    })
 }
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -202,23 +273,106 @@ fn manifest<R: tauri::Runtime>(app: &tauri::AppHandle<R>, name: &str) -> Result<
     serde_json::from_slice(&std::fs::read(separation::resources(app).join(name)).map_err(io_error)?)
         .map_err(io_error)
 }
-fn installed(core: &Core) -> bool {
-    root(core).join("ready.json").is_file()
-        && separation::python(&root(core)).is_file()
-        && root(core).join("model/unet/unet.pth").is_file()
+#[derive(Deserialize)]
+struct LatentModels {
+    common: Vec<File>,
+    variants: std::collections::BTreeMap<String, Manifest>,
+}
+fn model_manifest<R: tauri::Runtime>(
+    app: &tauri::AppHandle<R>,
+    id: &str,
+) -> Result<Manifest, String> {
+    valid_model(id)?;
+    if id == MUSE {
+        return manifest(app, "musetalk-model.json");
+    }
+    let mut models: LatentModels = serde_json::from_slice(
+        &std::fs::read(separation::resources(app).join("latentsync-model.json"))
+            .map_err(io_error)?,
+    )
+    .map_err(io_error)?;
+    let mut variant = models.variants.remove(id).ok_or("INPAINT_MODEL_INVALID")?;
+    variant.files.extend(models.common);
+    Ok(variant)
+}
+fn installed(core: &Core, id: &str) -> bool {
+    ready_path(core, id).is_file()
+        && separation::python(&runtime_root(core, id)).is_file()
+        && runtime_root(core, id)
+            .join("model")
+            .join(if id == MUSE {
+                "unet/unet.pth".into()
+            } else {
+                format!("{id}/unet.pt")
+            })
+            .is_file()
+}
+fn complete(path: &Path, size: u64) -> bool {
+    std::fs::metadata(path).is_ok_and(|m| m.is_file() && m.len() == size)
+}
+
+pub fn space<R: tauri::Runtime>(
+    core: &Core,
+    app: &tauri::AppHandle<R>,
+    id: &str,
+) -> Result<serde_json::Value, String> {
+    valid_model(id)?;
+    let folder = runtime_root(core, id);
+    let model_bytes = model_manifest(app, id)?
+        .files
+        .iter()
+        .filter(|f| !complete(&folder.join("model").join(&f.name), f.size))
+        .map(|f| f.size)
+        .sum::<u64>();
+    let mut download_bytes = if complete(&folder.join("python.zip"), 11133606) {
+        0
+    } else {
+        11133606
+    };
+    for f in manifest(app, runtime_name(id))?.files {
+        if ![
+            folder.join("wheels").join(&f.name),
+            crate::tts::root(core).join("wheels").join(&f.name),
+            root(core).join("wheels").join(&f.name),
+            crate::voice_engines::root(core)
+                .join("fish-runtime/wheels")
+                .join(&f.name),
+        ]
+        .iter()
+        .any(|p| complete(p, f.size))
+        {
+            download_bytes += f.size;
+        }
+    }
+    let present = if folder.join("python").is_dir() {
+        crate::model_storage::directory_size(&folder.join("python"))
+            .ok()
+            .filter(|v| !v.partial)
+            .map_or(0, |v| v.bytes)
+    } else {
+        0
+    };
+    let runtime_bytes = (10_u64 * 1024_u64.pow(3)).saturating_sub(present);
+    let required_bytes = model_bytes + download_bytes + runtime_bytes + 2 * 1024_u64.pow(3);
+    let available_bytes = crate::voice_space::available(&folder)?;
+    Ok(
+        serde_json::json!({"path":folder,"requiredBytes":required_bytes,"availableBytes":available_bytes,"enough":available_bytes>=required_bytes}),
+    )
 }
 pub async fn status<R: tauri::Runtime>(
     core: Arc<Core>,
     app: tauri::AppHandle<R>,
+    id: &str,
 ) -> Result<serde_json::Value, String> {
-    let ready = installed(&core);
+    valid_model(id)?;
+    let ready = installed(&core, id);
     let permit = core.gate.clone().try_acquire_owned().ok();
     let info = if ready && permit.is_some() {
         separation::probe(
-            &separation::python(&root(&core)),
+            &separation::python(&runtime_root(&core, id)),
             &[
                 separation::resources(&app)
-                    .join("musetalk_worker.py")
+                    .join(worker_name(id))
                     .to_string_lossy()
                     .into_owned(),
                 "--info".into(),
@@ -232,7 +386,7 @@ pub async fn status<R: tauri::Runtime>(
         serde_json::json!({"devices":[]})
     };
     Ok(
-        serde_json::json!({"installed":ready,"sizeBytes":manifest(&app,"musetalk-model.json")?.files.iter().map(|f|f.size).sum::<u64>(),"devices":info["devices"]}),
+        serde_json::json!({"modelId":id,"installed":ready,"sizeBytes":model_manifest(&app,id)?.files.iter().map(|f|f.size).sum::<u64>(),"devices":info["devices"],"space":space(&core,&app,id)?}),
     )
 }
 async fn fetch<R: tauri::Runtime>(
@@ -255,10 +409,13 @@ async fn fetch<R: tauri::Runtime>(
     )
     .await
 }
-pub fn install<R: tauri::Runtime>(
+pub fn install_model<R: tauri::Runtime>(
     core: Arc<Core>,
     app: tauri::AppHandle<R>,
+    model_id: &str,
 ) -> Result<String, String> {
+    valid_model(model_id)?;
+    let model_id = model_id.to_owned();
     if !cfg!(windows) {
         return Err("RUNTIME_PLATFORM_UNSUPPORTED".into());
     }
@@ -273,6 +430,13 @@ pub fn install<R: tauri::Runtime>(
         .unwrap()
         .saved
         .inpaint_install = true;
+    core.jobs
+        .lock()
+        .map_err(io_error)?
+        .get_mut(&key)
+        .unwrap()
+        .saved
+        .inpaint_model = Some(model_id.clone());
     jobs::persist(&core);
     let returned = key.clone();
     tauri::async_runtime::spawn(async move {
@@ -280,25 +444,28 @@ pub fn install<R: tauri::Runtime>(
         let result=async{
             let _permit=tokio::select!{_=jobs::cancelled(&flag)=>return Err("CANCELLED".into()),permit=core.gate.clone().acquire_owned()=>permit.map_err(io_error)?};
             jobs::update(&core,&app,&key,|j|{j.status="running".into();j.stage="runtime".into();});
-            let folder=root(&core);std::fs::create_dir_all(folder.join("python/Lib/site-packages")).map_err(io_error)?;let _=std::fs::remove_file(folder.join("ready.json"));
+            let budget=space(&core,&app,&model_id)?;
+            jobs::update(&core,&app,&key,|j|j.logs.push(format!("Disk preflight: available {} bytes, required {} bytes at {}",budget["availableBytes"],budget["requiredBytes"],budget["path"])));
+            if budget["enough"] != true { return Err("INPAINT_DISK_REQUIRED".into()); }
+            let folder=runtime_root(&core,&model_id);std::fs::create_dir_all(folder.join("python/Lib/site-packages")).map_err(io_error)?;let _=std::fs::remove_file(ready_path(&core,&model_id));
             let archive=folder.join("python.zip");
             separation::fetch(&core,&app,&key,&["https://www.python.org/ftp/python/3.12.10/python-3.12.10-embed-amd64.zip".into()],&archive,("4acbed6dd1c744b0376e3b1cf57ce906f9dc9e95e68824584c8099a63025a3c3",11133606),&flag).await?;
             let target=folder.join("python");let cancel=flag.clone();tauri::async_runtime::spawn_blocking(move||crate::tts::extract(&archive,&target,&cancel)).await.map_err(io_error)??;
             project::atomic_write(&folder.join("python/python312._pth"),b"python312.zip\n.\nLib/site-packages\nimport site\n")?;
-            for f in manifest(&app,"musetalk-runtime.json")?.files {
+            for f in manifest(&app,runtime_name(&model_id))?.files {
                 let mut archive=folder.join("wheels").join(&f.name);
-                for shared in [crate::tts::root(&core).join("wheels").join(&f.name),crate::voice_engines::root(&core).join("fish-runtime/wheels").join(&f.name)]{
+                for shared in [root(&core).join("wheels").join(&f.name),crate::tts::root(&core).join("wheels").join(&f.name),crate::voice_engines::root(&core).join("fish-runtime/wheels").join(&f.name)]{
                     if crate::downloads::cached(&shared,&crate::downloads::Spec{urls:&[],sha256:&f.sha256,size:f.size},&flag).await?{archive=shared;break;}
                 }
                 fetch(&core,&app,&key,&f,&archive,&flag).await?;
                 jobs::update(&core,&app,&key,|j|{j.stage="ttsExtract".into();j.progress=None;j.logs.push(format!("Verified runtime wheel: {}",f.name));});
                 let target=folder.join("python/Lib/site-packages");let cancel=flag.clone();tauri::async_runtime::spawn_blocking(move||crate::tts::extract(&archive,&target,&cancel)).await.map_err(io_error)??;
             }
-            let model=manifest(&app,"musetalk-model.json")?;
-            for f in model.files{jobs::update(&core,&app,&key,|j|{j.stage="inpaintDownload".into();j.logs.push(format!("MuseTalk component: {}",f.name));});fetch(&core,&app,&key,&f,&folder.join("model").join(&f.name),&flag).await?;}
-            let info=separation::probe(&separation::python(&folder),&[separation::resources(&app).join("musetalk_worker.py").to_string_lossy().into_owned(),"--info".into()],&flag,Duration::from_secs(90)).await?.ok_or("INPAINT_RUNTIME_FAILED")?;
-            if info["runtimeReady"]!=true || info["torchVersion"]!="2.8.0" || info["cudaVersion"]!="12.8" {return Err("INPAINT_RUNTIME_FAILED".into());}
-            if flag.load(Ordering::Relaxed){return Err("CANCELLED".into());}project::atomic_write(&folder.join("ready.json"),model.revision.as_bytes())
+            let model=model_manifest(&app,&model_id)?;
+            for f in model.files{jobs::update(&core,&app,&key,|j|{j.stage="inpaintDownload".into();j.logs.push(format!("{} component: {}",model_id,f.name));});fetch(&core,&app,&key,&f,&folder.join("model").join(&f.name),&flag).await?;}
+            let info=separation::probe(&separation::python(&folder),&[separation::resources(&app).join(worker_name(&model_id)).to_string_lossy().into_owned(),"--info".into()],&flag,Duration::from_secs(90)).await?.ok_or("INPAINT_RUNTIME_FAILED")?;
+            if info["runtimeReady"]!=true || info["torchVersion"]!="2.8.0" || info["cudaVersion"]!="12.8" || (model_id != MUSE && info["diffusersVersion"]!="0.32.2") {return Err("INPAINT_RUNTIME_FAILED".into());}
+            if flag.load(Ordering::Relaxed){return Err("CANCELLED".into());}project::atomic_write(&ready_path(&core,&model_id),model.revision.as_bytes())
         }.await;
         separation::finish(&core, &app, &key, &result);
     });
@@ -313,14 +480,14 @@ pub fn enqueue<R: tauri::Runtime>(
     if crate::tts::busy(&core) {
         return Err("BUSY".into());
     }
-    if !installed(&core) {
+    if !installed(&core, options.model()) {
         return Err("INPAINT_NOT_INSTALLED".into());
     }
     let request = {
         let guard = core.session.lock().map_err(io_error)?;
         let s = guard.as_ref().ok_or("NO_PROJECT")?;
         let (fingerprint, clip) = signature(&s.project, &options.line_id, &options.generation_id)?;
-        if !(200..=10000).contains(&clip.duration_ms()) {
+        if !(200..=options.max_duration()).contains(&clip.duration_ms()) {
             return Err("INPAINT_WINDOW_INVALID".into());
         }
         Request {
@@ -389,7 +556,7 @@ async fn ffmpeg<R: tauri::Runtime>(
 }
 pub(crate) fn crop_expression(o: &Options, duration: u64) -> String {
     let seconds = duration as f64 / 1000.0;
-    format!("crop=iw*{w}:ih*{h}:'iw*({x}+({dx})*min(t/{seconds},1))':'ih*({y}+({dy})*min(t/{seconds},1))',scale=256:256",w=o.face.width,h=o.face.height,x=o.face.x,y=o.face.y,dx=o.end_x-o.face.x,dy=o.end_y-o.face.y)
+    format!("crop=iw*{w}:ih*{h}:'iw*({x}+({dx})*min(t/{seconds},1))':'ih*({y}+({dy})*min(t/{seconds},1))',scale={size}:{size}",size=o.resolution(),w=o.face.width,h=o.face.height,x=o.face.x,y=o.face.y,dx=o.end_x-o.face.x,dy=o.end_y-o.face.y)
 }
 pub(crate) fn overlay_expression(o: &Options, duration: u64, w: u32, h: u32) -> String {
     let seconds = duration as f64 / 1000.0;
@@ -416,20 +583,31 @@ async fn render<R: tauri::Runtime>(
     }
     let duration = clip.duration_ms() / 40 * 40;
     let frames = duration / 40;
-    if !(5..=250).contains(&frames) {
+    if !(5..=request.options.max_duration() / 40).contains(&frames) {
         return Err("INPAINT_WINDOW_INVALID".into());
     }
+    #[cfg(windows)]
+    {
+        // Input/output PNGs are private to this dialogue's temporary directory.
+        let pixels = u64::from(request.options.resolution()).pow(2);
+        let required = frames * pixels * 8 + 2 * 1024_u64.pow(3);
+        if crate::voice_space::available(&request.root)? < required {
+            return Err("INPAINT_DISK_REQUIRED".into());
+        }
+    }
     let ff = media::binary(app, "ffmpeg")?;
-    let model = manifest(app, "musetalk-model.json")?;
+    let model_id = request.options.model();
+    let folder = runtime_root(core, model_id);
+    let model = model_manifest(app, model_id)?;
     jobs::update(core, app, key, |j| {
         j.stage = "inpaintDevice".into();
         j.progress = None;
     });
     let inventory = separation::probe(
-        &separation::python(&root(core)),
+        &separation::python(&folder),
         &[
             separation::resources(app)
-                .join("musetalk_worker.py")
+                .join(worker_name(model_id))
                 .to_string_lossy()
                 .into_owned(),
             "--info".into(),
@@ -451,7 +629,7 @@ async fn render<R: tauri::Runtime>(
     });
     for f in &model.files {
         if !crate::downloads::cached(
-            &root(core).join("model").join(&f.name),
+            &folder.join("model").join(&f.name),
             &crate::downloads::Spec {
                 urls: &[],
                 sha256: &f.sha256,
@@ -600,17 +778,17 @@ async fn render<R: tauri::Runtime>(
     )
     .await?;
     let worker_request = temp.join("request.json");
-    project::atomic_write(&worker_request,&serde_json::to_vec(&serde_json::json!({"device":request.options.device,"modelDirectory":root(core).join("model"),"inputDirectory":input,"outputDirectory":output,"audioPath":audio,"frames":frames,"mask":request.options.mask,"feather":request.options.feather,"blend":request.options.blend,"seed":request.options.seed})).map_err(io_error)?)?;
+    project::atomic_write(&worker_request,&serde_json::to_vec(&serde_json::json!({"device":request.options.device,"modelDirectory":folder.join("model"),"modelId":model_id,"inferenceSteps":request.options.inference_steps.unwrap_or(20),"guidanceScale":request.options.guidance_scale.unwrap_or(1.5),"inputDirectory":input,"outputDirectory":output,"audioPath":audio,"frames":frames,"mask":request.options.mask,"feather":request.options.feather,"blend":request.options.blend,"seed":request.options.seed})).map_err(io_error)?)?;
     tokio::time::timeout(
         Duration::from_secs(7200),
         separation::process(
             core,
             app,
             key,
-            &separation::python(&root(core)),
+            &separation::python(&folder),
             &[
                 separation::resources(app)
-                    .join("musetalk_worker.py")
+                    .join(worker_name(model_id))
                     .to_string_lossy()
                     .into_owned(),
                 "--request".into(),
@@ -716,7 +894,9 @@ async fn render<R: tauri::Runtime>(
         model_revision: model.revision,
     };
     let mut next = s.project.clone();
-    next.format_version = next.format_version.max(8);
+    next.format_version = next
+        .format_version
+        .max(if model_id == MUSE { 8 } else { 13 });
     next.generations
         .push(serde_json::to_value(edit).map_err(io_error)?);
     let revision = s.project.revision;
@@ -730,4 +910,50 @@ async fn render<R: tauri::Runtime>(
     drop(session);
     app.emit("project-changed", saved).map_err(io_error)?;
     Ok(())
+}
+
+#[cfg(test)]
+mod profile_tests {
+    use super::*;
+    fn options() -> Options {
+        serde_json::from_value(serde_json::json!({"lineId":"line","generationId":"take","device":"cuda:1","face":{"x":0.1,"y":0.1,"width":0.7,"height":0.8},"endX":0.1,"endY":0.1,"mask":{"x":0.2,"y":0.55,"width":0.6,"height":0.4},"feather":0.12,"blend":1,"style":"live","seed":0})).unwrap()
+    }
+    #[test]
+    fn legacy_defaults_and_latent_profile_limits_are_validated() {
+        let mut o = options();
+        assert_eq!(o.model(), MUSE);
+        assert_eq!((o.resolution(), o.max_duration()), (256, 10000));
+        o.validate().unwrap();
+        for (id, resolution) in [("latentsync-15", 256), ("latentsync-16", 512)] {
+            o.model_id = Some(id.into());
+            assert_eq!((o.resolution(), o.max_duration()), (resolution, 120000));
+            o.validate().unwrap();
+        }
+        o.inference_steps = Some(9);
+        assert_eq!(o.validate().unwrap_err(), "INPAINT_SETTINGS_INVALID");
+        o.inference_steps = Some(50);
+        o.guidance_scale = Some(f64::NAN);
+        assert!(o.validate().is_err());
+        o.guidance_scale = Some(3.0);
+        o.validate().unwrap();
+        o.model_id = Some("../model".into());
+        assert_eq!(o.validate().unwrap_err(), "INPAINT_MODEL_INVALID");
+    }
+    #[test]
+    fn latent_manifest_has_distinct_pinned_weights_and_shared_components() {
+        let models: LatentModels =
+            serde_json::from_str(include_str!("../../workers/latentsync-model.json")).unwrap();
+        assert_eq!(models.common.len(), 5);
+        assert_eq!(models.variants.len(), 2);
+        let a = &models.variants["latentsync-15"].files[0];
+        let b = &models.variants["latentsync-16"].files[0];
+        assert_ne!(a.sha256, b.sha256);
+        assert_ne!(a.name, b.name);
+        for f in models.common.iter().chain([a, b]) {
+            crate::domain::valid_relative(&f.name).unwrap();
+            assert_eq!(f.sha256.len(), 64);
+            assert!(f.url.starts_with("https://huggingface.co/"));
+            assert!(f.size > 0);
+        }
+    }
 }

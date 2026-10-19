@@ -73,6 +73,13 @@ jobs:
         run: |
           python scripts/test-cosyvoice-tail.py | Tee-Object artifacts/cosyvoice-tail-validation.txt
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
+      - name: LatentSync actual neural core and official checkpoint architecture
+        # Small actual CPU models and pinned checkpoint headers; no GPU benchmark.
+        run: |
+          python -m pip install diffusers==0.32.2 einops==0.8.2
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          python scripts/test-latentsync-core.py | Tee-Object artifacts/latentsync-core-validation.txt
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
       - name: Build unsigned Windows installer
         env:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}

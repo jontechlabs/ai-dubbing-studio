@@ -15,15 +15,21 @@ export async function audioPatchUrl(id: string) {
   return convertFileSrc(await invoke<string>('audio_patch_path', { id }));
 }
 export interface InpaintStatus {
+  modelId?: import('../domain/inpaint').InpaintModelId;
+  space?: { path: string; availableBytes: number; requiredBytes: number; enough: boolean };
   installed: boolean;
   sizeBytes: number;
   devices: { id: string; name: string; memoryMb: number }[];
 }
-export function inpaintStatus() {
-  return invoke<InpaintStatus>('inpaint_status');
+export function inpaintStatus(
+  modelId: import('../domain/inpaint').InpaintModelId = 'musetalk-15-fp16',
+) {
+  return invoke<InpaintStatus>('inpaint_status', { modelId });
 }
-export function installInpaint() {
-  return invoke<string>('install_inpaint');
+export function installInpaint(
+  modelId: import('../domain/inpaint').InpaintModelId = 'musetalk-15-fp16',
+) {
+  return invoke<string>('install_inpaint', { modelId });
 }
 export function inpaintLips(options: import('../domain/inpaint').InpaintOptions) {
   return invoke<string>('inpaint_lips', { options });

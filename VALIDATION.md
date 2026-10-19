@@ -1,5 +1,15 @@
 # Validation
 
+## v0.17.0 — 19 October 2026
+
+Windows workflow evidence will be recorded before publication.
+
+- Local actual CPU neural diagnostics pass: both official checkpoint headers (1,246 keys/shapes each), Whisper pre-LayerNorm conditioning, actual temporal UNet/SDPA sequential-versus-batched guidance, strict checkpoint loading under Unicode paths and missing-layer rejection, deterministic overlapping DDIM windows and single-frame VAE encode/decode/CPU conversion. No full pretrained model render or RTX peak VRAM/quality/speed measurement was performed.
+- Worker regressions cover explicit GPU indices, VRAM reserve, CUDA-only OOM retry, 120-second frame windows, exact long audio coverage, settings and pinned components. Native FFmpeg checks retain the source SHA-256, check 512 px crops and interval-only output pixels, and refuse stale variants.
+- Browser regressions cover separate model installations, visible disk preflight, settings, longer dialogue configuration, cancellation, disabled variants/persistence, retained standby decoders, pause/seek/rate and original continuation when a retouch is missing. Screenshots use real React UI with synthetic media and mocked native commands.
+- LatentSync 1.6 official minimum is 18 GB; the adapted 8/4-frame profile is a 16 GB candidate, not a guarantee. Anime is experimental. Retouched clips are 25 fps; no full-resolution 4K playback benchmark was run. Model weights download separately, and only LatentSync variants upgrade the project to format 13.
+
+
 
 ## v0.16.0 — 19 October 2026
 

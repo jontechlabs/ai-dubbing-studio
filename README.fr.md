@@ -1,5 +1,11 @@
 # AI Dubbing Studio — phases 1–7
 
+**v0.17.0 — LatentSync 1.5 et 1.6, adaptation du wrapper ShmuelRonen.** Choisissez un moteur, vérifiez l’espace disque puis retouchez uniquement la séquence de chaque dialogue. La vidéo principale reste intacte ; les variantes activées sont préchargées pour la lecture et composées à l’export. Profil mémoire réduit pour 16 Go, avec fenêtres temporelles, guidance séquentielle et VAE séparé. 1.6 reste un profil candidat, sans garantie d’absence d’OOM sur la RTX 5060 Ti. [Guide détaillé](docs/LATENTSYNC.md).
+
+![LatentSync engine selection](docs/screenshots/latentsync-profiles-fr.png)
+
+*Interface React réelle avec média synthétique et commandes natives simulées ; diagnostics neuronaux CPU séparés.*
+
 **v0.16.0 — Menus au clic droit.** Supprimez une zone de volume ou de silence directement sur la timeline, sur toutes les pistes audio, avec annulation et sauvegarde. Effacez une sélection sans traitement, activez/désactivez une piste et accédez aux options audio. Le menu général ajoute Annuler, Rétablir, Sauvegarder et Paramètres. [Guide illustré](docs/CONTEXT-MENUS.md).
 
 **v0.15.1 — Durées et déplacements des doublages sécurisés.** Maximum disponible affiché, arrêt à la prochaine voix et à la fin de la vidéo, limite de traitement de 120 secondes. Les déplacements conservent la durée audible ; les champs de calage se valident avec Entrée ou en les quittant. Les anciens calages trop longs ou sans créneau disposent d’une action de récupération qui conserve les retouches. [Guide illustré](docs/VOICE-DURATION-SAFETY.md).
@@ -55,7 +61,7 @@
 
 *Interface React réelle avec audio de démonstration synthétique et inventaire natif simulé.*
 
-[Version anglaise et captures de l’interface](README.md) · [Téléchargements Windows](https://github.com/jontechlabs/ai-dubbing-studio/releases/tag/v0.16.0)
+[Version anglaise et captures de l’interface](README.md) · [Téléchargements Windows](https://github.com/jontechlabs/ai-dubbing-studio/releases/tag/v0.17.0)
 
 Studio desktop local de travail texte, voix et vidéo. Tauri 2, React, TypeScript strict et Rust.
 

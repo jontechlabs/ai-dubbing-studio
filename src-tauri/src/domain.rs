@@ -269,7 +269,7 @@ impl Project {
         references.iter().find(|r| r.id == id)
     }
     pub fn validate(&self) -> Result<(), String> {
-        if ![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].contains(&self.format_version) {
+        if ![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13].contains(&self.format_version) {
             return Err("UNSUPPORTED_PROJECT_VERSION".into());
         }
         if !self.translation_approvals.is_empty()

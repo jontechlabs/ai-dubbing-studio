@@ -31,7 +31,7 @@ test('dragging and fine nudging a voice saves its placement without retiming sub
   expect(moved.sourceCues).toEqual(before.sourceCues); expect(moved.targetCues).toEqual(before.targetCues); expect(moved.dialogues).toEqual(before.dialogues); expect(moved.generations).toEqual(before.generations);
   await block.focus(); await page.keyboard.press('ArrowLeft'); await page.keyboard.press('Shift+ArrowLeft');
   await expect(page.locator('.save-indicator')).toHaveText('Sauvegardé');
-  expect(await page.evaluate((id)=>JSON.parse(localStorage.getItem('nativeMockProject')!).dubbingTiming.offsetsMs[id].fr,before.dialogues[0].id)).toBe(offset-11);
+  await expect.poll(()=>page.evaluate((id)=>JSON.parse(localStorage.getItem('nativeMockProject')!).dubbingTiming.offsetsMs[id].fr,before.dialogues[0].id)).toBe(offset-11);
   await page.reload(); await page.locator('.dialogue-card').first().getByRole('button',{name:'Régénérer',exact:true}).click();
   const panel=page.getByRole('dialog',{name:'Doublage'});
   await expect(panel.getByRole('spinbutton',{name:'Décalage du doublage (ms)'})).toHaveValue(String(offset-11));

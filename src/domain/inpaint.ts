@@ -1,7 +1,19 @@
 import type { Project } from './types';
 import type { MouthRegion } from './lips';
 import { dubbingClips } from './mix';
+export const INPAINT_MODELS = ['musetalk-15-fp16', 'latentsync-15', 'latentsync-16'] as const;
+export type InpaintModelId = (typeof INPAINT_MODELS)[number];
+export const inpaintModelLabel = (id?: string) =>
+  id === 'latentsync-15'
+    ? 'LatentSync 1.5 · 256 px · ShmuelRonen'
+    : id === 'latentsync-16'
+      ? 'LatentSync 1.6 · 512 px · ShmuelRonen'
+      : 'MuseTalk 1.5 · FP16';
+export const inpaintLimit = (id?: string) => (id?.startsWith('latentsync-') ? 120000 : 10000);
 export interface InpaintOptions {
+  modelId?: InpaintModelId;
+  inferenceSteps?: number;
+  guidanceScale?: number;
   lineId: string;
   generationId: string;
   device: string;
@@ -35,7 +47,7 @@ export interface LipVideo {
 }
 export const lipVideos = (project: Project) =>
   project.generations.filter((g) => g.kind === 'lipVideo') as unknown as LipVideo[];
-export function currentLipVideo(project: Project, edit: LipVideo) {
+export function currentLipVideo(project: Project, edit: LipVideo, clips = dubbingClips(project)) {
   let sameAudio = false;
   try {
     sameAudio =
@@ -44,7 +56,7 @@ export function currentLipVideo(project: Project, edit: LipVideo) {
   } catch {
     /* Malformed metadata cannot activate a retouched variant. */
   }
-  const clip = dubbingClips(project).find(
+  const clip = clips.find(
     (c) => c.line.id === edit.dialogueId && c.generation.id === edit.generationId,
   );
   return (
@@ -107,13 +119,21 @@ export function validateLipVideos(project: Project) {
       e.startMs > 86400000 ||
       !Number.isSafeInteger(e.durationMs) ||
       e.durationMs < 200 ||
-      e.durationMs > 10000 ||
+      e.durationMs > inpaintLimit(o?.modelId) ||
       !Number.isSafeInteger(e.slotMs) ||
       e.slotMs < 1 ||
       e.slotMs > 120000 ||
       typeof e.exactDuration !== 'boolean' ||
       typeof e.enabled !== 'boolean' ||
       !o ||
+      (o.modelId !== undefined && !INPAINT_MODELS.includes(o.modelId)) ||
+      (o.modelId?.startsWith('latentsync-') && project.formatVersion < 13) ||
+      (o.inferenceSteps !== undefined &&
+        (!Number.isSafeInteger(o.inferenceSteps) ||
+          o.inferenceSteps < 10 ||
+          o.inferenceSteps > 50)) ||
+      (o.guidanceScale !== undefined &&
+        (!Number.isFinite(o.guidanceScale) || o.guidanceScale < 1 || o.guidanceScale > 3)) ||
       !region(o.face) ||
       !region(o.mask) ||
       !region({ ...o.face, x: o.endX, y: o.endY }) ||

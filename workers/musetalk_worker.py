@@ -91,13 +91,13 @@ def positional(torch, input):
     return input + result.to(input.dtype)[None]
 
 
-def mouth_alpha(mask, feather, blend):
+def mouth_alpha(mask, feather, blend, resolution=256):
     import numpy as np
     values = [mask[k] for k in ['x', 'y', 'width', 'height']]
     if any(not math.isfinite(v) for v in values) or min(values[:2]) < 0 or min(values[2:]) < .01 or mask['x']+mask['width'] > 1.000001 or mask['y']+mask['height'] > 1.000001 or not .01 <= feather <= .45 or not .1 <= blend <= 1:
         raise ValueError('INPAINT_MASK_INVALID')
-    y, x = np.mgrid[:256, :256].astype('float32') + .5
-    x = (x/256-mask['x'])/mask['width']; y = (y/256-mask['y'])/mask['height']
+    y, x = np.mgrid[:resolution, :resolution].astype('float32') + .5
+    x = (x/resolution-mask['x'])/mask['width']; y = (y/resolution-mask['y'])/mask['height']
     distance = np.minimum(np.minimum(x, 1-x), np.minimum(y, 1-y))
     ramp = np.clip(distance/feather, 0, 1)
     return ((.5-.5*np.cos(ramp*np.pi))*blend*255).round().astype('uint8')

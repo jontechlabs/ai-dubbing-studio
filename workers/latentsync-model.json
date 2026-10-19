@@ -1,0 +1,58 @@
+{
+  "common": [
+    {
+      "name": "common/vae/config.json",
+      "url": "https://huggingface.co/stabilityai/sd-vae-ft-mse/resolve/31f26fdeee1355a5c34592e401dd41e45d25a493/config.json",
+      "size": 547,
+      "sha256": "92d3dfb746fca211a2c9e019e285f8597412211728dce3c5bcf4eda0f2d62e7e"
+    },
+    {
+      "name": "common/vae/diffusion_pytorch_model.safetensors",
+      "url": "https://huggingface.co/stabilityai/sd-vae-ft-mse/resolve/31f26fdeee1355a5c34592e401dd41e45d25a493/diffusion_pytorch_model.safetensors",
+      "size": 334643276,
+      "sha256": "a1d993488569e928462932c8c38a0760b874d166399b14414135bd9c42df5815"
+    },
+    {
+      "name": "common/whisper/config.json",
+      "url": "https://huggingface.co/openai/whisper-tiny/resolve/169d4a4341b33bc18d8881c4b69c2e104e1cc0af/config.json",
+      "size": 1983,
+      "sha256": "ffdccec4f3211f4c63310f2b7098f309fe70f3952cedc5e4d11e43f5b2379b98"
+    },
+    {
+      "name": "common/whisper/preprocessor_config.json",
+      "url": "https://huggingface.co/openai/whisper-tiny/resolve/169d4a4341b33bc18d8881c4b69c2e104e1cc0af/preprocessor_config.json",
+      "size": 184990,
+      "sha256": "9b5cd03a36fbb8a627c64d98a5b5b126ead95a77720723944487311f0110b666"
+    },
+    {
+      "name": "common/whisper/model.safetensors",
+      "url": "https://huggingface.co/openai/whisper-tiny/resolve/169d4a4341b33bc18d8881c4b69c2e104e1cc0af/model.safetensors",
+      "size": 151061672,
+      "sha256": "7ebd0e69e78190ffe1438491fa05cc1f5c1aa3a4c4db3bc1723adbb551ea2395"
+    }
+  ],
+  "variants": {
+    "latentsync-15": {
+      "revision": "LatentSync-1.5-32a20d29aead0498e3e885e90dbbe8027da1b61b-wrapper-360d5283-profile1",
+      "files": [
+        {
+          "name": "latentsync-15/unet.pt",
+          "url": "https://huggingface.co/ByteDance/LatentSync-1.5/resolve/32a20d29aead0498e3e885e90dbbe8027da1b61b/latentsync_unet.pt",
+          "size": 5072348184,
+          "sha256": "6440b49a7ccceff56cdc001f5f17605216337f5bbd66fa360139768926e23f51"
+        }
+      ]
+    },
+    "latentsync-16": {
+      "revision": "LatentSync-1.6-c42c7e6c8e9c213626389fa7d9a3c444b8536353-wrapper-360d5283-profile1",
+      "files": [
+        {
+          "name": "latentsync-16/unet.pt",
+          "url": "https://huggingface.co/ByteDance/LatentSync-1.6/resolve/c42c7e6c8e9c213626389fa7d9a3c444b8536353/latentsync_unet.pt",
+          "size": 5072222488,
+          "sha256": "0a478e89eb660f82da4c35dbdde8a5adfb27f99d1b4e50edd03729e1e98316d3"
+        }
+      ]
+    }
+  }
+}

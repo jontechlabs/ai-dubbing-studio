@@ -118,3 +118,12 @@ Native and frontend mix planners cap slots at 120 s. IPC and the shared fitting 
 ### Context menus (v0.16.0)
 
 The application owns one accessible portal menu. Timeline events stop propagation and resolve the saved envelope region under the pointer (or its selection handle); deleting calls the same pure `removeAudioRegion` operation as the advanced Audio editor. This removes a single region by stable track/region IDs and retains the track bypass state. It does not touch source audio, transfers or generated-take edits. The existing project edit/save/history path persists the operation. Unapplied selections are UI state only. Menus close when their project snapshot or editing scope changes, on outside interaction, scroll or resize. Primary-button guards prevent a context click from seeking or starting a subtitle/voice drag. Editable text retains its platform context menu.
+
+
+### LatentSync dialogue sequences (v0.17.0)
+
+`inpaint::Options` defaults to the legacy MuseTalk engine. Two pinned LatentSync weight sets share one isolated CUDA 12.8/PyTorch 2.8/diffusers 0.32.2 runtime; persisted install jobs retain the selected engine for retries. Disk preflight happens in UI and under the native job gate before fetching dependencies. SHA-256 checked weights, strict state loading and explicit CUDA selection fail closed. The adapter uses the vendored ShmuelRonen temporal UNet, pre-final-LayerNorm Whisper features, sequential CFG, overlapping bounded DDIM windows and a separately resident single-frame FP32 VAE. Windows CUDA OOM reduces the temporal context on the same device; process cancellation frees all allocations.
+
+The native job extracts only the current fitted take interval, never supplies the movie path to the neural worker, composes the patch into a project-owned muted MP4 and appends a disabled format-13 variant. Existing signature/timing/edit staleness and overlap checks still govern activation/export. The source media path is only an input; exports target a separate file.
+
+`LipVideoOverlay` keeps the original video as the uninterrupted transport clock, and preloads the nearest next sequence within five seconds. Keyed decoder children survive standby-to-active transitions; at most two muted overlays exist. Binary schedule lookup avoids scanning all edits on every frame. Unready/failed overlays remain hidden while the original continues. Only overlay clocks are adjusted. No rendered whole-film preview is required. See [LATENTSYNC.md](LATENTSYNC.md) for limits and upstream provenance.

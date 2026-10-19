@@ -278,7 +278,7 @@
     "INPAINT_NOT_INSTALLED": "Install MuseTalk from Models or Lip inpainting.",
     "INPAINT_MASK_INVALID": "The crop and mask must stay inside the image; also check blending settings.",
     "INPAINT_RUNTIME_FAILED": "The MuseTalk runtime is unavailable. Repair its installation.",
-    "INPAINT_WINDOW_INVALID": "Choose a take between 0.2 and 10 seconds.",
+    "INPAINT_WINDOW_INVALID": "Choose a take of 0.2–10 seconds for MuseTalk, or 0.2–120 seconds for LatentSync.",
     "INPAINT_FRAME_INVALID": "Generated frames are incomplete or incompatible. Check the logs.",
     "INPAINT_FACE_TOO_SMALL": "The face must be at least 32 pixels wide and high.",
     "INPAINT_AUDIO_INVALID": "The retouch conditioning audio is invalid.",
@@ -310,7 +310,10 @@
     "TRANSLATION_STALE": "The text, language or cue associations changed. Request a new proposal to preserve your edits.",
     "TRANSLATION_TIMEOUT": "Model loading exceeded three minutes. Check the device and retry.",
     "VOICE_DURATION_OUT_OF_RANGE": "This duration exceeds the available limits. Respect the displayed maximum and keep at least 1 ms per piece.",
-    "VOICE_EDIT_NO_ROOM": "The edit would cross the next dubbing clip or the end of the video. Shorten it or move the next clip first."
+    "VOICE_EDIT_NO_ROOM": "The edit would cross the next dubbing clip or the end of the video. Shorten it or move the next clip first.",
+    "INPAINT_MODEL_INVALID": "The lip synchronization model is unknown or incomplete. Repair its installation.",
+    "INPAINT_SETTINGS_INVALID": "Choose 10–50 steps and guidance between 1 and 3.",
+    "INPAINT_DISK_REQUIRED": "Not enough disk space for this installation or sequence. Free space and refresh."
   },
   "preparingVideo": "Preparing video…",
   "loadingVideo": "Loading video…",
@@ -893,5 +896,19 @@
   "contextRedo": "Redo change",
   "contextAudioTrack": "Track: {{name}}",
   "contextDeleteRegion": "Delete region",
-  "contextRegionHint": "Right-click to remove this region and restore the track volume."
+  "contextRegionHint": "Right-click to remove this region and restore the track volume.",
+  "inpaintEngine": "Lip synchronization engine",
+  "latent15Hint": "LatentSync 1.5 at 256 px, adapted from the ShmuelRonen wrapper. Memory-saving profile for NVIDIA GPUs with 8 GB or more; isolated CUDA 12.8 runtime.",
+  "latent16Hint": "LatentSync 1.6 at 512 px, adapted from the ShmuelRonen wrapper. Candidate 16 GB profile: 8-frame windows, sequential guidance and staged VAE. Official inference lists 18 GB without these adaptations; OOM safety and speed are not measured on your GPU.",
+  "latentMemoryProfile": "16 GB profile: CPU audio analysis, UNet on the selected GPU, VAE on that GPU only during single-frame encoding/decoding. Overlapping windows; smaller windows retried on the same GPU after OOM. The process exits after completion or cancellation.",
+  "latentSteps": "Diffusion steps",
+  "latentGuidance": "Synchronization guidance",
+  "latentAnimeHint": "LatentSync primarily targets frontal human faces. Anime is experimental: frame the whole face and compare before activating a variant. MuseTalk remains available.",
+  "latentLimits": "0.2 to 120 seconds per dialogue, at 25 fps. Source files remain unchanged. Long takes can be slow; generation has a two-hour limit.",
+  "inpaintSequence": "Independent sequence: {{start}} → {{end}} ({{seconds}} s), aligned to the dubbed voice. The main video remains unchanged; only the enabled variant overlays this interval.",
+  "inpaintDiskSpace": "Available: {{available}} GiB · estimated additional requirement: {{required}} GiB (weights, dependencies, extraction and margin).",
+  "inpaintRefresh": "Refresh installation and free space",
+  "latentInstall": "Install LatentSync",
+  "latentRepair": "Verify or repair LatentSync",
+  "latentRuntimeSize": "Shared CUDA runtime for 1.5 and 1.6; separate model weights. Installation budget below."
 }

@@ -5,7 +5,7 @@ import { validVoiceSettings } from './tts';
 import { validateAudioPatches } from './audioPatch';
 import { validateLipVideos } from './inpaint';
 import { validateVoiceEdit } from './voiceEdit';
-export const APP_VERSION = '0.16.0';
+export const APP_VERSION = '0.17.0';
 
 export function blankProject(name = 'Untitled', source = 'ja', target = 'fr'): Project {
   const now = new Date().toISOString();
@@ -95,7 +95,7 @@ export function validateProject(value: unknown): Project {
   const preferences = project.modelPreferences;
   if (preferences && !validVoiceVariant(preferences.ttsProviderId, preferences.voiceVariantId))
     throw new Error('INVALID_PROJECT');
-  if (![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].includes(project.formatVersion))
+  if (![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13].includes(project.formatVersion))
     throw new Error('UNSUPPORTED_PROJECT_VERSION');
   if (project.voiceEdits !== undefined) {
     if (

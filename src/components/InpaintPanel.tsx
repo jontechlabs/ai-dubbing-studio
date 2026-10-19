@@ -3,12 +3,29 @@ import { useTranslation } from 'react-i18next';
 import { Download, LoaderCircle, Play, Pause, ScanFace } from 'lucide-react';
 import type { Dialogue, Job, Project } from '../domain/types';
 import type { MouthRegion } from '../domain/lips';
-import { currentLipVideo, lipVideos, selectLipVideo } from '../domain/inpaint';
+import {
+  currentLipVideo,
+  lipVideos,
+  selectLipVideo,
+  INPAINT_MODELS,
+  inpaintModelLabel,
+  inpaintLimit,
+  type InpaintModelId,
+} from '../domain/inpaint';
 import { dubbingClips } from '../domain/mix';
 import { formatTime } from '../domain/time';
 import * as bridge from '../services/bridge';
 
 function useRuntime(jobs: Job[], onError: (e: string) => void) {
+  const [modelId, setModel] = useState<InpaintModelId>(() => {
+    const value = localStorage.getItem('studio.inpaintModel') as InpaintModelId;
+    return INPAINT_MODELS.includes(value) ? value : 'musetalk-15-fp16';
+  });
+  const [refreshCount, refresh] = useState(0);
+  const chooseModel = (value: InpaintModelId) => {
+    localStorage.setItem('studio.inpaintModel', value);
+    setModel(value);
+  };
   const [status, setStatus] = useState<bridge.InpaintStatus | null>(null),
     [working, setWorking] = useState(false);
   const completion = jobs
@@ -21,9 +38,10 @@ function useRuntime(jobs: Job[], onError: (e: string) => void) {
     .join('|');
   useEffect(() => {
     let disposed = false;
+    setStatus(null);
     if (bridge.native)
       void bridge
-        .inpaintStatus()
+        .inpaintStatus(modelId)
         .then((value) => {
           if (!disposed) setStatus(value);
         })
@@ -33,43 +51,93 @@ function useRuntime(jobs: Job[], onError: (e: string) => void) {
     return () => {
       disposed = true;
     };
-  }, [completion, onError]);
+  }, [completion, onError, modelId, refreshCount]);
   const busy = jobs.some((j) => ['queued', 'running', 'paused'].includes(j.status));
   const install = async () => {
     setWorking(true);
     try {
-      await bridge.installInpaint();
+      await bridge.installInpaint(modelId);
     } catch (e) {
       onError(String(e));
     } finally {
       setWorking(false);
     }
   };
-  return { status, working, busy, install };
+  return {
+    status,
+    working,
+    busy,
+    install,
+    modelId,
+    chooseModel,
+    refresh: () => refresh((v) => v + 1),
+  };
 }
 function ModelCard({ runtime }: { runtime: ReturnType<typeof useRuntime> }) {
   const { t } = useTranslation(),
     { status, working, busy, install } = runtime;
   return (
     <div className="model-card">
+      <label className="field">
+        <span>{t('inpaintEngine')}</span>
+        <select
+          aria-label={t('inpaintEngine')}
+          value={runtime.modelId}
+          disabled={working || busy}
+          onChange={(e) => runtime.chooseModel(e.target.value as InpaintModelId)}
+        >
+          {INPAINT_MODELS.map((id) => (
+            <option key={id} value={id}>
+              {inpaintModelLabel(id)}
+            </option>
+          ))}
+        </select>
+      </label>
       <h3>
-        <ScanFace size={16} /> MuseTalk 1.5 · FP16
+        <ScanFace size={16} /> {inpaintModelLabel(runtime.modelId)}
       </h3>
       <span className="model-state">
         {t(status?.installed ? 'modelInstalled' : 'modelNotInstalled')}
       </span>
-      <p>{t('inpaintModelHint')}</p>
+      <p>
+        {t(
+          runtime.modelId === 'musetalk-15-fp16'
+            ? 'inpaintModelHint'
+            : runtime.modelId === 'latentsync-15'
+              ? 'latent15Hint'
+              : 'latent16Hint',
+        )}
+      </p>
       <small>
         {status ? `${(status.sizeBytes / 1024 ** 3).toFixed(2)} GiB` : t('loading')} ·{' '}
-        {t('inpaintRuntimeSize')}
+        {t(runtime.modelId === 'musetalk-15-fp16' ? 'inpaintRuntimeSize' : 'latentRuntimeSize')}
       </small>
+      {status?.space && (
+        <p className={status.space.enough ? 'panel-description' : 'warning'}>
+          {t('inpaintDiskSpace', {
+            available: (status.space.availableBytes / 1024 ** 3).toFixed(2),
+            required: (status.space.requiredBytes / 1024 ** 3).toFixed(2),
+          })}
+        </p>
+      )}
+      <button className="text-button" disabled={working || busy} onClick={runtime.refresh}>
+        {t('inpaintRefresh')}
+      </button>
       <button
         className="button accent wide"
-        disabled={!bridge.native || working || busy || !status}
+        disabled={!bridge.native || working || busy || !status || status.space?.enough === false}
         onClick={() => void install()}
       >
         {working ? <LoaderCircle size={14} className="spin" /> : <Download size={14} />}{' '}
-        {t(status?.installed ? 'inpaintRepair' : 'inpaintInstall')}
+        {t(
+          runtime.modelId === 'musetalk-15-fp16'
+            ? status?.installed
+              ? 'inpaintRepair'
+              : 'inpaintInstall'
+            : status?.installed
+              ? 'latentRepair'
+              : 'latentInstall',
+        )}
       </button>
     </div>
   );
@@ -95,6 +163,8 @@ export function InpaintPanel({
 }) {
   const { t } = useTranslation(),
     runtime = useRuntime(jobs, onError);
+  const [inferenceSteps, setInferenceSteps] = useState(20),
+    [guidanceScale, setGuidanceScale] = useState(1.5);
   const clip = useMemo(
     () => line && dubbingClips(project).find((c) => c.line.id === line.id),
     [project, line],
@@ -230,6 +300,46 @@ export function InpaintPanel({
   return (
     <div className="panel-body inpaint-panel">
       <ModelCard runtime={runtime} />
+      <p className="panel-description">
+        {t('inpaintSequence', {
+          start: formatTime(clip.startMs),
+          end: formatTime(clip.endMs),
+          seconds: ((clip.endMs - clip.startMs) / 1000).toFixed(2),
+        })}
+      </p>
+      {runtime.modelId !== 'musetalk-15-fp16' && (
+        <>
+          <p className="panel-description">{t('latentMemoryProfile')}</p>
+          <div className="lips-window">
+            <label className="field">
+              <span>{t('latentSteps')}</span>
+              <input
+                aria-label={t('latentSteps')}
+                type="number"
+                min="10"
+                max="50"
+                disabled={busy}
+                value={inferenceSteps}
+                onChange={(e) => setInferenceSteps(Number(e.target.value))}
+              />
+            </label>
+            <label className="field">
+              <span>{t('latentGuidance')}</span>
+              <input
+                aria-label={t('latentGuidance')}
+                type="number"
+                min="1"
+                max="3"
+                step=".1"
+                disabled={busy}
+                value={guidanceScale}
+                onChange={(e) => setGuidanceScale(Number(e.target.value))}
+              />
+            </label>
+          </div>
+          {style === 'anime' && <p className="warning">{t('latentAnimeHint')}</p>}
+        </>
+      )}
       <p className="panel-description">{t('inpaintHint')}</p>
       <label className="field">
         <span>{t('inpaintStyle')}</span>
@@ -588,7 +698,14 @@ export function InpaintPanel({
           face.width < 0.01 ||
           face.height < 0.01 ||
           limit < 200 ||
-          clip.endMs - clip.startMs > 10000
+          clip.endMs - clip.startMs > inpaintLimit(runtime.modelId) ||
+          (runtime.modelId !== 'musetalk-15-fp16' &&
+            (!Number.isSafeInteger(inferenceSteps) ||
+              inferenceSteps < 10 ||
+              inferenceSteps > 50 ||
+              !Number.isFinite(guidanceScale) ||
+              guidanceScale < 1 ||
+              guidanceScale > 3))
         }
         onClick={async () => {
           if (!face) return;
@@ -598,6 +715,9 @@ export function InpaintPanel({
             await snapshot();
             setJobId(
               await bridge.inpaintLips({
+                ...(runtime.modelId === 'musetalk-15-fp16'
+                  ? {}
+                  : { modelId: runtime.modelId, inferenceSteps, guidanceScale }),
                 lineId: line.id,
                 generationId: clip.generation.id,
                 device,
@@ -633,7 +753,9 @@ export function InpaintPanel({
           </button>
         </div>
       )}
-      <p className="panel-description">{t('inpaintLimits')}</p>
+      <p className="panel-description">
+        {t(runtime.modelId === 'musetalk-15-fp16' ? 'inpaintLimits' : 'latentLimits')}
+      </p>
       <h3>{t('inpaintVariants', { count: edits.length })}</h3>
       {edits.map((e, index) => (
         <div className="runtime-card" key={e.id}>
@@ -641,6 +763,7 @@ export function InpaintPanel({
             {t('inpaintVariant', { number: index + 1 })} · {(e.durationMs / 1000).toFixed(2)} s
           </strong>
           <p>
+            {inpaintModelLabel(e.options.modelId)} ·{' '}
             {t(e.options.style === 'anime' ? 'inpaintAnime' : 'inpaintLive')} ·{' '}
             {formatTime(e.startMs)}
           </p>

@@ -105,12 +105,26 @@ fn analyze_lips(
 async fn inpaint_status(
     app: tauri::AppHandle,
     core: State<'_, Shared>,
+    model_id: Option<String>,
 ) -> Result<serde_json::Value, String> {
-    inpaint::status(core.inner().clone(), app).await
+    inpaint::status(
+        core.inner().clone(),
+        app,
+        model_id.as_deref().unwrap_or(inpaint::MUSE),
+    )
+    .await
 }
 #[tauri::command]
-fn install_inpaint(app: tauri::AppHandle, core: State<'_, Shared>) -> Result<String, String> {
-    inpaint::install(core.inner().clone(), app)
+fn install_inpaint(
+    app: tauri::AppHandle,
+    core: State<'_, Shared>,
+    model_id: Option<String>,
+) -> Result<String, String> {
+    inpaint::install_model(
+        core.inner().clone(),
+        app,
+        model_id.as_deref().unwrap_or(inpaint::MUSE),
+    )
 }
 #[tauri::command]
 fn inpaint_lips(
@@ -1019,7 +1033,11 @@ fn retry_job(app: tauri::AppHandle, core: State<'_, Shared>, id: String) -> Resu
         return tts_batch::resume(core.inner().clone(), app, tts_batch::load(&core, &key)?);
     }
     if record.inpaint_install {
-        return inpaint::install(core.inner().clone(), app);
+        return inpaint::install_model(
+            core.inner().clone(),
+            app,
+            record.inpaint_model.as_deref().unwrap_or(inpaint::MUSE),
+        );
     }
     if let Some(request) = record.audio_transfer {
         let session = core.session.lock().map_err(io_error)?;

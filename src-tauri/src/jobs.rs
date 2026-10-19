@@ -53,6 +53,8 @@ pub struct PersistedJob {
     #[serde(default)]
     pub inpaint_install: bool,
     #[serde(default)]
+    pub inpaint_model: Option<String>,
+    #[serde(default)]
     pub lips: Option<crate::lips::Request>,
     pub record: Job,
     pub request: Option<ImportRequest>,
@@ -119,6 +121,7 @@ pub fn create<R: tauri::Runtime>(
                     audio_transfer: None,
                     inpaint: None,
                     inpaint_install: false,
+                    inpaint_model: None,
                     lips: None,
                     record: record.clone(),
                     request,

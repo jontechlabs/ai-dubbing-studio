@@ -278,7 +278,7 @@
     "INPAINT_NOT_INSTALLED": "Installez MuseTalk depuis Modèles ou Retouche des lèvres.",
     "INPAINT_MASK_INVALID": "Le cadre et le masque doivent rester dans l’image ; vérifiez aussi les réglages de fusion.",
     "INPAINT_RUNTIME_FAILED": "Le runtime MuseTalk n’est pas disponible. Réparez son installation.",
-    "INPAINT_WINDOW_INVALID": "Choisissez une prise de 0,2 à 10 secondes.",
+    "INPAINT_WINDOW_INVALID": "Choisissez une prise de 0,2 à 10 secondes pour MuseTalk, ou de 0,2 à 120 secondes pour LatentSync.",
     "INPAINT_FRAME_INVALID": "Les images générées sont incomplètes ou incompatibles. Consultez les logs.",
     "INPAINT_FACE_TOO_SMALL": "Le visage doit occuper au moins 32 pixels de largeur et de hauteur.",
     "INPAINT_AUDIO_INVALID": "L’audio de conditionnement de la retouche est invalide.",
@@ -310,7 +310,10 @@
     "TRANSLATION_STALE": "Le texte, la langue ou l’association de cette réplique a changé. Demandez une nouvelle proposition pour conserver vos corrections.",
     "TRANSLATION_TIMEOUT": "Le chargement du modèle a dépassé trois minutes. Vérifiez le périphérique et réessayez.",
     "VOICE_DURATION_OUT_OF_RANGE": "Cette durée est hors des limites disponibles. Respectez le maximum affiché et conservez au moins 1 ms par segment.",
-    "VOICE_EDIT_NO_ROOM": "La modification dépasserait la réplique suivante ou la fin de la vidéo. Réduisez la durée ou déplacez d’abord la réplique suivante."
+    "VOICE_EDIT_NO_ROOM": "La modification dépasserait la réplique suivante ou la fin de la vidéo. Réduisez la durée ou déplacez d’abord la réplique suivante.",
+    "INPAINT_MODEL_INVALID": "Le modèle de synchronisation des lèvres est inconnu ou incomplet. Réparez son installation.",
+    "INPAINT_SETTINGS_INVALID": "Choisissez 10 à 50 étapes et une intensité entre 1 et 3.",
+    "INPAINT_DISK_REQUIRED": "Espace disque insuffisant pour cette installation ou cette séquence. Libérez de la place puis actualisez."
   },
   "preparingVideo": "Préparation de la vidéo…",
   "loadingVideo": "Chargement de la vidéo…",
@@ -893,5 +896,19 @@
   "contextRedo": "Rétablir la modification",
   "contextAudioTrack": "Piste : {{name}}",
   "contextDeleteRegion": "Supprimer la zone",
-  "contextRegionHint": "Clic droit : supprimer cette zone pour retrouver le volume de la piste."
+  "contextRegionHint": "Clic droit : supprimer cette zone pour retrouver le volume de la piste.",
+  "inpaintEngine": "Moteur de synchronisation des lèvres",
+  "latent15Hint": "LatentSync 1.5 à 256 px, adapté du wrapper ShmuelRonen. Profil mémoire réduit pour GPU NVIDIA de 8 Go ou plus ; environnement CUDA 12.8 isolé.",
+  "latent16Hint": "LatentSync 1.6 à 512 px, adapté du wrapper ShmuelRonen. Profil candidat pour 16 Go : fenêtres de 8 images, guidance séquentielle, VAE séparé. Le moteur officiel annonce 18 Go sans ces adaptations ; absence d’OOM et vitesse non mesurées sur votre carte.",
+  "latentMemoryProfile": "Profil 16 Go : analyse audio sur CPU, UNet sur le GPU choisi, VAE chargé sur ce GPU uniquement pendant l’encodage/décodage image par image. Fenêtres avec recouvrement ; nouvelle tentative avec moins d’images en cas d’OOM, sur le même GPU. Libération du processus à la fin ou à l’annulation.",
+  "latentSteps": "Étapes de diffusion",
+  "latentGuidance": "Intensité de synchronisation",
+  "latentAnimeHint": "LatentSync vise surtout les visages humains de face. Les animes sont expérimentaux : cadrez le visage entier et comparez la variante avant de l’activer. MuseTalk reste disponible.",
+  "latentLimits": "Retouche de 0,2 à 120 secondes par réplique, à 25 images/s. Le fichier source reste intact. La génération de longues répliques peut être lente ; le traitement est limité à deux heures.",
+  "inpaintSequence": "Séquence indépendante : {{start}} → {{end}} ({{seconds}} s), alignée sur le doublage. La vidéo principale reste intacte ; seule la variante activée est superposée pendant cet intervalle.",
+  "inpaintDiskSpace": "Espace disponible : {{available}} Gio · encore nécessaire, estimation : {{required}} Gio (poids, dépendances, extraction et marge).",
+  "inpaintRefresh": "Actualiser l’installation et l’espace libre",
+  "latentInstall": "Installer LatentSync",
+  "latentRepair": "Vérifier ou réparer LatentSync",
+  "latentRuntimeSize": "Runtime CUDA partagé pour 1.5 et 1.6 ; modèles séparés. Budget détaillé ci-dessous."
 }

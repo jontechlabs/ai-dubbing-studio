@@ -1,5 +1,11 @@
 # AI Dubbing Studio
 
+**v0.17.0 — LatentSync 1.5 and 1.6, adapted from ShmuelRonen’s wrapper.** Select an engine, check disk capacity and retouch separate dialogue sequences. The main video stays intact; enabled variants preload for playback and compose on export. Reduced-memory profile uses temporal windows, sequential guidance and a separately loaded VAE. The 1.6 profile remains a 16 GB candidate, without an RTX 5060 Ti no-OOM guarantee. [Detailed guide](docs/LATENTSYNC.md).
+
+![LatentSync engine selection](docs/screenshots/latentsync-profiles-fr.png)
+
+*Interface React réelle avec média synthétique et commandes natives simulées ; diagnostics neuronaux CPU séparés.*
+
 **v0.16.0 — Right-click menus.** Remove a volume or mute region directly from any audio track, with undo/redo and persistence. Clear an unapplied selection, toggle a track or open audio options. The application menu provides Undo, Redo, Save and Settings. [Illustrated guide](docs/CONTEXT-MENUS.md).
 
 **v0.15.1 — Protected voice duration and movement.** Editing shows the actual available maximum, stops at neighbouring voices and the video end, and enforces the 120-second processing limit. Moves preserve audible duration; numeric timing applies on Enter/blur. Existing oversize or collapsed timings have a recovery action that retains edits. [Illustrated guide (French)](docs/VOICE-DURATION-SAFETY.md).
@@ -79,7 +85,7 @@ CosyVoice3, Fish S2 FP8/GGUF and Qwen3-TTS GGUF remain available. [Models and GP
 
 *Actual React browser UI with a simulated reference and transcription result. Separate native checks transcribe real Japanese speech. These are not RTX performance measurements.*
 
-[Windows downloads](https://github.com/jontechlabs/ai-dubbing-studio/releases/tag/v0.16.0) · [User guide](docs/GETTING-STARTED.md) · [Build instructions](docs/BUILDING.md) · [Français](README.fr.md)
+[Windows downloads](https://github.com/jontechlabs/ai-dubbing-studio/releases/tag/v0.17.0) · [User guide](docs/GETTING-STARTED.md) · [Build instructions](docs/BUILDING.md) · [Français](README.fr.md)
 
 ![Studio with bilingual dialogue, video preview, text editor and timeline](docs/screenshots/studio.png)
 
@@ -93,9 +99,9 @@ Audio regions with independent silence and volume, timeline range selection, fas
 
 | Package | Purpose |
 | --- | --- |
-| [Windows x64 setup](https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.16.0/AI-Dubbing-Studio-0.16.0-Setup.exe) | NSIS installer for the current user, with English/French installer interface |
-| [Portable ZIP](https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.16.0/AI-Dubbing-Studio-Windows-Portable.zip) | Extract the whole folder and launch `AI Dubbing Studio.exe` |
-| [SHA-256 checksums](https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.16.0/SHA256SUMS.txt) | Verify the setup and ZIP downloads |
+| [Windows x64 setup](https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.17.0/AI-Dubbing-Studio-0.17.0-Setup.exe) | NSIS installer for the current user, with English/French installer interface |
+| [Portable ZIP](https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.17.0/AI-Dubbing-Studio-Windows-Portable.zip) | Extract the whole folder and launch `AI Dubbing Studio.exe` |
+| [SHA-256 checksums](https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.17.0/SHA256SUMS.txt) | Verify the setup and ZIP downloads |
 
 Target: **Windows 10/11 x64**, with **Microsoft Edge WebView2 Runtime**. FFmpeg and FFprobe are included. Python, CUDA and AI model downloads are not required for editing and playback. Installation may need Internet access if WebView2 is missing; local project editing does not require a cloud account.
 

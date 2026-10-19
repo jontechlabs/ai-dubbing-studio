@@ -1589,7 +1589,11 @@ fn inpaint_options() -> crate::inpaint::Options {
 #[tokio::test]
 async fn translated_face_crop_and_alpha_overlay_use_valid_ffmpeg_expressions() {
     let (_temp, root, _p) = fixture().await;
-    let o = inpaint_options();
+    use sha2::Digest;
+    let source = root.join("media/source.mkv");
+    let before = sha2::Sha256::digest(std::fs::read(&source).unwrap());
+    let mut o = inpaint_options();
+    o.model_id = Some("latentsync-16".into());
     o.validate().unwrap();
     let face = root.join("cache/face.png");
     let crop = crate::inpaint::crop_expression(&o, 1000);
@@ -1607,6 +1611,13 @@ async fn translated_face_crop_and_alpha_overlay_use_valid_ffmpeg_expressions() {
         &face,
     )
     .await;
+    let face_info = media::probe_executable(&tool("ffprobe"), &face)
+        .await
+        .unwrap();
+    assert_eq!(
+        (face_info.streams[0].width, face_info.streams[0].height),
+        (Some(512), Some(512))
+    );
     let overlay = crate::inpaint::overlay_expression(&o, 1000, 160, 90);
     ffmpeg(
         &[
@@ -1633,6 +1644,10 @@ async fn translated_face_crop_and_alpha_overlay_use_valid_ffmpeg_expressions() {
         .await
         .unwrap();
     assert_eq!(info.duration_ms, 200);
+    assert_eq!(
+        before,
+        sha2::Sha256::digest(std::fs::read(&source).unwrap())
+    );
     let mut invalid = o;
     invalid.device = "cpu".into();
     assert_eq!(invalid.validate().unwrap_err(), "INPAINT_CUDA_REQUIRED");
@@ -1668,6 +1683,13 @@ async fn retouched_variants_reencode_only_when_selected_and_refuse_stale_timing(
     p.generations.push(serde_json::json!({"kind":"lipVideo","id":"edit","dialogueId":"line","generationId":"voice","sourcePath":"media/source.mkv","language":"fr","path":"generations/lips-edit.mp4","startMs":1000,"durationMs":1480,"slotMs":2000,"exactDuration":false,"fingerprint":fingerprint,"enabled":true,"options":inpaint_options(),"createdAt":"2026-10-16T00:00:00Z","modelRevision":"fixture"}));
     p.validate().unwrap();
     assert_eq!(crate::inpaint::active(&p).unwrap().len(), 1);
+    // Existing MuseTalk v8 projects remain valid; LatentSync variants use v13.
+    p.generations.last_mut().unwrap()["options"]["modelId"] = "latentsync-16".into();
+    assert!(p.validate().is_err());
+    p.format_version = 13;
+    p.validate().unwrap();
+    let source = root.join("media/source.mkv");
+    let original_hash = sha2::Sha256::digest(std::fs::read(&source).unwrap());
     let app = tauri::test::mock_app();
     let core = core(&root, p.clone());
     let output = root.join("exports/retouched.mkv");
@@ -1696,6 +1718,10 @@ async fn retouched_variants_reencode_only_when_selected_and_refuse_stale_timing(
     )
     .await
     .unwrap();
+    assert_eq!(
+        original_hash,
+        sha2::Sha256::digest(std::fs::read(&source).unwrap())
+    );
     for (time, red) in [("0.5", false), ("1.2", true), ("2.8", false)] {
         let sample = media::command(&tool("ffmpeg"))
             .args(["-v", "error", "-ss", time, "-i"])
