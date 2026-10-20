@@ -333,6 +333,9 @@ impl<R: tauri::Runtime> Controller<R> {
     }
     fn serve(&self, mut stream: TcpStream) {
         let result = (|| -> Result<Value, String> {
+            // Winsock can inherit nonblocking mode from the listener. Each
+            // dedicated connection thread must wait for the complete request.
+            stream.set_nonblocking(false).map_err(io_error)?;
             stream
                 .set_read_timeout(Some(Duration::from_secs(5)))
                 .map_err(io_error)?;

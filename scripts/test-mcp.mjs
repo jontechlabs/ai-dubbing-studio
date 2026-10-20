@@ -31,6 +31,7 @@ const job=async id=>{
     throw Error('Native MCP job timeout');
 };
 try {
+    proofs.relayLifecycle=await verifyRelayLifecycle(args.exe,args['test-root']);
     await client.connect(transport);
     const tools=(await client.listTools()).tools;
     const catalog=JSON.parse(await fs.readFile(new URL('../src/mcp/catalog.json',import.meta.url),'utf8'));
@@ -109,7 +110,6 @@ try {
     const media=JSON.parse(execFileSync(probe,['-v','error','-show_format','-show_streams','-of','json',output],{encoding:'utf8',windowsHide:true}));
     assert(Math.abs(Number(media.format.duration)-16)<.2);assert(media.streams.some(stream=>stream.codec_type==='audio'));assert.equal(media.streams.filter(stream=>stream.codec_type==='subtitle').length,2);
     assert.equal(createHash('sha256').update(await fs.readFile(args.movie)).digest('hex'),originalHash);proofs.mkvExport=true;proofs.sourcePreserved=true;
-    proofs.relayLifecycle=await verifyRelayLifecycle(args.exe,args['test-root']);
     await fs.writeFile(args.proof,JSON.stringify(proofs,null,2)+'\n','utf8');
     console.log('MCP_NATIVE_PROOF '+JSON.stringify(proofs));
 } catch(error){if(stderr)console.error(stderr.slice(-2000));throw error;}

@@ -119,6 +119,46 @@ fn local_listener_authenticates_and_never_exposes_its_token_in_configuration() {
     assert!(!directory.path().join("mcp-endpoint.json").exists());
 }
 #[test]
+fn accepted_nonblocking_socket_waits_for_the_complete_request() {
+    let directory = tempfile::tempdir().unwrap();
+    let app = tauri::test::mock_app();
+    let controller = Controller::new(app.handle().clone(), directory.path().to_path_buf());
+    controller.start().unwrap();
+    let endpoint: Endpoint =
+        serde_json::from_slice(&std::fs::read(directory.path().join("mcp-endpoint.json")).unwrap())
+            .unwrap();
+    let listener = TcpListener::bind(("127.0.0.1", 0)).unwrap();
+    let mut client = TcpStream::connect(listener.local_addr().unwrap()).unwrap();
+    client
+        .set_read_timeout(Some(Duration::from_secs(3)))
+        .unwrap();
+    let (accepted, _) = listener.accept().unwrap();
+    // Windows can inherit this mode from the accepting listener. Force it on
+    // every platform so this regression also exercises the failure on Linux.
+    accepted.set_nonblocking(true).unwrap();
+    let worker = controller.clone();
+    let (started, ready) = mpsc::channel();
+    let task = std::thread::spawn(move || {
+        started.send(()).unwrap();
+        worker.serve(accepted);
+    });
+    ready.recv_timeout(Duration::from_secs(2)).unwrap();
+    std::thread::sleep(Duration::from_millis(100));
+    let request = serde_json::to_vec(&json!({"op":"ping", "token":endpoint.token})).unwrap();
+    let middle = request.len() / 2;
+    client.write_all(&request[..middle]).unwrap();
+    std::thread::sleep(Duration::from_millis(100));
+    client.write_all(&request[middle..]).unwrap();
+    client.write_all(b"\n").unwrap();
+    let mut response = String::new();
+    BufReader::new(client).read_line(&mut response).unwrap();
+    let response: Value = serde_json::from_str(&response).unwrap();
+    assert_eq!(response["ok"], true, "{response}");
+    assert_eq!(response["value"]["running"], true);
+    task.join().unwrap();
+    controller.stop();
+}
+#[test]
 fn actual_local_request_is_claimed_once_and_returns_the_ui_result() {
     let directory = tempfile::tempdir().unwrap();
     let app = tauri::test::mock_app();
