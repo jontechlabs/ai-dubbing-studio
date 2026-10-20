@@ -2,6 +2,72 @@
   "protocolVersion": "2025-11-25",
   "commands": [
     {
+      "name": "studio_prosody_status",
+      "command": "prosody_status",
+      "description": "prosody status. Uses the current desktop session. Local file paths must be absolute; long operations return job IDs. Existing native validation applies.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "annotations": { "readOnlyHint": true, "destructiveHint": false, "openWorldHint": false }
+    },
+    {
+      "name": "studio_transfer_voice_prosody",
+      "command": "transfer_voice_prosody",
+      "description": "Experimental CPU contour transfer from dialogue audio or a stored voice reference onto an existing voice take. Creates a new immutable take; originals stay intact. Poll studio_list_jobs.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "options": { "$ref": "#/$defs/options_ProsodyOptions_0" },
+          "context": {
+            "type": "object",
+            "properties": {
+              "projectId": { "type": "string" },
+              "expectedRevision": { "type": "integer", "minimum": 0 }
+            },
+            "required": ["projectId", "expectedRevision"],
+            "additionalProperties": false
+          }
+        },
+        "required": ["options", "context"],
+        "additionalProperties": false,
+        "$defs": {
+          "options_ProsodyOptions_0": {
+            "type": "object",
+            "properties": {
+              "generationId": { "type": "string" },
+              "referenceMode": {
+                "anyOf": [
+                  { "type": "string", "const": "dialogue" },
+                  { "type": "string", "const": "reference" }
+                ]
+              },
+              "referenceId": { "anyOf": [{ "type": "null" }, { "type": "string" }] },
+              "characterId": { "anyOf": [{ "type": "null" }, { "type": "string" }] },
+              "referenceTrackId": { "anyOf": [{ "type": "null" }, { "type": "string" }] },
+              "strength": { "type": "number" },
+              "pitch": { "type": "boolean" },
+              "rhythm": { "type": "boolean" },
+              "energy": { "type": "boolean" }
+            },
+            "required": [
+              "generationId",
+              "referenceMode",
+              "referenceId",
+              "strength",
+              "pitch",
+              "rhythm",
+              "energy"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "annotations": { "readOnlyHint": false, "destructiveHint": true, "openWorldHint": false }
+    },
+    {
       "name": "studio_translation_status",
       "command": "translation_status",
       "description": "translation status. Uses the current desktop session. Local file paths must be absolute; long operations return job IDs. Existing native validation applies.",
@@ -2977,6 +3043,7 @@
         "Generation_15": {
           "type": "object",
           "properties": {
+            "prosodyTransfer": { "anyOf": [{ "$ref": "#/$defs/ProsodyTransfer_16" }] },
             "kind": { "type": "string", "const": "tts" },
             "id": { "type": "string" },
             "dialogueId": { "type": "string" },
@@ -3031,6 +3098,87 @@
             "deviceName",
             "peakVramMb",
             "inputHash"
+          ],
+          "additionalProperties": false
+        },
+        "ProsodyTransfer_16": {
+          "type": "object",
+          "properties": {
+            "algorithm": { "type": "string", "const": "praat-psola-v1" },
+            "sourceGenerationId": { "type": "string" },
+            "sourceDurationMs": { "type": "number" },
+            "guideDurationMs": { "type": "number" },
+            "options": { "$ref": "#/$defs/ProsodyOptions_17" }
+          },
+          "required": [
+            "algorithm",
+            "sourceGenerationId",
+            "sourceDurationMs",
+            "guideDurationMs",
+            "options"
+          ],
+          "additionalProperties": false
+        },
+        "ProsodyOptions_17": {
+          "type": "object",
+          "properties": {
+            "generationId": { "type": "string" },
+            "referenceMode": {
+              "anyOf": [
+                { "type": "string", "const": "dialogue" },
+                { "type": "string", "const": "reference" }
+              ]
+            },
+            "referenceId": { "anyOf": [{ "type": "null" }, { "type": "string" }] },
+            "characterId": { "anyOf": [{ "type": "null" }, { "type": "string" }] },
+            "referenceTrackId": { "anyOf": [{ "type": "null" }, { "type": "string" }] },
+            "strength": { "type": "number" },
+            "pitch": { "type": "boolean" },
+            "rhythm": { "type": "boolean" },
+            "energy": { "type": "boolean" }
+          },
+          "required": [
+            "generationId",
+            "referenceMode",
+            "referenceId",
+            "strength",
+            "pitch",
+            "rhythm",
+            "energy"
+          ],
+          "additionalProperties": false
+        }
+      }
+    },
+    "ProsodyOptions": {
+      "$ref": "#/$defs/ProsodyOptions_0",
+      "$defs": {
+        "ProsodyOptions_0": {
+          "type": "object",
+          "properties": {
+            "generationId": { "type": "string" },
+            "referenceMode": {
+              "anyOf": [
+                { "type": "string", "const": "dialogue" },
+                { "type": "string", "const": "reference" }
+              ]
+            },
+            "referenceId": { "anyOf": [{ "type": "null" }, { "type": "string" }] },
+            "characterId": { "anyOf": [{ "type": "null" }, { "type": "string" }] },
+            "referenceTrackId": { "anyOf": [{ "type": "null" }, { "type": "string" }] },
+            "strength": { "type": "number" },
+            "pitch": { "type": "boolean" },
+            "rhythm": { "type": "boolean" },
+            "energy": { "type": "boolean" }
+          },
+          "required": [
+            "generationId",
+            "referenceMode",
+            "referenceId",
+            "strength",
+            "pitch",
+            "rhythm",
+            "energy"
           ],
           "additionalProperties": false
         }

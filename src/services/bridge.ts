@@ -134,6 +134,18 @@ export function installTtsRuntime(cuda: boolean) {
 export function generateLine(lineId: string, options: import('../domain/types').VoiceSettings) {
   return invoke<string>('generate_line', { lineId, options });
 }
+export function prosodyStatus() {
+  return invoke<{
+    available: boolean;
+    version: string;
+    maxDurationMs: number;
+    experimental: boolean;
+    device: string;
+  }>('prosody_status');
+}
+export function transferVoiceProsody(options: import('../domain/prosody').ProsodyOptions) {
+  return invoke<string>('transfer_voice_prosody', { options });
+}
 export async function generationUrl(id: string, edit?: import('../domain/voiceEdit').VoiceEdit) {
   if (!native) throw Error('DESKTOP_REQUIRED');
   return convertFileSrc(await invoke<string>('generation_path', { id, edit: edit ?? null }));

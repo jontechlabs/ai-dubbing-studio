@@ -151,7 +151,9 @@ export async function nativeMock(page: Page, large = false) {
       if(command==='lip_analysis_result')return lips?.result??null;
       if(command==='voice_status')return {variants:Object.entries({'fish-s2-gguf-q8':6317911232,'qwen3-06b-gguf-q8':1991211136,'qwen3-17b-gguf-q8':2695175104,'fish-s2-fp8':8047624252,'drama3-comfy-fp8':40144065412}).map(([id,sizeBytes])=>({id,installed:id==='drama3-comfy-fp8'?host.__dramaReady!==false:true,sizeBytes})),devices:[{id:'vulkan:0',name:'Ryzen iGPU (simulation)'},{id:'vulkan:1',name:'RTX 5060 Ti (simulation)',discrete:true},{id:'cpu',name:'CPU'}],cudaDevices:[{id:'cuda:0',name:'RTX 5060 Ti (simulation)'}]};
         if(command==='install_voice_runtime')return 'install-voice';
-        if(command==='tts_status')return {installed:host.__ttsReady,installing:false,sizeBytes:5427042285,inventory:{devices:[{id:'cpu',name:'CPU'},{id:'cuda:0',name:'NVIDIA RTX 5060 Ti (simulation)'}],cudaVersion:'12.8'}};
+        if(command==='prosody_status')return {available:true,version:'6.4.67',maxDurationMs:30000,experimental:true,device:'cpu'};
+      if(command==='transfer_voice_prosody'){host.__pendingProsody=structuredClone(args.options);job={id:'prosody-job',projectId:project.id,kind:'prosodyTransfer',status:'running',stage:'prosodyAnalyze',progress:.2,logs:[],error:null};emit('job-changed',job);return job.id;}
+      if(command==='tts_status')return {installed:host.__ttsReady,installing:false,sizeBytes:5427042285,inventory:{devices:[{id:'cpu',name:'CPU'},{id:'cuda:0',name:'NVIDIA RTX 5060 Ti (simulation)'}],cudaVersion:'12.8'}};
       if(command==='install_tts_runtime'){job={id:'tts-install',projectId:'',kind:'ttsInstall',status:'running',stage:'dependencies',progress:null,logs:[],error:null};emit('job-changed',job);return job.id;}
       if(command==='generate_line'){host.__pendingTts=structuredClone(args);job={id:'tts-job',projectId:project.id,kind:'tts',status:'running',stage:'ttsGenerate',progress:null,logs:[],error:null};emit('job-changed',job);return job.id;}
       if(command==='generation_path')return `C:/Studio/generations/${args.id}.wav`;

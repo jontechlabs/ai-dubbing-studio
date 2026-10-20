@@ -17,6 +17,7 @@ mod media;
 mod mix;
 mod model_storage;
 mod project;
+mod prosody;
 mod separation;
 mod smoke;
 mod speakers;
@@ -52,6 +53,19 @@ async fn mcp_set_enabled(
     tauri::async_runtime::spawn_blocking(move || control.set_enabled(enabled))
         .await
         .map_err(domain::io_error)?
+}
+
+#[tauri::command]
+fn prosody_status(app: tauri::AppHandle) -> serde_json::Value {
+    prosody::status(&app)
+}
+#[tauri::command]
+fn transfer_voice_prosody(
+    app: tauri::AppHandle,
+    core: State<'_, Shared>,
+    options: prosody::Options,
+) -> Result<String, String> {
+    prosody::start(core.inner().clone(), app, options)
 }
 #[tauri::command]
 fn mcp_ready(control: tauri::State<'_, Arc<mcp::Controller>>, ready: bool) {
@@ -1123,6 +1137,18 @@ fn retry_job(app: tauri::AppHandle, core: State<'_, Shared>, id: String) -> Resu
             record.inpaint_model.as_deref().unwrap_or(inpaint::MUSE),
         );
     }
+    if let Some(request) = record.prosody {
+        let session = core.session.lock().map_err(io_error)?;
+        let s = session.as_ref().ok_or("NO_PROJECT")?;
+        if s.root != request.root
+            || s.project.id != request.project_id
+            || s.project.revision != request.revision
+        {
+            return Err("STALE_REVISION".into());
+        }
+        drop(session);
+        return prosody::enqueue(core.inner().clone(), app, request);
+    }
     if let Some(request) = record.audio_transfer {
         let session = core.session.lock().map_err(io_error)?;
         let s = session.as_ref().ok_or("NO_PROJECT")?;
@@ -1380,6 +1406,8 @@ pub fn run() {
             install_voice_runtime,
             install_tts_runtime,
             generate_line,
+            prosody_status,
+            transfer_voice_prosody,
             generation_path,
             dubbing_path,
             export_generation,

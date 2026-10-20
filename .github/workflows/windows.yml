@@ -25,8 +25,10 @@ jobs:
         run: |
           npm install --global pnpm@11.25.0
           pnpm install --frozen-lockfile
-      - name: Prepare pinned FFmpeg tools
-        run: ./scripts/prepare-ffmpeg.ps1
+      - name: Prepare pinned media and prosody tools
+        run: |
+          ./scripts/prepare-ffmpeg.ps1
+          ./scripts/prepare-prosody.ps1
       - name: Frontend checks
         run: |
           pnpm mcp:check

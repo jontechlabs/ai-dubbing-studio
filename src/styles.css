@@ -2768,3 +2768,21 @@ pre {
   color: var(--muted);
   white-space: nowrap;
 }
+.prosody-transfer {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 12px;
+  margin: 12px 0;
+}
+.prosody-transfer summary {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  cursor: pointer;
+  font-weight: 600;
+}
+.prosody-parts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}

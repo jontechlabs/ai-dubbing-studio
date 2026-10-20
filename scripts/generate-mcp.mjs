@@ -56,6 +56,7 @@ function makeSchema(name) {
   return { ...root, ...(Object.keys(definitions).length ? { $defs: definitions } : {}) };
 }
 const mapping = {
+  'prosody::Options': 'ProsodyOptions',
   'tts::Options': 'VoiceSettings', 'voice_edit::Edit': 'VoiceEdit',
   'lips::Options': 'LipOptions', 'inpaint::Options': 'InpaintOptions',
   'inpaint_batch::Selection': 'InpaintBatchSelection', 'tts_batch::Selection': 'DubbingBatchSelection',
@@ -73,6 +74,7 @@ function rustSchema(type) {
 }
 const readOnly = /^(environment|graphics_info|.*_status|.*_result|latest_.*|.*_path|.*_paths|list_jobs|model_storage_info|model_storage_size|voice_install_space|preview_.*|reference_audio_info|get_waveform)$/;
 const notes = {
+  transfer_voice_prosody: 'Experimental CPU contour transfer from dialogue audio or a stored voice reference onto an existing voice take. Creates a new immutable take; originals stay intact. Poll studio_list_jobs.',
   create_project: 'Create a project under an existing absolute parentPath. source and target are language codes.',
   import_media: 'Import a local movie into the current project. Returns a background job ID. Poll studio_list_jobs.',
   generate_line: 'Generate another immutable voice take. Returns a job ID; poll jobs. Does not overwrite previous takes.',
@@ -85,7 +87,7 @@ const notes = {
   detect_inpaint_faces: 'Propose face crops on CPU; profile is auto, live or anime. Poll jobs then read the face result.',
 };
 const context = object({ projectId: { type: 'string' }, expectedRevision: { type: 'integer', minimum: 0 } });
-const projectCommands = new Set('generate_line generate_dubbing_batch start_inpaint_batch inpaint_lips detect_inpaint_faces transfer_audio analyze_lips suggest_translation identify_speakers transcribe_voice_reference import_voice_reference import_dubbing_reference import_media prepare_proxy import_subtitles import_embedded_subtitles history separate_audio export_mkv export_generation export_audio_track export_subtitles'.split(' '));
+const projectCommands = new Set('transfer_voice_prosody generate_line generate_dubbing_batch start_inpaint_batch inpaint_lips detect_inpaint_faces transfer_audio analyze_lips suggest_translation identify_speakers transcribe_voice_reference import_voice_reference import_dubbing_reference import_media prepare_proxy import_subtitles import_embedded_subtitles history separate_audio export_mkv export_generation export_audio_track export_subtitles'.split(' '));
 const text = fs.readFileSync('src-tauri/src/lib.rs', 'utf8');
 const commands = [];
 for (const match of text.matchAll(/#\[tauri::command\]\s*(?:async\s+)?fn (\w+)\(([\s\S]*?)\)\s*(?:->[\s\S]*?)?\{/g)) {

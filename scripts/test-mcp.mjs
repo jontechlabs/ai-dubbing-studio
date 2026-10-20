@@ -71,6 +71,37 @@ try {
     while((await state()).playback.timeMs<=2150){if(Date.now()>playingDeadline)throw Error('Native MCP playback did not start');await new Promise(resolve=>setTimeout(resolve,200));}
     await call('studio_playback',{action:'pause'});
     assert((await state()).playback.timeMs>2150);proofs.playback=true;
+    // Actual CPU contour processing in the packaged app, with synthetic voiced
+    // inputs; no TTS quality or Japanese-to-French prosody benchmark claim.
+    const monoVoice=(rising=false)=>{
+        const n=48000,b=Buffer.alloc(44+n*2);b.write('RIFF');b.writeUInt32LE(b.length-8,4);b.write('WAVEfmt ',8);b.writeUInt32LE(16,16);b.writeUInt16LE(1,20);b.writeUInt16LE(1,22);b.writeUInt32LE(24000,24);b.writeUInt32LE(48000,28);b.writeUInt16LE(2,32);b.writeUInt16LE(16,34);b.write('data',36);b.writeUInt32LE(n*2,40);
+        let phase=0;for(let i=0;i<n;i++){phase+=2*Math.PI*(rising?160*2**((i/24000-1)*5/12):180)/24000;b.writeInt16LE(Math.round(7000*(.8*Math.sin(phase)+.2*Math.sin(2*phase))),44+2*i);}return b;
+    };
+    const baseId=randomUUID(),basePath=`generations/${baseId}.wav`,projectRoot=path.join(args['test-root'],`${name}.dubproject`);
+    const baseWave=monoVoice(),guideWave=monoVoice(true),guideFile=path.join(args['test-root'],'Guide 日本語.wav');
+    await fs.writeFile(path.join(projectRoot,basePath),baseWave);await fs.writeFile(guideFile,guideWave);
+    const beforeProsody=await call('studio_get_project'),line=beforeProsody.dialogues.find(l=>l.id===lineId);
+    const voiceOptions={variantId:'cosy3-official',device:'cpu',referenceMode:'current',referenceId:null,mode:'crossLingual',speed:1,seed:0};
+    const baseTake={id:baseId,kind:'tts',dialogueId:lineId,providerId:'cosyvoice3',modelId:'cosy3-official',path:basePath,createdAt:new Date().toISOString(),sourcePath:beforeProsody.media.path,startMs:line.startMs,endMs:line.endMs,text:'Une première traduction.',language:'fr',characterId:line.characterId,durationMs:2000,sampleRate:24000,options:voiceOptions,referenceTranscript:'',device:'cpu',deviceName:'CPU synthetic diagnostic',peakVramMb:0,inputHash:'synthetic-native-prosody-test'};
+    await call('studio_project_patch',{context:await context(),patches:[{op:'replace',path:'/formatVersion',value:14},{op:'add',path:'/generations/-',value:baseTake}]});
+    const withReference=await call('studio_import_dubbing_reference',{context:await context(),lineId:null,path:guideFile,range:null,options:voiceOptions});
+    const guideId=withReference.voiceReferences.at(-1).id;
+    assert((await call('studio_prosody_status')).available);
+    const transfer={generationId:baseId,referenceMode:'reference',referenceId:guideId,strength:.7,pitch:true,rhythm:true,energy:true};
+    await job(await call('studio_transfer_voice_prosody',{context:await context(),options:transfer}));
+    let processed=await call('studio_get_project');
+    const derived=processed.generations.find(g=>g.prosodyTransfer?.sourceGenerationId===baseId);
+    assert(derived&&derived.id!==baseId);assert.equal(processed.dialogues.find(l=>l.id===lineId).selectedGenerationIds.fr,derived.id);
+    assert.deepEqual(processed.generations.find(g=>g.id===baseId),baseTake);assert.equal(processed.formatVersion,14);
+    assert.deepEqual(await fs.readFile(path.join(projectRoot,basePath)),baseWave);assert.deepEqual(await fs.readFile(guideFile),guideWave);
+    assert(derived.durationMs>=1600&&derived.durationMs<=2500);proofs.prosodyReferenceTransfer=true;
+    await job(await call('studio_transfer_voice_prosody',{context:await context(),options:{...transfer,referenceMode:'dialogue',referenceId:null,referenceTrackId:'original'}}));
+    processed=await call('studio_get_project');assert.equal(processed.generations.filter(g=>g.prosodyTransfer).length,2);proofs.prosodyDialogueTransfer=true;
+    const cancelled=await call('studio_transfer_voice_prosody',{context:await context(),options:transfer});await call('studio_cancel_job',{id:cancelled});
+    const cancellationDeadline=Date.now()+15000;
+    while((await call('studio_list_jobs')).find(j=>j.id===cancelled).status!=='cancelled'){if(Date.now()>cancellationDeadline)throw Error('Prosody cancellation did not settle');await new Promise(resolve=>setTimeout(resolve,100));}
+    assert.equal((await call('studio_get_project')).generations.length,processed.generations.length);
+    assert.deepEqual(await fs.readFile(path.join(projectRoot,basePath)),baseWave);proofs.prosodyCancellationPreservesTakes=true;
     const output=path.join(args['test-root'],'Résultat 日本語.mkv');
     const exported=await call('studio_export_mkv',{context:await context(),path:output,options:{includeRetouched:false,includeOriginal:true,sourceSubtitles:true,targetSubtitles:true,codec:'flac',allowIncomplete:true}});await job(exported);
     const probe=path.join(path.dirname(args.exe),'binaries','ffprobe.exe');

@@ -9,12 +9,15 @@ Reference transcription also compiles whisper.cpp using CMake (3.14 or newer), t
 ```powershell
 pnpm install --frozen-lockfile
 powershell -NoProfile -File scripts/prepare-ffmpeg.ps1
+powershell -NoProfile -File scripts/prepare-prosody.ps1
 pnpm desktop
 ```
 
 `prepare-ffmpeg.ps1` downloads the versioned Gyan.dev FFmpeg 9.0.2 essentials archive specified in `resources/toolchain.json`. It verifies SHA-256 before extracting and copying `ffmpeg.exe`, `ffprobe.exe` and the license to `src-tauri/binaries/`. A hash mismatch stops preparation. The Git repository excludes the executable files and download cache.
 
 For an existing archive, pass `-ArchivePath C:\path\ffmpeg.zip`. Downloaded archives/extractions remain in `.cache/` for inspection. The script uses Windows PowerShell/.NET only; it does not change execution policies or machine security settings.
+
+`prepare-prosody.ps1` downloads the pinned Praat 6.4.67 x64v1 archive, verifies its SHA-256 and bundles the separate GPL-3.0-or-later executable and license. See `resources/prosody-toolchain.json`. Native prosody tests use this actual executable; Linux developers can provide a matching native `src-tauri/binaries/praat`.
 
 ## Browser preview
 
@@ -52,11 +55,11 @@ powershell -NoProfile -File scripts/package-windows.ps1
 
 Tauri outputs its executable in `src-tauri/target/release/` and NSIS installer in `src-tauri/target/release/bundle/nsis/`. The packaging script validates its inputs and creates:
 
-- `artifacts/AI-Dubbing-Studio-0.4.0-Setup.exe`
+- `artifacts/AI-Dubbing-Studio-0.20.0-Setup.exe`
 - `artifacts/AI-Dubbing-Studio-Windows-Portable.zip`
 - `artifacts/SHA256SUMS.txt`
 
-The ZIP includes the executable, FFmpeg tools/license, synthetic demo and documentation. The setup installs for the current user. Consult [Tauri's Windows installer documentation](https://v2.tauri.app/distribute/windows-installer/) for the underlying NSIS and WebView2 behavior.
+The ZIP includes the executable, FFmpeg and Praat tools/licenses, synthetic demo and documentation. The setup installs for the current user. Consult [Tauri's Windows installer documentation](https://v2.tauri.app/distribute/windows-installer/) for the underlying NSIS and WebView2 behavior.
 
 For another target directory or cross-built artifacts, pass explicit paths:
 
@@ -64,7 +67,7 @@ For another target directory or cross-built artifacts, pass explicit paths:
 powershell -NoProfile -File scripts/package-windows.ps1 -ExecutablePath C:\build\ai-dubbing-studio.exe -InstallerPath C:\build\setup.exe -OutputDirectory C:\build\packages
 ```
 
-The current release was cross-built from Ubuntu/WSL using `cargo-xwin` for `x86_64-pc-windows-msvc`. Native Windows builds follow the standard commands above. See [validation](../VALIDATION.md) for why local Windows execution remains limited.
+Current release installers are built and checked on GitHub Actions Windows runners, including an actual packaged desktop diagnostic through the official MCP SDK. See [validation](../VALIDATION.md) for evidence and hardware limits.
 
 ## Other platforms
 

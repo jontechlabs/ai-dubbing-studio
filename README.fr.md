@@ -1,5 +1,11 @@
 # AI Dubbing Studio — phases 1–7
 
+**v0.20.0 — Transfert d’intonation expérimental.** Transformez un essai français existant avec la mélodie, le rythme et l’énergie de la réplique japonaise ou d’une autre référence. Intensité réglable, traitement local sur CPU, nouvel essai indépendant : les prises précédentes et la vidéo sont conservées. Ce transfert acoustique reste approximatif entre langues. Disponible aussi via MCP (95 outils). [Guide, limites et capture](docs/PROSODY-TRANSFER.md).
+
+![Intonation transfer](docs/screenshots/prosody-transfer-fr.png)
+
+*Actual React UI with simulated native commands / Interface réelle, commandes natives simulées.*
+
 **v0.19.0 — Pilotage du studio par MCP.** Activez le serveur stdio local dans Paramètres et connectez un client IA avec la configuration JSON ou Codex TOML générée. Les 93 outils couvrent projets, sous-titres, montage audio, doublage, synchro labiale, lecture, tâches, exports et mises à jour. Révisions du projet, annulation et vérification du rendu audio restent appliquées. Cette première intégration pilote l’application ouverte. [Installation et guide](docs/MCP.md).
 
 ![MCP configuration](docs/screenshots/mcp-settings-fr.png)
@@ -73,7 +79,7 @@
 
 *Interface React réelle avec audio de démonstration synthétique et inventaire natif simulé.*
 
-[Version anglaise et captures de l’interface](README.md) · [Téléchargements Windows](https://github.com/jontechlabs/ai-dubbing-studio/releases/tag/v0.19.0)
+[Version anglaise et captures de l’interface](README.md) · [Téléchargements Windows](https://github.com/jontechlabs/ai-dubbing-studio/releases/tag/v0.20.0)
 
 Studio desktop local de travail texte, voix et vidéo. Tauri 2, React, TypeScript strict et Rust.
 
@@ -163,6 +169,7 @@ Prérequis : Node compatible avec Vite, pnpm, Rust stable, dépendances Tauri de
 ```sh
 pnpm install --frozen-lockfile
 powershell -NoProfile -File scripts/prepare-ffmpeg.ps1
+powershell -NoProfile -File scripts/prepare-prosody.ps1
 pnpm desktop
 ```
 

@@ -52,6 +52,7 @@ export interface VoiceSettings {
   seed: number;
 }
 export interface Generation {
+  prosodyTransfer?: import('./prosody').ProsodyTransfer;
   kind: 'tts';
   id: string;
   dialogueId: string;

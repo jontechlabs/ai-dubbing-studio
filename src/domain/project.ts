@@ -5,7 +5,8 @@ import { validVoiceSettings } from './tts';
 import { validateAudioPatches } from './audioPatch';
 import { validateLipVideos } from './inpaint';
 import { validateVoiceEdit } from './voiceEdit';
-export const APP_VERSION = '0.19.0';
+import { validateProsody } from './prosody';
+export const APP_VERSION = '0.20.0';
 
 export function blankProject(name = 'Untitled', source = 'ja', target = 'fr'): Project {
   const now = new Date().toISOString();
@@ -95,7 +96,11 @@ export function validateProject(value: unknown): Project {
   const preferences = project.modelPreferences;
   if (preferences && !validVoiceVariant(preferences.ttsProviderId, preferences.voiceVariantId))
     throw new Error('INVALID_PROJECT');
-  if (![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13].includes(project.formatVersion))
+  if (
+    !Number.isInteger(project.formatVersion) ||
+    project.formatVersion < 1 ||
+    project.formatVersion > 14
+  )
     throw new Error('UNSUPPORTED_PROJECT_VERSION');
   if (project.voiceEdits !== undefined) {
     if (
@@ -366,6 +371,7 @@ export function validateProject(value: unknown): Project {
       )
         throw Error('INVALID_GENERATION');
   }
+  validateProsody(project);
   validateLipVideos(project);
   validateAudioPatches(project);
   return project;

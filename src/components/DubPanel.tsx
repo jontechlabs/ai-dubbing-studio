@@ -21,6 +21,7 @@ import { accentSupported, voiceAccents } from '../domain/voiceAccents';
 import { ReferenceFileImport } from './ReferenceFileImport';
 import { BatchDubbingAction } from './BatchDubbingAction';
 import { DubbingTimingControls } from './DubbingTimingControls';
+import { ProsodyTransfer } from './ProsodyTransfer';
 
 export function CosyModel({
   jobs,
@@ -720,6 +721,17 @@ export function DubPanel({
               {t('original')}
             </button>
           </div>
+          <ProsodyTransfer
+            key={line.id}
+            project={project}
+            line={line}
+            takes={generations}
+            chosen={chosen}
+            jobs={jobs}
+            snapshot={snapshot}
+            onStarted={onStarted}
+            onError={onError}
+          />
           {generations.length > 1 && (
             <div className="generation-compare">
               <strong>{t('ttsCompare')}</strong>
@@ -781,6 +793,13 @@ export function DubPanel({
                   <small>{t('ttsPeakVram', { mb: generation.peakVramMb })}</small>
                 )}
                 {generation.compatibilityMode && <small>{t('ttsCompatibleTake')}</small>}
+                {generation.prosodyTransfer && (
+                  <small>
+                    {t('prosody.take', {
+                      percent: Math.round(generation.prosodyTransfer.options.strength * 100),
+                    })}
+                  </small>
+                )}
                 {(stale || long) && (
                   <p className="warning">{t(stale ? 'ttsStale' : 'ttsTooLong')}</p>
                 )}

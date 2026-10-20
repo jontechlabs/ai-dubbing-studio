@@ -17,6 +17,12 @@ Whisper supplies reference mel feature extraction here; no Whisper transcription
 Python, Torch, Torchaudio and other dependencies are downloaded from hash-locked upstream files;
 their wheel distributions retain their respective licenses and notices.
 
+Praat 6.4.67 (CPU prosody transfer), Paul Boersma and David Weenink.
+Distributed as an independent command-line executable under GPL-3.0-or-later.
+License: binaries/PRAAT-LICENSE.txt. Unmodified corresponding source:
+https://github.com/praat/praat/tree/v6.4.67
+Pinned binary archive and digest: resources/prosody-toolchain.json.
+
 FFmpeg and FFprobe are independent local command-line programs.
 Windows build: Gyan.dev FFmpeg essentials release 9.0.2.
 Build distribution: https://www.gyan.dev/ffmpeg/builds/

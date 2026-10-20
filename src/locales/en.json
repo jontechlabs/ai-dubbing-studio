@@ -179,7 +179,11 @@
     "translationRelease": "Releasing translation model",
     "inpaintBatch": "Batch lip synchronization",
     "faceDetection": "Detecting faces…",
-    "faceInstall": "Preparing face detectors"
+    "faceInstall": "Preparing face detectors",
+    "prosodyPrepare": "Preparing intonation transfer",
+    "prosodyAnalyze": "Analyzing melody and rhythm",
+    "prosodyRender": "Transferring intonation on CPU",
+    "prosodySave": "Saving the new take"
   },
   "shortcuts": "Space: play · J/K/L: transport · O: original · Ctrl+S: save · Ctrl+Z/Y: undo/redo",
   "errors": {
@@ -328,7 +332,14 @@
     "FACE_SCENE_CHANGE": "Shot change detected: manual framing required.",
     "FACE_MULTIPLE": "Multiple faces: choose the speaking character manually.",
     "FACE_NOT_FOUND": "Face missing or occluded on some frames: manual framing required.",
-    "FACE_MOVEMENT": "Complex movement or zoom: manual framing required."
+    "FACE_MOVEMENT": "Complex movement or zoom: manual framing required.",
+    "INVALID_PROSODY_REQUEST": "Invalid intonation transfer settings.",
+    "PROSODY_UNAVAILABLE": "The transfer component is missing. Reinstall this studio version.",
+    "PROSODY_TOO_LONG": "The take and guide must each last between 150 ms and 30 seconds.",
+    "PROSODY_NO_VOICE": "Not enough speech with measurable pitch. Choose a clear voice guide, or disable Melody for whispered speech.",
+    "PROSODY_ANALYSIS_FAILED": "Intonation analysis failed. Previous takes were not changed.",
+    "PROSODY_RENDER_FAILED": "Intonation transfer failed. Previous takes were not changed.",
+    "PROSODY_TIMEOUT": "Intonation transfer exceeded its time limit."
   },
   "preparingVideo": "Preparing video…",
   "loadingVideo": "Loading video…",
@@ -985,5 +996,20 @@
   "faceDetectionResults": "Proposals: {{found}} · Need manual framing: {{rejected}}",
   "faceManualRequired": "View crops requiring attention",
   "faceApplyProposals": "Use proposed crops ({{count}})",
-  "faceReviewHint": "Review framing in the dialogue selector before synchronizing. Multiple faces, shot cuts, occlusions and complex movement require manual framing. Detection does not identify the speaker."
+  "faceReviewHint": "Review framing in the dialogue selector before synchronizing. Multiple faces, shot cuts, occlusions and complex movement require manual framing. Detection does not identify the speaker.",
+  "prosody": {
+    "title": "Intonation transfer · Experimental",
+    "hint": "Start with a take whose pronunciation you like, then use another voice as its intonation guide. Runs locally on CPU with no additional model.",
+    "source": "Take to transform",
+    "guide": "Intonation guide",
+    "originalGuide": "Original audio of this dialogue",
+    "guideTrack": "Original guide track",
+    "strength": "Transfer strength",
+    "pitch": "Melody",
+    "rhythm": "Rhythm",
+    "energy": "Energy",
+    "limits": "Approximate acoustic transfer across languages. Start at 50%. At 0% the sound stays identical. Previous takes are preserved.",
+    "create": "Create a new take with this intonation",
+    "take": "Transferred intonation · {{percent}}%"
+  }
 }

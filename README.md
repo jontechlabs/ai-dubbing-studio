@@ -1,5 +1,11 @@
 # AI Dubbing Studio
 
+**v0.20.0 — Experimental intonation transfer.** Transform an existing French take using pitch, rhythm and energy contours from the original Japanese dialogue or another reference. Adjustable strength, local CPU processing and an independent new take preserve every previous take and the source video. Cross-language acoustic transfer remains approximate. Also available through MCP (95 tools). [Guide, limits and screenshot](docs/PROSODY-TRANSFER.md).
+
+![Intonation transfer](docs/screenshots/prosody-transfer-fr.png)
+
+*Actual React UI with simulated native commands / Interface réelle, commandes natives simulées.*
+
 **v0.19.0 — Control the studio through MCP.** Enable the local stdio server in Settings and connect an AI client using the generated JSON or Codex TOML configuration. 93 typed tools cover projects, subtitle/voice/audio editing, generation, lip sync, playback, jobs, exports and updates. Project revisions, undo and audio-render preflight remain enforced. The application stays open during this first integration. [Setup and guide (French)](docs/MCP.md).
 
 ![MCP configuration](docs/screenshots/mcp-settings-fr.png)
@@ -97,7 +103,7 @@ CosyVoice3, Fish S2 FP8/GGUF and Qwen3-TTS GGUF remain available. [Models and GP
 
 *Actual React browser UI with a simulated reference and transcription result. Separate native checks transcribe real Japanese speech. These are not RTX performance measurements.*
 
-[Windows downloads](https://github.com/jontechlabs/ai-dubbing-studio/releases/tag/v0.19.0) · [User guide](docs/GETTING-STARTED.md) · [Build instructions](docs/BUILDING.md) · [Français](README.fr.md)
+[Windows downloads](https://github.com/jontechlabs/ai-dubbing-studio/releases/tag/v0.20.0) · [User guide](docs/GETTING-STARTED.md) · [Build instructions](docs/BUILDING.md) · [Français](README.fr.md)
 
 ![Studio with bilingual dialogue, video preview, text editor and timeline](docs/screenshots/studio.png)
 
@@ -111,9 +117,9 @@ Audio regions with independent silence and volume, timeline range selection, fas
 
 | Package | Purpose |
 | --- | --- |
-| [Windows x64 setup](https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.19.0/AI-Dubbing-Studio-0.19.0-Setup.exe) | NSIS installer for the current user, with English/French installer interface |
-| [Portable ZIP](https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.19.0/AI-Dubbing-Studio-Windows-Portable.zip) | Extract the whole folder and launch `AI Dubbing Studio.exe` |
-| [SHA-256 checksums](https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.19.0/SHA256SUMS.txt) | Verify the setup and ZIP downloads |
+| [Windows x64 setup](https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.20.0/AI-Dubbing-Studio-0.20.0-Setup.exe) | NSIS installer for the current user, with English/French installer interface |
+| [Portable ZIP](https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.20.0/AI-Dubbing-Studio-Windows-Portable.zip) | Extract the whole folder and launch `AI Dubbing Studio.exe` |
+| [SHA-256 checksums](https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.20.0/SHA256SUMS.txt) | Verify the setup and ZIP downloads |
 
 Target: **Windows 10/11 x64**, with **Microsoft Edge WebView2 Runtime**. FFmpeg and FFprobe are included. Python, CUDA and AI model downloads are not required for editing and playback. Installation may need Internet access if WebView2 is missing; local project editing does not require a cloud account.
 
@@ -212,6 +218,7 @@ git clone https://github.com/jontechlabs/ai-dubbing-studio.git
 cd ai-dubbing-studio
 pnpm install --frozen-lockfile
 powershell -NoProfile -File scripts/prepare-ffmpeg.ps1
+powershell -NoProfile -File scripts/prepare-prosody.ps1
 pnpm desktop
 ```
 

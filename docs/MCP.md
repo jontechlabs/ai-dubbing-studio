@@ -1,6 +1,6 @@
-# v0.19.0 — Piloter le studio avec une IA via MCP
+# Piloter le studio avec une IA via MCP
 
-Le studio fournit **93 outils MCP** : 68 commandes natives et 25 commandes d’édition, d’état et de lecture. Le serveur utilise **stdio** et le même exécutable que l’application. Cette première intégration pilote **l’application ouverte** ; aucun environnement Node.js ou Python supplémentaire n’est requis pour la connexion.
+Le studio fournit **95 outils MCP** en v0.20.0 : 70 commandes natives et 25 commandes d’édition, d’état et de lecture. Le serveur utilise **stdio** et le même exécutable que l’application. Cette première intégration pilote **l’application ouverte** ; aucun environnement Node.js ou Python supplémentaire n’est requis pour la connexion.
 
 ## Connexion
 
@@ -22,6 +22,7 @@ Pour Codex, ajoutez le bloc TOML généré dans `~/.codex/config.toml` ou dans l
 | Projets et médias | Créer/ouvrir un projet, importer la vidéo, choisir ses pistes, préparer un proxy, lire le projet complet |
 | Sous-titres et personnages | Import SRT/MKV, édition, validation, découpe/fusion/calage des répliques ; personnages, références et prononciation via les données du projet |
 | Modèles et voix | État et installation, espace disque, stockage, périphérique, références audio et transcription, génération unitaire ou par lot |
+| Intonation | Disponibilité Praat et transfert expérimental vers un nouvel essai, avec mélodie, rythme et énergie réglables ; [guide](PROSODY-TRANSFER.md) |
 | Montage audio | Choix des prises, déplacement, durée, découpe, silence, fondus, volume des pistes et des portions, transferts entre pistes |
 | Synchronisation labiale | Analyse, cadrage automatique, rendu unitaire/par lot, consultation et activation des variantes |
 | Lecture et interface | Sélection des dialogues et lots, lecture/pause/déplacement, volume, vitesse, boucle, zoom, panneaux, langue et thème |

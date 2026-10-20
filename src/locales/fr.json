@@ -179,7 +179,11 @@
     "translationRelease": "Libération du modèle de traduction",
     "inpaintBatch": "Synchronisation labiale par lot",
     "faceDetection": "Détection des visages en cours…",
-    "faceInstall": "Préparation des détecteurs de visages"
+    "faceInstall": "Préparation des détecteurs de visages",
+    "prosodyPrepare": "Préparation du transfert d’intonation",
+    "prosodyAnalyze": "Analyse des mélodies et du rythme",
+    "prosodyRender": "Transfert d’intonation sur CPU",
+    "prosodySave": "Sauvegarde du nouvel essai"
   },
   "shortcuts": "Espace : lecture · J/K/L : transport · O : original · Ctrl+S : sauvegarde · Ctrl+Z/Y : annuler/rétablir",
   "errors": {
@@ -328,7 +332,14 @@
     "FACE_SCENE_CHANGE": "Changement de plan détecté : cadrage manuel requis.",
     "FACE_MULTIPLE": "Plusieurs visages : choisissez celui du personnage qui parle.",
     "FACE_NOT_FOUND": "Visage absent ou masqué sur certaines images : cadrage manuel requis.",
-    "FACE_MOVEMENT": "Mouvement ou zoom complexe : cadrage manuel requis."
+    "FACE_MOVEMENT": "Mouvement ou zoom complexe : cadrage manuel requis.",
+    "INVALID_PROSODY_REQUEST": "Réglages du transfert d’intonation invalides.",
+    "PROSODY_UNAVAILABLE": "Le composant de transfert est absent. Réinstallez cette version du studio.",
+    "PROSODY_TOO_LONG": "L’essai et le guide doivent durer entre 150 ms et 30 secondes.",
+    "PROSODY_NO_VOICE": "Pas assez de parole avec une hauteur mesurable. Choisissez un guide vocal clair, ou désactivez Mélodie pour une voix chuchotée.",
+    "PROSODY_ANALYSIS_FAILED": "L’analyse de l’intonation a échoué. Aucun essai précédent n’a été modifié.",
+    "PROSODY_RENDER_FAILED": "Le transfert d’intonation a échoué. Aucun essai précédent n’a été modifié.",
+    "PROSODY_TIMEOUT": "Le transfert d’intonation a dépassé le délai disponible."
   },
   "preparingVideo": "Préparation de la vidéo…",
   "loadingVideo": "Chargement de la vidéo…",
@@ -985,5 +996,20 @@
   "faceDetectionResults": "Propositions : {{found}} · À cadrer manuellement : {{rejected}}",
   "faceManualRequired": "Voir les cadrages à reprendre",
   "faceApplyProposals": "Utiliser les cadrages proposés ({{count}})",
-  "faceReviewHint": "Vérifiez les cadrages avec le sélecteur de réplique avant de synchroniser. Plusieurs visages, coupures de plan, occlusions et déplacements complexes exigent un cadrage manuel. La détection ne reconnaît pas qui parle."
+  "faceReviewHint": "Vérifiez les cadrages avec le sélecteur de réplique avant de synchroniser. Plusieurs visages, coupures de plan, occlusions et déplacements complexes exigent un cadrage manuel. La détection ne reconnaît pas qui parle.",
+  "prosody": {
+    "title": "Transfert d’intonation · Expérimental",
+    "hint": "Partez d’un essai dont la prononciation vous convient, puis utilisez une autre voix pour guider son intonation. Traitement local sur CPU, sans modèle supplémentaire.",
+    "source": "Essai à transformer",
+    "guide": "Guide d’intonation",
+    "originalGuide": "Audio original de cette réplique",
+    "guideTrack": "Piste du guide original",
+    "strength": "Intensité du transfert",
+    "pitch": "Mélodie",
+    "rhythm": "Rythme",
+    "energy": "Énergie",
+    "limits": "Transfert acoustique approximatif entre langues. Commencez à 50 %. À 0 %, le son reste identique. Les essais précédents sont conservés.",
+    "create": "Créer un nouvel essai avec cette intonation",
+    "take": "Intonation transférée · {{percent}} %"
+  }
 }

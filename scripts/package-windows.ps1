@@ -7,15 +7,15 @@ $version = $config.version
 if (-not $ExecutablePath) { $ExecutablePath = Join-Path $repoRoot 'src-tauri/target/release/ai-dubbing-studio.exe' }
 if (-not $InstallerPath) { $InstallerPath = Join-Path $repoRoot "src-tauri/target/release/bundle/nsis/AI Dubbing Studio_${version}_x64-setup.exe" }
 if (-not $OutputDirectory) { $OutputDirectory = Join-Path $repoRoot 'artifacts' }
-foreach ($file in @($ExecutablePath, $InstallerPath, (Join-Path $repoRoot 'src-tauri/binaries/ffmpeg.exe'), (Join-Path $repoRoot 'src-tauri/binaries/ffprobe.exe'))) {
-    if (-not (Test-Path -LiteralPath $file -PathType Leaf)) { throw "Missing build input: $file. Run prepare-ffmpeg.ps1 and pnpm desktop:build first." }
+foreach ($file in @($ExecutablePath, $InstallerPath, (Join-Path $repoRoot 'src-tauri/binaries/ffmpeg.exe'), (Join-Path $repoRoot 'src-tauri/binaries/ffprobe.exe'), (Join-Path $repoRoot 'src-tauri/binaries/praat.exe'), (Join-Path $repoRoot 'src-tauri/binaries/PRAAT-LICENSE.txt'))) {
+    if (-not (Test-Path -LiteralPath $file -PathType Leaf)) { throw "Missing build input: $file. Run prepare-ffmpeg.ps1, prepare-prosody.ps1 and pnpm desktop:build first." }
 }
 New-Item -ItemType Directory -Force -Path $OutputDirectory | Out-Null
 $stageParent = Join-Path $repoRoot ".cache/package-$([guid]::NewGuid().ToString('N'))"
 $portable = Join-Path $stageParent 'AI-Dubbing-Studio-Windows'
 New-Item -ItemType Directory -Force -Path (Join-Path $portable 'binaries'), (Join-Path $portable 'demo') | Out-Null
 Copy-Item -LiteralPath $ExecutablePath -Destination (Join-Path $portable 'AI Dubbing Studio.exe')
-foreach ($name in @('ffmpeg.exe', 'ffprobe.exe', 'FFMPEG-LICENSE.txt')) {
+foreach ($name in @('ffmpeg.exe', 'ffprobe.exe', 'praat.exe', 'FFMPEG-LICENSE.txt', 'PRAAT-LICENSE.txt')) {
     Copy-Item -LiteralPath (Join-Path $repoRoot "src-tauri/binaries/$name") -Destination (Join-Path $portable "binaries/$name")
 }
 Copy-Item -LiteralPath (Join-Path $repoRoot 'public/demo.mp4') -Destination (Join-Path $portable 'demo/demo.mp4')

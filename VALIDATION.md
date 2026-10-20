@@ -1,5 +1,15 @@
 # Validation
 
+## v0.20.0 — 20 October 2026
+
+Windows workflow evidence will be recorded before publication.
+
+- Four native prosody tests cover settings/contour validation and stale revisions, actual Praat analysis and PSOLA resynthesis of a rising-pitch guide, source/guide byte preservation, output duration and audible tail, silent-guide rejection, zero-strength identity and cancellation before rendering. The pinned executable is prepared before Windows tests; actual Linux Praat also passes locally.
+- Browser checks cover source/guide controls, strength and component options, duration limits, queued-job state and preserved previous takes. TypeScript checks cover bounded options, format-14 provenance and derived-take independence after deleting the base.
+- The packaged Windows MCP diagnostic adds actual stored-reference and original-dialogue contour transfers through the native desktop, checks independent files/records, and cancels a third transfer without adding a take. Existing playback, undo, format-13 reload and MKV/source-preservation diagnostics remain enabled.
+- Screenshots show the real React UI with synthetic media and mocked native commands. Acoustic diagnostics use synthetic voiced signals, not a subjective French/Japanese acting comparison. The feature is experimental CPU contour transfer, not neural two-reference cloning. No new GPU speed, accent or emotional-fidelity guarantee is claimed. Only derived takes require project format 14; existing formats 1–13 remain readable.
+- Praat 6.4.67 is bundled as a separate GPL-3.0-or-later executable with its license, pinned source link and verified archive hash. Original voice files and the main video remain immutable.
+
 ## v0.19.0 — 20 October 2026
 
 Windows checks and signed-update package production passed in [run 39368789826](https://github.com/jontechlabs/ai-dubbing-studio/actions/runs/39368789826), built from `882eb0a5051142ae22637b56f53eb327171d23b8`. All 414 Windows suite checks passed (116 TypeScript, 115 Rust, 123 Chrome, 60 Python), plus an actual packaged Windows desktop diagnostic driven by the official MCP SDK (93 tools, schemas, imports, edits, approval, stale revision refusal, undo, format-13 reload, playback, MKV export and preserved source hash), plus four actual CPU face-detector/protocol checks, plus seven actual LatentSync neural-core/checkpoint-header diagnostics, plus actual unpinned-bank/FP8/cache/tiny-model/header diagnostics and the real causal-vocoder finalization diagnostic, plus a real native Japanese-to-French LLM proposal and cancellation/process-release checks under a Unicode model path, plus two real Japanese ASR checks using the final Windows release executable. The setup and portable archive are copied unchanged from this workflow. Final metadata only records this evidence and the verified update feed.

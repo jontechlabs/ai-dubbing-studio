@@ -26,10 +26,10 @@ pub fn binary<R: tauri::Runtime>(app: &tauri::AppHandle<R>, name: &str) -> Resul
             }
         }
     }
-    Err(if name == "ffmpeg" {
-        "FFMPEG_UNAVAILABLE"
-    } else {
-        "FFPROBE_UNAVAILABLE"
+    Err(match name {
+        "ffmpeg" => "FFMPEG_UNAVAILABLE",
+        "praat" => "PROSODY_UNAVAILABLE",
+        _ => "FFPROBE_UNAVAILABLE",
     }
     .into())
 }
