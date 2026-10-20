@@ -22,11 +22,18 @@ export async function verifyRelayLifecycle(executable, parent = os.tmpdir()) {
     const endpointPath = path.join(root, scenario + '.json');
     const token = randomBytes(32).toString('hex');
     const sockets = new Set();
+    let stopping = false;
+    const closedConnection = error => {
+      // Windows can reset the pending RPC when its owning relay exits. The
+      // readline interface forwards input errors and needs its own handler.
+      if (!stopping || error.code !== 'ECONNRESET') throw error;
+    };
     let waiting;
     const pending = new Promise(resolve => { waiting = resolve; });
     const server = createServer(socket => {
-      sockets.add(socket); socket.on('close', () => sockets.delete(socket)); socket.on('error', () => {});
+      sockets.add(socket); socket.on('close', () => sockets.delete(socket)); socket.on('error', closedConnection);
       const lines = createInterface({ input: socket });
+      lines.on('error', closedConnection);
       lines.on('line', line => {
         const request = JSON.parse(line);
         assert.equal(request.token, token);
@@ -46,6 +53,7 @@ export async function verifyRelayLifecycle(executable, parent = os.tmpdir()) {
     const exited = new Promise(resolve => child.once('exit', (code, signal) => resolve({ code, signal })));
     let stderr = ''; child.stderr.on('data', data => { stderr += data; });
     const lines = createInterface({ input: child.stdout });
+    lines.on('error', closedConnection);
     const ready = new Promise((resolve, reject) => {
       lines.on('line', line => {
         const response = JSON.parse(line);
@@ -64,6 +72,7 @@ export async function verifyRelayLifecycle(executable, parent = os.tmpdir()) {
       await bounded(ready, 15000, 'Relay discovery timeout');
       await new Promise(resolve => setTimeout(resolve, 750));
       assert.equal(child.exitCode, null, 'Healthy idle relay must remain connected');
+      stopping = true;
       if (scenario === 'stdinEofWhileWaiting') {
         child.stdin.write(JSON.stringify({ jsonrpc: '2.0', id: 'pending', method: 'tools/call', params: { name: 'studio_get_state', arguments: {} } }) + '\n');
         await bounded(pending, 5000, 'The pending native request was not received');
@@ -85,6 +94,7 @@ export async function verifyRelayLifecycle(executable, parent = os.tmpdir()) {
       assert.equal(result.signal, null, 'Relay must exit itself, without forced termination');
       assert.equal(result.code, scenario.startsWith('stdinEof') ? 0 : 1);
       proof[scenario] = true;
+      console.log('MCP relay lifecycle passed: ' + scenario);
     } finally {
       if (child.exitCode === null && child.signalCode === null) child.kill();
       child.stdout.destroy();
