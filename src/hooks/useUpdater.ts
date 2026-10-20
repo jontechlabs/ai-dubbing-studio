@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { check, type Update } from '@tauri-apps/plugin-updater';
+import { invoke } from '@tauri-apps/api/core';
 import { native } from '../services/bridge';
 export function useUpdater(flush: () => Promise<void>) {
   const [state, setState] = useState('idle');
@@ -84,11 +85,25 @@ export function useUpdater(flush: () => Promise<void>) {
     if (!resource.current || state !== 'downloaded' || running.current) return;
     running.current = true;
     setError(null);
+    let suspended = false;
     try {
       await flush();
       setState('installing');
+      await invoke('mcp_prepare_update');
+      suspended = true;
+      // Let idle stdio relays observe the removed endpoint and release the exe.
+      await new Promise((resolve) => setTimeout(resolve, 5000));
+      // A user may have started a job while the relays were shutting down.
+      await invoke('mcp_prepare_update');
       await resource.current.install({ restartAfterInstall: true });
     } catch (cause) {
+      if (suspended) {
+        try {
+          await invoke('mcp_update_failed');
+        } catch {
+          /* Preserve the installer error. */
+        }
+      }
       if (mounted.current) {
         setError(String(cause));
         setState('downloaded');

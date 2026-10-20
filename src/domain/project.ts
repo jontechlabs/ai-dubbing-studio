@@ -6,7 +6,7 @@ import { validateAudioPatches } from './audioPatch';
 import { validateLipVideos } from './inpaint';
 import { validateVoiceEdit } from './voiceEdit';
 import { validateProsody } from './prosody';
-export const APP_VERSION = '0.20.0';
+export const APP_VERSION = '0.20.1';
 
 export function blankProject(name = 'Untitled', source = 'ja', target = 'fr'): Project {
   const now = new Date().toISOString();

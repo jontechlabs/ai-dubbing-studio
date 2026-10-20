@@ -35,7 +35,7 @@ test('GPU preference and signed update flow reject failure and save before insta
   await page.evaluate(()=>(window as any).__downloadError=true);await page.getByRole('button',{name:'Télécharger la mise à jour'}).click();await expect(page.getByRole('alert')).toBeVisible();
   await expect(page.getByRole('button',{name:'Installer et redémarrer'})).toHaveCount(0);await page.evaluate(()=>(window as any).__downloadError=false);
   await page.getByRole('button',{name:'Télécharger la mise à jour'}).click();await expect(page.getByText(/Téléchargement terminé, signature vérifiée/)).toBeVisible();
-  await page.screenshot({path:'test-results/screenshots/studio-updates.png'});await page.getByRole('button',{name:'Installer et redémarrer'}).click();await expect.poll(()=>page.evaluate(()=>(window as any).__installed)).toBe(true);
+  await page.screenshot({path:'test-results/screenshots/studio-updates.png'});await page.getByRole('button',{name:'Installer et redémarrer'}).click();await expect.poll(()=>page.evaluate(()=>(window as any).__installed),{timeout:10000}).toBe(true);
   expect(await page.evaluate(()=>(window as any).__calls.some((call:any)=>call.command==='set_graphics_preference'&&call.args.choice==='performance'))).toBe(true);
 });
 

@@ -1,5 +1,7 @@
 # AI Dubbing Studio — phases 1–7
 
+**v0.20.1 — Installation et relais MCP.** Les relais quittent le processus à la fermeture du studio ; les mises à jour suspendent MCP et attendent la libération de l’exécutable. La connexion est restaurée si l’installation échoue. [Déblocage des anciennes versions et détails](docs/INSTALLATION-RECOVERY.md).
+
 **v0.20.0 — Transfert d’intonation expérimental.** Transformez un essai français existant avec la mélodie, le rythme et l’énergie de la réplique japonaise ou d’une autre référence. Intensité réglable, traitement local sur CPU, nouvel essai indépendant : les prises précédentes et la vidéo sont conservées. Ce transfert acoustique reste approximatif entre langues. Disponible aussi via MCP (95 outils). [Guide, limites et capture](docs/PROSODY-TRANSFER.md).
 
 ![Intonation transfer](docs/screenshots/prosody-transfer-fr.png)
@@ -79,7 +81,7 @@
 
 *Interface React réelle avec audio de démonstration synthétique et inventaire natif simulé.*
 
-[Version anglaise et captures de l’interface](README.md) · [Téléchargements Windows](https://github.com/jontechlabs/ai-dubbing-studio/releases/tag/v0.20.0)
+[Version anglaise et captures de l’interface](README.md) · [Téléchargements Windows](https://github.com/jontechlabs/ai-dubbing-studio/releases/tag/v0.20.1)
 
 Studio desktop local de travail texte, voix et vidéo. Tauri 2, React, TypeScript strict et Rust.
 

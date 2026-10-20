@@ -164,6 +164,8 @@ export async function nativeMock(page: Page, large = false) {
       }
       if(command==='export_generation')return null;
       if(command==='mcp_ready'){host.__mcpReady=args.ready;return null;}
+      if(command==='mcp_prepare_update'){if(host.__updateBusy)throw Error('BUSY');mcpEnabled=false;return null;}
+      if(command==='mcp_update_failed'){mcpEnabled=localStorage.getItem('mockMcpEnabled')==='true';return null;}
       if(command==='mcp_status')return {enabled:mcpEnabled,ready:host.__mcpReady,port:mcpEnabled?50291:null,pending:mcpRequests.size,audit:structuredClone(mcpAudit),configuration:{mcpServers:{'ai-dubbing-studio':{command:'C:/Studio/ai-dubbing-studio.exe',args:['--mcp','--endpoint','C:/Studio/mcp-endpoint.json']}}},configurationToml:'[mcp_servers.ai_dubbing_studio]\ncommand = "C:/Studio/ai-dubbing-studio.exe"\nargs = ["--mcp", "--endpoint", "C:/Studio/mcp-endpoint.json"]\nstartup_timeout_sec = 20\ntool_timeout_sec = 180\n'};
       if(command==='mcp_set_enabled'){mcpEnabled=args.enabled;localStorage.setItem('mockMcpEnabled',String(mcpEnabled));if(!mcpEnabled)for(const id of mcpRequests.keys())host.__mcpCancel(id);return host.__TAURI_INTERNALS__.invoke('mcp_status');}
       if(command==='mcp_claim'){const row=mcpRequests.get(args.id);if(!mcpEnabled||!row||row.claimed)return null;row.claimed=true;mcpAudit.find(r=>r.id===args.id).status='running';return {id:row.id,tool:row.tool,arguments:row.arguments};}
@@ -219,7 +221,7 @@ export async function nativeMock(page: Page, large = false) {
         if(host.__downloadError)throw Error('Invalid signature');
         const channel=args.onEvent.id;callbacks.get(channel)?.({index:0,message:{event:'Started',data:{contentLength:100}}});callbacks.get(channel)?.({index:1,message:{event:'Progress',data:{chunkLength:100}}});callbacks.get(channel)?.({index:2,message:{event:'Finished'}});return 46;
       }
-      if(command==='plugin:updater|install'){host.__installed=true;return null;}
+      if(command==='plugin:updater|install'){if(host.__installError)throw Error('Installer failed');host.__installed=true;return null;}
       throw Error(`Unexpected mock command ${command}`);
     }};
   },{initial:(() => { const initial=demoProject();if(large){initial.sourceCues=Array.from({length:6000},(_,i)=>({id:`s${i}`,startMs:i*3000,endMs:i*3000+2000,text:`Source ${i}`}));initial.targetCues=initial.sourceCues.map((cue,i)=>({...cue,id:`t${i}`,text:`Texte ${i}`}));initial.dialogues=initial.sourceCues.map((cue,i)=>({id:`d${i}`,startMs:cue.startMs,endMs:cue.endMs,sourceCueIds:[cue.id],targetCueIds:[`t${i}`],ttsText:null,characterId:null,status:'ungenerated',warnings:[],selectedGenerationIds:{}}));}return initial;})()});

@@ -45,6 +45,33 @@ fn mcp_status(control: tauri::State<'_, Arc<mcp::Controller>>) -> serde_json::Va
     control.status()
 }
 #[tauri::command]
+fn mcp_prepare_update(
+    core: State<'_, Shared>,
+    control: tauri::State<'_, Arc<mcp::Controller>>,
+) -> Result<(), String> {
+    if core
+        .jobs
+        .lock()
+        .map_err(domain::io_error)?
+        .values()
+        .any(|j| {
+            matches!(
+                j.saved.record.status.as_str(),
+                "queued" | "running" | "paused"
+            )
+        })
+    {
+        return Err("BUSY".into());
+    }
+    // Keep mcp-enabled intact, so the new version restores the user's choice.
+    control.stop();
+    Ok(())
+}
+#[tauri::command]
+fn mcp_update_failed(control: tauri::State<'_, Arc<mcp::Controller>>) {
+    control.restore();
+}
+#[tauri::command]
 async fn mcp_set_enabled(
     control: tauri::State<'_, Arc<mcp::Controller>>,
     enabled: bool,
@@ -1377,6 +1404,8 @@ pub fn run() {
         })
         .invoke_handler(tauri::generate_handler![
             mcp_status,
+            mcp_prepare_update,
+            mcp_update_failed,
             mcp_set_enabled,
             mcp_ready,
             mcp_claim,

@@ -49,3 +49,5 @@ Une seule instance MCP peut gérer un même profil d’application : une seconde
 Le SDK TypeScript officiel `@modelcontextprotocol/sdk` 1.32.1 sert uniquement aux tests de compatibilité. Il n’est pas nécessaire sur le PC qui utilise l’application.
 
 Références : [transport stdio](https://modelcontextprotocol.io/specification/2025-11-25/basic/transports#stdio), [cycle de vie](https://modelcontextprotocol.io/specification/2025-11-25/basic/lifecycle) et [outils MCP](https://modelcontextprotocol.io/specification/2025-11-25/server/tools). Les révisions 2025-03-26, 2025-06-18 et 2025-11-25 sont négociées ; les versions ultérieures peuvent utiliser la négociation de compatibilité.
+
+Depuis v0.20.1, le relais quitte le processus à la fermeture du studio, à la désactivation de MCP ou au changement de session, même si le client garde son entrée ouverte. Reconnectez le client après un redémarrage du studio. Le serveur est suspendu avant une mise à jour, puis restauré si son lancement échoue. [Installation bloquée et procédure pour les anciennes versions](INSTALLATION-RECOVERY.md).

@@ -1,5 +1,14 @@
 # Validation
 
+## v0.20.1 — 20 October 2026
+
+Windows workflow evidence will be recorded before publication.
+
+- Actual stdio process diagnostics keep stdin open and verify normal EOF, EOF with an unresponsive in-flight request, blocked stdout, host exit with a stale endpoint, endpoint deletion and token rotation. A healthy idle relay stays alive. No forced termination is used for the passing lifecycle cases. The actual Linux executable passes locally; the Windows packaged diagnostic runs the same six cases.
+- Four new Chrome scenarios cover preparation before installer launch, retained MCP opt-in, restoration after failure, busy refusal, and a new job during the relay shutdown delay. Native preflight checks all queued/running/paused jobs. No user project, generation or model format changes.
+- Existing 95-tool packaged desktop, actual Praat transfer, cancellation, MKV export, source-preservation and neural worker diagnostics remain enabled. The fixture is a private authenticated loopback host, not an NSIS GUI installation test. Local Windows execution is blocked by application-control policy; the final Windows runner provides the native executable proof.
+- Older v0.19/v0.20 relays may still require the documented one-time manual cleanup before installing this fix. No automatic termination of arbitrary processes or GUI windows is added.
+
 ## v0.20.0 — 20 October 2026
 
 Windows checks and signed-update package production passed in [run 39457240077](https://github.com/jontechlabs/ai-dubbing-studio/actions/runs/39457240077), built from `fdff23c187b418e9b334b48797eb571d4e7806a6`. All 423 Windows suite checks passed (119 TypeScript, 119 Rust, 125 Chrome, 60 Python), plus an actual packaged Windows desktop diagnostic driven by the official MCP SDK (95 tools, actual reference/dialogue Praat transfers and cancellation, schemas, imports, edits, approval, stale revision refusal, undo, format-13 reload, playback, MKV export and preserved source hash), plus four actual CPU face-detector/protocol checks, plus seven actual LatentSync neural-core/checkpoint-header diagnostics, plus actual unpinned-bank/FP8/cache/tiny-model/header diagnostics and the real causal-vocoder finalization diagnostic, plus a real native Japanese-to-French LLM proposal and cancellation/process-release checks under a Unicode model path, plus two real Japanese ASR checks using the final Windows release executable. The setup and portable archive are copied unchanged from this workflow. Final metadata only records this evidence and the verified update feed.

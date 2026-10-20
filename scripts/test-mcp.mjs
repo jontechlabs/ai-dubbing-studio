@@ -7,6 +7,7 @@ import {createHash,randomUUID} from 'node:crypto';
 import path from 'node:path';
 import assert from 'node:assert/strict';
 import {execFileSync} from 'node:child_process';
+import {verifyRelayLifecycle} from './test-mcp-lifecycle.mjs';
 const args=Object.fromEntries(process.argv.slice(2).reduce((rows,value,index,all)=>index%2===0?[...rows,[value.slice(2),all[index+1]]]:rows,[]));
 const client=new Client({name:'studio-native-validation',version:'1.0.0'},{capabilities:{}});
 const transport=new StdioClientTransport({command:args.exe,args:['--mcp','--endpoint',args.endpoint],stderr:'pipe'});
@@ -108,6 +109,7 @@ try {
     const media=JSON.parse(execFileSync(probe,['-v','error','-show_format','-show_streams','-of','json',output],{encoding:'utf8',windowsHide:true}));
     assert(Math.abs(Number(media.format.duration)-16)<.2);assert(media.streams.some(stream=>stream.codec_type==='audio'));assert.equal(media.streams.filter(stream=>stream.codec_type==='subtitle').length,2);
     assert.equal(createHash('sha256').update(await fs.readFile(args.movie)).digest('hex'),originalHash);proofs.mkvExport=true;proofs.sourcePreserved=true;
+    proofs.relayLifecycle=await verifyRelayLifecycle(args.exe,args['test-root']);
     await fs.writeFile(args.proof,JSON.stringify(proofs,null,2)+'\n','utf8');
     console.log('MCP_NATIVE_PROOF '+JSON.stringify(proofs));
 } catch(error){if(stderr)console.error(stderr.slice(-2000));throw error;}

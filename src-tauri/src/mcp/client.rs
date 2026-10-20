@@ -5,8 +5,8 @@ use std::{
     net::{SocketAddr, TcpStream},
     path::Path,
     sync::{
-        atomic::{AtomicUsize, Ordering},
-        Arc, Mutex,
+        atomic::{AtomicBool, AtomicUsize, Ordering},
+        mpsc, Arc, Mutex,
     },
     time::Duration,
 };
@@ -20,11 +20,13 @@ pub(super) fn exchange(endpoint: &Endpoint, mut request: Value) -> Result<Value,
     let mut stream = TcpStream::connect_timeout(&address, Duration::from_secs(2))
         .map_err(|_| "MCP_APP_NOT_RUNNING")?;
     stream
-        .set_read_timeout(Some(Duration::from_secs(if request["op"] == "ping" {
-            2
-        } else {
-            190
-        })))
+        .set_read_timeout(Some(Duration::from_secs(
+            if matches!(request["op"].as_str(), Some("ping" | "cancel")) {
+                2
+            } else {
+                190
+            },
+        )))
         .map_err(|_| "MCP_IO_FAILED")?;
     stream
         .set_write_timeout(Some(Duration::from_secs(5)))
@@ -61,21 +63,70 @@ fn endpoint(path: &Path) -> Result<Endpoint, String> {
         .map_err(|_| "MCP_DISABLED: open the application and enable MCP in Settings")?;
     serde_json::from_slice(&bytes).map_err(|_| "MCP_INVALID_ENDPOINT".into())
 }
+struct HostMonitor(Arc<AtomicBool>);
+impl HostMonitor {
+    fn start(path: &Path, instance: &Endpoint) -> Self {
+        let stopped = Arc::new(AtomicBool::new(false));
+        let flag = stopped.clone();
+        let path = path.to_owned();
+        let instance = instance.clone();
+        std::thread::spawn(move || {
+            while !flag.load(Ordering::Acquire) {
+                let same = endpoint(&path).is_ok_and(|current| {
+                    current.pid == instance.pid
+                        && current.port == instance.port
+                        && current.token == instance.token
+                });
+                if (!same || exchange(&instance, json!({"op":"ping"})).is_err())
+                    && !flag.load(Ordering::Acquire)
+                {
+                    // This is the separate --mcp CLI process, never the GUI.
+                    // Do not wait on a blocked stdin/stdout or RPC thread.
+                    std::process::exit(1);
+                }
+                std::thread::sleep(Duration::from_millis(500));
+            }
+        });
+        Self(stopped)
+    }
+}
+impl Drop for HostMonitor {
+    fn drop(&mut self) {
+        self.0.store(true, Ordering::Release);
+    }
+}
 pub fn stdio(path: &Path) -> Result<(), String> {
-    endpoint(path)?;
+    let instance = endpoint(path)?;
+    let _monitor = HostMonitor::start(path, &instance);
     let output = Arc::new(Mutex::new(std::io::stdout()));
     let owner = uuid::Uuid::new_v4().to_string();
     let mut session = protocol::Session::default();
     let active = Arc::new(AtomicUsize::new(0));
-    let input = std::io::stdin();
-    let mut input = input.lock();
+    // Windows SSH or an AI client can keep stdin open after the GUI exits.
+    let (sender, receiver) = mpsc::sync_channel(1);
+    std::thread::spawn(move || {
+        let input = std::io::stdin();
+        let mut input = input.lock();
+        loop {
+            let mut line = vec![];
+            let result = (&mut input)
+                .take(protocol::MAX_BYTES + 1)
+                .read_until(b'\n', &mut line)
+                .map(|read| (read, line))
+                .map_err(|_| "MCP_STDIN_FAILED".to_owned());
+            let finished = !matches!(result.as_ref(), Ok((read, _)) if *read > 0);
+            if sender.send(result).is_err() || finished {
+                break;
+            }
+        }
+    });
     let mut workers = vec![];
     loop {
-        let mut line = vec![];
-        let read = (&mut input)
-            .take(protocol::MAX_BYTES + 1)
-            .read_until(b'\n', &mut line)
-            .map_err(|_| "MCP_STDIN_FAILED")?;
+        let (read, line) = match receiver.recv_timeout(Duration::from_millis(250)) {
+            Ok(value) => value?,
+            Err(mpsc::RecvTimeoutError::Timeout) => continue,
+            Err(mpsc::RecvTimeoutError::Disconnected) => break,
+        };
         if read == 0 {
             break;
         }
@@ -101,12 +152,10 @@ pub fn stdio(path: &Path) -> Result<(), String> {
         };
         if request["method"] == "notifications/cancelled" && request.get("id").is_none() {
             if let Some(id) = request["params"].get("requestId") {
-                if let Ok(endpoint) = endpoint(path) {
-                    let _ = exchange(
-                        &endpoint,
-                        json!({"op":"cancel","owner":owner,"requestId":id}),
-                    );
-                }
+                let _ = exchange(
+                    &instance,
+                    json!({"op":"cancel","owner":owner,"requestId":id}),
+                );
             }
             continue;
         }
@@ -121,7 +170,7 @@ pub fn stdio(path: &Path) -> Result<(), String> {
                 );
                 continue;
             }
-            let path = path.to_path_buf();
+            let instance = instance.clone();
             let output = output.clone();
             let owner = owner.clone();
             let active = active.clone();
@@ -130,7 +179,7 @@ pub fn stdio(path: &Path) -> Result<(), String> {
                 let id = request["id"].clone();
                 if let Some(response) = snapshot.handle(request, |tool, arguments| {
                     exchange(
-                        &endpoint(&path)?,
+                        &instance,
                         json!({"owner":owner,"requestId":id,"tool":tool,"arguments":arguments}),
                     )
                 }) {
@@ -154,11 +203,12 @@ pub fn stdio(path: &Path) -> Result<(), String> {
             write(&output, response);
         }
     }
-    if let Ok(endpoint) = endpoint(path) {
-        let _ = exchange(&endpoint, json!({"op":"cancel","owner":owner}));
-    }
+    let _ = exchange(&instance, json!({"op":"cancel","owner":owner}));
     for worker in workers {
-        let _ = worker.join();
+        // EOF ends this CLI process; a stalled RPC must not hold the exe open.
+        if worker.is_finished() {
+            let _ = worker.join();
+        }
     }
     Ok(())
 }
