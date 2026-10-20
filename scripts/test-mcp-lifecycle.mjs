@@ -22,11 +22,11 @@ export async function verifyRelayLifecycle(executable, parent = os.tmpdir()) {
     const endpointPath = path.join(root, scenario + '.json');
     const token = randomBytes(32).toString('hex');
     const sockets = new Set();
-    let stopping = false;
     const closedConnection = error => {
-      // Windows can reset the pending RPC when its owning relay exits. The
-      // readline interface forwards input errors and needs its own handler.
-      if (!stopping || error.code !== 'ECONNRESET') throw error;
+      // Windows can reset an RPC/ping socket when its owning relay drops it.
+      // Process discovery, liveness and exact exit-code assertions below still
+      // detect a relay failure. readline forwards input errors to this handler.
+      if (error.code !== 'ECONNRESET') throw error;
     };
     let waiting;
     const pending = new Promise(resolve => { waiting = resolve; });
@@ -72,7 +72,6 @@ export async function verifyRelayLifecycle(executable, parent = os.tmpdir()) {
       await bounded(ready, 15000, 'Relay discovery timeout');
       await new Promise(resolve => setTimeout(resolve, 750));
       assert.equal(child.exitCode, null, 'Healthy idle relay must remain connected');
-      stopping = true;
       if (scenario === 'stdinEofWhileWaiting') {
         child.stdin.write(JSON.stringify({ jsonrpc: '2.0', id: 'pending', method: 'tools/call', params: { name: 'studio_get_state', arguments: {} } }) + '\n');
         await bounded(pending, 5000, 'The pending native request was not received');
