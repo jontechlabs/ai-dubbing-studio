@@ -70,6 +70,7 @@ test('native import opens processing; embedded source and target tracks are sele
         if (command === 'plugin:event|listen') { listeners.set(args.event, args.handler); return args.handler; }
         if (command === 'plugin:event|unlisten') return;
         if (command === 'restore_project') return null;
+        if (command === 'mcp_ready') return null;
         if (command === 'list_jobs') return [];
         if (command === 'plugin:dialog|open') return args.options.directory ? 'C:/Projects' : 'C:/two-tracks.mkv';
         if (command === 'probe_media') return info;
