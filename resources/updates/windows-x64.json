@@ -1,11 +1,11 @@
 {
-  "version": "0.18.0",
-  "notes": "Synchronisation labiale par lot : toutes les répliques doublées ou cochées, détection CPU des visages filmés et animes, cadrages corrigibles par dialogue, séquences indépendantes, annulation et reprise ; vidéo principale intacte. Corrections FFmpeg des découpes et étirements audio, vérification avant enregistrement et écoute de l’essai original. Correction des cartes multilignes qui se chevauchent. Tête de lecture précise dans l’éditeur de doublage avec placement du curseur.",
-  "pub_date": "2026-10-20T03:22:49Z",
+  "version": "0.19.0",
+  "notes": "Pilotage de l’application ouverte par MCP : 93 outils, projets, sous-titres, traductions, doublage et synchro labiale par lot, mixage, édition audio, lecture et export MKV. Activation dans Paramètres > Contrôle IA / MCP, configuration JSON ou Codex TOML, journal récent, annulation et garde de révision. Aucun Node.js requis dans l’application installée. Correction du rechargement des projets au format 13.",
+  "pub_date": "2026-10-20T05:00:18Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSdFFyMUJGTFp3Nk5WU0REUzFRY24rSGFod3JDSUZ5MUt1WWdmMUlEN2QrYmJLb0VnR0ZieUdRRjJOYjVhNzZndW5UWVFHZDd4TWdLMjlKeGhpeXBMNEJRZkExM0NyR2dnPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkyNDI5MDg2CWZpbGU6QUkgRHViYmluZyBTdHVkaW9fMC4xOC4wX3g2NC1zZXR1cC5leGUJdmVyc2lvbjowLjE4LjAKYndsaVpLOTdUZXgrOEFCdys2dWdPWjkvUjlEMDBkM21xZlZTV0Yrb2tCdEdNSENERFFTVml3MHd6Y2pCY0Jmb2RFUlg4eWk1ditOOXc3RWJIbWRWQlE9PQo=",
-      "url": "https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.18.0/AI-Dubbing-Studio-0.18.0-Setup.exe"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSdFFyMUJGTFp3Nk4wOGNLTDRHc0dQdEw1ZkVxRHFSRk9Mc0hKSnp3QUVGTlVZenhlUWo1Wk5nVC9SYm1NL1FBQ1pET3hKblFtRjZyZWpnenZxaXFqaFNpNi9FS3QwK3drPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkyNDcxOTcwCWZpbGU6QUkgRHViYmluZyBTdHVkaW9fMC4xOS4wX3g2NC1zZXR1cC5leGUJdmVyc2lvbjowLjE5LjAKRFkzQUNPc2pTU3ZxL2l1RFc3MWRsVG82dnlpWVlDbUZ0VHh3dEw1Vy9ENjNYRTYyakZoWklSYXluaEExZ1BFTDRGZDJPdWZBZGdaeXZEdFVhV0x0RGc9PQo=",
+      "url": "https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.19.0/AI-Dubbing-Studio-0.19.0-Setup.exe"
     }
   }
 }
