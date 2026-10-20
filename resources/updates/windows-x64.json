@@ -1,11 +1,11 @@
 {
-  "version": "0.19.0",
-  "notes": "Pilotage de l’application ouverte par MCP : 93 outils, projets, sous-titres, traductions, doublage et synchro labiale par lot, mixage, édition audio, lecture et export MKV. Activation dans Paramètres > Contrôle IA / MCP, configuration JSON ou Codex TOML, journal récent, annulation et garde de révision. Aucun Node.js requis dans l’application installée. Correction du rechargement des projets au format 13.",
-  "pub_date": "2026-10-20T05:00:18Z",
+  "version": "0.20.0",
+  "notes": "Transfert d’intonation expérimental : conservez une voix française et appliquez les contours de mélodie, rythme et énergie d’une réplique japonaise ou d’une autre référence. Intensité réglable, traitement local sur CPU, nouvel essai indépendant et tous les essais précédents conservés. Également pilotable par MCP (95 outils). Transfert acoustique approximatif entre langues ; projets dérivés au format 14.",
+  "pub_date": "2026-10-20T17:02:28Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSdFFyMUJGTFp3Nk4wOGNLTDRHc0dQdEw1ZkVxRHFSRk9Mc0hKSnp3QUVGTlVZenhlUWo1Wk5nVC9SYm1NL1FBQ1pET3hKblFtRjZyZWpnenZxaXFqaFNpNi9FS3QwK3drPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkyNDcxOTcwCWZpbGU6QUkgRHViYmluZyBTdHVkaW9fMC4xOS4wX3g2NC1zZXR1cC5leGUJdmVyc2lvbjowLjE5LjAKRFkzQUNPc2pTU3ZxL2l1RFc3MWRsVG82dnlpWVlDbUZ0VHh3dEw1Vy9ENjNYRTYyakZoWklSYXluaEExZ1BFTDRGZDJPdWZBZGdaeXZEdFVhV0x0RGc9PQo=",
-      "url": "https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.19.0/AI-Dubbing-Studio-0.19.0-Setup.exe"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSdFFyMUJGTFp3NkRqTGpMbVpTOStiZmpkazV5a2RtR0taMWI1dmNscjJyc2loM3VUallqMUVyWXo5Y3ZVL3RHbUlQTXJVOVYyOGYwTHVmZGpaZzNDTFROV1hTRFQxNGdZPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkyNTE1MzQ1CWZpbGU6QUkgRHViYmluZyBTdHVkaW9fMC4yMC4wX3g2NC1zZXR1cC5leGUJdmVyc2lvbjowLjIwLjAKZy9hL0FWNUttRDNrNWF2Z3IxdTl0aFZpS3hyZ05sdjl5U2djRWpFMlRrY1llUTlVL0NwVEpuVHNKQ0t3VmkwdEdKU1dienZqa3RYV1lEM0xmc2I4QlE9PQo=",
+      "url": "https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.20.0/AI-Dubbing-Studio-0.20.0-Setup.exe"
     }
   }
 }

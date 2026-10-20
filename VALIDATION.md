@@ -2,7 +2,9 @@
 
 ## v0.20.0 — 20 October 2026
 
-Windows workflow evidence will be recorded before publication.
+Windows checks and signed-update package production passed in [run 39457240077](https://github.com/jontechlabs/ai-dubbing-studio/actions/runs/39457240077), built from `fdff23c187b418e9b334b48797eb571d4e7806a6`. All 423 Windows suite checks passed (119 TypeScript, 119 Rust, 125 Chrome, 60 Python), plus an actual packaged Windows desktop diagnostic driven by the official MCP SDK (95 tools, actual reference/dialogue Praat transfers and cancellation, schemas, imports, edits, approval, stale revision refusal, undo, format-13 reload, playback, MKV export and preserved source hash), plus four actual CPU face-detector/protocol checks, plus seven actual LatentSync neural-core/checkpoint-header diagnostics, plus actual unpinned-bank/FP8/cache/tiny-model/header diagnostics and the real causal-vocoder finalization diagnostic, plus a real native Japanese-to-French LLM proposal and cancellation/process-release checks under a Unicode model path, plus two real Japanese ASR checks using the final Windows release executable. The setup and portable archive are copied unchanged from this workflow. Final metadata only records this evidence and the verified update feed.
+
+Packaged Windows worker timings for the 7.2-second Japanese fixture: auto: 176.91 s, ja: 85.62 s. These are CI CPU measurements, not performance estimates for the user’s PC.
 
 - Four native prosody tests cover settings/contour validation and stale revisions, actual Praat analysis and PSOLA resynthesis of a rising-pitch guide, source/guide byte preservation, output duration and audible tail, silent-guide rejection, zero-strength identity and cancellation before rendering. The pinned executable is prepared before Windows tests; actual Linux Praat also passes locally.
 - Browser checks cover source/guide controls, strength and component options, duration limits, queued-job state and preserved previous takes. TypeScript checks cover bounded options, format-14 provenance and derived-take independence after deleting the base.
