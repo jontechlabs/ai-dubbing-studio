@@ -12,6 +12,7 @@ mod inpaint_batch;
 mod integration_tests;
 mod jobs;
 mod lips;
+mod mcp;
 mod media;
 mod mix;
 mod model_storage;
@@ -33,6 +34,48 @@ mod voice_space;
 mod waveform;
 pub fn smoke_test(path: &std::path::Path) -> Result<(), String> {
     smoke::run(path)
+}
+pub fn mcp_stdio(path: &std::path::Path) -> Result<(), String> {
+    mcp::stdio(path)
+}
+
+#[tauri::command]
+fn mcp_status(control: tauri::State<'_, Arc<mcp::Controller>>) -> serde_json::Value {
+    control.status()
+}
+#[tauri::command]
+async fn mcp_set_enabled(
+    control: tauri::State<'_, Arc<mcp::Controller>>,
+    enabled: bool,
+) -> Result<serde_json::Value, String> {
+    let control = control.inner().clone();
+    tauri::async_runtime::spawn_blocking(move || control.set_enabled(enabled))
+        .await
+        .map_err(domain::io_error)?
+}
+#[tauri::command]
+fn mcp_ready(control: tauri::State<'_, Arc<mcp::Controller>>, ready: bool) {
+    control.set_ready(ready);
+}
+#[tauri::command]
+fn mcp_claim(
+    control: tauri::State<'_, Arc<mcp::Controller>>,
+    id: String,
+) -> Result<Option<mcp::Request>, String> {
+    control.claim(&id)
+}
+#[tauri::command]
+fn mcp_live(control: tauri::State<'_, Arc<mcp::Controller>>, id: String) -> bool {
+    control.live(&id)
+}
+#[tauri::command]
+fn mcp_complete(
+    control: tauri::State<'_, Arc<mcp::Controller>>,
+    id: String,
+    result: Option<serde_json::Value>,
+    error: Option<String>,
+) {
+    control.complete(&id, result, error);
 }
 pub fn transcribe_reference_worker(
     model: &Path,
@@ -1299,11 +1342,20 @@ pub fn run() {
                 jobs: Mutex::new(restored),
                 gate: Arc::new(tokio::sync::Semaphore::new(1)),
                 model_dir: Mutex::new(model_storage::load(&data_dir)?),
-                data_dir,
+                data_dir: data_dir.clone(),
             }));
+            let automation = mcp::Controller::new(app.handle().clone(), data_dir);
+            automation.restore();
+            app.manage(automation);
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
+            mcp_status,
+            mcp_set_enabled,
+            mcp_ready,
+            mcp_claim,
+            mcp_live,
+            mcp_complete,
             translation_status,
             install_translation_model,
             suggest_translation,

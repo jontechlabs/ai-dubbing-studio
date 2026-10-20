@@ -1,5 +1,14 @@
 # Validation
 
+## v0.19.0 — 20 October 2026
+
+Windows workflow evidence will be recorded before publication.
+
+- MCP protocol tests cover initialization/version negotiation, tools/resources, nested schema references, rejected unknown tools/invalid requests and tool errors. Real loopback tests cover authentication, secret-free client configuration, single-instance ownership, one-time request claims, result delivery, cancellation before arrival, pending-request shutdown and token rotation. No HTTP server or arbitrary shell/JavaScript tool is exposed.
+- Browser checks cover opt-in settings, JSON/Codex TOML configuration, recent-command audit, visible edits and undo, rejected stale contexts, atomic project patches, normal audio regions, failed/cancelled render preflight, selection, timeline zoom, playback and background job control. Pure checks cover JSON pointers, identity/revision guards and prototype paths. The generated catalog is checked against the current desktop types and native command definitions.
+- The packaged Windows diagnostic uses the pinned official MCP TypeScript SDK 1.32.1 to control the actual portable executable and hidden native WebView over stdio: discovery, shared schemas, project/media/subtitle import, approval, stale-context refusal, undo, track edits, characters, format-13 reload, playback and real MKV export with source hashes preserved. It runs no neural voice/lip inference. Node.js is a test dependency, not an installed-app requirement.
+- Project loading now accepts the existing format 13 used by LatentSync and still refuses future formats. The integration controls the open local application; a standalone headless engine and remote HTTP transport are not included. Screenshots use the actual React UI and mocked native commands. Earlier neural-core/ASR/translation and media suites remain enabled; no RTX throughput or VRAM claim is added.
+
 ## v0.18.0 — 19 October 2026
 
 Windows checks and signed-update package production passed in [run 39284945854](https://github.com/jontechlabs/ai-dubbing-studio/actions/runs/39284945854), built from `e397de031dda094b87575389848435a611eb2b1e`. All 397 Windows suite checks passed (111 TypeScript, 108 Rust, 118 Chrome, 60 Python), plus four actual CPU face-detector/protocol checks, plus seven actual LatentSync neural-core/checkpoint-header diagnostics, plus actual unpinned-bank/FP8/cache/tiny-model/header diagnostics and the real causal-vocoder finalization diagnostic, plus a real native Japanese-to-French LLM proposal and cancellation/process-release checks under a Unicode model path, plus two real Japanese ASR checks using the final Windows release executable. The setup and portable archive are copied unchanged from this workflow. Final metadata only records this evidence and the verified update feed.

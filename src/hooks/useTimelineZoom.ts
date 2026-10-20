@@ -122,5 +122,14 @@ export function useTimelineZoom(
       window.removeEventListener('keydown', key);
     };
   }, [change, fit, projectId, scroll, viewport]);
+  useEffect(() => {
+    const control = (event: Event) => {
+      const value = (event as CustomEvent<unknown>).detail;
+      if (value === 'fit') fit();
+      else if (typeof value === 'number' && Number.isFinite(value) && value >= 1) change(value);
+    };
+    document.addEventListener('studio-timeline-zoom', control);
+    return () => document.removeEventListener('studio-timeline-zoom', control);
+  }, [change, fit]);
   return { zoom, maxZoom, change, fit, focus, reveal };
 }

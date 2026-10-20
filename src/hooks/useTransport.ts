@@ -36,6 +36,8 @@ export function useTransport(
   projectRef.current = project;
   useEffect(() => {
     let disposed = false;
+    ++playToken.current;
+    setPreparingDub(false);
     pendingSeek.current = 0;
     timeRef.current = 0;
     stopAt.current = null;
@@ -108,9 +110,19 @@ export function useTransport(
   }, [onError]);
   const queueStart = useCallback(() => {
     const token = ++playToken.current;
-    requestAnimationFrame(() => {
+    let started = false;
+    let frame = 0;
+    const begin = () => {
+      if (started) return;
+      started = true;
+      cancelAnimationFrame(frame);
+      clearTimeout(timer);
       if (token === playToken.current) void startVideo();
-    });
+    };
+    frame = requestAnimationFrame(begin);
+    // A minimized/hidden WebView may suspend animation frames. Keep commands
+    // usable after React has committed its mixer changes in that case too.
+    const timer = setTimeout(begin, 80);
   }, [startVideo]);
   const toggle = useCallback(() => {
     setOriginalOnly(false);

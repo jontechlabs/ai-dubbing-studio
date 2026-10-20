@@ -50,7 +50,7 @@ pub fn load(root: &Path) -> Result<Project, String> {
         let value: serde_json::Value =
             serde_json::from_slice(&std::fs::read(path).map_err(io_error)?)
                 .map_err(|_| "INVALID_PROJECT".to_string())?;
-        if !matches!(value["formatVersion"].as_u64(), Some(1..=12)) {
+        if !matches!(value["formatVersion"].as_u64(), Some(1..=13)) {
             return Err("UNSUPPORTED_PROJECT_VERSION".into());
         }
         let mut p: Project =
@@ -207,6 +207,23 @@ impl Session {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn reloads_format_13_and_still_refuses_future_formats() {
+        let directory = tempfile::tempdir().unwrap();
+        let root = create_root(directory.path(), "LatentSync").unwrap();
+        let mut project = Project::new("LatentSync".into(), "ja".into(), "fr".into());
+        project.format_version = 13;
+        save(&root, &project).unwrap();
+        assert_eq!(load(&root).unwrap().format_version, 13);
+        let mut future = serde_json::to_value(project).unwrap();
+        future["formatVersion"] = serde_json::json!(14);
+        atomic_write(
+            &root.join("project.json"),
+            &serde_json::to_vec(&future).unwrap(),
+        )
+        .unwrap();
+        assert_eq!(load(&root).unwrap_err(), "UNSUPPORTED_PROJECT_VERSION");
+    }
 
     #[test]
     fn translation_approval_survives_reload_and_tts_changes_but_not_text_edits() {

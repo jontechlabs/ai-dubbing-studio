@@ -21,6 +21,15 @@ export async function nativeMock(page: Page, large = false) {
     const host=window as unknown as Record<string,any>,callbacks=new Map<number,(data:any)=>void>(),listeners=new Map<string,number>();let counter=0,project=JSON.parse(localStorage.getItem('nativeMockProject')||'null')||structuredClone(initial),job:any;
     const emit=(name:string,payload:any)=>{const id=listeners.get(name);if(id)callbacks.get(id)?.({event:name,id,payload});};
     host.__calls=[];host.__downloadError=false;host.__installed=false;
+    host.__getMockProject=()=>structuredClone(project);
+    let mcpEnabled=localStorage.getItem('mockMcpEnabled')==='true';const mcpRequests=new Map<string,any>(),mcpAudit:any[]=[];
+    host.__mcpReady=false;host.__mcpIds=[];
+    host.__mcp=(tool:string,args:any={})=>new Promise(resolve=>{
+      if(!mcpEnabled||!host.__mcpReady){resolve({error:'MCP_DISABLED'});return;}
+      const id=crypto.randomUUID();host.__mcpIds.push(id);
+      mcpRequests.set(id,{id,tool,arguments:structuredClone(args),resolve,claimed:false});mcpAudit.unshift({id,tool,status:'queued'});emit('mcp-request',id);
+    });
+    host.__mcpCancel=(id:string)=>{const row=mcpRequests.get(id);if(row){row.resolve({error:'MCP_CANCELLED'});mcpRequests.delete(id);}};
     let lips:any=null;
     host.__llmReady=true;
     const proposals:any[]=JSON.parse(localStorage.getItem('nativeMockProposals')||'[]');
@@ -152,6 +161,12 @@ export async function nativeMock(page: Page, large = false) {
         return `C:/Studio/generations/${args.id}.wav`;
       }
       if(command==='export_generation')return null;
+      if(command==='mcp_ready'){host.__mcpReady=args.ready;return null;}
+      if(command==='mcp_status')return {enabled:mcpEnabled,ready:host.__mcpReady,port:mcpEnabled?50291:null,pending:mcpRequests.size,audit:structuredClone(mcpAudit),configuration:{mcpServers:{'ai-dubbing-studio':{command:'C:/Studio/ai-dubbing-studio.exe',args:['--mcp','--endpoint','C:/Studio/mcp-endpoint.json']}}},configurationToml:'[mcp_servers.ai_dubbing_studio]\ncommand = "C:/Studio/ai-dubbing-studio.exe"\nargs = ["--mcp", "--endpoint", "C:/Studio/mcp-endpoint.json"]\nstartup_timeout_sec = 20\ntool_timeout_sec = 180\n'};
+      if(command==='mcp_set_enabled'){mcpEnabled=args.enabled;localStorage.setItem('mockMcpEnabled',String(mcpEnabled));if(!mcpEnabled)for(const id of mcpRequests.keys())host.__mcpCancel(id);return host.__TAURI_INTERNALS__.invoke('mcp_status');}
+      if(command==='mcp_claim'){const row=mcpRequests.get(args.id);if(!mcpEnabled||!row||row.claimed)return null;row.claimed=true;mcpAudit.find(r=>r.id===args.id).status='running';return {id:row.id,tool:row.tool,arguments:row.arguments};}
+      if(command==='mcp_live')return mcpEnabled&&mcpRequests.has(args.id);
+      if(command==='mcp_complete'){const row=mcpRequests.get(args.id);if(row){mcpRequests.delete(args.id);mcpAudit.find(r=>r.id===args.id).status=args.error?'failed':'succeeded';row.resolve(args.error?{error:args.error}:args.result);}return null;}
       if(command==='list_jobs')return job?[job]:[];
       if(command==='media_path')return 'preview.mp4';
       if(command==='get_waveform')return {durationMs:16000,stepMs:20,audioStreamIndex:args.trackId?0:1,peaks:Array.from({length:800},(_,i)=>0.1+(i%9)/12)};

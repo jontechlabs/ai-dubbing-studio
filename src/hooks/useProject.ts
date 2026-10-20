@@ -175,6 +175,10 @@ export function useProject() {
     await save();
     if (savedVersion.current !== version.current) throw new Error('SAVE_FAILED');
   }, [save]);
+  const currentSnapshot = useCallback(async () => {
+    await flush();
+    return latest.current ? structuredClone(latest.current) : null;
+  }, [flush]);
   const applySnapshot = useCallback(
     async (before: Project, after: Project) => {
       setApplying(true);
@@ -209,5 +213,6 @@ export function useProject() {
     applySnapshot,
     applying,
     flush,
+    currentSnapshot,
   };
 }

@@ -1,0 +1,83 @@
+// Actual packaged executable + WebView + native filesystem/FFmpeg, driven by
+// the pinned official SDK. No model weights or GPU inference are involved.
+import {Client} from '@modelcontextprotocol/sdk/client/index.js';
+import {StdioClientTransport} from '@modelcontextprotocol/sdk/client/stdio.js';
+import fs from 'node:fs/promises';
+import {createHash,randomUUID} from 'node:crypto';
+import path from 'node:path';
+import assert from 'node:assert/strict';
+import {execFileSync} from 'node:child_process';
+const args=Object.fromEntries(process.argv.slice(2).reduce((rows,value,index,all)=>index%2===0?[...rows,[value.slice(2),all[index+1]]]:rows,[]));
+const client=new Client({name:'studio-native-validation',version:'1.0.0'},{capabilities:{}});
+const transport=new StdioClientTransport({command:args.exe,args:['--mcp','--endpoint',args.endpoint],stderr:'pipe'});
+let stderr='';transport.stderr?.on('data',bytes=>{stderr+=bytes.toString();});
+const proofs={};
+const call=async(name,arguments_={})=>{
+    const response=await client.callTool({name,arguments:arguments_});
+    if(response.isError)throw Error(response.content.map(item=>item.text??'').join('\n'));
+    return response.structuredContent.value;
+};
+const state=()=>call('studio_get_state');
+const context=async()=> (await state()).context;
+const job=async id=>{
+    const until=Date.now()+120000;
+    while(Date.now()<until){
+        const rows=await call('studio_list_jobs');const row=rows.find(row=>row.id===id);
+        if(row?.status==='succeeded')return row;
+        if(row&&['failed','cancelled','interrupted'].includes(row.status))throw Error(JSON.stringify(row));
+        await new Promise(resolve=>setTimeout(resolve,200));
+    }
+    throw Error('Native MCP job timeout');
+};
+try {
+    await client.connect(transport);
+    const tools=(await client.listTools()).tools;
+    const catalog=JSON.parse(await fs.readFile(new URL('../src/mcp/catalog.json',import.meta.url),'utf8'));
+    assert.equal(tools.length,catalog.commands.length+catalog.builtins.length);
+    assert(!tools.some(tool=>tool.name==='studio_replace_project'||tool.name.startsWith('studio_mcp_')));
+    proofs.officialSdk=true;proofs.toolCount=tools.length;proofs.version=client.getServerVersion().version;
+    const schema=await client.readResource({uri:'studio://schemas/Project'});
+    assert(JSON.parse(schema.contents[0].text).$defs);proofs.resources=true;
+    const until=Date.now()+90000;
+    while(true){try {await state();break;}catch(error){if(!String(error).includes('MCP_UI_NOT_READY')||Date.now()>=until)throw error;await new Promise(resolve=>setTimeout(resolve,250));}}
+    const name='Projet MCP 日本語';
+    await call('studio_create_project',{parentPath:args['test-root'],name,source:'ja',target:'fr'});
+    const originalHash=createHash('sha256').update(await fs.readFile(args.movie)).digest('hex');
+    const imported=await call('studio_import_media',{context:await context(),path:args.movie,audioStreamIndex:1,forceProxy:false});await job(imported);
+    for(const [role,text] of [['source','字幕のテスト。'],['target','Une première traduction.']]){
+        const file=path.join(args['test-root'],`${role}.srt`);await fs.writeFile(file,`1\n00:00:01,000 --> 00:00:03,000\n${text}\n\n2\n00:00:05,000 --> 00:00:07,000\n${text}\n`,'utf8');
+        await call('studio_import_subtitles',{context:await context(),path:file,role});
+    }
+    const rows=await call('studio_get_dialogues',{limit:10});assert.equal(rows.rows.length,2);
+    const lineId=rows.rows[0].id;
+    const edited=await call('studio_edit_dialogue',{context:await context(),lineId,role:'target',text:'Une traduction validée par MCP.',approved:true});
+    assert.equal((await call('studio_get_dialogues',{status:'approved'})).rows[0].translated,'Une traduction validée par MCP.');
+    const stale=await client.callTool({name:'studio_edit_dialogue',arguments:{context:rows.context,lineId,role:'target',text:'Must be rejected'}});assert(stale.isError);proofs.staleRevision=true;
+    await call('studio_history',{context:edited.context,direction:'undo'});
+    assert.equal((await call('studio_get_dialogues')).rows[0].translated,'Une première traduction.');proofs.undo=true;
+    await call('studio_set_track',{context:await context(),id:'original',changes:{gain:.6,mute:false}});
+    await call('studio_audio_region',{context:await context(),id:'original',startMs:1000,endMs:1500,gain:0,mute:true});
+    const characterId=randomUUID();
+    await call('studio_project_patch',{context:await context(),patches:[{op:'add',path:'/characters/-',value:{id:characterId,name:'Personnage MCP',color:'#82bda0',references:[],defaultReferenceId:null}},{op:'replace',path:'/formatVersion',value:13}]});
+    const project=await call('studio_get_project');assert.equal(project.characters[0].id,characterId);assert.equal(project.tracks.find(track=>track.id==='original').regions[0].mute,true);proofs.atomicEditing=true;
+    await call('studio_open_project',{path:path.join(args['test-root'],`${name}.dubproject`)});
+    assert.equal((await call('studio_get_project')).formatVersion,13);proofs.reopenFormat13=true;
+    await call('studio_select_dialogue',{lineId});await call('studio_set_selection',{ids:[lineId]});
+    await call('studio_preferences',{zoom:3,language:'fr',theme:'dark'});
+    const ready=Date.now()+30000;
+    while(!(await state()).playback.ready){if(Date.now()>ready)throw Error('Native video did not become ready');await new Promise(resolve=>setTimeout(resolve,200));}
+    await call('studio_playback',{action:'seek',timeMs:2000});await call('studio_playback',{action:'play'});
+    const playingDeadline=Date.now()+15000;
+    while((await state()).playback.timeMs<=2150){if(Date.now()>playingDeadline)throw Error('Native MCP playback did not start');await new Promise(resolve=>setTimeout(resolve,200));}
+    await call('studio_playback',{action:'pause'});
+    assert((await state()).playback.timeMs>2150);proofs.playback=true;
+    const output=path.join(args['test-root'],'Résultat 日本語.mkv');
+    const exported=await call('studio_export_mkv',{context:await context(),path:output,options:{includeRetouched:false,includeOriginal:true,sourceSubtitles:true,targetSubtitles:true,codec:'flac',allowIncomplete:true}});await job(exported);
+    const probe=path.join(path.dirname(args.exe),'binaries','ffprobe.exe');
+    const media=JSON.parse(execFileSync(probe,['-v','error','-show_format','-show_streams','-of','json',output],{encoding:'utf8',windowsHide:true}));
+    assert(Math.abs(Number(media.format.duration)-16)<.2);assert(media.streams.some(stream=>stream.codec_type==='audio'));assert.equal(media.streams.filter(stream=>stream.codec_type==='subtitle').length,2);
+    assert.equal(createHash('sha256').update(await fs.readFile(args.movie)).digest('hex'),originalHash);proofs.mkvExport=true;proofs.sourcePreserved=true;
+    await fs.writeFile(args.proof,JSON.stringify(proofs,null,2)+'\n','utf8');
+    console.log('MCP_NATIVE_PROOF '+JSON.stringify(proofs));
+} catch(error){if(stderr)console.error(stderr.slice(-2000));throw error;}
+finally {await client.close();}

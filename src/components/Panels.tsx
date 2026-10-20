@@ -10,6 +10,7 @@ import type {
   Project,
 } from '../domain/types';
 import { APP_VERSION } from '../domain/project';
+import { McpSettings } from './McpSettings';
 import { jobProgress } from '../domain/batchProgress';
 import type { Panel } from './Header';
 import { ImportPanel } from './ImportPanel';
@@ -314,6 +315,7 @@ function SettingsPanel({
   return (
     <div className="panel-body">
       <ModelStorageSettings jobs={jobs} onError={onError} />
+      <McpSettings />
       <UpdateSettings
         updater={updater}
         busy={jobs.some((job) => ['queued', 'running', 'paused'].includes(job.status))}

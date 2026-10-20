@@ -1,0 +1,50 @@
+# v0.19.0 — Piloter le studio avec une IA via MCP
+
+Le studio fournit **93 outils MCP** : 68 commandes natives et 25 commandes d’édition, d’état et de lecture. Le serveur utilise **stdio** et le même exécutable que l’application. Cette première intégration pilote **l’application ouverte** ; aucun environnement Node.js ou Python supplémentaire n’est requis pour la connexion.
+
+## Connexion
+
+1. Ouvrez le studio, puis **Paramètres → Contrôle IA / MCP**.
+2. Cochez **Activer le pilotage MCP local**.
+3. Choisissez **JSON** ou **Codex · TOML**, puis **Copier la configuration MCP**.
+4. Ajoutez-la dans votre client MCP et redémarrez sa connexion au serveur.
+
+Pour Codex, ajoutez le bloc TOML généré dans `~/.codex/config.toml` ou dans le fichier de configuration du projet. Il fournit `command`, `args` et les délais adaptés au studio. La [documentation officielle Codex](https://learn.chatgpt.com/docs/extend/mcp?surface=cli) décrit ces champs et l’ajout de serveurs stdio. Le studio ne modifie pas automatiquement les réglages du client.
+
+![Activation et configuration MCP](screenshots/mcp-settings-fr.png)
+
+*Interface réelle avec commandes natives simulées pour la capture. Le diagnostic Windows vérifie séparément le SDK officiel avec l’exécutable portable et le WebView réels.*
+
+## Commandes disponibles
+
+| Domaine | Exemples de commandes |
+| --- | --- |
+| Projets et médias | Créer/ouvrir un projet, importer la vidéo, choisir ses pistes, préparer un proxy, lire le projet complet |
+| Sous-titres et personnages | Import SRT/MKV, édition, validation, découpe/fusion/calage des répliques ; personnages, références et prononciation via les données du projet |
+| Modèles et voix | État et installation, espace disque, stockage, périphérique, références audio et transcription, génération unitaire ou par lot |
+| Montage audio | Choix des prises, déplacement, durée, découpe, silence, fondus, volume des pistes et des portions, transferts entre pistes |
+| Synchronisation labiale | Analyse, cadrage automatique, rendu unitaire/par lot, consultation et activation des variantes |
+| Lecture et interface | Sélection des dialogues et lots, lecture/pause/déplacement, volume, vitesse, boucle, zoom, panneaux, langue et thème |
+| Résultats | Export MKV, audio, sous-titres et diagnostic ; état, annulation et reprise des traitements ; vérification et installation des mises à jour |
+
+Les schémas exposent tous les paramètres des commandes. Les champs persistants sans outil spécialisé restent modifiables avec `studio_project_patch`, notamment les réglages de modèles, personnages, références, dictionnaire de prononciation et variantes. Il s’agit d’un pilotage des fonctions et des données du studio, sans simulation de clics.
+
+Les outils suivent la session affichée : les changements sont sauvegardés, annulables et visibles dans l’interface. Commencez par `studio_get_state` ; les commandes qui modifient le projet demandent son `context` contenant `projectId` et `expectedRevision`. En cas de `STALE_REVISION`, relisez l’état et vérifiez les modifications avant de recommencer.
+
+Exemple de parcours pour une IA : lire l’état, créer ou ouvrir le projet, importer la vidéo et suivre sa tâche, importer les deux SRT, lire les répliques par pages avec `studio_get_dialogues`, proposer/valider leurs traductions, sélectionner les références et le modèle, lancer le lot de doublage puis vérifier les prises et exporter le MKV. Après chaque modification, utilisez le contexte renvoyé ou relisez l’état.
+
+Les générations, installations et exports longs renvoient un identifiant de tâche. Utilisez `studio_list_jobs`, `studio_cancel_job` et `studio_retry_job` pour suivre, annuler ou reprendre. L’annulation d’une requête MCP qui attend dans la file empêche son exécution. Les tâches déjà lancées se gèrent avec leur identifiant ; fermer un client MCP ne les détruit pas.
+
+Les schémas des outils décrivent leurs paramètres. Les ressources `studio://schemas/Project`, `studio://schemas/VoiceSettings` et les autres schémas fournissent les structures complètes. `studio_project_patch` permet des changements atomiques à l’aide des opérations JSON Pointer `add`, `replace`, `remove` et `test`. L’identifiant du projet et les métadonnées de révision ne sont pas modifiables.
+
+Utilisez une opération `test` sur l’identifiant d’une entrée avant de la modifier par indice de tableau. Une liste de patches est limitée à 500 opérations et se valide en une seule modification annulable. Les noms et positions de la timeline sont en millisecondes ; les gains audio utilisent 0 pour le silence, 1 pour 100 % et 2 pour 200 %. Les répliques se lisent par pages de 200 au maximum pour limiter la taille des réponses.
+
+Une demande de retouche vocale vérifie le rendu avant sa sauvegarde. Une erreur, une annulation pendant cette préparation ou une révision devenue obsolète conserve le montage précédent. Le modèle labial traite toujours des séquences indépendantes ; la vidéo principale reste intacte.
+
+Le mode est désactivé au départ, se limite à cet ordinateur et utilise une connexion privée authentifiée entre le relais stdio et l’application. Désactiver MCP coupe les nouvelles commandes et celles encore en attente. Le journal des paramètres affiche les noms et résultats des dernières commandes sans enregistrer les jetons de connexion. Aucun outil n’exécute de shell ou de JavaScript fourni par l’IA.
+
+Une seule instance MCP peut gérer un même profil d’application : une seconde instance ne remplace pas une connexion existante. Le relais retrouve les coordonnées locales après un redémarrage ou une réactivation ; le client doit relire l’état avant de reprendre des modifications. Les traitements déjà acceptés peuvent continuer après une déconnexion et se suivent par leur identifiant. Une réponse perdue après le lancement d’une opération exige de vérifier les tâches et le projet avant de relancer cette opération.
+
+Le SDK TypeScript officiel `@modelcontextprotocol/sdk` 1.32.1 sert uniquement aux tests de compatibilité. Il n’est pas nécessaire sur le PC qui utilise l’application.
+
+Références : [transport stdio](https://modelcontextprotocol.io/specification/2025-11-25/basic/transports#stdio), [cycle de vie](https://modelcontextprotocol.io/specification/2025-11-25/basic/lifecycle) et [outils MCP](https://modelcontextprotocol.io/specification/2025-11-25/server/tools). Les révisions 2025-03-26, 2025-06-18 et 2025-11-25 sont négociées ; les versions ultérieures peuvent utiliser la négociation de compatibilité.

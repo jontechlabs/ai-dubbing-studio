@@ -16,6 +16,7 @@ import { useTransport } from './hooks/useTransport';
 import * as bridge from './services/bridge';
 import type { TimelineNavigation } from './domain/timeline';
 import { useUpdater } from './hooks/useUpdater';
+import { useMcpControl } from './hooks/useMcpControl';
 import { ContextMenu, type ContextRequest, type OpenContextMenu } from './components/ContextMenu';
 
 export default function App() {
@@ -197,6 +198,28 @@ export default function App() {
     if (generation) playGeneration(generation);
     else openDub(line);
   };
+  const mcpActive = useMcpControl({
+    updater,
+    studio,
+    transport,
+    selectedId,
+    batchIds,
+    select,
+    checkBatch,
+    playGeneration,
+    stopAudio: () => {
+      stopGeneration();
+      document.dispatchEvent(new Event('studio-voice-preview'));
+    },
+    panel,
+    setPanel,
+    theme,
+    setTheme,
+    padding,
+    setPadding,
+    language: i18n.resolvedLanguage ?? 'fr',
+    changeLanguage: (language) => i18n.changeLanguage(language),
+  });
   useShortcuts({
     toggle: transport.toggle,
     dub: () => {
@@ -442,6 +465,7 @@ export default function App() {
         </div>
       </main>
       <footer className="statusbar">
+        {mcpActive && <span>{t('mcpActive')}</span>}
         {generationAudio.active && (
           <button onClick={generationAudio.stop}>{t('ttsStopListening')}</button>
         )}
