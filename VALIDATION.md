@@ -2,7 +2,9 @@
 
 ## v0.20.1 — 20 October 2026
 
-Windows workflow evidence will be recorded before publication.
+Windows checks and signed-update package production passed in [run 39484228944](https://github.com/jontechlabs/ai-dubbing-studio/actions/runs/39484228944), built from `838bc2ef88cc8bc7bfae301337112fb8f3ef8a40`. All 428 Windows suite checks passed (119 TypeScript, 120 Rust, 129 Chrome, 60 Python), plus an actual packaged Windows desktop diagnostic driven by the official MCP SDK (95 tools, six real stdio lifecycle cases, actual reference/dialogue Praat transfers and cancellation, schemas, imports, edits, approval, stale revision refusal, undo, format-13 reload, playback, MKV export and preserved source hash), plus four actual CPU face-detector/protocol checks, plus seven actual LatentSync neural-core/checkpoint-header diagnostics, plus actual unpinned-bank/FP8/cache/tiny-model/header diagnostics and the real causal-vocoder finalization diagnostic, plus a real native Japanese-to-French LLM proposal and cancellation/process-release checks under a Unicode model path, plus two real Japanese ASR checks using the final Windows release executable. The setup and portable archive are copied unchanged from this workflow. Final metadata only records this evidence and the verified update feed.
+
+Packaged Windows worker timings for the 7.2-second Japanese fixture: auto: 152.05 s, ja: 57.17 s. These are CI CPU measurements, not performance estimates for the user’s PC.
 
 - Actual stdio process diagnostics keep stdin open and verify normal EOF, EOF with an unresponsive in-flight request, blocked stdout, host exit with a stale endpoint, endpoint deletion and token rotation. A healthy idle relay stays alive. No forced termination is used for the passing lifecycle cases. The actual Linux executable passes locally; the Windows packaged diagnostic runs the same six cases.
 - A native regression forces an accepted socket into nonblocking mode and sends a delayed, fragmented request. The server must normalize the socket to blocking reads and authenticate the complete message, covering the Windows `WSAEWOULDBLOCK` race exposed by the packaged diagnostic.
