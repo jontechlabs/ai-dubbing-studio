@@ -50,6 +50,8 @@ export async function verifyRelayLifecycle(executable, parent = os.tmpdir()) {
     await fs.writeFile(endpointPath, JSON.stringify(endpoint));
     const child = spawn(executable, ['--mcp', '--endpoint', endpointPath], { windowsHide: true, stdio: ['pipe', 'pipe', 'pipe'] });
     child.stdin.on('error', () => {}); // An early process failure is reported by ready/exit below.
+    child.stdout.on('error', closedConnection);
+    child.stderr.on('error', closedConnection);
     const exited = new Promise(resolve => child.once('exit', (code, signal) => resolve({ code, signal })));
     let stderr = ''; child.stderr.on('data', data => { stderr += data; });
     const lines = createInterface({ input: child.stdout });
