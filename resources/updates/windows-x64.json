@@ -1,11 +1,11 @@
 {
-  "version": "0.17.0",
-  "notes": "LatentSync 1.5 et 1.6 : adaptation ShmuelRonen, profil mémoire réduit, vérification disque avant installation et choix explicite du GPU. Séquences indépendantes par dialogue ; vidéo principale intacte, préchargement des retouches pendant la lecture. 1.6 : profil candidat 16 Go, sans garantie OOM ; animes expérimentaux.",
-  "pub_date": "2026-10-19T11:29:24Z",
+  "version": "0.18.0",
+  "notes": "Synchronisation labiale par lot : toutes les répliques doublées ou cochées, détection CPU des visages filmés et animes, cadrages corrigibles par dialogue, séquences indépendantes, annulation et reprise ; vidéo principale intacte. Corrections FFmpeg des découpes et étirements audio, vérification avant enregistrement et écoute de l’essai original. Correction des cartes multilignes qui se chevauchent. Tête de lecture précise dans l’éditeur de doublage avec placement du curseur.",
+  "pub_date": "2026-10-20T03:22:49Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSdFFyMUJGTFp3NklGWkxPaG03L3JDUEtCN0xIU0w1U0xHTmJFM3NBUmc3ZmdaMWkvVGtEdndEK3Qwb0JKUlBwT1RXL1ZCejU0SXVDNkt2a2dIK25DdGh4MElySHFzcmdzPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkyNDA5MDc4CWZpbGU6QUkgRHViYmluZyBTdHVkaW9fMC4xNy4wX3g2NC1zZXR1cC5leGUJdmVyc2lvbjowLjE3LjAKUEZxV3R2V2prZ0hwMWFwMjZXaHNMOEVGVXl2N05EZ2tPRG9hbTVIbS9iaGloOFVvWHNHcDRLZEgwYW1TTTB1QkNEem1ZYi9xb3htWVgrclBETEg2QXc9PQo=",
-      "url": "https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.17.0/AI-Dubbing-Studio-0.17.0-Setup.exe"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSdFFyMUJGTFp3Nk5WU0REUzFRY24rSGFod3JDSUZ5MUt1WWdmMUlEN2QrYmJLb0VnR0ZieUdRRjJOYjVhNzZndW5UWVFHZDd4TWdLMjlKeGhpeXBMNEJRZkExM0NyR2dnPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkyNDI5MDg2CWZpbGU6QUkgRHViYmluZyBTdHVkaW9fMC4xOC4wX3g2NC1zZXR1cC5leGUJdmVyc2lvbjowLjE4LjAKYndsaVpLOTdUZXgrOEFCdys2dWdPWjkvUjlEMDBkM21xZlZTV0Yrb2tCdEdNSENERFFTVml3MHd6Y2pCY0Jmb2RFUlg4eWk1ditOOXc3RWJIbWRWQlE9PQo=",
+      "url": "https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.18.0/AI-Dubbing-Studio-0.18.0-Setup.exe"
     }
   }
 }

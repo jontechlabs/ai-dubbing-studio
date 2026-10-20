@@ -2,7 +2,9 @@
 
 ## v0.18.0 — 19 October 2026
 
-Windows workflow evidence will be recorded before publication.
+Windows checks and signed-update package production passed in [run 39284945854](https://github.com/jontechlabs/ai-dubbing-studio/actions/runs/39284945854), built from `e397de031dda094b87575389848435a611eb2b1e`. All 397 Windows suite checks passed (111 TypeScript, 108 Rust, 118 Chrome, 60 Python), plus four actual CPU face-detector/protocol checks, plus seven actual LatentSync neural-core/checkpoint-header diagnostics, plus actual unpinned-bank/FP8/cache/tiny-model/header diagnostics and the real causal-vocoder finalization diagnostic, plus a real native Japanese-to-French LLM proposal and cancellation/process-release checks under a Unicode model path, plus two real Japanese ASR checks using the final Windows release executable. The setup and portable archive are copied unchanged from this workflow. Final metadata only records this evidence and the verified update feed.
+
+Packaged Windows worker timings for the 7.2-second Japanese fixture: auto: 223.43 s, ja: 113.82 s. These are CI CPU measurements, not performance estimates for the user’s PC.
 
 - Real FFmpeg regressions reproduce concatenation failure after repeated tiny RubberBand stretches and verify the sample-clock fix, exact PCM length, cache reuse and untouched source WAV. An additional local stress experiment passed 200 varied valid multisegment graphs. The user’s diagnostic was from v0.16.0 and contained VOICE_EDIT_FAILED/filtergraph errors; their private source WAV was not supplied for this specific edit.
 - Native batch checks exercise actual FFmpeg extraction, 512 px crop/compose, fitted reference audio, independent intervals/files, original video/WAV byte preservation, per-line failure, cancellation, resume and the commit-before-journal crash window. The neural worker is a standard-library PNG protocol fixture in these orchestration tests, not a pretrained GPU render.
