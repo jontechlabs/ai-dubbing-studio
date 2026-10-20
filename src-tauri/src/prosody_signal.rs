@@ -236,7 +236,9 @@ pub fn read_pcm(path: &Path) -> Result<Vec<f64>, String> {
             let mut bytes = vec![0; frames as usize * 2];
             file.read_exact(&mut bytes).map_err(io_error)?;
             return Ok(bytes
-                .chunks_exact(2)
+                .as_chunks::<2>()
+                .0
+                .iter()
                 .map(|v| f64::from(i16::from_le_bytes([v[0], v[1]])) / 32768.0)
                 .collect());
         }
