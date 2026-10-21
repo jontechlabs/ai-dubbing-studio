@@ -186,6 +186,20 @@ fn expanded_moods_roundtrip_with_format_15_without_touching_existing_takes() {
         p.dialogues[0].voice_settings = Some(o.clone());
         let next: Project = serde_json::from_slice(&serde_json::to_vec(&p).unwrap()).unwrap();
         next.validate().unwrap();
+        let temporary = tempfile::tempdir().unwrap();
+        let root = temporary.path().canonicalize().unwrap();
+        project::save(&root, &next).unwrap();
+        let reopened = project::load(&root).unwrap();
+        assert_eq!(reopened.format_version, format);
+        assert_eq!(
+            reopened.dialogues[0]
+                .voice_settings
+                .as_ref()
+                .unwrap()
+                .mood
+                .as_deref(),
+            Some(id.as_str())
+        );
         assert!(next.generations.is_empty());
         assert_eq!(next.target_cues[0].text, "Bonjour");
         if format == 15 {
