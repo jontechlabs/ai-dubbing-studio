@@ -31,12 +31,14 @@ def target_prompt(request, chunk):
     return f'[Speak the following text in {language}] {chunk}'
 
 
-def target_chunks(request):
-    from drama3.chunking import split_text
+def target_chunks(request, splitter=None):
     prompt_text = request.get('promptText', request['text'])
     if prompt_text != request['text'] and not prompt_text.endswith(' ' + request['text']):
         raise ValueError('TTS_TEXT_MISMATCH')
-    return [target_prompt(request, chunk) for chunk in (split_text(prompt_text) or [prompt_text])]
+    if splitter is None:
+        from drama3.chunking import split_text
+        splitter = split_text
+    return [target_prompt(request, chunk) for chunk in (splitter(prompt_text) or [prompt_text])]
 
 
 def report(**values):

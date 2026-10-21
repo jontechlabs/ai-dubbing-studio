@@ -87,10 +87,9 @@ class MultilingualTests(unittest.TestCase):
         self.assertTrue(provenance['changes'])
 
     def test_drama_language_is_explicit_even_with_auto_accent_and_on_each_chunk(self):
-        from drama3.chunking import split_text
         r = request()
-        for chunk in split_text('Ah ! Je vire ça ! ' * 30):
-            prompt = target_prompt(r, chunk)
+        chunks = ['Ah ! Je vire ça !', 'La suite de la phrase.']
+        for chunk, prompt in zip(chunks, target_chunks(r, lambda text: chunks)):
             self.assertTrue(prompt.startswith('[Speak the following text in French] '))
             self.assertTrue(prompt.endswith(chunk))
             self.assertNotIn(r['referenceTranscript'], prompt)
@@ -99,7 +98,7 @@ class MultilingualTests(unittest.TestCase):
             target_prompt(request(language='xx'), 'test')
         with self.assertRaisesRegex(ValueError, 'TTS_TEXT_MISMATCH'):
             target_chunks(request(promptText='あぁ！ 外すんだよ!!'))
-        self.assertEqual(target_chunks(r), ['[Speak the following text in French] Ah ! Je vire ça !'])
+        self.assertEqual(target_chunks(r, lambda text: [text]), ['[Speak the following text in French] Ah ! Je vire ça !'])
 
 
 if __name__ == '__main__':

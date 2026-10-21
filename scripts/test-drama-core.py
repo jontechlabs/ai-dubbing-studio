@@ -9,6 +9,11 @@ with zipfile.ZipFile(repo/'workers/vendor/drama3/comfy-core.zip') as archive:arc
 sys.path[:0]=[str(repo/'workers'),core_tmp.name,str(repo/'workers/vendor/drama3')]
 from drama_worker import configure_core
 configure_core(cpu=True)
+from drama_worker import target_chunks
+target = 'Bonjour, je suis heureux de vous revoir. ' * 40
+language_chunks = target_chunks(dict(text=target, language='fr', accent='auto', referenceTranscript='日本語の参照'))
+assert len(language_chunks) > 1
+assert all(chunk.startswith('[Speak the following text in French] ') and '日本語' not in chunk for chunk in language_chunks)
 import torch,comfy.ops,comfy.model_management as mm
 from drama3.offload import FP8Experts,ExpertStore,SlotPool,HostBank
 assert mm.DISABLE_PINNED_MEMORY
