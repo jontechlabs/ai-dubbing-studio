@@ -1,11 +1,11 @@
 {
-  "version": "0.21.0",
-  "notes": "43 intentions de jeu regroupées, dont mourant, stressé, hilare, paniqué et épuisé. Disponibles par réplique et en lot avec CosyVoice3, Fish S2 et Drama 3. Aide clarifiée sur le compromis accent et expressivité de CosyVoice3. Les nouvelles intentions enregistrées nécessitent le format de projet 15 ; les essais précédents sont conservés.",
-  "pub_date": "2026-10-21T14:54:54Z",
+  "version": "0.22.0",
+  "notes": "Installation et génération locale avec VoxCPM2 2B et Chatterbox Multilingual V3, par réplique et en lot, avec contrôle de l’espace disque. Drama 3 reçoit la langue cible même avec l’accent Auto afin de limiter la dérive de langue depuis une référence japonaise. Réglages enregistrés au format 16 ; essais précédents conservés.",
+  "pub_date": "2026-10-21T18:59:05Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSdFFyMUJGTFp3NkF1Q3V2WDJqVzRuNzJyWE0wdWhXUWZyaFF1YjVDUmNoS0RPc3NucVRXeU5GWDJrZ041SXlYZjV3TjlNNVIva2VjM1NYOWhka2pJdTVBZWJqV0cyS2dzPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkyNTkzODc2CWZpbGU6QUkgRHViYmluZyBTdHVkaW9fMC4yMS4wX3g2NC1zZXR1cC5leGUJdmVyc2lvbjowLjIxLjAKV2JSQ045QmJWUzF3RkJoNWhPRW9WZ1p5Z1VmTTg0TS9MQVlrMVBhS0xxY244UVppRkFJaUZXaWVCT1FFb2VGSUd6WnA2aEcrTitTeldEU1drTWJ0QXc9PQo=",
-      "url": "https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.21.0/AI-Dubbing-Studio-0.21.0-Setup.exe"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSdFFyMUJGTFp3NkNqckxFMUNhUTIyYjNHWjNRR01iQmVxZEtlbVJjYXRCNjlzSytFR1VMMHZvQWlpUDlUTUJZekVOeFNUeWZLeGlnVHdhandRRUczL28wMzhOekExQUFnPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkyNjA3NTUyCWZpbGU6QUkgRHViYmluZyBTdHVkaW9fMC4yMi4wX3g2NC1zZXR1cC5leGUJdmVyc2lvbjowLjIyLjAKbXE2dG5WOFhjYXdjZ1R5UkxRMk9TcDFjNUJlb0pZRzlFMk9ZU29ZZ2tJRHFZTGhqaXJ1NW5jTVhwK09GZ2pQUVZsM21QL3Z6R0xzT2Mway91QzZOQVE9PQo=",
+      "url": "https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.22.0/AI-Dubbing-Studio-0.22.0-Setup.exe"
     }
   }
 }

@@ -2,7 +2,7 @@
 
 ## v0.22.0 — 21 October 2026
 
-Windows workflow evidence will be recorded before publication.
+Windows checks and signed-update packages passed in [run 39647716640](https://github.com/jontechlabs/ai-dubbing-studio/actions/runs/39647716640), built from `27c34fcc2530ad23853c20e6b1b377591562e0d2`. All 445 suite checks passed (123 TypeScript, 122 Rust, 132 Chrome, 68 Python). Both full official-weight engines generated French from a Japanese reference on CPU, verified by automatic-language Whisper ASR; each hot worker served two requests with one model load. The real packaged Windows desktop passed 95-tool MCP discovery, format-16 save/reopen for both new providers, disk preflight, preserved takes, the existing six relay lifecycle cases, Praat processing and MKV/source-preservation checks. Existing neural diagnostics, Japanese ASR and local Japanese-to-French LLM checks passed. These are CPU/functional checks, not a 5060 Ti speed or VRAM qualification. Installer and portable are unchanged workflow artifacts.
 
 - VoxCPM2 2B and Chatterbox Multilingual V3 have real installation/generation adapters, a pinned isolated headless runtime, size/SHA-256 model verification and per-variant disk preflight before downloads. The production CUDA 12.8 dependency profile passed an actual local import probe for both engine classes.
 - Shared per-line/batch settings persist in format 16. Validators, native disk reload and packaged MCP checks cover the new providers; Chatterbox rejects unsupported semantic mood/regional accent controls. Existing takes remain intact.
