@@ -104,6 +104,15 @@ def runtime_info():
         raise ValueError('TTS_RUNTIME_FAILED')
     if 't3_model' not in inspect.signature(ChatterboxMultilingualTTS.from_local).parameters:
         raise ValueError('TTS_RUNTIME_FAILED')
+    # A successful import on a developer machine can conceal missing Torch
+    # dependencies. The app-owned environment must contain the entire profile.
+    manifest = json.loads((HERE / 'multilingual-runtime.json').read_text(encoding='utf-8'))
+    normalized = lambda name: name.lower().replace('_', '-').replace('.', '-')
+    installed = {(normalized(item.metadata['Name']), item.version) for item in importlib.metadata.distributions()}
+    for file in manifest['files']:
+        distribution, version = file['name'].split('-')[:2]
+        if (normalized(distribution), version) not in installed:
+            raise ValueError(f'TTS_RUNTIME_FAILED: {distribution}=={version}')
     return dict(runtimeReady=True, cudaVersion=torch.version.cuda,
                 voxcpm=VoxCPM.__name__, chatterbox=ChatterboxMultilingualTTS.__name__)
 

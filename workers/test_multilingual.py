@@ -82,6 +82,7 @@ class MultilingualTests(unittest.TestCase):
         self.assertIn('torch-2.8.0+cu128-cp312-cp312-win_amd64.whl', [f['name'] for f in wheels])
         self.assertFalse({'gradio', 'modelscope', 'funasr', 'triton'} & set(names))
         self.assertIn('resemble_perth', names)
+        self.assertTrue({'filelock', 'fsspec', 'typing_extensions', 'sympy', 'mpmath', 'networkx', 'jinja2', 'markupsafe', 'setuptools'}.issubset({name.lower() for name in names}))
         provenance = json.loads((root / 'vendor/chatterbox/UPSTREAM.json').read_text())
         self.assertEqual(len(provenance['revision']), 40)
         self.assertTrue(provenance['changes'])

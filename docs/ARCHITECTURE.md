@@ -54,6 +54,8 @@ The dialogue list is virtualized. The player uses the browser/WebView media elem
 
 ## Future engines
 
+VoxCPM2 and Chatterbox Multilingual V3 share an isolated `multilingual-runtime` from v0.22.0. A complete pinned wheel profile includes the Windows Torch dependencies; startup verifies all distribution versions before any model weight download. Chatterbox's pinned V3 source, Cangjie dictionary and pkuseg data load locally from the configured model storage. No implicit user-profile model download is used. Production CUDA imports/tokenizers and a tiny Chatterbox neural core were checked without inherited site-packages; CI runs full official weights in a fresh Python environment with the matching CPU Torch 2.8 API. These are functional tests, not a 16 GB GPU benchmark.
+
 `src/domain/providers.ts` defines reserved provider capabilities, model metadata and TTS requests/results. `schemas/worker-protocol.schema.json` and `schemas/model-manifest.schema.json` are preliminary contracts. The model catalogue includes the pinned Bandit checkpoint. CosyVoice3, Fish S2 and Qwen3-TTS now have native installation and generation adapters; unintegrated catalogue variants remain future work. Their runtimes are described in the Phase 5–7 guides; Bandit has the dedicated runtime described below.
 
 ## Phase 2 timing and waveform

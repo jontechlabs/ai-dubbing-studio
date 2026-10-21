@@ -6,6 +6,7 @@ this runner uses the same Torch 2.8 API on CPU. No private project/audio is used
 """
 from pathlib import Path
 import hashlib
+import importlib.metadata
 import inspect
 import json
 import os
@@ -27,6 +28,17 @@ import soundfile as sf
 import numpy as np
 
 assert torch.__version__.split('+')[0] == '2.8.0'
+assert sys.prefix != sys.base_prefix
+for module in [torch, np, sf]:
+    assert Path(module.__file__).resolve().is_relative_to(Path(sys.prefix).resolve()), module.__file__
+runtime = json.loads((ROOT / 'workers/multilingual-runtime.json').read_text(encoding='utf-8'))
+for file in runtime['files']:
+    name, version = file['name'].split('-')[:2]
+    if name in ['torch', 'torchvision', 'torchaudio']:
+        continue
+    distribution = importlib.metadata.distribution(name)
+    assert distribution.version == version, name
+    assert Path(distribution.locate_file('')).resolve().is_relative_to(Path(sys.prefix).resolve()), name
 assert 't3_model' in inspect.signature(ChatterboxMultilingualTTS.from_local).parameters
 assert set(worker.voxcpm_arguments(dict(text='Bonjour.', mood='default', accent='auto', mode='crossLingual'), 'ref')).issubset(inspect.signature(VoxCPM._generate).parameters)
 
@@ -53,7 +65,7 @@ reference = WORK / 'Référence 日本語/ja.wav'
 fetch('https://huggingface.co/csukuangfj/sherpa-onnx-sense-voice-zh-en-ja-ko-yue-2024-07-17/resolve/2365baeacb507f821a0c8120fcee3d484dba7a07/test_wavs/ja.wav', reference,
       '460bd8dccb0d2a5f4e29c628f837be4082d13defc64c3fc21dd1b6bb0e119095')
 manifest = json.loads((ROOT / 'workers/voice-engines.json').read_text(encoding='utf-8'))
-proof = {'device': 'CPU', 'torch': torch.__version__, 'hardwareQualified': False, 'engines': []}
+proof = {'device': 'CPU', 'torch': torch.__version__, 'hardwareQualified': False, 'isolatedEnvironment': True, 'engines': []}
 exe = ROOT / 'src-tauri/target/release/ai-dubbing-studio.exe'
 ffmpeg = ROOT / 'src-tauri/binaries/ffmpeg.exe'
 whisper = ROOT / '.cache/reference-transcription/Référence 日本語/ggml-small-q5_1.bin'

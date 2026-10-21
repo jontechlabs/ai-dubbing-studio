@@ -48,6 +48,8 @@ Drama 3 reçoit maintenant une consigne explicite de **langue cible à chaque mo
 
 Ce guidage corrige le défaut de conditionnement identifié ; il ne constitue pas un détecteur automatique garantissant chaque mot ou chaque accent. Si un essai reste incorrect, utilisez une référence française, vérifiez la transcription japonaise et comparez une autre graine. Les anciens essais ne sont ni modifiés ni retraduits.
 
+Pour appliquer la correction à une ancienne prise, générez un nouvel essai. En lot, cochez **Forcer un nouvel essai** pour retraiter les répliques qui possèdent déjà un doublage. Les prises précédentes restent conservées.
+
 ## MCP
 
 Utilisez `studio_install_voice_runtime` avec `variantId` égal à `voxcpm2-bf16` ou `chatterbox-multilingual-v3`. `studio_voice_install_space` accepte le même argument facultatif ; sans argument il conserve son comportement historique pour Drama 3.
