@@ -1,11 +1,11 @@
 {
-  "version": "0.20.1",
-  "notes": "Correction des relais MCP restant en arrière-plan après fermeture du studio. Les mises à jour suspendent MCP avant de lancer l’installeur et conservent le choix d’activation. Une erreur de lancement rétablit le serveur. Les tâches sont revérifiées après l’attente. Le transfert d’intonation et les essais existants restent disponibles.",
-  "pub_date": "2026-10-20T20:04:43Z",
+  "version": "0.21.0",
+  "notes": "43 intentions de jeu regroupées, dont mourant, stressé, hilare, paniqué et épuisé. Disponibles par réplique et en lot avec CosyVoice3, Fish S2 et Drama 3. Aide clarifiée sur le compromis accent et expressivité de CosyVoice3. Les nouvelles intentions enregistrées nécessitent le format de projet 15 ; les essais précédents sont conservés.",
+  "pub_date": "2026-10-21T14:54:54Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSdFFyMUJGTFp3NkxSdXVUSGl3dVZFMkp2bmtVdFdlc0NlQ0xVcW9yM0wvZWlQK1hlNlRQU0JLQlUzN2cwQW5icE56VVVraElya1oxUEplZjlVbkp2ZVJ6NXZuenJMakFJPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkyNTI2MzAyCWZpbGU6QUkgRHViYmluZyBTdHVkaW9fMC4yMC4xX3g2NC1zZXR1cC5leGUJdmVyc2lvbjowLjIwLjEKczQxZ1hacFhOL1JsOG9uOHp2Mm9VZExDZTlxYndiNVl0bzFJeGJzeU5Za0F1YjBVQlJNSnRwamQxUHFnSmRYbHVWWUs5ZHZFZUQ3WldySjNNTU9QQ3c9PQo=",
-      "url": "https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.20.1/AI-Dubbing-Studio-0.20.1-Setup.exe"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSdFFyMUJGTFp3NkF1Q3V2WDJqVzRuNzJyWE0wdWhXUWZyaFF1YjVDUmNoS0RPc3NucVRXeU5GWDJrZ041SXlYZjV3TjlNNVIva2VjM1NYOWhka2pJdTVBZWJqV0cyS2dzPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkyNTkzODc2CWZpbGU6QUkgRHViYmluZyBTdHVkaW9fMC4yMS4wX3g2NC1zZXR1cC5leGUJdmVyc2lvbjowLjIxLjAKV2JSQ045QmJWUzF3RkJoNWhPRW9WZ1p5Z1VmTTg0TS9MQVlrMVBhS0xxY244UVppRkFJaUZXaWVCT1FFb2VGSUd6WnA2aEcrTitTeldEU1drTWJ0QXc9PQo=",
+      "url": "https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.21.0/AI-Dubbing-Studio-0.21.0-Setup.exe"
     }
   }
 }

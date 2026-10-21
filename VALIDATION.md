@@ -2,7 +2,7 @@
 
 ## v0.21.0 — 21 October 2026
 
-Windows workflow evidence will be recorded before publication.
+Windows checks and signed-update packages passed in [run 39614021699](https://github.com/jontechlabs/ai-dubbing-studio/actions/runs/39614021699), built from `7a461eac496f96954707bed9df73f05e7f4221dd`. All 433 Windows suite checks passed (121 TypeScript, 121 Rust, 130 Chrome, 61 Python). The real packaged Windows desktop was driven by the official MCP SDK: 95 tools, shipped 43-entry catalogue, expanded option schemas and format-15 save/reopen with existing takes preserved, plus the existing six relay lifecycle cases, playback, native Praat processing, cancellation and MKV export/source-preservation checks. Existing actual CPU neural diagnostics, Japanese reference ASR and Japanese-to-French LLM checks also passed. Setup and portable ZIP are unchanged workflow artifacts. Final metadata records these results and the verified update feed.
 
 - A shared catalogue supplies 43 grouped acting directions to TypeScript, Rust, Python and MCP. All entries have French/English labels, provider-specific prompts and explicit minimum project formats. The seven original IDs and prompts are unchanged.
 - Regression checks cover every preset across compatible engines, invalid moods, Qwen Base rejection, separated spoken text and instructions, format-15 roundtrips/refusal under format 14, persisted individual settings and common batch configuration. Native batch resume/retention checks exercise a new preset.
