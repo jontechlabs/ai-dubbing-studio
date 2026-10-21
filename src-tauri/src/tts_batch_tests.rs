@@ -3,7 +3,7 @@ use crate::domain::{Cue, VoiceReference};
 use std::{collections::HashMap, sync::Mutex, time::Duration};
 
 fn options() -> tts::Options {
-    serde_json::from_value(serde_json::json!({"variantId":"cosy3-official","device":"cpu","referenceMode":"file","referenceId":"ref","mode":"crossLingual","speed":1.2,"seed":7,"mood":"happy","accent":"fr-FR"})).unwrap()
+    serde_json::from_value(serde_json::json!({"variantId":"cosy3-official","device":"cpu","referenceMode":"file","referenceId":"ref","mode":"crossLingual","speed":1.2,"seed":7,"mood":"stressed","accent":"fr-FR"})).unwrap()
 }
 fn fixture(root: &Path, texts: &[&str]) -> Project {
     std::fs::create_dir_all(root.join("characters")).unwrap();
@@ -333,6 +333,7 @@ async fn sequential_batch_keeps_successes_and_retries_only_failures_with_origina
     assert_eq!(finished(&core, &retry).await.status, "succeeded");
     let p = project::load(&root).unwrap();
     assert_eq!(p.generations.len(), 3);
+    assert_eq!(p.format_version, 15);
     assert!(p
         .dialogues
         .iter()
@@ -344,7 +345,7 @@ async fn sequential_batch_keeps_successes_and_retries_only_failures_with_origina
         assert_eq!(v["seed"], 7);
         assert_eq!(v["speed"], 1.2);
         assert_eq!(v["device"], "cpu");
-        assert_eq!(v["mood"], "happy");
+        assert_eq!(v["mood"], "stressed");
         assert_eq!(v["accent"], "fr-FR");
     }
     let files = std::fs::read_dir(root.join("generations")).unwrap().count();

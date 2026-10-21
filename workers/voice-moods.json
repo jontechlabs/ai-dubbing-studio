@@ -1,0 +1,263 @@
+{
+  "version": 1,
+  "moods": {
+    "default": {
+      "group": "reference",
+      "minProjectVersion": 5,
+      "cosyInstruction": "",
+      "fishInstruction": ""
+    },
+    "happy": {
+      "group": "positive",
+      "minProjectVersion": 7,
+      "cosyInstruction": "请用开心的语气说话。",
+      "fishInstruction": "happy"
+    },
+    "excited": {
+      "group": "positive",
+      "minProjectVersion": 15,
+      "cosyInstruction": "请用兴奋激动的语气说话。",
+      "fishInstruction": "excited"
+    },
+    "enthusiastic": {
+      "group": "positive",
+      "minProjectVersion": 15,
+      "cosyInstruction": "请用充满热情和活力的语气说话。",
+      "fishInstruction": "enthusiastic and energetic"
+    },
+    "amused": {
+      "group": "positive",
+      "minProjectVersion": 15,
+      "cosyInstruction": "请用觉得有趣、忍着笑的语气说话。",
+      "fishInstruction": "amused, holding back a smile"
+    },
+    "laughing": {
+      "group": "positive",
+      "minProjectVersion": 15,
+      "cosyInstruction": "请一边开心地大笑一边说话，但要把话说清楚。",
+      "fishInstruction": "laughing while speaking clearly"
+    },
+    "proud": {
+      "group": "positive",
+      "minProjectVersion": 15,
+      "cosyInstruction": "请用自豪而自信的语气说话。",
+      "fishInstruction": "proud and confident"
+    },
+    "tender": {
+      "group": "positive",
+      "minProjectVersion": 15,
+      "cosyInstruction": "请用温柔而充满关爱的语气说话。",
+      "fishInstruction": "tender and affectionate"
+    },
+    "relieved": {
+      "group": "positive",
+      "minProjectVersion": 15,
+      "cosyInstruction": "请用如释重负、放松下来的语气说话。",
+      "fishInstruction": "relieved, tension giving way to relaxation"
+    },
+    "angry": {
+      "group": "tension",
+      "minProjectVersion": 7,
+      "cosyInstruction": "请用愤怒的语气说话。",
+      "fishInstruction": "angry"
+    },
+    "stressed": {
+      "group": "tension",
+      "minProjectVersion": 15,
+      "cosyInstruction": "请用紧张、有压力、声音略微发紧的语气说话。",
+      "fishInstruction": "stressed, tense voice under pressure"
+    },
+    "anxious": {
+      "group": "tension",
+      "minProjectVersion": 15,
+      "cosyInstruction": "请用焦虑不安、担心的语气说话。",
+      "fishInstruction": "anxious and worried"
+    },
+    "panicked": {
+      "group": "tension",
+      "minProjectVersion": 15,
+      "cosyInstruction": "请用惊慌失措、急切的语气说话。",
+      "fishInstruction": "panicked, urgent and frightened"
+    },
+    "afraid": {
+      "group": "tension",
+      "minProjectVersion": 15,
+      "cosyInstruction": "请用害怕、声音微微颤抖的语气说话。",
+      "fishInstruction": "afraid, trembling voice"
+    },
+    "irritated": {
+      "group": "tension",
+      "minProjectVersion": 15,
+      "cosyInstruction": "请用不耐烦、恼火但不大喊的语气说话。",
+      "fishInstruction": "irritated, annoyed without shouting"
+    },
+    "furious": {
+      "group": "tension",
+      "minProjectVersion": 15,
+      "cosyInstruction": "请用极其愤怒、强烈激动的语气说话。",
+      "fishInstruction": "furious, intense anger"
+    },
+    "threatening": {
+      "group": "tension",
+      "minProjectVersion": 15,
+      "cosyInstruction": "请用低沉、冷静而带有威胁感的语气说话。",
+      "fishInstruction": "threatening, low and controlled voice"
+    },
+    "determined": {
+      "group": "tension",
+      "minProjectVersion": 15,
+      "cosyInstruction": "请用坚定、毫不动摇的语气说话。",
+      "fishInstruction": "determined and resolute"
+    },
+    "impatient": {
+      "group": "tension",
+      "minProjectVersion": 15,
+      "cosyInstruction": "请用急切、不愿再等待的语气说话。",
+      "fishInstruction": "impatient, eager to move on"
+    },
+    "sad": {
+      "group": "sorrow",
+      "minProjectVersion": 7,
+      "cosyInstruction": "请用悲伤的语气说话。",
+      "fishInstruction": "sad"
+    },
+    "crying": {
+      "group": "sorrow",
+      "minProjectVersion": 15,
+      "cosyInstruction": "请用含着泪、声音哽咽的语气说话。",
+      "fishInstruction": "crying, tearful voice breaking with emotion"
+    },
+    "desperate": {
+      "group": "sorrow",
+      "minProjectVersion": 15,
+      "cosyInstruction": "请用绝望、恳求而无助的语气说话。",
+      "fishInstruction": "desperate, pleading and helpless"
+    },
+    "disappointed": {
+      "group": "sorrow",
+      "minProjectVersion": 15,
+      "cosyInstruction": "请用失望、沮丧的语气说话。",
+      "fishInstruction": "disappointed and dejected"
+    },
+    "regretful": {
+      "group": "sorrow",
+      "minProjectVersion": 15,
+      "cosyInstruction": "请用后悔、内疚的语气说话。",
+      "fishInstruction": "regretful and remorseful"
+    },
+    "nostalgic": {
+      "group": "sorrow",
+      "minProjectVersion": 15,
+      "cosyInstruction": "请用怀念往事、温柔而略带忧伤的语气说话。",
+      "fishInstruction": "nostalgic, wistful and gently sad"
+    },
+    "dying": {
+      "group": "physical",
+      "minProjectVersion": 15,
+      "cosyInstruction": "请用仿佛奄奄一息、虚弱而气息逐渐减弱的声音说话，但要把话说清楚。",
+      "fishInstruction": "very weak fading breathy voice, as if dying, still speaking the words clearly"
+    },
+    "exhausted": {
+      "group": "physical",
+      "minProjectVersion": 15,
+      "cosyInstruction": "请用筋疲力尽、沉重无力的声音说话。",
+      "fishInstruction": "exhausted, heavy and tired voice"
+    },
+    "breathless": {
+      "group": "physical",
+      "minProjectVersion": 15,
+      "cosyInstruction": "请用刚跑完步、气喘吁吁的声音说话。",
+      "fishInstruction": "breathless, panting after running"
+    },
+    "in-pain": {
+      "group": "physical",
+      "minProjectVersion": 15,
+      "cosyInstruction": "请用忍受疼痛、声音紧绷的语气说话。",
+      "fishInstruction": "in pain, strained voice"
+    },
+    "sleepy": {
+      "group": "physical",
+      "minProjectVersion": 15,
+      "cosyInstruction": "请用困倦、昏昏欲睡的声音说话。",
+      "fishInstruction": "sleepy and drowsy"
+    },
+    "weak": {
+      "group": "physical",
+      "minProjectVersion": 15,
+      "cosyInstruction": "请用虚弱、轻柔无力的声音说话。",
+      "fishInstruction": "weak and frail voice"
+    },
+    "calm": {
+      "group": "delivery",
+      "minProjectVersion": 7,
+      "cosyInstruction": "请用平静的语气说话。",
+      "fishInstruction": "calm"
+    },
+    "surprised": {
+      "group": "delivery",
+      "minProjectVersion": 7,
+      "cosyInstruction": "请用惊讶的语气说话。",
+      "fishInstruction": "surprised"
+    },
+    "whisper": {
+      "group": "delivery",
+      "minProjectVersion": 7,
+      "cosyInstruction": "请用低声耳语说话。",
+      "fishInstruction": "whisper"
+    },
+    "shouting": {
+      "group": "delivery",
+      "minProjectVersion": 15,
+      "cosyInstruction": "请提高音量、用大声呼喊的方式说话。",
+      "fishInstruction": "shouting"
+    },
+    "sarcastic": {
+      "group": "delivery",
+      "minProjectVersion": 15,
+      "cosyInstruction": "请用尖锐、嘲讽的语气说话。",
+      "fishInstruction": "sarcastic, biting and mocking"
+    },
+    "ironic": {
+      "group": "delivery",
+      "minProjectVersion": 15,
+      "cosyInstruction": "请用带有反讽、言外之意的语气说话。",
+      "fishInstruction": "ironic, dry and knowingly understated"
+    },
+    "confused": {
+      "group": "delivery",
+      "minProjectVersion": 15,
+      "cosyInstruction": "请用困惑、不明白发生了什么的语气说话。",
+      "fishInstruction": "confused and puzzled"
+    },
+    "doubtful": {
+      "group": "delivery",
+      "minProjectVersion": 15,
+      "cosyInstruction": "请用怀疑、不太相信的语气说话。",
+      "fishInstruction": "doubtful and skeptical"
+    },
+    "curious": {
+      "group": "delivery",
+      "minProjectVersion": 15,
+      "cosyInstruction": "请用好奇、想知道答案的语气说话。",
+      "fishInstruction": "curious and inquisitive"
+    },
+    "serious": {
+      "group": "delivery",
+      "minProjectVersion": 15,
+      "cosyInstruction": "请用严肃、郑重的语气说话。",
+      "fishInstruction": "serious and solemn"
+    },
+    "narration": {
+      "group": "delivery",
+      "minProjectVersion": 15,
+      "cosyInstruction": "请用清晰、自然、有表现力的旁白语气说话。",
+      "fishInstruction": "clear natural expressive narration"
+    },
+    "disgusted": {
+      "group": "delivery",
+      "minProjectVersion": 15,
+      "cosyInstruction": "请用厌恶、嫌弃的语气说话。",
+      "fishInstruction": "disgusted and repulsed"
+    }
+  }
+}

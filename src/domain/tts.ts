@@ -2,13 +2,13 @@ import type { Dialogue, Generation, Project, VoiceSettings } from './types';
 import { dialogueText } from './subtitles';
 import { voiceVariant } from './voiceEngines';
 import { validAccent } from './voiceAccents';
+import { validMood, moodFormatVersion } from './voiceMoods';
 export function validVoiceSettings(value: unknown): value is VoiceSettings {
   if (!value || typeof value !== 'object') return false;
   const s = value as VoiceSettings;
   return (
     validAccent(s.accent, s.variantId ?? undefined) &&
-    (s.mood == null ||
-      ['default', 'angry', 'happy', 'sad', 'calm', 'surprised', 'whisper'].includes(s.mood)) &&
+    validMood(s.mood) &&
     (!s.variantId?.startsWith('qwen3') || !s.mood || s.mood === 'default') &&
     (s.variantId == null || !!voiceVariant(s.variantId)) &&
     ['character', 'current', 'custom', 'file'].includes(s.referenceMode) &&
@@ -138,7 +138,7 @@ export function editVoiceSettings(
   line.voiceSettings = settings;
   next.formatVersion = Math.max(
     (settings.accent && settings.accent !== 'auto') || settings.referenceMode === 'file' ? 9 : 1,
-    settings.mood && settings.mood !== 'default' ? 7 : 5,
+    moodFormatVersion(settings.mood),
     next.formatVersion,
   );
   return next;

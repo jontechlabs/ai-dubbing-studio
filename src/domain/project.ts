@@ -2,11 +2,12 @@ import type { Project } from './types';
 import { alignCues } from './subtitles';
 import { validVoiceVariant } from './modelVariants';
 import { validVoiceSettings } from './tts';
+import { moodFormatVersion } from './voiceMoods';
 import { validateAudioPatches } from './audioPatch';
 import { validateLipVideos } from './inpaint';
 import { validateVoiceEdit } from './voiceEdit';
 import { validateProsody } from './prosody';
-export const APP_VERSION = '0.20.1';
+export const APP_VERSION = '0.21.0';
 
 export function blankProject(name = 'Untitled', source = 'ja', target = 'fr'): Project {
   const now = new Date().toISOString();
@@ -99,7 +100,7 @@ export function validateProject(value: unknown): Project {
   if (
     !Number.isInteger(project.formatVersion) ||
     project.formatVersion < 1 ||
-    project.formatVersion > 14
+    project.formatVersion > 15
   )
     throw new Error('UNSUPPORTED_PROJECT_VERSION');
   if (project.voiceEdits !== undefined) {
@@ -317,9 +318,7 @@ export function validateProject(value: unknown): Project {
       (project.formatVersion < 9 &&
         (generation.options?.referenceMode === 'file' ||
           (generation.options?.accent && generation.options.accent !== 'auto'))) ||
-      (project.formatVersion < 7 &&
-        generation.options?.mood &&
-        generation.options.mood !== 'default') ||
+      project.formatVersion < moodFormatVersion(generation.options.mood) ||
       !Number.isSafeInteger(generation.startMs) ||
       !Number.isSafeInteger(generation.endMs) ||
       typeof generation.startMs !== 'number' ||
@@ -358,9 +357,7 @@ export function validateProject(value: unknown): Project {
         (project.formatVersion < 9 &&
           (line.voiceSettings.referenceMode === 'file' ||
             (line.voiceSettings.accent && line.voiceSettings.accent !== 'auto'))) ||
-        (line.voiceSettings.mood &&
-          line.voiceSettings.mood !== 'default' &&
-          project.formatVersion < 7))
+        project.formatVersion < moodFormatVersion(line.voiceSettings.mood))
     )
       throw Error('INVALID_TTS_REQUEST');
     for (const [language, id] of Object.entries(line.selectedGenerationIds))

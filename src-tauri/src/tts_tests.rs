@@ -163,6 +163,50 @@ async fn imported_mp3_is_copied_normalized_capped_and_undoable_without_a_charact
     );
 }
 #[test]
+fn expanded_moods_roundtrip_with_format_15_without_touching_existing_takes() {
+    let catalog: serde_json::Value =
+        serde_json::from_str(include_str!("../../workers/voice-moods.json")).unwrap();
+    assert_eq!(catalog["moods"].as_object().unwrap().len(), 43);
+    for (id, spec) in catalog["moods"].as_object().unwrap() {
+        let mut o = options();
+        o.mood = Some(id.clone());
+        let format = o.required_format();
+        assert_eq!(format as u64, spec["minProjectVersion"].as_u64().unwrap());
+        for variant in [
+            "cosy3-official",
+            "fish-s2-fp8",
+            "fish-s2-gguf-q8",
+            "drama3-comfy-fp8",
+        ] {
+            o.variant_id = Some(variant.into());
+            o.validate().unwrap();
+        }
+        let mut p = fixture();
+        p.format_version = format;
+        p.dialogues[0].voice_settings = Some(o.clone());
+        let next: Project = serde_json::from_slice(&serde_json::to_vec(&p).unwrap()).unwrap();
+        next.validate().unwrap();
+        assert!(next.generations.is_empty());
+        assert_eq!(next.target_cues[0].text, "Bonjour");
+        if format == 15 {
+            p.format_version = 14;
+            assert!(p.validate().is_err());
+        }
+        o.variant_id = Some("qwen3-06b-gguf-q8".into());
+        assert_eq!(o.validate().is_ok(), id == "default");
+        if id != "default" {
+            o.accent = Some("fr-FR".into());
+            let prompt = crate::voice_accent::fish_prompt("Bonjour !", &o);
+            assert!(prompt.contains(&format!("[{}]", spec["fishInstruction"].as_str().unwrap())));
+            assert!(prompt.starts_with("[speaking French"));
+            assert!(prompt.ends_with(" Bonjour !"));
+        }
+    }
+    let mut o = options();
+    o.mood = Some("unknown".into());
+    assert_eq!(o.validate().unwrap_err(), "TTS_STYLE_UNSUPPORTED");
+}
+#[test]
 fn mood_presets_are_supported_for_cosy_and_fish_but_not_qwen_base() {
     let mut value = options();
     value.mood = Some("angry".into());

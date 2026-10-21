@@ -1,5 +1,7 @@
 # Humeur des voix générées
 
+**v0.21.0 : la liste compte désormais 43 intentions, en individuel et en lot, avec Drama 3 également. [Guide actuel, liste et limites](VOICE-ACTING.md).** Le contenu ci-dessous décrit l’introduction historique des sept premiers choix.
+
 Depuis v0.7.3, ouvrez **Doubler / Régénérer → Humeur / interprétation** avant de lancer un essai. Choisissez **Par défaut**, **En colère**, **Joyeux**, **Triste**, **Calme**, **Surpris** ou **Chuchoté**. Le choix est mémorisé par réplique et enregistré avec chaque essai pour faciliter les comparaisons. Il faut générer un nouvel essai pour changer son interprétation ; déplacer ou étirer une prise n’en change pas l’humeur.
 
 | Moteur intégré | Fonctionnement |

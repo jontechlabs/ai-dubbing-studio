@@ -42,16 +42,7 @@ impl Options {
     pub fn validate(&self) -> Result<(), String> {
         crate::voice_accent::validate(self, None)?;
         let mood = self.mood.as_deref().unwrap_or("default");
-        if ![
-            "default",
-            "angry",
-            "happy",
-            "sad",
-            "calm",
-            "surprised",
-            "whisper",
-        ]
-        .contains(&mood)
+        if crate::voice_mood::spec(Some(mood)).is_none()
             || (self.variant().starts_with("qwen3") && mood != "default")
         {
             return Err("TTS_STYLE_UNSUPPORTED".into());
@@ -85,6 +76,13 @@ impl Options {
             return Err("INVALID_AUDIO_TRANSFER".into());
         }
         Ok(())
+    }
+    pub fn required_format(&self) -> u32 {
+        crate::voice_mood::format_version(self.mood.as_deref()).max(if self.requires_v9() {
+            9
+        } else {
+            5
+        })
     }
     pub fn requires_v9(&self) -> bool {
         self.reference_mode == "file" || self.accent.as_deref().is_some_and(|a| a != "auto")
@@ -705,18 +703,7 @@ pub(crate) async fn execute_with_session<R: tauri::Runtime>(
     }
     let unchanged = matches_request(&s.project, request);
     let mut next = s.project.clone();
-    next.format_version = next.format_version.max(if request.options.requires_v9() {
-        9
-    } else if request
-        .options
-        .mood
-        .as_deref()
-        .is_some_and(|m| m != "default")
-    {
-        7
-    } else {
-        5
-    });
+    next.format_version = next.format_version.max(request.options.required_format());
     next.generations.push(generation);
     if let Some(line) = next.dialogues.iter_mut().find(|l| l.id == request.line_id) {
         if unchanged {
@@ -769,7 +756,7 @@ pub fn validate_generations(p: &Project) -> Result<(), String> {
         if p.format_version < 9 && settings.requires_v9() {
             return Err("INVALID_GENERATION".into());
         }
-        if p.format_version < 7 && settings.mood.as_deref().is_some_and(|m| m != "default") {
+        if p.format_version < settings.required_format() {
             return Err("INVALID_GENERATION".into());
         }
         if g["startMs"].as_u64().is_none()
@@ -807,12 +794,10 @@ pub fn validate_generations(p: &Project) -> Result<(), String> {
         {
             return Err("INVALID_PROJECT".into());
         }
-        if p.format_version < 7
-            && line
-                .voice_settings
-                .as_ref()
-                .and_then(|v| v.mood.as_deref())
-                .is_some_and(|m| m != "default")
+        if line
+            .voice_settings
+            .as_ref()
+            .is_some_and(|v| p.format_version < v.required_format())
         {
             return Err("INVALID_PROJECT".into());
         }

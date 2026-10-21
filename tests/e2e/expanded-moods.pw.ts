@@ -1,0 +1,33 @@
+import {test,expect} from '@playwright/test';
+import {nativeMock} from './nativeMock';
+
+test('expanded acting directions group, persist and dispatch for individual and batch dubbing',async({page})=>{
+  await nativeMock(page);await page.goto('/');
+  await page.locator('.dialogue-card').first().getByRole('button',{name:'Doubler',exact:true}).click();
+  const panel=page.getByRole('dialog',{name:'Doublage',exact:true});
+  const mood=panel.getByRole('combobox',{name:'Humeur / interprétation',exact:true});
+  await panel.getByRole('combobox',{name:'Référence vocale',exact:true}).selectOption('current');
+  await expect(mood.locator('option')).toHaveCount(43);await expect(mood.locator('optgroup')).toHaveCount(5);
+  await mood.selectOption({label:'Mourant'});
+  await expect(panel.getByRole('combobox',{name:'Mode de clonage'})).toBeDisabled();
+  await expect(panel.getByText(/ses indices d’intonation sont utilisés différemment/)).toBeVisible();
+  await mood.scrollIntoViewIfNeeded();await page.screenshot({path:'docs/screenshots/voice-acting-fr.png'});
+  await panel.getByRole('button',{name:'Générer un nouvel essai'}).click();
+  expect((await page.evaluate(()=>(window as any).__pendingTts)).options.mood).toBe('dying');
+  await page.evaluate(()=>(window as any).__completeTts());await page.getByRole('button',{name:'Fermer',exact:true}).click();
+  await expect(page.locator('.save-indicator')).toHaveText('Sauvegardé');await page.reload();
+  await page.locator('.dialogue-card').first().getByRole('button',{name:'Régénérer',exact:true}).click();
+  await expect(mood).toHaveValue('dying');
+  const saved=await page.evaluate(()=>JSON.parse(localStorage.getItem('nativeMockProject')!));
+  expect(saved.formatVersion).toBe(15);expect(saved.generations[0].options.mood).toBe('dying');
+  await panel.getByRole('combobox',{name:'Moteur et variante de voix'}).selectOption('drama3-comfy-fp8');
+  await mood.selectOption({label:'Hilare'});await expect(mood).toHaveValue('laughing');
+  await page.getByRole('button',{name:'Fermer',exact:true}).click();
+  await page.getByRole('button',{name:/Doublage par lot/}).click();
+  const batch=page.getByRole('dialog',{name:'Doublage par lot',exact:true});
+  await batch.getByRole('combobox',{name:'Référence vocale',exact:true}).selectOption('current');
+  await batch.getByRole('combobox',{name:'Humeur / interprétation',exact:true}).selectOption({label:'Stressé'});
+  await batch.getByRole('checkbox',{name:/Forcer un nouvel essai/}).check();
+  await batch.getByRole('button',{name:'Doubler 4 répliques',exact:true}).click();
+  expect((await page.evaluate(()=>(window as any).__pendingBatch)).options.mood).toBe('stressed');
+});

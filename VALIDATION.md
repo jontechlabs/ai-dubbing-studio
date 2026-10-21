@@ -1,5 +1,13 @@
 # Validation
 
+## v0.21.0 — 21 October 2026
+
+Windows workflow evidence will be recorded before publication.
+
+- A shared catalogue supplies 43 grouped acting directions to TypeScript, Rust, Python and MCP. All entries have French/English labels, provider-specific prompts and explicit minimum project formats. The seven original IDs and prompts are unchanged.
+- Regression checks cover every preset across compatible engines, invalid moods, Qwen Base rejection, separated spoken text and instructions, format-15 roundtrips/refusal under format 14, persisted individual settings and common batch configuration. Native batch resume/retention checks exercise a new preset.
+- CosyVoice help describes the instruction-mode trade-off; no neural transfer of Japanese acting or guaranteed emotional quality is claimed. The screenshot uses the actual React UI with synthetic media and mocked native commands.
+
 ## v0.20.1 — 20 October 2026
 
 Windows checks and signed-update package production passed in [run 39484228944](https://github.com/jontechlabs/ai-dubbing-studio/actions/runs/39484228944), built from `838bc2ef88cc8bc7bfae301337112fb8f3ef8a40`. All 428 Windows suite checks passed (119 TypeScript, 120 Rust, 129 Chrome, 60 Python), plus an actual packaged Windows desktop diagnostic driven by the official MCP SDK (95 tools, six real stdio lifecycle cases, actual reference/dialogue Praat transfers and cancellation, schemas, imports, edits, approval, stale revision refusal, undo, format-13 reload, playback, MKV export and preserved source hash), plus four actual CPU face-detector/protocol checks, plus seven actual LatentSync neural-core/checkpoint-header diagnostics, plus actual unpinned-bank/FP8/cache/tiny-model/header diagnostics and the real causal-vocoder finalization diagnostic, plus a real native Japanese-to-French LLM proposal and cancellation/process-release checks under a Unicode model path, plus two real Japanese ASR checks using the final Windows release executable. The setup and portable archive are copied unchanged from this workflow. Final metadata only records this evidence and the verified update feed.

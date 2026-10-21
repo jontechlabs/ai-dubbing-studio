@@ -85,8 +85,8 @@ def verify_model(directory):
 def validate_request(request):
     from voice_accent import accent_spec
     accent_spec(request)
-    if (request.get('mood') or 'default') not in ['default','angry','happy','sad','calm','surprised','whisper']:
-        raise ValueError('TTS_STYLE_UNSUPPORTED')
+    from voice_mood import mood_spec
+    mood_spec(request)
     if not isinstance(request.get('text'), str) or not request['text'].strip() or len(request['text']) > 1000:
         raise ValueError('TTS_TEXT_REQUIRED')
     if request.get('language') not in ['zh', 'en', 'ja', 'ko', 'de', 'es', 'fr', 'it', 'ru']:
@@ -242,10 +242,11 @@ def synthesis_stream(model, request, reference, options):
     from voice_accent import accent_spec
     accent = accent_spec(request)
     mood = request.get('mood') or 'default'
-    instructions = {'angry':'请用愤怒的语气说话。','happy':'请用开心的语气说话。','sad':'请用悲伤的语气说话。','calm':'请用平静的语气说话。','surprised':'请用惊讶的语气说话。','whisper':'请用低声耳语说话。'}
+    from voice_mood import mood_spec
+    instruction = mood_spec(request)['cosyInstruction']
     prefix = 'You are a helpful assistant.'
     if mood != 'default' or accent:
-        instruction = prefix + instructions.get(mood, '') + (accent['cosyInstruction'] if accent else '') + '<|endofprompt|>'
+        instruction = prefix + instruction + (accent['cosyInstruction'] if accent else '') + '<|endofprompt|>'
         return model.inference_instruct2(request['text'], instruction, reference, **options)
     prefix += '<|endofprompt|>'
     if request['mode'] == 'zeroShot':

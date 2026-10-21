@@ -28,7 +28,9 @@ pub(crate) fn fish_prompt(text: &str, options: &Options) -> String {
         }
     }
     if let Some(mood) = options.mood.as_deref().filter(|m| *m != "default") {
-        tags.push(format!("[{mood}]"));
+        if let Some(instruction) = crate::voice_mood::fish_instruction(mood) {
+            tags.push(format!("[{instruction}]"));
+        }
     }
     if tags.is_empty() {
         text.to_owned()

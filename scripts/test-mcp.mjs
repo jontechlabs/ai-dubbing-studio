@@ -110,6 +110,20 @@ try {
     const media=JSON.parse(execFileSync(probe,['-v','error','-show_format','-show_streams','-of','json',output],{encoding:'utf8',windowsHide:true}));
     assert(Math.abs(Number(media.format.duration)-16)<.2);assert(media.streams.some(stream=>stream.codec_type==='audio'));assert.equal(media.streams.filter(stream=>stream.codec_type==='subtitle').length,2);
     assert.equal(createHash('sha256').update(await fs.readFile(args.movie)).digest('hex'),originalHash);proofs.mkvExport=true;proofs.sourcePreserved=true;
+    // Verify the shipped catalogue, typed MCP schema and persisted expanded
+    // options on the real desktop without claiming neural acting quality.
+    const moodSchema=await client.readResource({uri:'studio://schemas/VoiceSettings'});
+    const schemaText=moodSchema.contents[0].text;
+    for(const id of ['dying','stressed','laughing']) assert(schemaText.includes(`"${id}"`));
+    const shippedMoods=JSON.parse(await fs.readFile(path.join(path.dirname(args.exe),'workers','voice-moods.json'),'utf8'));
+    assert.equal(Object.keys(shippedMoods.moods).length,43);
+    assert((await fs.readFile(path.join(path.dirname(args.exe),'workers','voice_mood.py'),'utf8')).includes('def mood_spec'));
+    const lineIndex=processed.dialogues.findIndex(l=>l.id===lineId);
+    await call('studio_project_patch',{context:await context(),patches:[{op:'replace',path:'/formatVersion',value:15},{op:'add',path:`/dialogues/${lineIndex}/voiceSettings`,value:{...voiceOptions,mood:'dying'}}]});
+    await call('studio_open_project',{path:projectRoot});
+    const reopened=await call('studio_get_project');
+    assert.equal(reopened.formatVersion,15);assert.equal(reopened.dialogues[lineIndex].voiceSettings.mood,'dying');
+    assert.deepEqual(reopened.generations,processed.generations);proofs.expandedMoods=43;proofs.reopenFormat15=true;
     await fs.writeFile(args.proof,JSON.stringify(proofs,null,2)+'\n','utf8');
     console.log('MCP_NATIVE_PROOF '+JSON.stringify(proofs));
 } catch(error){if(stderr)console.error(stderr.slice(-2000));throw error;}

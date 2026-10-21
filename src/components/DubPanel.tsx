@@ -22,6 +22,7 @@ import { ReferenceFileImport } from './ReferenceFileImport';
 import { BatchDubbingAction } from './BatchDubbingAction';
 import { DubbingTimingControls } from './DubbingTimingControls';
 import { ProsodyTransfer } from './ProsodyTransfer';
+import { moodGroup, moodGroups, voiceMoods } from '../domain/voiceMoods';
 
 export function CosyModel({
   jobs,
@@ -577,18 +578,26 @@ export function DubPanel({
           disabled={busy || variant.providerId === 'qwen3-tts'}
           onChange={(event) => edit({ mood: event.target.value as typeof settings.mood })}
         >
-          {(['default', 'angry', 'happy', 'sad', 'calm', 'surprised', 'whisper'] as const).map(
-            (value) => (
-              <option key={value} value={value}>
-                {t(`moods.${value}`)}
-              </option>
-            ),
-          )}
+          <option value="default">{t('moods.default')}</option>
+          {moodGroups.map((group) => (
+            <optgroup key={group} label={t(`moodGroups.${group}`)}>
+              {voiceMoods
+                .filter((id) => moodGroup(id) === group)
+                .map((id) => (
+                  <option key={id} value={id}>
+                    {t(`moods.${id}`)}
+                  </option>
+                ))}
+            </optgroup>
+          ))}
         </select>
       </label>
       <p className="panel-description">
         {t(variant.providerId === 'qwen3-tts' ? 'ttsMoodUnsupported' : 'ttsMoodHint')}
       </p>
+      {variant.providerId === 'cosyvoice3' && (
+        <p className="panel-description">{t('ttsCosyReferenceActingHint')}</p>
+      )}
       <label className="field">
         <span>{t('ttsAccent')}</span>
         <select

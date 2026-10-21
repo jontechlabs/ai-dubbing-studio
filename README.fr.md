@@ -1,5 +1,7 @@
 # AI Dubbing Studio — phases 1–7
 
+**v0.21.0 — 43 intentions de jeu.** Mourant, stressé, hilare, paniqué, épuisé et bien d’autres, regroupés par intention. Disponibles par réplique et en lot avec CosyVoice3, Fish S2 et Drama 3. Aide clarifiée sur le compromis accent / expressivité de CosyVoice3. [Guide, liste complète et capture](docs/VOICE-ACTING.md).
+
 **v0.20.1 — Installation et relais MCP.** Les relais quittent le processus à la fermeture du studio ; les mises à jour suspendent MCP et attendent la libération de l’exécutable. La connexion est restaurée si l’installation échoue. [Déblocage des anciennes versions et détails](docs/INSTALLATION-RECOVERY.md).
 
 **v0.20.0 — Transfert d’intonation expérimental.** Transformez un essai français existant avec la mélodie, le rythme et l’énergie de la réplique japonaise ou d’une autre référence. Intensité réglable, traitement local sur CPU, nouvel essai indépendant : les prises précédentes et la vidéo sont conservées. Ce transfert acoustique reste approximatif entre langues. Disponible aussi via MCP (95 outils). [Guide, limites et capture](docs/PROSODY-TRANSFER.md).
@@ -81,7 +83,7 @@
 
 *Interface React réelle avec audio de démonstration synthétique et inventaire natif simulé.*
 
-[Version anglaise et captures de l’interface](README.md) · [Téléchargements Windows](https://github.com/jontechlabs/ai-dubbing-studio/releases/tag/v0.20.1)
+[Version anglaise et captures de l’interface](README.md) · [Téléchargements Windows](https://github.com/jontechlabs/ai-dubbing-studio/releases/tag/v0.21.0)
 
 Studio desktop local de travail texte, voix et vidéo. Tauri 2, React, TypeScript strict et Rust.
 
@@ -127,7 +129,7 @@ L'exemple fourni utilise une vidéo et un son synthétiques. Il ne contient pas 
 
 Installez le modèle de locuteurs depuis Modèles, lancez l’identification depuis Personnages, puis appliquez et corrigez les groupes proposés. Le bouton Ajouter une traduction ouvre l’éditeur même sans sous-titre cible. SRT traduit permet d’importer un fichier ou une piste MKV et propose le calage automatique. Le haut-parleur active ou coupe une piste, S l’isole et l’œil affiche/masque les sous-titres. **Doubler** ouvre le choix du moteur, du GPU et de la référence vocale.
 
-Les références et préférences utilisent le format de projet 3, les zones audio le format 4 et les essais vocaux le format 5. Les anciennes versions refusent les formats plus récents. Fish FP8 et les profils Fish/Qwen GGUF Q8_0 sont intégrés. Le mix synchronisé et l’export MKV sont disponibles en phase 7. Le déplacement, la durée et les humeurs utilisent le format 7, lisible par v0.7.3 ou ultérieure. L’édition simultanée de plusieurs langues cibles reste à intégrer.
+Les références et préférences utilisent le format de projet 3, les zones audio le format 4 et les essais vocaux le format 5. Les anciennes versions refusent les formats plus récents. Fish FP8 et les profils Fish/Qwen GGUF Q8_0 sont intégrés. Le mix synchronisé et l’export MKV sont disponibles en phase 7. Le déplacement, la durée et les sept premières humeurs utilisent le format 7, lisible par v0.7.3 ou ultérieure. Les nouvelles intentions de v0.21.0 nécessitent le format 15. L’édition simultanée de plusieurs langues cibles reste à intégrer.
 
 ## Fonctions présentes
 
