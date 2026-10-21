@@ -8,7 +8,7 @@ def mood_spec(request):
     mood = request.get('mood')
     mood = 'default' if mood is None else mood
     if not isinstance(mood, str) or mood not in MOODS or (
-        mood != 'default' and str(request.get('variantId', '')).startswith('qwen3')
+        mood != 'default' and str(request.get('variantId', '')).startswith(('qwen3', 'chatterbox'))
     ):
         raise ValueError('TTS_STYLE_UNSUPPORTED')
     return MOODS[mood]

@@ -124,6 +124,18 @@ try {
     const reopened=await call('studio_get_project');
     assert.equal(reopened.formatVersion,15);assert.equal(reopened.dialogues[lineIndex].voiceSettings.mood,'dying');
     assert.deepEqual(reopened.generations,processed.generations);proofs.expandedMoods=43;proofs.reopenFormat15=true;
+    // Save/reopen both new engines through the shipped native validators.
+    for (const [variantId, provider] of [['voxcpm2-bf16','voxcpm2'],['chatterbox-multilingual-v3','chatterbox']]) {
+      await call('studio_project_patch',{context:await context(),patches:[{op:'replace',path:'/formatVersion',value:16},{op:'replace',path:`/dialogues/${lineIndex}/voiceSettings`,value:{...voiceOptions,variantId,mood:'default',mode:'crossLingual'}},{op:'add',path:'/modelPreferences',value:{ttsProviderId:provider,voiceVariantId:variantId}}]});
+      await call('studio_open_project',{path:projectRoot});
+      const newProfile=await call('studio_get_project');
+      assert.equal(newProfile.formatVersion,16);assert.equal(newProfile.dialogues[lineIndex].voiceSettings.variantId,variantId);
+      assert.deepEqual(newProfile.generations,processed.generations);
+      const space=await call('studio_voice_install_space',{variantId});
+      assert(space.requiredBytes>0 && space.modelBytes>0 && typeof space.enough==='boolean');
+    }
+    for (const asset of ['multilingual_worker.py','multilingual-runtime.json','vendor/chatterbox/chatterbox/mtl_tts.py']) await fs.access(path.join(path.dirname(args.exe),'workers',asset));
+    proofs.reopenFormat16=true;proofs.multilingualProfiles=2;proofs.multilingualSpacePreflight=true;
     await fs.writeFile(args.proof,JSON.stringify(proofs,null,2)+'\n','utf8');
     console.log('MCP_NATIVE_PROOF '+JSON.stringify(proofs));
 } catch(error){if(stderr)console.error(stderr.slice(-2000));throw error;}

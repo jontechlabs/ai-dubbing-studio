@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next';
 import { useState } from 'react';
 import type { Project } from '../domain/types';
 import { variantsFor } from '../domain/modelVariants';
-import { voiceVariant } from '../domain/voiceEngines';
+import { voiceVariant, multilingualVariant } from '../domain/voiceEngines';
 
 export function VoiceVariantSettings({
   project,
@@ -27,7 +27,10 @@ export function VoiceVariantSettings({
           onChange={(event) =>
             onEdit((p) => ({
               ...p,
-              formatVersion: Math.max(p.formatVersion, 3),
+              formatVersion: Math.max(
+                p.formatVersion,
+                multilingualVariant(event.target.value) ? 16 : 3,
+              ),
               modelPreferences: {
                 ...p.modelPreferences!,
                 voiceVariantId: event.target.value || null,

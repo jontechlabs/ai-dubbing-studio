@@ -21,10 +21,25 @@ fn complete(path: &Path, size: u64) -> bool {
     std::fs::metadata(path).is_ok_and(|m| m.is_file() && m.len() == size)
 }
 pub fn check<R: tauri::Runtime>(core: &Core, app: &tauri::AppHandle<R>) -> Result<Space, String> {
+    check_variant(core, app, "drama3-comfy-fp8")
+}
+pub fn check_variant<R: tauri::Runtime>(
+    core: &Core,
+    app: &tauri::AppHandle<R>,
+    id: &str,
+) -> Result<Space, String> {
+    let multilingual = voice_engines::multilingual(id);
+    if !multilingual && id != "drama3-comfy-fp8" {
+        return Err("INVALID_TTS_REQUEST".into());
+    }
     let folder = voice_engines::root(core);
-    let model = folder.join("drama3-comfy-fp8");
-    let runtime = folder.join("drama-runtime");
-    let variant = voice_engines::variant(app, "drama3-comfy-fp8")?;
+    let model = folder.join(id);
+    let runtime = folder.join(if multilingual {
+        "multilingual-runtime"
+    } else {
+        "drama-runtime"
+    });
+    let variant = voice_engines::variant(app, id)?;
     let model_bytes = variant
         .files
         .iter()
@@ -32,7 +47,12 @@ pub fn check<R: tauri::Runtime>(core: &Core, app: &tauri::AppHandle<R>) -> Resul
         .map(|f| f.size)
         .sum();
     let files: serde_json::Value = serde_json::from_slice(
-        &std::fs::read(separation::resources(app).join("drama-runtime.json")).map_err(io_error)?,
+        &std::fs::read(separation::resources(app).join(if multilingual {
+            "multilingual-runtime.json"
+        } else {
+            "drama-runtime.json"
+        }))
+        .map_err(io_error)?,
     )
     .map_err(io_error)?;
     let mut download_bytes = if complete(&runtime.join("python.zip"), 11133606) {

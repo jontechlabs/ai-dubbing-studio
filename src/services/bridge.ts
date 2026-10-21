@@ -111,8 +111,8 @@ export interface VoiceInstallSpace {
   marginBytes: number;
   enough: boolean;
 }
-export function voiceInstallSpace() {
-  return invoke<VoiceInstallSpace>('voice_install_space');
+export function voiceInstallSpace(variantId?: string) {
+  return invoke<VoiceInstallSpace>('voice_install_space', { variantId });
 }
 export interface TtsStatus {
   installed: boolean;

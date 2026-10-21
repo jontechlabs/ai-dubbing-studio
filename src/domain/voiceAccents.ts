@@ -3,6 +3,7 @@ export const voiceAccents = catalog.accents;
 export function accentSupported(variantId: string, language?: string) {
   return (
     (variantId === 'cosy3-official' ||
+      variantId === 'voxcpm2-bf16' ||
       variantId.startsWith('fish-s2') ||
       variantId === 'drama3-comfy-fp8') &&
     (language === undefined || voiceAccents.some((accent) => accent.language === language))

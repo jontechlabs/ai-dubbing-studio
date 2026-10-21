@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Job } from '../domain/types';
-import { installedVoiceVariants } from '../domain/voiceEngines';
+import { installedVoiceVariants, multilingualVariant } from '../domain/voiceEngines';
 import * as bridge from '../services/bridge';
 import { DramaModels } from './DramaModels';
+import { MultilingualModel } from './MultilingualModel';
 
 export function VoiceEngineModels({
   jobs,
@@ -65,6 +66,20 @@ export function VoiceEngineModels({
         .filter((v) => v.id !== 'cosy3-official')
         .map((variant) => {
           const state = status?.variants.find((v) => v.id === variant.id);
+          if (multilingualVariant(variant.id))
+            return (
+              <MultilingualModel
+                key={variant.id}
+                id={variant.id}
+                name={variant.name}
+                installed={state?.installed}
+                size={state?.sizeBytes}
+                busy={busy}
+                completion={completion}
+                onStarted={onStarted}
+                onError={onError}
+              />
+            );
           const installButton = (
             <button
               className="button accent wide"

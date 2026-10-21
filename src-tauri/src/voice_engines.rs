@@ -37,7 +37,12 @@ pub const IDS: &[&str] = &[
     "qwen3-17b-gguf-q8",
     "fish-s2-fp8",
     "drama3-comfy-fp8",
+    "voxcpm2-bf16",
+    "chatterbox-multilingual-v3",
 ];
+pub(crate) fn multilingual(id: &str) -> bool {
+    ["voxcpm2-bf16", "chatterbox-multilingual-v3"].contains(&id)
+}
 pub fn root(core: &Core) -> PathBuf {
     crate::model_storage::root(core).join("voice-engines")
 }
@@ -69,6 +74,16 @@ pub fn installed(core: &Core, id: &str) -> bool {
                 && root(core)
                     .join(id)
                     .join("drama3_codec.safetensors")
+                    .is_file()
+        } else if multilingual(id) {
+            separation::python(&root(core).join("multilingual-runtime")).is_file()
+                && root(core)
+                    .join(id)
+                    .join(if id == "voxcpm2-bf16" {
+                        "model.safetensors"
+                    } else {
+                        "t3_mtl23ls_v3.safetensors"
+                    })
                     .is_file()
         } else {
             root(core).join("audiocpp/audiocpp_cli.exe").is_file()
@@ -114,32 +129,37 @@ pub async fn status<R: tauri::Runtime>(
         vec![]
     };
     let variants:Vec<_>=manifest(&app)?.variants.into_iter().map(|v|serde_json::json!({"id":v.id,"installed":installed(&core,&v.id),"sizeBytes":v.files.iter().map(|f|f.size).sum::<u64>()})).collect();
-    let cuda = if include_cuda
-        && permit.is_some()
-        && (installed(&core, "fish-s2-fp8") || installed(&core, "drama3-comfy-fp8"))
+    let tensor = if installed(&core, "fish-s2-fp8") {
+        Some(("fish-runtime", "fish_worker.py"))
+    } else if installed(&core, "drama3-comfy-fp8") {
+        Some(("drama-runtime", "drama_worker.py"))
+    } else if IDS
+        .iter()
+        .any(|id| multilingual(id) && installed(&core, id))
     {
-        separation::probe(
-            &separation::python(&root(&core).join(if installed(&core, "fish-s2-fp8") {
-                "fish-runtime"
-            } else {
-                "drama-runtime"
-            })),
-            &[
-                separation::resources(&app)
-                    .join(if installed(&core, "fish-s2-fp8") {
-                        "fish_worker.py"
-                    } else {
-                        "drama_worker.py"
-                    })
-                    .to_string_lossy()
-                    .into_owned(),
-                "--info".into(),
-            ],
-            &AtomicBool::new(false),
-            Duration::from_secs(30),
-        )
-        .await?
-        .unwrap_or_else(|| serde_json::json!({"devices":[]}))
+        Some(("multilingual-runtime", "multilingual_worker.py"))
+    } else {
+        None
+    };
+    let cuda = if include_cuda && permit.is_some() {
+        if let Some((runtime, script)) = tensor {
+            separation::probe(
+                &separation::python(&root(&core).join(runtime)),
+                &[
+                    separation::resources(&app)
+                        .join(script)
+                        .to_string_lossy()
+                        .into_owned(),
+                    "--info".into(),
+                ],
+                &AtomicBool::new(false),
+                Duration::from_secs(30),
+            )
+            .await?
+            .unwrap_or_else(|| serde_json::json!({"devices":[]}))
+        } else {
+            serde_json::json!({"devices":[]})
+        }
     } else {
         serde_json::json!({"devices":[]})
     };
@@ -178,6 +198,12 @@ pub fn install<R: tauri::Runtime>(
                 jobs::update(&core,&app,&key,|j|j.logs.push(format!("Drama 3 before downloads: {}; available {:.2} GiB; estimated required {:.2} GiB (models, dependency archives, expansion and margin)",space.path,space.available_bytes as f64/1073741824.0,space.required_bytes as f64/1073741824.0)));
                 if !space.enough {return Err("TTS_DRAMA_DISK_REQUIRED".into());}
             }
+            if selected.engine=="multilingual" {
+              let c=core.clone();let a=app.clone();let v=id.clone();
+              let space=tauri::async_runtime::spawn_blocking(move||crate::voice_space::check_variant(&c,&a,&v)).await.map_err(io_error)??;
+              jobs::update(&core,&app,&key,|j|j.logs.push(format!("{}: available {:.2} GiB; estimated required {:.2} GiB before dependency downloads",selected.name,space.available_bytes as f64/1073741824.0,space.required_bytes as f64/1073741824.0)));
+              if !space.enough {return Err("TTS_DISK_REQUIRED".into());}
+            }
             jobs::update(&core,&app,&key,|j|{j.status="running".into();j.stage="runtime".into();});
             let folder=root(&core);std::fs::create_dir_all(folder.join(&id)).map_err(io_error)?;
             let _=std::fs::remove_file(folder.join(&id).join("ready.json"));
@@ -189,7 +215,7 @@ pub fn install<R: tauri::Runtime>(
                 tauri::async_runtime::spawn_blocking(move||tts::extract(&archive,&target,&f)).await.map_err(io_error)??;
                 if inventory(&core).await.is_empty(){return Err("TTS_RUNTIME_FAILED".into());}
             } else {
-                install_fish_python(&core,&app,&key,&flag,selected.engine=="drama3").await?;
+                install_python_profile(&core,&app,&key,&flag,&selected.engine).await?;
                 if selected.engine=="drama3" {
                     separation::process(&core,&app,&key,&separation::python(&folder.join("drama-runtime")),&[separation::resources(&app).join("drama_worker.py").to_string_lossy().into_owned(),"--preflight".into(),folder.join(&id).to_string_lossy().into_owned()],&flag).await?;
                 }
@@ -199,6 +225,13 @@ pub fn install<R: tauri::Runtime>(
                 jobs::update(&core,&app,&key,|j|{j.stage="ttsModel".into();j.progress=Some(0.0);j.logs.push(format!("{}: {}",selected.name,file.name));});
                 separation::fetch(&core,&app,&key,&[file.url],&folder.join(&id).join(&file.name),(&file.sha256,file.size),&flag).await?;
             }
+            if id=="chatterbox-multilingual-v3" {
+                jobs::update(&core,&app,&key,|j|{j.stage="ttsExtract".into();j.progress=None;});
+                let archive=folder.join(&id).join("pkuseg.zip");
+                let target=folder.join(&id).join("pkuseg");
+                let f=flag.clone();
+                tauri::async_runtime::spawn_blocking(move||tts::extract(&archive,&target,&f)).await.map_err(io_error)??;
+            }
             if flag.load(Ordering::Relaxed){return Err("CANCELLED".into());}
             project::atomic_write(&folder.join(&id).join("ready.json"),selected.revision.as_bytes())
         }.await;
@@ -206,14 +239,18 @@ pub fn install<R: tauri::Runtime>(
     });
     Ok(returned)
 }
-async fn install_fish_python<R: tauri::Runtime>(
+async fn install_python_profile<R: tauri::Runtime>(
     core: &Arc<Core>,
     app: &tauri::AppHandle<R>,
     key: &str,
     flag: &Arc<AtomicBool>,
-    drama: bool,
+    profile: &str,
 ) -> Result<(), String> {
-    let folder = root(core).join(if drama {
+    let drama = profile == "drama3";
+    let multilingual = profile == "multilingual";
+    let folder = root(core).join(if multilingual {
+        "multilingual-runtime"
+    } else if drama {
         "drama-runtime"
     } else {
         "fish-runtime"
@@ -243,7 +280,9 @@ async fn install_fish_python<R: tauri::Runtime>(
         b"python312.zip\n.\nLib/site-packages\nimport site\n",
     )?;
     let runtime: serde_json::Value = serde_json::from_slice(
-        &std::fs::read(separation::resources(app).join(if drama {
+        &std::fs::read(separation::resources(app).join(if multilingual {
+            "multilingual-runtime.json"
+        } else if drama {
             "drama-runtime.json"
         } else {
             "fish-runtime.json"
@@ -325,7 +364,9 @@ async fn install_fish_python<R: tauri::Runtime>(
         &separation::python(&folder),
         &[
             separation::resources(app)
-                .join(if drama {
+                .join(if multilingual {
+                    "multilingual_worker.py"
+                } else if drama {
                     "drama_worker.py"
                 } else {
                     "fish_worker.py"

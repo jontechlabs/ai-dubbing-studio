@@ -93,3 +93,18 @@ MIT License. Anime LBP cascade: nagadomi/lbpcascade_animeface revision
 Full detector license texts: workers/FACE-DETECTION-LICENSES.txt.
 Detector weights download separately; validation images are temporary and are
 not redistributed with the application.
+
+VoxCPM2 / VoxCPM 2.0.3
+https://github.com/OpenBMB/VoxCPM
+Apache License 2.0; see docs/third-party/VOXCPM-LICENSE.txt.
+Official model openbmb/VoxCPM2 (revision 32279effe8c19989596f05d353d1447f51d9e915), downloaded only on request.
+
+Chatterbox Multilingual V3
+https://github.com/resemble-ai/chatterbox
+MIT; source revision 5de7a54aa4e5e2baadb0182dde554908b48b85c2, license and local modifications in workers/vendor/chatterbox/.
+Official model ResembleAI/chatterbox (revision 5bb1f6ee58e50c3b8d408bc82a6d3740c2db6e18), downloaded only on request.
+The upstream Perth audio watermark is retained; resemble-perth 1.0.1 is installed in the isolated runtime.
+
+Chinese segmentation data: explosion/spacy-pkuseg spacy_ontonotes, release v0.0.26 (MIT distribution).
+https://github.com/explosion/spacy-pkuseg/releases/tag/v0.0.26
+Downloaded with pinned SHA-256 into the configured Chatterbox model folder; library license is installed with the wheel.

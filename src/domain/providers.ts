@@ -60,6 +60,8 @@ export const futureVoiceProviders = [
   { id: 'fish-s2', name: 'Fish Audio S2', phase: 6 },
   { id: 'fish-drama3', name: 'Fish Audio Drama 3', phase: 9 },
   { id: 'qwen3-tts', name: 'Qwen3-TTS', phase: 6 },
+  { id: 'voxcpm2', name: 'VoxCPM2', phase: 22 },
+  { id: 'chatterbox', name: 'Chatterbox Multilingual', phase: 22 },
 ] as const;
 export interface SpeakerIdentificationProvider {
   id: string;

@@ -15,6 +15,28 @@ export interface VoiceVariant {
 import { installedVoiceVariants } from './voiceEngines';
 export const voiceVariants: VoiceVariant[] = [
   {
+    id: 'voxcpm2-bf16',
+    providerId: 'voxcpm2',
+    name: 'VoxCPM2 · 2B · BF16',
+    format: 'BF16',
+    origin: 'official',
+    engine: 'VoxCPM 2.0.3 · PyTorch CUDA 12.8',
+    source: 'https://huggingface.co/openbmb/VoxCPM2',
+    detailKey: 'voxcpmProfile',
+    suggested16Gb: true,
+  },
+  {
+    id: 'chatterbox-multilingual-v3',
+    providerId: 'chatterbox',
+    name: 'Chatterbox Multilingual V3 · 500M',
+    format: 'FP32',
+    origin: 'official',
+    engine: 'Chatterbox · PyTorch CUDA 12.8',
+    source: 'https://github.com/resemble-ai/chatterbox',
+    detailKey: 'chatterboxProfile',
+    suggested16Gb: true,
+  },
+  {
     id: 'drama3-comfy-fp8',
     providerId: 'fish-drama3',
     name: 'Drama 3 · FP8 · experts en RAM',

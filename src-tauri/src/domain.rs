@@ -269,7 +269,7 @@ impl Project {
         references.iter().find(|r| r.id == id)
     }
     pub fn validate(&self) -> Result<(), String> {
-        if !(1..=15).contains(&self.format_version) {
+        if !(1..=16).contains(&self.format_version) {
             return Err("UNSUPPORTED_PROJECT_VERSION".into());
         }
         if !self.translation_approvals.is_empty()
@@ -326,6 +326,13 @@ impl Project {
             }
         }
         if let Some(preferences) = &self.model_preferences {
+            if self.format_version < 16
+                && preferences["ttsProviderId"]
+                    .as_str()
+                    .is_some_and(|id| ["voxcpm2", "chatterbox"].contains(&id))
+            {
+                return Err("UNSUPPORTED_PROJECT_VERSION".into());
+            }
             if !preferences["voiceVariantId"].is_null() {
                 let valid = match preferences["ttsProviderId"].as_str() {
                     Some("cosyvoice3") => ["cosy3-official", "cosy3-gguf-q4"]
@@ -340,6 +347,10 @@ impl Project {
                     .contains(&preferences["voiceVariantId"].as_str().unwrap_or("")),
                     Some("fish-drama3") => ["drama3-comfy-fp8"]
                         .contains(&preferences["voiceVariantId"].as_str().unwrap_or("")),
+                    Some("voxcpm2") => preferences["voiceVariantId"] == "voxcpm2-bf16",
+                    Some("chatterbox") => {
+                        preferences["voiceVariantId"] == "chatterbox-multilingual-v3"
+                    }
                     Some("qwen3-tts") => [
                         "qwen3-06b-bf16",
                         "qwen3-17b-bf16",
@@ -356,7 +367,15 @@ impl Project {
             }
             if !preferences["ttsProviderId"].is_null()
                 && !preferences["ttsProviderId"].as_str().is_some_and(|id| {
-                    ["cosyvoice3", "fish-s2", "fish-drama3", "qwen3-tts"].contains(&id)
+                    [
+                        "cosyvoice3",
+                        "fish-s2",
+                        "fish-drama3",
+                        "qwen3-tts",
+                        "voxcpm2",
+                        "chatterbox",
+                    ]
+                    .contains(&id)
                 })
             {
                 return Err("INVALID_PROJECT".into());

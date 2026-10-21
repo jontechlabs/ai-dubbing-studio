@@ -120,7 +120,10 @@ export function ModelsPanel({
             onChange={(event) =>
               onEdit((p) => ({
                 ...p,
-                formatVersion: Math.max(p.formatVersion, 3),
+                formatVersion: Math.max(
+                  p.formatVersion,
+                  ['voxcpm2', 'chatterbox'].includes(event.target.value) ? 16 : 3,
+                ),
                 modelPreferences: {
                   ...p.modelPreferences,
                   ttsProviderId: event.target.value || null,

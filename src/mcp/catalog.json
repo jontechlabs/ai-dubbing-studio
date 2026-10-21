@@ -832,7 +832,7 @@
       "description": "voice install space. Uses the current desktop session. Local file paths must be absolute; long operations return job IDs. Existing native validation applies.",
       "inputSchema": {
         "type": "object",
-        "properties": {},
+        "properties": { "variantId": { "anyOf": [{ "type": "string" }, { "type": "null" }] } },
         "required": [],
         "additionalProperties": false
       },

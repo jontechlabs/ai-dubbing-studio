@@ -1,15 +1,17 @@
 import type { Dialogue, Generation, Project, VoiceSettings } from './types';
 import { dialogueText } from './subtitles';
-import { voiceVariant } from './voiceEngines';
+import { voiceVariant, voiceSettingsFormat } from './voiceEngines';
 import { validAccent } from './voiceAccents';
-import { validMood, moodFormatVersion } from './voiceMoods';
+import { validMood } from './voiceMoods';
 export function validVoiceSettings(value: unknown): value is VoiceSettings {
   if (!value || typeof value !== 'object') return false;
   const s = value as VoiceSettings;
   return (
     validAccent(s.accent, s.variantId ?? undefined) &&
     validMood(s.mood) &&
-    (!s.variantId?.startsWith('qwen3') || !s.mood || s.mood === 'default') &&
+    (!(s.variantId?.startsWith('qwen3') || s.variantId?.startsWith('chatterbox')) ||
+      !s.mood ||
+      s.mood === 'default') &&
     (s.variantId == null || !!voiceVariant(s.variantId)) &&
     ['character', 'current', 'custom', 'file'].includes(s.referenceMode) &&
     (s.referenceTrackId === undefined ||
@@ -136,10 +138,6 @@ export function editVoiceSettings(
   const line = next.dialogues.find((line) => line.id === lineId);
   if (!line) throw Error('NO_DIALOGUES');
   line.voiceSettings = settings;
-  next.formatVersion = Math.max(
-    (settings.accent && settings.accent !== 'auto') || settings.referenceMode === 'file' ? 9 : 1,
-    moodFormatVersion(settings.mood),
-    next.formatVersion,
-  );
+  next.formatVersion = Math.max(voiceSettingsFormat(settings), next.formatVersion);
   return next;
 }

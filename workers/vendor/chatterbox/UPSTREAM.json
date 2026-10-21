@@ -1,0 +1,10 @@
+{
+  "repository": "https://github.com/resemble-ai/chatterbox",
+  "revision": "5de7a54aa4e5e2baadb0182dde554908b48b85c2",
+  "archiveSha256": "bb7363a76c0c0432a0305681fe2e533bbfb0f10fcf7b98d75a439d9a909f1576",
+  "changes": [
+    "tokenizers/tokenizer.py: prefer verified local Cangjie5_TC.json; fallback is offline only. No tokenizer or watermark algorithm changed.",
+    "mtl_tts.py: deserialize checkpoints on CPU before placement on the explicitly selected device, avoiding allocations on a serialized CUDA device.",
+    "tokenizers/tokenizer.py: use the pinned local pkuseg dictionary/model in modelDir/pkuseg instead of an implicit download to the user profile."
+  ]
+}

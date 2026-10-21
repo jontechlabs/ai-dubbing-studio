@@ -12,7 +12,7 @@ permissions:
 jobs:
   windows:
     runs-on: windows-latest
-    timeout-minutes: 60
+    timeout-minutes: 90
     env:
       PYTHONDONTWRITEBYTECODE: '1'
       LIBCLANG_PATH: 'C:\Program Files\LLVM\bin'
@@ -100,6 +100,10 @@ jobs:
       - name: Verify real Japanese reference transcription
         # This calls only the headless worker, without opening the desktop UI.
         run: ./scripts/test-reference-transcription.ps1
+      - name: Actual VoxCPM2 and Chatterbox V3 French generation from Japanese reference
+        # Full official weights, two requests per hot worker, auto-language ASR.
+        # CPU Torch 2.8 here; no RTX memory/speed qualification claim.
+        run: ./scripts/test-multilingual.ps1
       - name: Package portable build and checksums
         run: ./scripts/package-windows.ps1
       - name: Packaged desktop controlled through the official MCP SDK
@@ -120,5 +124,7 @@ jobs:
             .cache/reference-transcription/**/*.json
             .cache/mcp-native/**/*.stdout.log
             .cache/mcp-native/**/*.stderr.log
+            .cache/multilingual-validation/*.log
+            .cache/multilingual-validation/*.json
           include-hidden-files: true
           if-no-files-found: ignore

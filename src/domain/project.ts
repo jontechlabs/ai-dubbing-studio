@@ -2,12 +2,12 @@ import type { Project } from './types';
 import { alignCues } from './subtitles';
 import { validVoiceVariant } from './modelVariants';
 import { validVoiceSettings } from './tts';
-import { moodFormatVersion } from './voiceMoods';
+import { voiceSettingsFormat } from './voiceEngines';
 import { validateAudioPatches } from './audioPatch';
 import { validateLipVideos } from './inpaint';
 import { validateVoiceEdit } from './voiceEdit';
 import { validateProsody } from './prosody';
-export const APP_VERSION = '0.21.0';
+export const APP_VERSION = '0.22.0';
 
 export function blankProject(name = 'Untitled', source = 'ja', target = 'fr'): Project {
   const now = new Date().toISOString();
@@ -95,12 +95,18 @@ export function validateProject(value: unknown): Project {
   if (!value || typeof value !== 'object') throw new Error('INVALID_PROJECT');
   const project = value as Project;
   const preferences = project.modelPreferences;
+  if (
+    preferences &&
+    ['voxcpm2', 'chatterbox'].includes(preferences.ttsProviderId ?? '') &&
+    project.formatVersion < 16
+  )
+    throw Error('UNSUPPORTED_PROJECT_VERSION');
   if (preferences && !validVoiceVariant(preferences.ttsProviderId, preferences.voiceVariantId))
     throw new Error('INVALID_PROJECT');
   if (
     !Number.isInteger(project.formatVersion) ||
     project.formatVersion < 1 ||
-    project.formatVersion > 15
+    project.formatVersion > 16
   )
     throw new Error('UNSUPPORTED_PROJECT_VERSION');
   if (project.voiceEdits !== undefined) {
@@ -318,7 +324,7 @@ export function validateProject(value: unknown): Project {
       (project.formatVersion < 9 &&
         (generation.options?.referenceMode === 'file' ||
           (generation.options?.accent && generation.options.accent !== 'auto'))) ||
-      project.formatVersion < moodFormatVersion(generation.options.mood) ||
+      project.formatVersion < voiceSettingsFormat(generation.options) ||
       !Number.isSafeInteger(generation.startMs) ||
       !Number.isSafeInteger(generation.endMs) ||
       typeof generation.startMs !== 'number' ||
@@ -357,7 +363,7 @@ export function validateProject(value: unknown): Project {
         (project.formatVersion < 9 &&
           (line.voiceSettings.referenceMode === 'file' ||
             (line.voiceSettings.accent && line.voiceSettings.accent !== 'auto'))) ||
-        project.formatVersion < moodFormatVersion(line.voiceSettings.mood))
+        project.formatVersion < voiceSettingsFormat(line.voiceSettings))
     )
       throw Error('INVALID_TTS_REQUEST');
     for (const [language, id] of Object.entries(line.selectedGenerationIds))

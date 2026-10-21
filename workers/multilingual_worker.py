@@ -1,0 +1,204 @@
+"""VoxCPM2 and Chatterbox Multilingual; explicit local assets and selected device.
+
+One process owns the model for a batch. Process exit releases its GPU allocations.
+No web UI, training, remote inference, denoiser or torch.compile is started.
+"""
+import argparse
+import contextlib
+import gc
+import hashlib
+import json
+import os
+from pathlib import Path
+import random
+import sys
+
+HERE = Path(__file__).resolve().parent
+sys.dont_write_bytecode = True
+sys.path.insert(0, str(HERE / 'vendor/chatterbox'))
+os.environ.update(HF_HUB_OFFLINE='1', TRANSFORMERS_OFFLINE='1', HF_HUB_DISABLE_TELEMETRY='1')
+IDS = ('voxcpm2-bf16', 'chatterbox-multilingual-v3')
+
+
+def report(**values):
+    print(json.dumps(values), file=sys.__stdout__, flush=True)
+
+
+def validate(request):
+    from cosyvoice_worker import validate_request
+    if request.get('variantId') not in IDS:
+        raise ValueError('INVALID_TTS_REQUEST')
+    validate_request(request)
+    if request['variantId'] == 'voxcpm2-bf16' and request['mode'] == 'zeroShot' and not request.get('referenceTranscript', '').strip():
+        raise ValueError('TTS_TRANSCRIPT_REQUIRED')
+    if request['variantId'].startswith('chatterbox'):
+        if request['mode'] != 'crossLingual':
+            raise ValueError('INVALID_TTS_REQUEST')
+        if (request.get('mood') or 'default') != 'default':
+            raise ValueError('TTS_STYLE_UNSUPPORTED')
+        if (request.get('accent') or 'auto') != 'auto':
+            raise ValueError('TTS_ACCENT_UNSUPPORTED')
+
+
+def voxcpm_arguments(request, reference):
+    from voice_mood import mood_spec
+    from voice_accent import accent_spec
+    directions = []
+    accent = accent_spec(request)
+    if accent:
+        directions.append(accent['fishInstruction'])
+    if request.get('mood', 'default') not in (None, 'default'):
+        directions.append(mood_spec(request)['fishInstruction'])
+    text = request['text']
+    if directions:
+        text = '(' + ', '.join(directions) + ')' + text
+    options = dict(text=text, cfg_value=2.0, inference_timesteps=10,
+                   normalize=False, denoise=False, retry_badcase=True, retry_badcase_max_times=1,
+                   max_len=1500)
+    if request['mode'] == 'zeroShot':
+        options.update(prompt_wav_path=str(reference), prompt_text=request['referenceTranscript'])
+    else:
+        options['reference_wav_path'] = str(reference)
+    return options
+
+
+def chatterbox_arguments(request, reference):
+    # The language token is independent of the reference's language. Upstream
+    # recommends CFG=0 for a cross-language reference to reduce language leakage.
+    return dict(text=request['text'], language_id=request['language'], audio_prompt_path=str(reference),
+                cfg_weight=0.0, exaggeration=0.5)
+
+
+def verify_models(request):
+    manifest = json.loads((HERE / 'voice-engines.json').read_text(encoding='utf-8'))
+    variant = next(v for v in manifest['variants'] if v['id'] == request['variantId'])
+    for index, spec in enumerate(variant['files']):
+        path = Path(request['modelDir']) / spec['name']
+        if not path.is_file() or path.stat().st_size != spec['size']:
+            raise ValueError('MODEL_CHECKSUM_FAILED')
+        report(stage='ttsVerify', progress=index / len(variant['files']), log='Verifying ' + spec['name'])
+        with path.open('rb') as stream:
+            if hashlib.file_digest(stream, 'sha256').hexdigest() != spec['sha256']:
+                raise ValueError('MODEL_CHECKSUM_FAILED')
+
+
+def load_model(request, device):
+    directory = Path(request['modelDir'])
+    if request['variantId'] == 'voxcpm2-bf16':
+        from voxcpm import VoxCPM
+        return VoxCPM.from_pretrained(str(directory), load_denoiser=False,
+                                      optimize=False, device=device, local_files_only=True)
+    from chatterbox.mtl_tts import ChatterboxMultilingualTTS
+    return ChatterboxMultilingualTTS.from_local(directory, device=device, t3_model='v3')
+
+
+def runtime_info():
+    import importlib.metadata
+    import inspect
+    import torch
+    from voxcpm import VoxCPM
+    from chatterbox.mtl_tts import ChatterboxMultilingualTTS
+    if torch.__version__ != '2.8.0+cu128':
+        raise ValueError('TTS_RUNTIME_FAILED')
+    if importlib.metadata.version('voxcpm') != '2.0.3':
+        raise ValueError('TTS_RUNTIME_FAILED')
+    if 't3_model' not in inspect.signature(ChatterboxMultilingualTTS.from_local).parameters:
+        raise ValueError('TTS_RUNTIME_FAILED')
+    return dict(runtimeReady=True, cudaVersion=torch.version.cuda,
+                voxcpm=VoxCPM.__name__, chatterbox=ChatterboxMultilingualTTS.__name__)
+
+
+def generate(request, session=None):
+    validate(request)
+    requested = request.get('device', 'auto')
+    if requested == 'cpu':
+        os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
+    from cosyvoice_worker import inference_device
+    from voice_reference import prepare_reference
+    import torch
+    import numpy as np
+    import soundfile as sf
+    from scipy.signal import resample_poly
+    from math import gcd
+    torch.set_num_threads(min(6, max(1, (os.cpu_count() or 2) // 2)))
+    device = inference_device(requested)
+    name = torch.cuda.get_device_name(device) if device.startswith('cuda:') else 'CPU'
+    if device.startswith('cuda:'):
+        torch.cuda.set_device(device)
+        torch.cuda.reset_peak_memory_stats(device)
+    identity = (request['variantId'], str(request['modelDir']), device)
+    if session and 'model' in session and session.get('identity') != identity:
+        raise ValueError('INVALID_TTS_REQUEST')
+    if session and 'model' in session:
+        model = session['model']
+        report(stage='ttsReuse', progress=None, log='Reusing ' + request['variantId'] + ' on ' + name)
+    else:
+        verify_models(request)
+        report(stage='ttsLoad', progress=None, device=requested, deviceName=name)
+        model = load_model(request, device)
+        if session is not None:
+            session.update(model=model, identity=identity)
+    random.seed(request['seed'])
+    np.random.seed(request['seed'])
+    if device.startswith('cuda:'):
+        torch.manual_seed(request['seed'])
+        torch.cuda.manual_seed_all(request['seed'])
+    else:
+        torch.random.default_generator.manual_seed(request['seed'])
+    with prepare_reference(request['referenceAudio'], report, request.get('preparedReferenceAudio')) as reference:
+        report(stage='ttsGenerate', progress=None,
+               log=f'{request["variantId"]}: target language {request["language"]}; selected device {name}')
+        with torch.inference_mode():
+            if request['variantId'] == 'voxcpm2-bf16':
+                audio = model.generate(**voxcpm_arguments(request, reference))
+                rate = model.tts_model.sample_rate
+            else:
+                audio = model.generate(**chatterbox_arguments(request, reference)).float().cpu().numpy()
+                rate = model.sr
+    audio = np.asarray(audio, dtype=np.float32).reshape(-1)
+    if not np.isfinite(audio).all() or len(audio) == 0 or np.max(np.abs(audio)) < 0.001:
+        raise ValueError('TTS_EMPTY_AUDIO')
+    factor = gcd(int(rate), 24000)
+    audio = resample_poly(audio, 24000 // factor, int(rate) // factor)
+    if request['speed'] != 1:
+        import librosa
+        audio = librosa.effects.time_stretch(audio, rate=request['speed'])
+    if not 0 < len(audio) <= 120 * 24000:
+        raise ValueError('TTS_EMPTY_AUDIO')
+    sf.write(request['outputPath'], np.clip(audio, -1, 1), 24000, subtype='PCM_16')
+    metadata = dict(device=device, deviceName=name, peakVramMb=
+                    round(torch.cuda.max_memory_allocated(device) / 1024**2) if device.startswith('cuda:') else 0)
+    Path(request['resultPath']).write_text(json.dumps(metadata), encoding='utf-8')
+    if session is None:
+        del model
+        gc.collect()
+        if device.startswith('cuda:'):
+            torch.cuda.empty_cache()
+    report(stage='ttsGenerate', progress=1, **metadata)
+
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--info', action='store_true')
+    parser.add_argument('--runtime-info', action='store_true')
+    parser.add_argument('--request')
+    args = parser.parse_args()
+    with contextlib.redirect_stdout(sys.stderr):
+        if args.info:
+            from cosyvoice_worker import device_info
+            report(**device_info())
+        elif args.runtime_info:
+            report(**runtime_info())
+        else:
+            generate(json.loads(Path(args.request).read_text(encoding='utf-8-sig')))
+
+
+if __name__ == '__main__':
+    try:
+        main()
+    except Exception as error:
+        import traceback
+        traceback.print_exc(file=sys.stderr)
+        code = 'TTS_OUT_OF_MEMORY' if 'out of memory' in str(error).lower() else str(error).split(':')[0]
+        report(error=code if code.startswith(('TTS_', 'INVALID_', 'DEVICE_', 'MODEL_')) else 'TTS_ENGINE_FAILED')
+        sys.exit(1)

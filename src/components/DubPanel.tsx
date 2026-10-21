@@ -234,7 +234,14 @@ export function DubPanel({
               if (!disposed) setStatus(s);
             })
           : bridge
-              .voiceStatus(['fish-s2-fp8', 'drama3-comfy-fp8'].includes(variantId))
+              .voiceStatus(
+                [
+                  'fish-s2-fp8',
+                  'drama3-comfy-fp8',
+                  'voxcpm2-bf16',
+                  'chatterbox-multilingual-v3',
+                ].includes(variantId),
+              )
               .then((s) => {
                 if (!disposed) setEngines(s);
               })
@@ -254,6 +261,8 @@ export function DubPanel({
         variantId: line.voiceSettings?.variantId ?? preferred?.id ?? 'cosy3-official',
       };
   const variant = voiceVariant(settings.variantId)!;
+  const chatterbox = variant.providerId === 'chatterbox';
+  const multilingual = chatterbox || variant.providerId === 'voxcpm2';
   const mood = settings.mood ?? 'default';
   const accent = accentSupported(variant.id, project.languages.target)
     ? (settings.accent ?? 'auto')
@@ -262,7 +271,7 @@ export function DubPanel({
     variant.providerId === 'cosyvoice3' && (mood !== 'default' || accent !== 'auto');
   const mode = variant.providerId.startsWith('fish')
     ? 'zeroShot'
-    : instructedMood
+    : instructedMood || chatterbox
       ? 'crossLingual'
       : settings.mode;
   const ready =
@@ -275,7 +284,9 @@ export function DubPanel({
       ? status?.inventory.devices
       : variant.backend === 'vulkan'
         ? engines?.devices
-        : engines?.cudaDevices.filter((d) => d.id.startsWith('cuda:'));
+        : engines?.cudaDevices.filter(
+            (d) => d.id.startsWith('cuda:') || (multilingual && d.id === 'cpu'),
+          );
   const character = project.characters.find((c) => c.id === line.characterId);
   const fileReference = settings.referenceMode === 'file';
   const reference = fileReference
@@ -338,9 +349,13 @@ export function DubPanel({
             edit({
               variantId: next.id,
               device: 'auto',
-              mood: next.providerId === 'qwen3-tts' ? 'default' : mood,
+              mood: ['qwen3-tts', 'chatterbox'].includes(next.providerId) ? 'default' : mood,
               accent: accentSupported(next.id, project.languages.target) ? accent : 'auto',
-              mode: next.providerId.startsWith('fish') ? 'zeroShot' : settings.mode,
+              mode: next.providerId.startsWith('fish')
+                ? 'zeroShot'
+                : next.providerId === 'chatterbox'
+                  ? 'crossLingual'
+                  : settings.mode,
             });
           }}
         >
@@ -356,11 +371,15 @@ export function DubPanel({
           {t(
             variant.id === 'drama3-comfy-fp8'
               ? 'dramaGenerationHint'
-              : variant.backend === 'vulkan'
-                ? 'phase6Gguf'
-                : variant.id === 'fish-s2-fp8'
-                  ? 'phase6Fp8'
-                  : 'ttsLocalHint',
+              : multilingual
+                ? chatterbox
+                  ? 'chatterboxGenerationHint'
+                  : 'voxcpmGenerationHint'
+                : variant.backend === 'vulkan'
+                  ? 'phase6Gguf'
+                  : variant.id === 'fish-s2-fp8'
+                    ? 'phase6Fp8'
+                    : 'ttsLocalHint',
           )}
         </p>
       )}
@@ -386,9 +405,8 @@ export function DubPanel({
               {d.name}
             </option>
           ))}
-          {variant.backend !== 'cuda' && !devices?.some((d) => d.id === 'cpu') && (
-            <option value="cpu">CPU</option>
-          )}
+          {(variant.backend !== 'cuda' || multilingual) &&
+            !devices?.some((d) => d.id === 'cpu') && <option value="cpu">CPU</option>}
         </select>
       </label>
       <label className="field">
@@ -551,7 +569,7 @@ export function DubPanel({
         <span>{t('ttsCloneMode')}</span>
         <select
           value={mode}
-          disabled={busy || instructedMood}
+          disabled={busy || instructedMood || chatterbox}
           onChange={(e) => edit({ mode: e.target.value as typeof settings.mode })}
         >
           <option value="crossLingual" disabled={variant.providerId.startsWith('fish')}>
@@ -562,20 +580,22 @@ export function DubPanel({
       </label>
       <p className="panel-description">
         {t(
-          instructedMood
-            ? 'ttsCosyMoodHint'
-            : variant.providerId.startsWith('fish')
-              ? 'ttsFishHint'
-              : mode === 'crossLingual'
-                ? 'ttsCrossHint'
-                : 'ttsZeroHint',
+          chatterbox
+            ? 'chatterboxCloneHint'
+            : instructedMood
+              ? 'ttsCosyMoodHint'
+              : variant.providerId.startsWith('fish')
+                ? 'ttsFishHint'
+                : mode === 'crossLingual'
+                  ? 'ttsCrossHint'
+                  : 'ttsZeroHint',
         )}
       </p>
       <label className="field">
         <span>{t('ttsMood')}</span>
         <select
-          value={variant.providerId === 'qwen3-tts' ? 'default' : mood}
-          disabled={busy || variant.providerId === 'qwen3-tts'}
+          value={variant.providerId === 'qwen3-tts' || chatterbox ? 'default' : mood}
+          disabled={busy || variant.providerId === 'qwen3-tts' || chatterbox}
           onChange={(event) => edit({ mood: event.target.value as typeof settings.mood })}
         >
           <option value="default">{t('moods.default')}</option>
@@ -593,7 +613,13 @@ export function DubPanel({
         </select>
       </label>
       <p className="panel-description">
-        {t(variant.providerId === 'qwen3-tts' ? 'ttsMoodUnsupported' : 'ttsMoodHint')}
+        {t(
+          chatterbox
+            ? 'chatterboxMoodHint'
+            : variant.providerId === 'qwen3-tts'
+              ? 'ttsMoodUnsupported'
+              : 'ttsMoodHint',
+        )}
       </p>
       {variant.providerId === 'cosyvoice3' && (
         <p className="panel-description">{t('ttsCosyReferenceActingHint')}</p>

@@ -339,7 +339,9 @@
     "PROSODY_NO_VOICE": "Pas assez de parole avec une hauteur mesurable. Choisissez un guide vocal clair, ou désactivez Mélodie pour une voix chuchotée.",
     "PROSODY_ANALYSIS_FAILED": "L’analyse de l’intonation a échoué. Aucun essai précédent n’a été modifié.",
     "PROSODY_RENDER_FAILED": "Le transfert d’intonation a échoué. Aucun essai précédent n’a été modifié.",
-    "PROSODY_TIMEOUT": "Le transfert d’intonation a dépassé le délai disponible."
+    "PROSODY_TIMEOUT": "Le transfert d’intonation a dépassé le délai disponible.",
+    "TTS_DISK_REQUIRED": "Espace disque insuffisant pour installer ce moteur. Consultez l’espace nécessaire et disponible dans Modèles, puis libérez de l’espace ou changez le dossier de stockage.",
+    "TTS_TEXT_MISMATCH": "La consigne du moteur ne correspond pas au texte à prononcer. Aucun essai précédent n’a été remplacé."
   },
   "preparingVideo": "Préparation de la vidéo…",
   "loadingVideo": "Chargement de la vidéo…",
@@ -532,7 +534,9 @@
     "qwenFull": "Modèle officiel Base 1,7B en BF16 pour le clonage vocal. La mémoire du moteur complet reste à mesurer ; le 0,6B et le profil GGUF sont des alternatives plus légères.",
     "qwenGguf": "Projet HaujetZhao : talker Q5_K, predictor Q8_0 et composants ONNX FP16. Conversion depuis les poids officiels, pas un simple GGUF à ouvrir dans un lecteur LLM ; le moteur hybride complet est nécessaire.",
     "phase6Gguf": "Moteur audio.cpp 0.9.1 : poids GGUF Q8_0, calcul Vulkan sur le GPU sélectionné ou CPU. En automatique, priorité au GPU dédié. Les fichiers incluent aussi le codec vocal.",
-    "dramaGenerationHint": "Drama 3 FP8 : experts en mémoire mappée, sans copie complète en RAM verrouillée ; cache GPU plafonné à 4 Gio, couches BF16 et codec FP32. Profil conseillé : NVIDIA 16 Go + 64 Go de RAM. Contrôle : 48 Gio utilisables, 24 Gio de RAM et 12 Gio de VRAM libres. Un SSD est conseillé ; les accès disque peuvent ralentir la génération. Environ 40,1 Go de modèles, prévoir 60 Go libres pour la première installation. Premier chargement long, calcul plus lent que S2. Aucun repli CPU."
+    "dramaGenerationHint": "Drama 3 FP8 : experts en mémoire mappée, sans copie complète en RAM verrouillée ; cache GPU plafonné à 4 Gio, couches BF16 et codec FP32. Profil conseillé : NVIDIA 16 Go + 64 Go de RAM. Contrôle : 48 Gio utilisables, 24 Gio de RAM et 12 Gio de VRAM libres. Un SSD est conseillé ; les accès disque peuvent ralentir la génération. Environ 40,1 Go de modèles, prévoir 60 Go libres pour la première installation. Premier chargement long, calcul plus lent que S2. Aucun repli CPU.",
+    "voxcpmProfile": "VoxCPM2 2B · BF16 sur NVIDIA CUDA 12.8, FP32 sur CPU. Français et japonais pris en charge. Référence sans transcription en mode interlangue ; transcription exacte en mode continuation. Humeurs et accents transmis comme consignes, sans garantie de résultat.",
+    "chatterboxProfile": "Chatterbox Multilingual V3 · 500M · français explicite, même avec une référence japonaise. Référence sans transcription, CFG à 0 pour limiter le transfert de langue. Filigrane audio Perth conservé. NVIDIA CUDA 12.8 ou CPU."
   },
   "allAudioSilent": "Tout rendre silencieux",
   "allAudioAudible": "Tout rendre audible",
@@ -655,7 +659,7 @@
     "sourceSubtitles": "Inclure le SRT original du projet",
     "targetSubtitles": "Inclure le SRT traduit du projet"
   },
-  "ttsFishHint": "Fish exige un audio de référence et la transcription exacte de ce qui y est dit, dans sa langue d’origine. Une référence japonaise doit avoir une transcription japonaise, même pour un doublage français. Utilisez « Transcrire automatiquement » pour la préparer.",
+  "ttsFishHint": "Fish exige un audio de référence et la transcription exacte de ce qui y est dit, dans sa langue d’origine. Une référence japonaise doit avoir une transcription japonaise, même pour un doublage français. Utilisez « Transcrire automatiquement » pour la préparer. Drama 3 reçoit toujours la langue cible, y compris avec l’accent Auto ; la transcription de référence reste dans sa langue d’origine.",
   "asrLanguage": "Langue de l’audio de référence",
   "asrLanguageAuto": "Détection automatique",
   "asrTranscribe": "Transcrire automatiquement",
@@ -672,7 +676,7 @@
   "dubbingDurationHint": "Étirez le bord droit ou saisissez une durée dans les limites affichées. Le bord s’arrête à la prochaine voix, à la fin de la vidéo et à 120 s. Un déplacement conserve la durée audible et s’arrête devant les autres voix. Réécoutez les fortes variations.",
   "dubbingResizeHint": "Glissez ce bord pour allonger ou raccourcir la voix, sans changer sa hauteur.",
   "ttsMood": "Humeur / interprétation",
-  "ttsMoodHint": "Consignes de jeu pour CosyVoice3, Fish S2 et Drama 3. Les intentions détaillées sont interprétées au mieux par le modèle, sans résultat garanti : comparez les essais. Le texte des sous-titres reste identique.",
+  "ttsMoodHint": "Consignes de jeu pour CosyVoice3, Fish S2, Drama 3 et VoxCPM2. Les intentions détaillées sont interprétées au mieux par le modèle, sans résultat garanti : comparez les essais. Le texte des sous-titres reste identique.",
   "ttsMoodUnsupported": "Les variantes Qwen3-TTS Base intégrées ne proposent pas de contrôle d’humeur. Utilisez CosyVoice3, Fish S2 ou Drama 3 pour ce réglage.",
   "ttsCosyMoodHint": "Choisir une humeur ou un accent active le mode d’instructions de CosyVoice3. La référence conserve son rôle vocal, mais ses indices d’intonation sont utilisés différemment du mode avec transcription exacte ; le jeu peut changer ou devenir plus neutre.",
   "moods": {
@@ -854,7 +858,7 @@
   "ttsImportReferenceHint": "WAV, MP3, FLAC, M4A, OGG, AAC ou Opus. Écoutez le fichier et choisissez le début et la fin avant de copier l’extrait dans le projet (1 à 20 secondes). Préférez une seule voix claire, sans musique.",
   "ttsListenReference": "Écouter la référence vocale",
   "ttsAccent": "Accent souhaité (consigne)",
-  "ttsAccentHint": "Consigne de prononciation pour CosyVoice3, Fish S2 et Drama 3 ; les accents régionaux ne sont pas garantis. Pour limiter l’accent japonais, préférez une référence française nette. CosyVoice3 utilise le mode avec consigne, sans transcription de référence.",
+  "ttsAccentHint": "Consigne de prononciation pour CosyVoice3, Fish S2, Drama 3 et VoxCPM2 ; les accents régionaux ne sont pas garantis. Pour limiter l’accent japonais, préférez une référence française nette. CosyVoice3 utilise le mode avec consigne, sans transcription de référence.",
   "ttsAccentUnsupported": "Ce moteur ou cette langue ne permet pas encore de choisir un accent dans le studio.",
   "accents": {
     "auto": "Automatique / référence",
@@ -1055,5 +1059,11 @@
     "physical": "État physique",
     "delivery": "Manière de parler"
   },
-  "ttsCosyReferenceActingHint": "Pour privilégier le jeu de la référence : choisissez une référence française expressive, accent Auto, humeur Par défaut et mode Avec transcription exacte. Une référence neutre peut donner un rendu neutre."
+  "ttsCosyReferenceActingHint": "Pour privilégier le jeu de la référence : choisissez une référence française expressive, accent Auto, humeur Par défaut et mode Avec transcription exacte. Une référence neutre peut donner un rendu neutre.",
+  "voxcpmGenerationHint": "VoxCPM2 2B · BF16 sur NVIDIA CUDA 12.8, FP32 sur CPU. Français et japonais pris en charge. Référence sans transcription en mode interlangue ; transcription exacte en mode continuation. Humeurs et accents transmis comme consignes, sans garantie de résultat.",
+  "chatterboxGenerationHint": "Chatterbox Multilingual V3 · 500M · français explicite, même avec une référence japonaise. Référence sans transcription, CFG à 0 pour limiter le transfert de langue. Filigrane audio Perth conservé. NVIDIA CUDA 12.8 ou CPU.",
+  "chatterboxCloneHint": "Ce moteur utilise la référence audio sans transcription et reçoit séparément la langue cible du projet. Le français ne dépend pas du choix d’un accent régional.",
+  "chatterboxMoodHint": "Les humeurs nommées et accents régionaux ne sont pas pilotés par cette intégration de Chatterbox. Le jeu dépend de la référence ; utilisez une référence française expressive pour limiter le transfert d’accent.",
+  "multilingualHardwareHint": "Profil candidat pour une RTX de 16 Go. La VRAM et la vitesse dépendent du texte et de la référence ; les performances sur RTX 5060 Ti ne sont pas mesurées. Aucun basculement automatique d’un GPU explicitement choisi vers le CPU.",
+  "multilingualRuntimeHint": "Runtime Python/CUDA partagé uniquement entre VoxCPM2 et Chatterbox, isolé des autres moteurs. L’estimation inclut les poids manquants, les archives, l’extraction et une marge ; les fichiers vérifiés sont réutilisés. Le contrôle est répété avant tout téléchargement."
 }

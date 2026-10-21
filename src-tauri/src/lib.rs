@@ -306,11 +306,18 @@ async fn voice_status(
 async fn voice_install_space(
     app: tauri::AppHandle,
     core: State<'_, Shared>,
+    variant_id: Option<String>,
 ) -> Result<voice_space::Space, String> {
     let core = core.inner().clone();
-    tauri::async_runtime::spawn_blocking(move || voice_space::check(&core, &app))
-        .await
-        .map_err(domain::io_error)?
+    tauri::async_runtime::spawn_blocking(move || {
+        voice_space::check_variant(
+            &core,
+            &app,
+            variant_id.as_deref().unwrap_or("drama3-comfy-fp8"),
+        )
+    })
+    .await
+    .map_err(domain::io_error)?
 }
 #[tauri::command]
 fn install_voice_runtime(

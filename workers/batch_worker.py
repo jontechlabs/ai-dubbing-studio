@@ -51,7 +51,7 @@ def serve(module, incoming, protocol):
 def main():
     faulthandler.enable(file=sys.stderr, all_threads=True)
     parser = argparse.ArgumentParser()
-    parser.add_argument('--engine', choices=['cosyvoice_worker', 'fish_worker', 'drama_worker'], required=True)
+    parser.add_argument('--engine', choices=['cosyvoice_worker', 'fish_worker', 'drama_worker', 'multilingual_worker'], required=True)
     args = parser.parse_args()
     protocol = sys.stdout
     def thread_error(args):

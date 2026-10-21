@@ -43,7 +43,8 @@ impl Options {
         crate::voice_accent::validate(self, None)?;
         let mood = self.mood.as_deref().unwrap_or("default");
         if crate::voice_mood::spec(Some(mood)).is_none()
-            || (self.variant().starts_with("qwen3") && mood != "default")
+            || ((self.variant().starts_with("qwen3") || self.variant().starts_with("chatterbox"))
+                && mood != "default")
         {
             return Err("TTS_STYLE_UNSUPPORTED".into());
         }
@@ -78,11 +79,15 @@ impl Options {
         Ok(())
     }
     pub fn required_format(&self) -> u32 {
-        crate::voice_mood::format_version(self.mood.as_deref()).max(if self.requires_v9() {
-            9
-        } else {
-            5
-        })
+        crate::voice_mood::format_version(self.mood.as_deref()).max(
+            if crate::voice_engines::multilingual(self.variant()) {
+                16
+            } else if self.requires_v9() {
+                9
+            } else {
+                5
+            },
+        )
     }
     pub fn requires_v9(&self) -> bool {
         self.reference_mode == "file" || self.accent.as_deref().is_some_and(|a| a != "auto")
@@ -353,9 +358,10 @@ pub(crate) fn prepare_request(
     line_id: String,
     mut options: Options,
 ) -> Result<Request, String> {
-    if options.variant() == "cosy3-official"
-        && (options.mood.as_deref().is_some_and(|m| m != "default")
-            || options.accent.as_deref().is_some_and(|a| a != "auto"))
+    if options.variant().starts_with("chatterbox")
+        || options.variant() == "cosy3-official"
+            && (options.mood.as_deref().is_some_and(|m| m != "default")
+                || options.accent.as_deref().is_some_and(|a| a != "auto"))
     {
         options.mode = "crossLingual".into();
     }
@@ -391,9 +397,10 @@ pub fn enqueue<R: tauri::Runtime>(
     line_id: String,
     mut options: Options,
 ) -> Result<String, String> {
-    if options.variant() == "cosy3-official"
-        && (options.mood.as_deref().is_some_and(|m| m != "default")
-            || options.accent.as_deref().is_some_and(|a| a != "auto"))
+    if options.variant().starts_with("chatterbox")
+        || options.variant() == "cosy3-official"
+            && (options.mood.as_deref().is_some_and(|m| m != "default")
+                || options.accent.as_deref().is_some_and(|a| a != "auto"))
     {
         options.mode = "crossLingual".into();
     }
@@ -523,6 +530,14 @@ pub(crate) fn worker_launch<R: tauri::Runtime>(
             python: separation::python(&root(core)),
             script: separation::resources(app).join("cosyvoice_worker.py"),
             model: root(core).join("model"),
+        }
+    } else if crate::voice_engines::multilingual(request.options.variant()) {
+        WorkerLaunch {
+            python: separation::python(
+                &crate::voice_engines::root(core).join("multilingual-runtime"),
+            ),
+            script: separation::resources(app).join("multilingual_worker.py"),
+            model: crate::voice_engines::root(core).join(request.options.variant()),
         }
     } else if request.options.variant() == "drama3-comfy-fp8" {
         WorkerLaunch {
@@ -695,7 +710,7 @@ pub(crate) async fn execute_with_session<R: tauri::Runtime>(
         }
         .into());
     }
-    let generation = serde_json::json!({"id":generation_id,"kind":"tts","dialogueId":line.id,"providerId":if request.options.variant()=="cosy3-official"{"cosyvoice3"}else if request.options.variant()=="drama3-comfy-fp8"{"fish-drama3"}else if request.options.variant().starts_with("fish"){"fish-s2"}else{"qwen3-tts"},"modelId":request.options.variant(),"path":format!("generations/{generation_id}.wav"),"createdAt":now(),"sourcePath":p.media.as_ref().map(|m|&m.path),"startMs":line.start_ms,"endMs":line.end_ms,"text":text(&p,line),"language":p.languages.target,"characterId":line.character_id,"durationMs":duration,"sampleRate":24000,"options":request.options,"referenceTranscript":transcript,"referenceId":if request.options.reference_mode=="current"{None}else{reference(&p,line,&request.options).ok().map(|r|&r.id)},"device":metadata["device"],"deviceName":metadata["deviceName"],"peakVramMb":metadata["peakVramMb"],"expertsInRam":metadata["expertsInRam"],"expertCacheGiB":metadata["expertCacheGiB"],"expertMemoryMode":metadata["expertMemoryMode"],"compatibilityMode":metadata["compatibilityMode"].as_bool().unwrap_or(false),"batchItemId":request.batch_item_id,"inputHash":request.fingerprint});
+    let generation = serde_json::json!({"id":generation_id,"kind":"tts","dialogueId":line.id,"providerId":if request.options.variant()=="cosy3-official"{"cosyvoice3"}else if request.options.variant()=="voxcpm2-bf16"{"voxcpm2"}else if request.options.variant()=="chatterbox-multilingual-v3"{"chatterbox"}else if request.options.variant()=="drama3-comfy-fp8"{"fish-drama3"}else if request.options.variant().starts_with("fish"){"fish-s2"}else{"qwen3-tts"},"modelId":request.options.variant(),"path":format!("generations/{generation_id}.wav"),"createdAt":now(),"sourcePath":p.media.as_ref().map(|m|&m.path),"startMs":line.start_ms,"endMs":line.end_ms,"text":text(&p,line),"language":p.languages.target,"characterId":line.character_id,"durationMs":duration,"sampleRate":24000,"options":request.options,"referenceTranscript":transcript,"referenceId":if request.options.reference_mode=="current"{None}else{reference(&p,line,&request.options).ok().map(|r|&r.id)},"device":metadata["device"],"deviceName":metadata["deviceName"],"peakVramMb":metadata["peakVramMb"],"expertsInRam":metadata["expertsInRam"],"expertCacheGiB":metadata["expertCacheGiB"],"expertMemoryMode":metadata["expertMemoryMode"],"compatibilityMode":metadata["compatibilityMode"].as_bool().unwrap_or(false),"batchItemId":request.batch_item_id,"inputHash":request.fingerprint});
     let mut session = core.session.lock().map_err(io_error)?;
     let s = session.as_mut().ok_or("NO_PROJECT")?;
     if s.root != request.root || s.project.id != request.project_id {

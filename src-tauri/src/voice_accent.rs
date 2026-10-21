@@ -15,7 +15,9 @@ pub(crate) fn validate(options: &Options, language: Option<&str>) -> Result<(), 
         return Ok(());
     }
     let value = spec(id).ok_or("TTS_ACCENT_UNSUPPORTED")?;
-    if options.variant().starts_with("qwen3") || language.is_some_and(|l| value["language"] != l) {
+    if (options.variant().starts_with("qwen3") || options.variant().starts_with("chatterbox"))
+        || language.is_some_and(|l| value["language"] != l)
+    {
         return Err("TTS_ACCENT_UNSUPPORTED".into());
     }
     Ok(())

@@ -1,5 +1,14 @@
 # Validation
 
+## v0.22.0 — 21 October 2026
+
+Windows workflow evidence will be recorded before publication.
+
+- VoxCPM2 2B and Chatterbox Multilingual V3 have real installation/generation adapters, a pinned isolated headless runtime, size/SHA-256 model verification and per-variant disk preflight before downloads. The production CUDA 12.8 dependency profile passed an actual local import probe for both engine classes.
+- Shared per-line/batch settings persist in format 16. Validators, native disk reload and packaged MCP checks cover the new providers; Chatterbox rejects unsupported semantic mood/regional accent controls. Existing takes remain intact.
+- Drama 3 now receives target-language direction independently from regional accent on every chunk. Target text and original-language reference transcript remain separate. A real remote diagnostic with the same Japanese reference and seed changed from non-French ASR to French ASR after explicit French direction; no private audio is published.
+- Full official-weight CPU inference and automatic-language ASR are part of Windows CI. These checks do not establish RTX 5060 Ti VRAM usage, generation speed, emotional quality or a universal accent guarantee.
+
 ## v0.21.0 — 21 October 2026
 
 Windows checks and signed-update packages passed in [run 39614021699](https://github.com/jontechlabs/ai-dubbing-studio/actions/runs/39614021699), built from `7a461eac496f96954707bed9df73f05e7f4221dd`. All 433 Windows suite checks passed (121 TypeScript, 121 Rust, 130 Chrome, 61 Python). The real packaged Windows desktop was driven by the official MCP SDK: 95 tools, shipped 43-entry catalogue, expanded option schemas and format-15 save/reopen with existing takes preserved, plus the existing six relay lifecycle cases, playback, native Praat processing, cancellation and MKV export/source-preservation checks. Existing actual CPU neural diagnostics, Japanese reference ASR and Japanese-to-French LLM checks also passed. Setup and portable ZIP are unchanged workflow artifacts. Final metadata records these results and the verified update feed.

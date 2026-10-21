@@ -18,6 +18,63 @@ fn options() -> Options {
     }
 }
 #[test]
+fn multilingual_profiles_survive_disk_reload_and_choose_their_isolated_worker() {
+    let temporary = tempfile::tempdir().unwrap();
+    let core = Core {
+        session: Mutex::new(None),
+        jobs: Mutex::new(HashMap::new()),
+        gate: Arc::new(tokio::sync::Semaphore::new(1)),
+        data_dir: temporary.path().into(),
+        model_dir: Mutex::new(temporary.path().into()),
+    };
+    let app = tauri::test::mock_app();
+    for (variant, provider) in [
+        ("voxcpm2-bf16", "voxcpm2"),
+        ("chatterbox-multilingual-v3", "chatterbox"),
+    ] {
+        let mut p = fixture();
+        let mut o = options();
+        o.variant_id = Some(variant.into());
+        o.validate().unwrap();
+        assert_eq!(o.required_format(), 16);
+        p.format_version = 16;
+        p.model_preferences =
+            Some(serde_json::json!({"ttsProviderId":provider,"voiceVariantId":variant}));
+        p.dialogues[0].voice_settings = Some(o.clone());
+        let root = project::create_root(temporary.path(), variant).unwrap();
+        project::save(&root, &p).unwrap();
+        let loaded = project::load(&root).unwrap();
+        assert_eq!(
+            loaded.dialogues[0]
+                .voice_settings
+                .as_ref()
+                .unwrap()
+                .variant(),
+            variant
+        );
+        assert_eq!(loaded.target_cues[0].text, "Bonjour");
+        p.format_version = 15;
+        assert!(p.validate().is_err());
+        let request = Request {
+            root,
+            project_id: p.id.clone(),
+            line_id: p.dialogues[0].id.clone(),
+            options: o.clone(),
+            fingerprint: String::new(),
+            option_fingerprint: None,
+            batch_item_id: None,
+        };
+        let launch = worker_launch(&core, app.handle(), &request);
+        assert!(launch.script.ends_with("multilingual_worker.py"));
+        assert!(launch.model.ends_with(variant));
+        assert!(launch
+            .python
+            .starts_with(crate::voice_engines::root(&core).join("multilingual-runtime")));
+        o.mood = Some("stressed".into());
+        assert_eq!(o.validate().is_ok(), provider == "voxcpm2");
+    }
+}
+#[test]
 fn accents_route_to_style_prompts_without_modifying_subtitles_and_reject_qwen() {
     let mut p = fixture();
     p.characters[0].references[0].transcript = "Bonjour".into();

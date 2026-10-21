@@ -18,6 +18,26 @@ CACHE_GIB = 4
 MIN_TOTAL_RAM_GIB = 48
 MIN_AVAILABLE_RAM_GIB = 24
 
+TARGET_LANGUAGES = {'fr': 'French', 'en': 'English', 'ja': 'Japanese', 'zh': 'Chinese',
+                    'ko': 'Korean', 'de': 'German', 'es': 'Spanish', 'it': 'Italian', 'ru': 'Russian'}
+
+
+def target_prompt(request, chunk):
+    # Language is distinct from regional accent. The reference must retain its
+    # original transcript; it is never substituted for the target dialogue.
+    language = TARGET_LANGUAGES.get(request.get('language'))
+    if not language:
+        raise ValueError('TTS_LANGUAGE_UNSUPPORTED')
+    return f'[Speak the following text in {language}] {chunk}'
+
+
+def target_chunks(request):
+    from drama3.chunking import split_text
+    prompt_text = request.get('promptText', request['text'])
+    if prompt_text != request['text'] and not prompt_text.endswith(' ' + request['text']):
+        raise ValueError('TTS_TEXT_MISMATCH')
+    return [target_prompt(request, chunk) for chunk in (split_text(prompt_text) or [prompt_text])]
+
 
 def report(**values):
     print(json.dumps(values), file=sys.__stdout__, flush=True)
@@ -141,6 +161,7 @@ def generate_audio(request, session=None):
 
 
 def synthesize(request, directory, reference, cache, session=None):
+    chunks = target_chunks(request)
     import torch
     import numpy as np
     import soundfile as sf
@@ -148,7 +169,6 @@ def synthesize(request, directory, reference, cache, session=None):
     mm, load_model, load_codec, generate = configure_core()
     from drama3.codec import SAMPLE_RATE
     from drama3.prompt import build_prompt
-    from drama3.chunking import split_text
     device = torch.device('cuda:0')
     torch.cuda.reset_peak_memory_stats(device)
     # Load, use and release the codec before loading the 35B model.
@@ -182,7 +202,8 @@ def synthesize(request, directory, reference, cache, session=None):
         model = load_model(str(directory / 'drama3_fp8experts_bf16.safetensors'), experts_in_ram=True, expert_cache_gb=cache)
         if session is not None:
             session.update(model=model, cache=cache)
-    chunks = split_text(request['promptText']) or [request['promptText']]
+    report(log=f'Drama 3 target language: {request["language"]}; target text: {request["text"]!r}; '
+               'reference transcript is kept separate in its original language.')
     reference_pair = (request['referenceTranscript'], codes)
     first = latest = None
     frames = []

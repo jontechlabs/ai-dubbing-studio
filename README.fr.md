@@ -1,5 +1,7 @@
 # AI Dubbing Studio — phases 1–7
 
+**v0.22.0 — VoxCPM2 et Chatterbox Multilingual V3.** Installation et génération par réplique ou en lot, runtime CUDA 12.8 isolé, contrôle d’espace disque et essais conservés. Drama 3 reçoit maintenant la langue cible même avec l’accent Auto, pour corriger la dérive de langue avec une référence japonaise. [Installation, possibilités, limites et captures](docs/VOXCPM2-CHATTERBOX.md).
+
 **v0.21.0 — 43 intentions de jeu.** Mourant, stressé, hilare, paniqué, épuisé et bien d’autres, regroupés par intention. Disponibles par réplique et en lot avec CosyVoice3, Fish S2 et Drama 3. Aide clarifiée sur le compromis accent / expressivité de CosyVoice3. [Guide, liste complète et capture](docs/VOICE-ACTING.md).
 
 **v0.20.1 — Installation et relais MCP.** Les relais quittent le processus à la fermeture du studio ; les mises à jour suspendent MCP et attendent la libération de l’exécutable. La connexion est restaurée si l’installation échoue. [Déblocage des anciennes versions et détails](docs/INSTALLATION-RECOVERY.md).
@@ -83,7 +85,7 @@
 
 *Interface React réelle avec audio de démonstration synthétique et inventaire natif simulé.*
 
-[Version anglaise et captures de l’interface](README.md) · [Téléchargements Windows](https://github.com/jontechlabs/ai-dubbing-studio/releases/tag/v0.21.0)
+[Version anglaise et captures de l’interface](README.md) · [Téléchargements Windows](https://github.com/jontechlabs/ai-dubbing-studio/releases/tag/v0.22.0)
 
 Studio desktop local de travail texte, voix et vidéo. Tauri 2, React, TypeScript strict et Rust.
 
