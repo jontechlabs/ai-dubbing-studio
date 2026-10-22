@@ -1,6 +1,11 @@
 name: WebView2 microphone diagnostic
 on:
   workflow_dispatch:
+  push:
+    branches: [codex/microphone-voice-conversion]
+    paths:
+      - scripts/probe-webview-microphone.ps1
+      - .github/workflows/microphone-probe.yml
 permissions:
   contents: read
 jobs:
