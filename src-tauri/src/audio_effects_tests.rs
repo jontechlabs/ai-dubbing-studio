@@ -93,7 +93,8 @@ fn catalog_presets_and_bounds_reject_untrusted_or_excessive_filters() {
 #[tokio::test]
 async fn all_twenty_effects_render_exact_duration_without_touching_source() {
     let dir = tempfile::tempdir().unwrap();
-    let source = dir.path().join("tone.wav");
+    let root = crate::project::create_root(dir.path(), "Audio FX é").unwrap();
+    let source = root.join("tone.wav");
     tone(&source);
     let original = std::fs::read(&source).unwrap();
     for spec in catalog()["effects"].as_array().unwrap() {
@@ -109,7 +110,7 @@ async fn all_twenty_effects_render_exact_duration_without_touching_source() {
             }],
         };
         let result = voice_edit::render(
-            dir.path(),
+            &root,
             "tone.wav",
             Some(&edit),
             &crate::mix::tests::tool("ffmpeg"),
@@ -133,7 +134,8 @@ async fn all_twenty_effects_render_exact_duration_without_touching_source() {
 #[tokio::test]
 async fn pitch_changes_frequency_only_inside_selection_and_muted_pieces_stay_silent() {
     let dir = tempfile::tempdir().unwrap();
-    tone(&dir.path().join("tone.wav"));
+    let root = crate::project::create_root(dir.path(), "Audio FX é").unwrap();
+    tone(&root.join("tone.wav"));
     let mut pitch = effect("pitch");
     pitch.parameters.insert("semitones".into(), 12.0);
     let mut edit = voice_edit::Edit {
@@ -157,7 +159,7 @@ async fn pitch_changes_frequency_only_inside_selection_and_muted_pieces_stay_sil
         ],
     };
     let path = voice_edit::render(
-        dir.path(),
+        &root,
         "tone.wav",
         Some(&edit),
         &crate::mix::tests::tool("ffmpeg"),
@@ -178,7 +180,7 @@ async fn pitch_changes_frequency_only_inside_selection_and_muted_pieces_stay_sil
     assert_eq!(wave.len(), 36000);
     edit.pieces[0].gain = 0.0;
     let muted = voice_edit::render(
-        dir.path(),
+        &root,
         "tone.wav",
         Some(&edit),
         &crate::mix::tests::tool("ffmpeg"),
