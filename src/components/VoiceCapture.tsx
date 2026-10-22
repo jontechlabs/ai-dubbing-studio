@@ -213,7 +213,9 @@ export function VoiceCapture({
                     document
                       .querySelectorAll<HTMLMediaElement>('video,audio')
                       .forEach((element) => element.pause());
-                    await startMicrophone(p, l, device);
+                    // A permission prompt may stay open indefinitely. Keep
+                    // discard and the rest of the UI responsive while it waits.
+                    void startMicrophone(p, l, device).catch((e) => onError(String(e)));
                   })
                 }
               >

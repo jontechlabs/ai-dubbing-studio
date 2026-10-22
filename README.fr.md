@@ -1,5 +1,8 @@
 # AI Dubbing Studio — phases 1–7
 
+**v0.23.0 — Microphone et changement de timbre local.** Enregistrez une réplique, écoutez-la puis conservez-la comme nouvel essai. Convertissez le timbre de tout essai avec Chatterbox VC et une référence du personnage ou un fichier audio avec choix du début et de la fin. La durée, les zones muettes et les essais précédents sont conservés. [Guide détaillé](docs/MICROPHONE-VOICE-CONVERSION.md).
+
+
 **v0.22.0 — VoxCPM2 et Chatterbox Multilingual V3.** Installation et génération par réplique ou en lot, runtime CUDA 12.8 isolé, contrôle d’espace disque et essais conservés. Drama 3 reçoit maintenant la langue cible même avec l’accent Auto, pour corriger la dérive de langue avec une référence japonaise. [Installation, possibilités, limites et captures](docs/VOXCPM2-CHATTERBOX.md).
 
 **v0.21.0 — 43 intentions de jeu.** Mourant, stressé, hilare, paniqué, épuisé et bien d’autres, regroupés par intention. Disponibles par réplique et en lot avec CosyVoice3, Fish S2 et Drama 3. Aide clarifiée sur le compromis accent / expressivité de CosyVoice3. [Guide, liste complète et capture](docs/VOICE-ACTING.md).

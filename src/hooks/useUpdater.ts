@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { check, type Update } from '@tauri-apps/plugin-updater';
 import { invoke } from '@tauri-apps/api/core';
 import { native } from '../services/bridge';
+import { readMicrophone } from '../services/microphone';
 export function useUpdater(flush: () => Promise<void>) {
   const [state, setState] = useState('idle');
   const [available, setAvailable] = useState<{ version: string; body?: string } | null>(null);
@@ -87,6 +88,7 @@ export function useUpdater(flush: () => Promise<void>) {
     setError(null);
     let suspended = false;
     try {
+      if (readMicrophone().phase !== 'idle') throw Error('MIC_DRAFT_EXISTS');
       await flush();
       setState('installing');
       await invoke('mcp_prepare_update');
@@ -94,6 +96,7 @@ export function useUpdater(flush: () => Promise<void>) {
       // Let idle stdio relays observe the removed endpoint and release the exe.
       await new Promise((resolve) => setTimeout(resolve, 5000));
       // A user may have started a job while the relays were shutting down.
+      if (readMicrophone().phase !== 'idle') throw Error('MIC_DRAFT_EXISTS');
       await invoke('mcp_prepare_update');
       await resource.current.install({ restartAfterInstall: true });
     } catch (cause) {

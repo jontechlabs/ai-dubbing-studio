@@ -55,4 +55,18 @@ test('discard closes microphone tracks and never adds a take',async({page})=>{
   await page.locator('.microphone-indicator').getByRole('button',{name:'Abandonner la prise'}).click();
   await expect(page.locator('.microphone-indicator')).toHaveCount(0);
   expect((await page.evaluate(()=>(window as any).__getMockProject())).generations).toHaveLength(0);
+  // An unanswered permission request must remain cancellable and must not
+  // start recording later when Windows/browser finally grants access.
+  await page.evaluate(()=>{
+    const host=window as any, original=navigator.mediaDevices.getUserMedia.bind(navigator.mediaDevices);
+    navigator.mediaDevices.getUserMedia=()=>new Promise(resolve=>{host.__grantMicrophone=async()=>{const stream=await original({audio:true});host.__lateStream=stream;resolve(stream);};});
+  });
+  await panel.getByRole('button',{name:'Commencer l’enregistrement',exact:true}).click();
+  await expect(page.locator('.microphone-indicator')).toContainText('Autorisation du microphone');
+  await page.locator('.microphone-indicator').getByRole('button',{name:'Abandonner la prise'}).click();
+  await expect(panel.getByRole('button',{name:'Commencer l’enregistrement',exact:true})).toBeEnabled();
+  await page.evaluate(()=>(window as any).__grantMicrophone());
+  await expect.poll(()=>page.evaluate(()=>(window as any).__lateStream.getTracks().every((t:MediaStreamTrack)=>t.readyState==='ended'))).toBe(true);
+  await expect(page.locator('.microphone-indicator')).toHaveCount(0);
+  expect((await page.evaluate(()=>(window as any).__getMockProject())).generations).toHaveLength(0);
 });
