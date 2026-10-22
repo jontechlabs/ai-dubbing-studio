@@ -239,6 +239,8 @@ async fn execute<R: tauri::Runtime>(
                 "1".into(),
                 "-i".into(),
                 raw.to_string_lossy().into_owned(),
+                "-af".into(),
+                "pan=stereo|c0=c0|c1=c0".into(),
                 "-ac".into(),
                 "2".into(),
                 "-ar".into(),

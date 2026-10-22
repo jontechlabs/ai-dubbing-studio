@@ -63,6 +63,25 @@ async fn whole_original_stem_and_dubbing_effect_copies_preserve_sources_and_mixe
             .unwrap(),
             192000
         );
+        if id == "dubbing" {
+            // Match WebAudio and the export mix: duplicate mono samples without
+            // FFmpeg's default -3 dB mono-to-stereo rematrix. Faders stay live.
+            let bytes = std::fs::read(project::asset(&root, new.path.as_deref().unwrap()).unwrap())
+                .unwrap();
+            let mut at = 12;
+            while &bytes[at..at + 4] != b"data" {
+                let size = u32::from_le_bytes(bytes[at + 4..at + 8].try_into().unwrap()) as usize;
+                at += 8 + size + size % 2;
+            }
+            for ms in [1200, 1600] {
+                for channel in 0..2 {
+                    let offset = at + 8 + ms * 48 * 4 + channel * 2;
+                    let sample =
+                        f64::from(i16::from_le_bytes([bytes[offset], bytes[offset + 1]])) / 32768.0;
+                    assert!((sample - 0.2).abs() < 0.002, "{ms} ch{channel}: {sample}");
+                }
+            }
+        }
         assert_eq!(
             std::fs::read(root.join("media/source.mkv")).unwrap(),
             original
