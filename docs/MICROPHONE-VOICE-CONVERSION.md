@@ -37,3 +37,11 @@ Les nouveaux essais portent une provenance `takeOrigin` et passent le projet au 
 ## Validation et limites matérielles
 
 La conversion réelle avec les poids officiels a été exécutée localement sur CPU, avec durée exacte et fichiers d’entrée inchangés. Le contrôle continu vérifie aussi un passage entre plusieurs fenêtres et la reconnaissance automatique du français en sortie. La capture Web Audio est testée avec une entrée microphone synthétique du navigateur, puis sauvegarde, rechargement et abandon. Les engagements sur la mémoire viennent du traitement par fenêtres ; la vitesse et la consommation réelles sur RTX 5060 Ti restent à mesurer sur ce GPU.
+
+## Captures de l’interface
+
+![Enregistrement au microphone](screenshots/microphone-recording-fr.png)
+
+![Référence et conversion du timbre](screenshots/voice-conversion-fr.png)
+
+Interface réelle ; entrée micro synthétique et commandes natives simulées pour ces captures. Les contrôles natifs du paquet Windows sont consignés dans VALIDATION.md.
