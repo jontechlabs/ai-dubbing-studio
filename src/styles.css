@@ -2958,7 +2958,7 @@ pre {
   position: fixed;
   z-index: 220;
   bottom: 45px;
-  right: 18px;
+  left: 18px;
   display: grid;
   gap: 8px;
   width: min(340px, calc(100vw - 36px));

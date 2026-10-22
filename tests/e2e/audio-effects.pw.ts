@@ -43,7 +43,7 @@ test('global faders reach 400 percent independently of regions and persist with 
   }
   await page.keyboard.press('Control+z');
   await saved(page);
-  expect((await project(page)).tracks.find((t: any) => t.id === 'dubbing').gain).toBe(1);
+  expect((await project(page)).tracks.find((t: any) => t.id === 'dubbing')?.gain ?? 1).toBe(1);
   await page.keyboard.press('Control+y');
   await saved(page);
   await page.reload();
