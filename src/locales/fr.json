@@ -1106,5 +1106,9 @@
     "recordedTake": "Prise enregistrée au microphone",
     "convertedTake": "Timbre converti · Chatterbox VC",
     "vcModelHint": "Conversion audio vers audio officielle de Chatterbox, sans transcription. Modèle d’environ 0,98 Gio, fenêtres audio bornées pour limiter la VRAM. CUDA 12.8 ou CPU ; environnement local partagé avec VoxCPM2/Chatterbox, distinct de CosyVoice3. Aucun envoi d’audio."
-  }
+  },
+  "llmDirection": "Orientation de traduction (facultatif)",
+  "llmDirectionPlaceholder": "Phrase prononcée par un méchant, il est vulgaire. La réplique traduite doit avoir une longueur proche de la source.",
+  "llmDirectionHint": "Rôle, registre, ton, vocabulaire et longueur souhaitée. Durée disponible : {{seconds}} s. Objectif indicatif : la durée parlée réelle dépendra du doublage. Ces consignes sont conservées sur ce PC pour les prochaines propositions.",
+  "llmUsedDirection": "Orientation utilisée : {{direction}}"
 }

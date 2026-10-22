@@ -1,5 +1,8 @@
 # AI Dubbing Studio
 
+**v0.24.0 — Translation direction and voice startup fix.** Give the local LLM character, register, tone and length guidance; available subtitle windows guide concise delivery. Proposals still require review before applying. Fixes `ModuleNotFoundError: No module named 'cosyvoice_worker'` with VoxCPM2, Chatterbox Multilingual and voice conversion under embedded Windows Python. Existing model downloads are reused.
+
+
 Enregistrement au microphone et conversion locale du timbre : [guide v0.23.0](docs/MICROPHONE-VOICE-CONVERSION.md). Les références de personnages et fichiers audio avec choix de début/fin sont disponibles ; chaque opération ajoute un nouvel essai.
 
 

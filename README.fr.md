@@ -1,5 +1,8 @@
 # AI Dubbing Studio — phases 1–7
 
+**v0.24.0 — Orientation de traduction et démarrage vocal corrigé.** Donnez au LLM des consignes de personnage, registre, vulgarité et longueur souhaitée. Les créneaux disponibles guident la concision ; les propositions restent à relire avant application. Correction de `ModuleNotFoundError: No module named 'cosyvoice_worker'` avec VoxCPM2, Chatterbox Multilingual et la conversion de timbre dans le Python Windows isolé. Les modèles déjà installés sont réutilisés.
+
+
 **v0.23.0 — Microphone et changement de timbre local.** Enregistrez une réplique, écoutez-la puis conservez-la comme nouvel essai. Convertissez le timbre de tout essai avec Chatterbox VC et une référence du personnage ou un fichier audio avec choix du début et de la fin. La durée, les zones muettes et les essais précédents sont conservés. [Guide détaillé](docs/MICROPHONE-VOICE-CONVERSION.md).
 
 

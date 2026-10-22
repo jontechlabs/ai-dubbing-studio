@@ -72,3 +72,27 @@ test('translation installation checks disk first and offers the installed model 
   await page.evaluate(()=>(window as any).__completeTranslationInstall());
   await expect(page.getByRole('button',{name:'Proposer une traduction',exact:true})).toBeEnabled();
 });
+
+test('translation direction is sent explicitly, retained on this PC and shown with its unapplied proposal',async({page})=>{
+  await page.setViewportSize({width:1440,height:1800});
+  await nativeMock(page); await page.goto('/');
+  await page.locator('.dialogue-card').first().locator('.line-select').click();
+  await page.getByRole('button',{name:'Aide à la traduction',exact:true}).click();
+  const direction='Phrase prononcée par un méchant, il est vulgaire. La longueur de la réplique traduite doit correspondre à la source.';
+  const input=page.getByRole('textbox',{name:'Orientation de traduction (facultatif)',exact:true});
+  await input.fill(direction);
+  const translated=page.getByRole('textbox',{name:'Sous-titre affiché',exact:true}), before=await translated.inputValue();
+  await page.getByRole('button',{name:'Proposer une traduction',exact:true}).click();
+  expect(await page.evaluate(()=>(window as any).__pendingTranslation.direction)).toBe(direction);
+  await expect(input).toBeDisabled(); await expect(translated).toHaveValue(before);
+  await page.evaluate(()=>(window as any).__completeTranslation(['Tu vas payer, sale idiot !']));
+  await expect(page.getByText('Orientation utilisée : '+direction,{exact:true})).toBeVisible();
+  await expect(translated).toHaveValue(before);
+  await page.locator('.editor').evaluate(e=>e.scrollTop=0);
+  await page.screenshot({path:'docs/screenshots/translation-direction-fr.png'});
+  await page.reload(); await page.locator('.dialogue-card').first().locator('.line-select').click();
+  await page.getByRole('button',{name:'Aide à la traduction',exact:true}).click();
+  await expect(input).toHaveValue(direction);
+  await input.fill(''); await page.getByRole('button',{name:'Proposer une traduction',exact:true}).click();
+  expect(await page.evaluate(()=>(window as any).__pendingTranslation.direction)).toBe('');
+});

@@ -29,6 +29,9 @@ export function TranslationSuggestion({
   const [open, setOpen] = useState(false),
     [status, setStatus] = useState<bridge.TranslationStatus | null>(null);
   const [device, setDevice] = useState(localStorage.getItem('studio.translationDevice') ?? '');
+  const [direction, setDirection] = useState(
+    localStorage.getItem('studio.translationDirection') ?? '',
+  );
   const [key, setKey] = useState<string | null>(null),
     [working, setWorking] = useState(false);
   const [proposal, setProposal] = useState<TranslationProposal | null>(null);
@@ -175,6 +178,26 @@ export function TranslationSuggestion({
                 </select>
               </label>
               {status.warning && <p role="alert">{t(`errors.${status.warning}`)}</p>}
+              <label className="field">
+                <span>{t('llmDirection')}</span>
+                <textarea
+                  aria-label={t('llmDirection')}
+                  rows={3}
+                  maxLength={2000}
+                  placeholder={t('llmDirectionPlaceholder')}
+                  value={direction}
+                  disabled={working || otherActive || busy}
+                  onChange={(e) => {
+                    setDirection(e.target.value);
+                    localStorage.setItem('studio.translationDirection', e.target.value);
+                  }}
+                />
+              </label>
+              <p className="panel-description">
+                {t('llmDirectionHint', {
+                  seconds: ((line.endMs - line.startMs) / 1000).toFixed(2),
+                })}
+              </p>
               <button
                 className="button accent"
                 disabled={
@@ -183,7 +206,7 @@ export function TranslationSuggestion({
                 onClick={() =>
                   run(async () => {
                     await snapshot();
-                    return bridge.suggestTranslation(line.id, device || 'cpu');
+                    return bridge.suggestTranslation(line.id, device || 'cpu', direction.trim());
                   })
                 }
               >
@@ -225,6 +248,11 @@ export function TranslationSuggestion({
           {proposal && !applied && (
             <div className="translation-proposal">
               <strong>{t('llmProposal')}</strong>
+              {proposal.direction && (
+                <p className="panel-description">
+                  {t('llmUsedDirection', { direction: proposal.direction })}
+                </p>
+              )}
               {proposal.translations.map((text, i) => (
                 <label className="field" key={i}>
                   <span>{t('llmSlot', { number: i + 1 })}</span>

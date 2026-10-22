@@ -79,6 +79,28 @@ test('empty or wrong-count proposals cannot modify subtitles', () => {
       'TRANSLATION_OUTPUT_INVALID',
     );
 });
+test('duration-aware proposals reject changed windows while older proposals remain readable', () => {
+  const p = demoProject(),
+    suggestion = proposal(p),
+    line = p.dialogues[0];
+  suggestion.direction = 'Méchant, ton vulgaire et bref.';
+  suggestion.basis.timing = {
+    startMs: line.startMs,
+    endMs: line.endMs,
+    targetSlots: line.targetCueIds.map((id) => {
+      const cue = p.targetCues.find((c) => c.id === id)!;
+      return [cue.startMs, cue.endMs];
+    }),
+  };
+  expect(proposalCurrent(p, suggestion)).toBe(true);
+  const changed = structuredClone(p);
+  changed.targetCues[0].endMs -= 10;
+  expect(proposalCurrent(changed, suggestion)).toBe(false);
+  const resized = structuredClone(p);
+  resized.dialogues[0].endMs += 10;
+  expect(proposalCurrent(resized, suggestion)).toBe(false);
+  expect(proposalCurrent(changed, proposal(p))).toBe(true);
+});
 test('indexed translation states match three colours and reject stale approvals', () => {
   const p = demoProject(),
     first = p.dialogues[0];

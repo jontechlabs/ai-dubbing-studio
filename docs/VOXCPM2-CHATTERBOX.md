@@ -1,5 +1,8 @@
 # VoxCPM2, Chatterbox Multilingual et langue de Drama 3
 
+**Correctif v0.24.0.** Le démarrage individuel de VoxCPM2, Chatterbox et de la conversion de timbre ajoute explicitement le dossier des workers aux imports du Python embarqué. Cela corrige `No module named 'cosyvoice_worker'` sur CPU comme sur GPU. Les poids et dépendances déjà installés restent réutilisables. Les tests exécutent désormais les ressources du paquet portable avec le Python Windows embarqué isolé, en individuel et en lot.
+
+
 Disponible à partir de **v0.22.0**. Les deux moteurs s’installent et génèrent des essais dans le studio, par réplique ou en lot. Chaque génération produit un nouveau WAV ; les essais précédents restent disponibles.
 
 ## Installation

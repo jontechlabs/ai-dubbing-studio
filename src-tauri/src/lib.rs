@@ -204,8 +204,15 @@ fn suggest_translation(
     core: State<'_, Shared>,
     line_id: String,
     device: String,
+    direction: Option<String>,
 ) -> Result<String, String> {
-    translation_llm::enqueue(core.inner().clone(), app, line_id, device)
+    translation_llm::enqueue(
+        core.inner().clone(),
+        app,
+        line_id,
+        device,
+        direction.unwrap_or_default(),
+    )
 }
 #[tauri::command]
 fn translation_result(
@@ -1192,6 +1199,7 @@ fn retry_job(app: tauri::AppHandle, core: State<'_, Shared>, id: String) -> Resu
             app,
             request.basis.line_id,
             request.device,
+            request.direction,
         );
     }
     if let Some(key) = record.tts_batch {

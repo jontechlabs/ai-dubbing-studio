@@ -130,12 +130,13 @@
     {
       "name": "studio_suggest_translation",
       "command": "suggest_translation",
-      "description": "suggest translation. Uses the current desktop session. Local file paths must be absolute; long operations return job IDs. Existing native validation applies.",
+      "description": "Propose a local translation without applying it. Optional direction (up to 2000 characters) guides character, register, tone and desired spoken length; subtitle timings are supplied automatically. Poll jobs, review the proposal, then explicitly apply it.",
       "inputSchema": {
         "type": "object",
         "properties": {
           "lineId": { "type": "string" },
           "device": { "type": "string" },
+          "direction": { "anyOf": [{ "type": "string" }, { "type": "null" }] },
           "context": {
             "type": "object",
             "properties": {

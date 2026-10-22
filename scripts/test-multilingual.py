@@ -26,6 +26,7 @@ from voxcpm import VoxCPM
 from chatterbox.mtl_tts import ChatterboxMultilingualTTS
 import soundfile as sf
 import numpy as np
+from isolated_worker_validation import prepare
 
 assert torch.__version__.split('+')[0] == '2.8.0'
 assert sys.prefix != sys.base_prefix
@@ -70,6 +71,8 @@ exe = ROOT / 'src-tauri/target/release/ai-dubbing-studio.exe'
 ffmpeg = ROOT / 'src-tauri/binaries/ffmpeg.exe'
 whisper = ROOT / '.cache/reference-transcription/Référence 日本語/ggml-small-q5_1.bin'
 assert exe.is_file() and whisper.is_file(), 'Build and ASR validation must run first'
+embedded_python, packaged_workers = prepare(ROOT, WORK)
+proof.update(embeddedPython=True, packagedWorkers=True)
 for id in worker.IDS:
     spec = next(v for v in manifest['variants'] if v['id'] == id)
     model = WORK / id
@@ -91,7 +94,7 @@ for id in worker.IDS:
         requests.append(request)
     protocol = '\n'.join(json.dumps(dict(requestId=str(i), path=str(WORK / f'{id}-{i}.request.json'))) for i in range(2)) + '\n'
     started = time.monotonic()
-    result = subprocess.run([sys.executable, '-B', str(ROOT / 'workers/batch_worker.py'), '--engine', 'multilingual_worker'], input=protocol,
+    result = subprocess.run([str(embedded_python), '-I', '-B', str(packaged_workers / 'batch_worker.py'), '--engine', 'multilingual_worker'], input=protocol,
                             text=True, encoding='utf-8', capture_output=True, timeout=1500,
                             creationflags=getattr(subprocess, 'CREATE_NO_WINDOW', 0), env=dict(os.environ, CUDA_VISIBLE_DEVICES='-1'))
     (WORK / f'{id}.stdout.log').write_text(result.stdout, encoding='utf-8')
@@ -106,8 +109,24 @@ for id in worker.IDS:
         assert rate == 24000 and 0 < len(audio) <= 120 * rate and np.isfinite(audio).all() and np.max(np.abs(audio)) > .001
         metadata = json.loads(Path(request['resultPath']).read_text())
         assert metadata['device'] == 'cpu' and metadata['peakVramMb'] == 0
+    # The batch adapter adds its own import path. A real single-take launch is
+    # essential: it caught the production ModuleNotFoundError masked by batch.
+    standalone = requests[0] | dict(outputPath=str(WORK / f'{id}-standalone.wav'),
+                                   resultPath=str(WORK / f'{id}-standalone.json'))
+    single_request = WORK / f'{id}-standalone.request.json'
+    single_request.write_text(json.dumps(standalone), encoding='utf-8-sig')
+    single = subprocess.run([str(embedded_python), '-I', '-B', str(packaged_workers / 'multilingual_worker.py'),
+        '--request', str(single_request)], capture_output=True, text=True, encoding='utf-8', timeout=1200,
+        creationflags=getattr(subprocess, 'CREATE_NO_WINDOW', 0), env=dict(os.environ, CUDA_VISIBLE_DEVICES='-1'))
+    (WORK / f'{id}-standalone.log').write_text(single.stdout+'\n'+single.stderr, encoding='utf-8')
+    assert single.returncode == 0, single.stderr[-6000:] + single.stdout[-3000:]
+    single_events = [json.loads(line) for line in single.stdout.splitlines() if line.startswith('{')]
+    assert sum(e.get('stage') == 'ttsLoad' for e in single_events) == 1
+    audio, rate = sf.read(standalone['outputPath'])
+    assert rate == 24000 and 0 < len(audio) <= 120*rate and np.isfinite(audio).all() and np.max(np.abs(audio)) > .001
+    assert json.loads(Path(standalone['resultPath']).read_text())['device'] == 'cpu'
     raw = WORK / f'{id}.f32'
-    subprocess.run([str(ffmpeg), '-v', 'error', '-i', requests[0]['outputPath'], '-ac', '1', '-ar', '16000', '-f', 'f32le', '-y', str(raw)], check=True)
+    subprocess.run([str(ffmpeg), '-v', 'error', '-i', standalone['outputPath'], '-ac', '1', '-ar', '16000', '-f', 'f32le', '-y', str(raw)], check=True)
     asr = WORK / f'{id}.asr.json'
     speech = subprocess.run([str(exe), '--transcribe-reference', str(whisper), str(raw), 'auto', str(asr)], capture_output=True, text=True, encoding='utf-8', timeout=600,
                             creationflags=getattr(subprocess, 'CREATE_NO_WINDOW', 0))
@@ -117,6 +136,6 @@ for id in worker.IDS:
     assert re.search(r'auto-detected language: fr\b', speech.stderr), speech.stderr[-1000:]
     assert len(set(re.findall(r'\w+', transcript.lower())) & {'bonjour', 'je', 'suis', 'heureux', 'de', 'vous', 'revoir'}) >= 4, transcript
     proof['engines'].append(dict(id=id, revision=spec['revision'], seconds=round(time.monotonic()-started, 2),
-                                frenchTranscript=transcript, batchRequests=2, modelLoads=1, reuses=1))
+                                frenchTranscript=transcript, batchRequests=2, modelLoads=1, reuses=1, standaloneRequests=1))
     print('ACTUAL_MULTILINGUAL_PROOF', json.dumps(proof['engines'][-1], ensure_ascii=False), flush=True)
 (ROOT / 'artifacts/multilingual-inference-validation.json').write_text(json.dumps(proof, indent=2, ensure_ascii=False) + '\n', encoding='utf-8')

@@ -1106,5 +1106,9 @@
     "recordedTake": "Microphone recording",
     "convertedTake": "Converted timbre · Chatterbox VC",
     "vcModelHint": "Official Chatterbox audio-to-audio conversion, no transcript. Approx. 0.98 GiB model, bounded audio windows limit VRAM. CUDA 12.8 or CPU; local environment shared with VoxCPM2/Chatterbox, separate from CosyVoice3. No audio upload."
-  }
+  },
+  "llmDirection": "Translation direction (optional)",
+  "llmDirectionPlaceholder": "A villain says this line, using vulgar language. Keep the translated line close to the original spoken length.",
+  "llmDirectionHint": "Character, register, tone, vocabulary and desired length. Available duration: {{seconds}} s. This is a soft goal: actual spoken duration depends on the voice generation. These instructions are kept on this PC for future proposals.",
+  "llmUsedDirection": "Direction used: {{direction}}"
 }

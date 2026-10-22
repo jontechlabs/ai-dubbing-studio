@@ -106,6 +106,8 @@ function rustSchema(type) {
 const readOnly =
   /^(environment|graphics_info|.*_status|.*_result|latest_.*|.*_path|.*_paths|list_jobs|model_storage_info|model_storage_size|voice_install_space|preview_.*|reference_audio_info|get_waveform)$/;
 const notes = {
+  suggest_translation:
+    'Propose a local translation without applying it. Optional direction (up to 2000 characters) guides character, register, tone and desired spoken length; subtitle timings are supplied automatically. Poll jobs, review the proposal, then explicitly apply it.',
   convert_voice_timbre:
     'Convert the timbre of any existing voice take, using a stored character/file reference. Local Chatterbox VC, no TTS. Creates another immutable take; poll jobs.',
   transfer_voice_prosody:

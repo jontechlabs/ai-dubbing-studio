@@ -26,9 +26,11 @@ La validation concerne le texte original, le texte traduit et les langues. Corri
 1. Sélectionnez une réplique contenant son texte original et ouvrez l’onglet **Texte** de l’éditeur.
 2. Cliquez sur **Aide à la traduction**, puis **Installer le modèle de traduction**. L’interface affiche le dossier, l’espace nécessaire et disponible avant de lancer le téléchargement.
 3. Une fois installé, choisissez **NVIDIA GeForce RTX 5060 Ti** dans **Périphérique de traduction**. Le moteur utilise Vulkan, avec une seule carte explicitement sélectionnée. Le CPU est aussi proposé. Un pilote Vulkan fonctionnel est nécessaire pour utiliser un GPU ; l’installation ne demande pas de kit CUDA.
-4. Cliquez sur **Proposer une traduction**. Les langues viennent du projet. Le modèle utilise la réplique sélectionnée et un bref contexte original avant/après ; il ne traduit pas tout le film.
-5. Relisez et modifiez les propositions dans les champs dédiés, puis cliquez sur **Appliquer la proposition**, ou **Écarter**. Les sous-titres existants restent inchangés jusqu’à l’application.
-6. Validez ensuite la traduction avec son badge vert clair si elle vous convient. Une proposition appliquée n’est jamais automatiquement approuvée.
+4. Depuis v0.24.0, renseignez **Orientation de traduction (facultatif)** : par exemple « Phrase prononcée par un méchant, il est vulgaire. Il faut que la longueur de la réplique traduite corresponde à la source ». Les consignes sont mémorisées localement sur ce PC et réutilisées aux prochaines propositions ; effacez-les pour revenir au comportement standard. Elles peuvent préciser le personnage, le niveau de langage, le ton, les termes à conserver et la concision. Le modèle reçoit les créneaux de la réplique et des sous-titres cibles. Il vise une durée parlée adaptée, avec une longueur indicative : le nombre de caractères japonais n’est pas une mesure de durée française, et le temps réel dépend ensuite du moteur vocal. Les consignes utilisées restent affichées avec la proposition.
+
+5. Cliquez sur **Proposer une traduction**. Les langues viennent du projet. Le modèle utilise la réplique sélectionnée et un bref contexte original avant/après ; il ne traduit pas tout le film.
+6. Relisez et modifiez les propositions dans les champs dédiés, puis cliquez sur **Appliquer la proposition**, ou **Écarter**. Les sous-titres existants restent inchangés jusqu’à l’application.
+7. Validez ensuite la traduction avec son badge vert clair si elle vous convient. Une proposition appliquée n’est jamais automatiquement approuvée.
 
 ![Proposition à relire avant application](screenshots/translation-assistant.png)
 
@@ -36,7 +38,7 @@ La validation concerne le texte original, le texte traduit et les langues. Corri
 
 L’application conserve les créneaux de chaque sous-titre cible. S’il y en a plusieurs dans une réplique, une proposition distincte est fournie pour chacun, dans le même ordre. S’il n’y en a aucun, l’application crée un sous-titre dans le créneau de la réplique. Les essais vocaux, références et réglages de prononciation ne sont pas effacés. Une prononciation personnalisée existante reste à vérifier séparément après une nouvelle traduction.
 
-Si vous corrigez le texte, changez de langue ou réassociez les sous-titres pendant l’attente, l’ancienne proposition devient inapplicable : demandez-en une nouvelle pour conserver vos corrections. Les propositions sont enregistrées localement et récupérables en rouvrant l’aide de la réplique. **Annuler** arrête la génération sans appliquer de texte.
+Si vous corrigez le texte, changez de langue ou réassociez les sous-titres ou changez leurs créneaux pendant l’attente, l’ancienne proposition devient inapplicable : demandez-en une nouvelle pour conserver vos corrections. Les propositions sont enregistrées localement et récupérables en rouvrant l’aide de la réplique. **Annuler** arrête la génération sans appliquer de texte.
 
 ## Modèle, stockage et mémoire
 

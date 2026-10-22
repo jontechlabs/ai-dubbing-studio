@@ -654,8 +654,8 @@ export function translationStatus() {
 export function installTranslationModel() {
   return invoke<string>('install_translation_model');
 }
-export function suggestTranslation(lineId: string, device: string) {
-  return invoke<string>('suggest_translation', { lineId, device });
+export function suggestTranslation(lineId: string, device: string, direction = '') {
+  return invoke<string>('suggest_translation', { lineId, device, direction });
 }
 export function translationResult(id: string) {
   return invoke<import('../domain/translationProposal').TranslationProposal | null>(

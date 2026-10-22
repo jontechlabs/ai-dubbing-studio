@@ -15,6 +15,8 @@ import sys
 
 HERE = Path(__file__).resolve().parent
 sys.dont_write_bytecode = True
+# The embedded Windows interpreter omits the script directory from sys.path.
+sys.path.insert(0, str(HERE))
 sys.path.insert(0, str(HERE / 'vendor/chatterbox'))
 os.environ.update(HF_HUB_OFFLINE='1', TRANSFORMERS_OFFLINE='1', HF_HUB_DISABLE_TELEMETRY='1')
 IDS = ('voxcpm2-bf16', 'chatterbox-multilingual-v3')

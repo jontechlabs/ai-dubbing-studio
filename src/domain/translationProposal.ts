@@ -11,17 +11,27 @@ export interface TranslationBasis {
   targetText: string;
   sourceCueIds: string[];
   targetCueIds: string[];
+  timing?: { startMs: number; endMs: number; targetSlots: [number, number][] } | null;
 }
 export interface TranslationProposal {
   basis: TranslationBasis;
   translations: string[];
   model: string;
+  direction?: string;
 }
 export function proposalCurrent(project: Project, proposal: TranslationProposal): boolean {
   const b = proposal.basis,
     line = project.dialogues.find((l) => l.id === b.lineId);
   return (
     !!line &&
+    (!b.timing ||
+      (line.startMs === b.timing.startMs &&
+        line.endMs === b.timing.endMs &&
+        JSON.stringify(
+          line.targetCueIds
+            .map((id) => project.targetCues.find((c) => c.id === id))
+            .map((c) => (c ? [c.startMs, c.endMs] : null)),
+        ) === JSON.stringify(b.timing.targetSlots))) &&
     project.id === b.projectId &&
     project.languages.source === b.sourceLanguage &&
     project.languages.target === b.targetLanguage &&
