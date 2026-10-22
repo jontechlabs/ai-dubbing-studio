@@ -1,11 +1,11 @@
 {
-  "version": "0.24.0",
-  "notes": "Orientation libre des traductions : personnage, registre, ton et longueur souhaitée, avec créneaux disponibles transmis au LLM. Propositions toujours à relire avant application. Démarrage individuel de VoxCPM2, Chatterbox et conversion de timbre corrigé sous Python Windows isolé. Modèles déjà installés réutilisés.",
-  "pub_date": "2026-10-22T15:13:15Z",
+  "version": "0.25.0",
+  "notes": "Compteur de durée en temps réel dans les traitements, la barre inférieure et les panneaux de progression. Durée conservée à la fin, après échec ou annulation. Attente et pauses exclues ; nouvelle tentative avec compteur indépendant. Historique local et exposition MCP de la mesure.",
+  "pub_date": "2026-10-22T16:49:48Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSdFFyMUJGTFp3NkN1Qk02S01Eb2JpVFJ5cVByNTFsR2Q1NmQvRURRa3k4NXRic21XU3JLN1dvenJGVlVFQ1doN2FudnJKSCtsU25zbUpqcFZKRVFXRjh4N2JFVCtOd3dZPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkyNjc5MzQ4CWZpbGU6QUkgRHViYmluZyBTdHVkaW9fMC4yNC4wX3g2NC1zZXR1cC5leGUJdmVyc2lvbjowLjI0LjAKTGIzOXRHTTZqNnBTenhTRFFML1FFV3pqQk5BcGNIazZ0V25hbUtaQ3NkQ3BLVjNsZmlBRkFYNDFJd3RTZDNIcURVcXVPT2s4M2p4eXE2VzBaRFNzQ1E9PQo=",
-      "url": "https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.24.0/AI-Dubbing-Studio-0.24.0-Setup.exe"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSdFFyMUJGTFp3NkplbzU1K0ZaZVg2R011QzR4QXlsV0c0MlBReWVBeWlQZGIzdGVrZHZOektlUStKc1dkcUE2YnRCc2JXYWVnSUVYa0twTEdScE8xaHFnU0hhTjNOTnc4PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkyNjg2NTY2CWZpbGU6QUkgRHViYmluZyBTdHVkaW9fMC4yNS4wX3g2NC1zZXR1cC5leGUJdmVyc2lvbjowLjI1LjAKcHgzam9yZ3A0R05ZV0M0NDFVUCswNTFBMnVXcVFhWUVxUXlrZkhRc3k2YmtmZS81bmVpOVQ2MVJYZ1pFLzZacDBQeGlhbnBGbFY5TGpxYmVuYU1CQlE9PQo=",
+      "url": "https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.25.0/AI-Dubbing-Studio-0.25.0-Setup.exe"
     }
   }
 }
