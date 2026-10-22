@@ -84,6 +84,7 @@ it('removes a processed copy and restores the previous mute state without touchi
   expect(p.tracks).toHaveLength(next.tracks.length + 1);
 });
 it('preparing the dubbing mix keeps an active processed stem from doubling its dry source', () => {
+  expect(dubbingMix(processed()).tracks.find((t) => t.id === 'fx')!.mute).toBe(true);
   const p = processed();
   p.tracks.push({
     id: 'stem',

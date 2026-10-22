@@ -249,7 +249,7 @@ export function dubbingMix(project: Project) {
     sourceTrackId: string;
     replaceInMix: boolean;
   }[];
-  const replacementIds = new Set(replacement ? [replacement] : []);
+  const replacementIds = new Set(['original', ...(replacement ? [replacement] : [])]);
   // A processed source voice is still a source voice. Replace its copies too.
   for (let pass = 0; pass < copies.length; pass++) {
     const size = replacementIds.size;
