@@ -815,7 +815,7 @@ export const Timeline = memo(function Timeline({
                     {style === 'video' ? project?.media?.originalName : null}
                     {style === 'audio' && project?.media && (
                       <Waveform
-                        key={track?.id ?? project.media.id}
+                        key={track ? `${track.id}:${track.path ?? ''}` : project.media.id}
                         project={project}
                         track={track?.kind === 'audio' ? track : undefined}
                         scale={scale}

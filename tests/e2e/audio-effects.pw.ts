@@ -1,7 +1,6 @@
 import { test, expect, type Page } from '@playwright/test';
 import { nativeMock } from './nativeMock';
-const project = (page: Page) =>
-  page.evaluate(() => JSON.parse(localStorage.getItem('nativeMockProject')!));
+const project = (page: Page) => page.evaluate(() => (window as any).__getMockProject());
 const saved = (page: Page) => expect(page.locator('.save-indicator')).toHaveText('Sauvegardé');
 async function ready(page: Page) {
   await nativeMock(page);
@@ -26,7 +25,7 @@ test('global faders reach 400 percent independently of regions and persist with 
     ['dubbing', 'Doublage'],
   ]) {
     const before = await project(page),
-      regions = before.tracks.find((t: any) => t.id === id).regions;
+      regions = before.tracks.find((t: any) => t.id === id)?.regions;
     const row = page
       .locator('.track-label')
       .filter({ has: page.getByRole('button', { name: `Volume global · ${name}`, exact: true }) });
@@ -78,7 +77,7 @@ test('voice effect preview keeps project dry until applied and later changes rep
       page.evaluate(() =>
         (window as any).__calls.some(
           (c: any) =>
-            c.command === 'dubbing_path' &&
+            c.command === 'generation_path' &&
             c.args.edit?.pieces.some((p: any) => p.effects?.[0]?.parameters.semitones === 4),
         ),
       ),
