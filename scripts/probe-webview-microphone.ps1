@@ -1,5 +1,5 @@
 # Standalone Windows/WebView2 diagnostic; synthetic input only, no user audio.
-param([ValidateSet('current','old-policy','unicode-input')][string]$Variant='current')
+param([ValidateSet('current','old-policy','unicode-input','hidden','flags-env')][string]$Variant='current')
 $ErrorActionPreference='Stop'
 Add-Type -AssemblyName System.Windows.Forms
 $repo=Split-Path -Parent $PSScriptRoot
@@ -47,6 +47,7 @@ $script:result=Join-Path $work 'result.json'
 $script:form=[Windows.Forms.Form]::new();$script:form.ShowInTaskbar=$false;$script:form.Opacity=0;$script:form.Width=640;$script:form.Height=480
 $script:web=[Microsoft.Web.WebView2.WinForms.WebView2]::new();$script:web.Dock=[Windows.Forms.DockStyle]::Fill
 $properties=[Microsoft.Web.WebView2.WinForms.CoreWebView2CreationProperties]::new();$properties.UserDataFolder=Join-Path $work 'profile';$properties.AdditionalBrowserArguments="--autoplay-policy=no-user-gesture-required --use-fake-ui-for-media-stream --use-fake-device-for-media-stream --use-file-for-fake-audio-capture=`"$wav`""
+if($Variant -eq 'flags-env'){$env:WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS=$properties.AdditionalBrowserArguments;$properties.AdditionalBrowserArguments='--autoplay-policy=no-user-gesture-required'}
 $script:web.CreationProperties=$properties;$script:form.Controls.Add($script:web)
 $script:web.add_CoreWebView2InitializationCompleted({
     param($sender,$eventArgs)
@@ -57,6 +58,7 @@ $script:web.add_CoreWebView2InitializationCompleted({
         $data=$message | ConvertFrom-Json
         if($data.done){[IO.File]::WriteAllText($script:result,$message);$script:form.Close()}
     })
+    if($Variant -eq 'hidden'){$script:web.Visible=$false}
     $script:web.CoreWebView2.Navigate('http://studio.localhost/index.html')
 })
 $script:form.add_Shown({$null=$script:web.EnsureCoreWebView2Async()})

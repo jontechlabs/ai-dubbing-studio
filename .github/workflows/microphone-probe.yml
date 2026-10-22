@@ -2,7 +2,7 @@ name: WebView2 microphone diagnostic
 on:
   workflow_dispatch:
   push:
-    branches: [codex/microphone-voice-conversion]
+    branches: [codex/microphone-probe-hidden]
     paths:
       - scripts/probe-webview-microphone.ps1
       - .github/workflows/microphone-probe.yml
@@ -16,7 +16,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        variant: [current, old-policy, unicode-input]
+        variant: [current, hidden, flags-env]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
       - name: Capture synthetic microphone through WebView2 and production CSP
