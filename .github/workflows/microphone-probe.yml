@@ -12,14 +12,19 @@ jobs:
   probe:
     runs-on: windows-latest
     timeout-minutes: 8
+    continue-on-error: ${{ matrix.variant != 'current' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        variant: [current, old-policy, unicode-input]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
       - name: Capture synthetic microphone through WebView2 and production CSP
         shell: powershell
-        run: powershell.exe -NoProfile -STA -File scripts/probe-webview-microphone.ps1
+        run: powershell.exe -NoProfile -STA -File scripts/probe-webview-microphone.ps1 -Variant '${{ matrix.variant }}'
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
         with:
-          name: webview-microphone-probe
+          name: webview-microphone-${{ matrix.variant }}
           path: .cache/webview-microphone-probe/result.json
           include-hidden-files: true

@@ -1,4 +1,5 @@
 # Standalone Windows/WebView2 diagnostic; synthetic input only, no user audio.
+param([ValidateSet('current','old-policy','unicode-input')][string]$Variant='current')
 $ErrorActionPreference='Stop'
 Add-Type -AssemblyName System.Windows.Forms
 $repo=Split-Path -Parent $PSScriptRoot
@@ -12,12 +13,14 @@ $env:PATH=(Join-Path $work 'sdk/runtimes/win-x64/native')+';'+$env:PATH
 [Reflection.Assembly]::LoadFrom((Join-Path $work 'sdk/lib/net462/Microsoft.Web.WebView2.Core.dll')) | Out-Null
 [Reflection.Assembly]::LoadFrom((Join-Path $work 'sdk/lib/net462/Microsoft.Web.WebView2.WinForms.dll')) | Out-Null
 $wav=Join-Path $work 'input.wav'
+if($Variant -eq 'unicode-input'){$wav=Join-Path $work 'Référence 日本語/input.wav';New-Item -ItemType Directory -Force (Split-Path -Parent $wav) | Out-Null}
 $writer=[IO.BinaryWriter]::new([IO.File]::Create($wav))
 try {
     $writer.Write([Text.Encoding]::ASCII.GetBytes('RIFF'));$writer.Write([uint32]48036);$writer.Write([Text.Encoding]::ASCII.GetBytes('WAVEfmt '));$writer.Write([uint32]16);$writer.Write([uint16]1);$writer.Write([uint16]1);$writer.Write([uint32]24000);$writer.Write([uint32]48000);$writer.Write([uint16]2);$writer.Write([uint16]16);$writer.Write([Text.Encoding]::ASCII.GetBytes('data'));$writer.Write([uint32]48000)
     for($i=0;$i -lt 24000;$i++){$writer.Write([int16]([Math]::Sin($i/24000*440*2*[Math]::PI)*6000))}
 } finally {$writer.Dispose()}
 $policy=(Get-Content -LiteralPath (Join-Path $repo 'src-tauri/tauri.conf.json') -Raw | ConvertFrom-Json).app.security.csp
+if($Variant -eq 'old-policy'){$policy=$policy.Replace(" script-src 'self';",'').Replace("connect-src 'self' ipc:",'connect-src ipc:')}
 [IO.File]::WriteAllText((Join-Path $work 'index.html'),"<html><head><meta http-equiv=`"Content-Security-Policy`" content=`"$policy`"></head><body><script src=`"probe.js`"></script></body></html>",[Text.UTF8Encoding]::new($false))
 Copy-Item -LiteralPath (Join-Path $repo 'public/microphone-worklet.js') -Destination $work
 $javascript=@'
