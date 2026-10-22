@@ -85,12 +85,18 @@ pub fn validate(p: &Project) -> Result<(), String> {
             || e.track_id.is_empty()
             || e.source_track_id.is_empty()
             || e.end_ms <= e.start_ms
-            || !(10..=60000).contains(&(e.end_ms - e.start_ms))
+            || !(10..=if e.operation == "effects" {
+                120000
+            } else {
+                60000
+            })
+                .contains(&(e.end_ms - e.start_ms))
             || e.end_ms > 86_400_000
             || !e.gain.is_finite()
             || !(0.0..=2.0).contains(&e.gain)
             || !["add", "replace", "silence"].contains(&e.mode.as_str())
-            || !["copy", "move", "swap"].contains(&e.operation.as_str())
+            || !["copy", "move", "swap", "effects"].contains(&e.operation.as_str())
+            || (e.operation == "effects" && p.format_version < 18)
             || p.generations.iter().filter(|g| g["id"] == e.id).count() != 1
         {
             return Err("INVALID_AUDIO_TRANSFER".into());

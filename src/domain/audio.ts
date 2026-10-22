@@ -33,7 +33,7 @@ export function effectiveGain(track: Track, tracks: Track[], master: number, tim
   const solo = tracks.some((item) => item.solo && !item.mute);
   return track.mute || (solo && !track.solo)
     ? 0
-    : Math.max(0, Math.min(2, track.gain)) *
+    : Math.max(0, Math.min(4, track.gain)) *
         master *
         (timeMs === undefined ? 1 : regionGain(track, timeMs));
 }
@@ -219,6 +219,11 @@ export function editTrack(
   id: string,
   change: Partial<Pick<Track, 'mute' | 'solo' | 'gain'>>,
 ) {
+  if (
+    change.gain !== undefined &&
+    (!Number.isFinite(change.gain) || change.gain < 0 || change.gain > 4)
+  )
+    throw Error('INVALID_PROJECT');
   const next = structuredClone(project);
   if (!next.tracks.some((track) => track.id === id)) {
     const track = audioTracks(project).find((track) => track.id === id);
@@ -226,6 +231,7 @@ export function editTrack(
   }
   if (next.tracks.some((t) => t.kind === 'dubbing'))
     next.formatVersion = Math.max(6, next.formatVersion);
+  if ((change.gain ?? 0) > 2) next.formatVersion = Math.max(18, next.formatVersion);
   next.tracks = next.tracks.map((track) => (track.id === id ? { ...track, ...change } : track));
   return next;
 }
@@ -237,15 +243,30 @@ export function dubbingMix(project: Project) {
     chosen && chosen !== 'auto'
       ? chosen
       : audioTracks(project).find((t) => t.role === 'speech')?.id;
+  const effectSources = new Set(
+    project.generations
+      .filter(
+        (g) =>
+          g.kind === 'audioEffects' &&
+          g.replaceInMix &&
+          project.tracks.some((t) => t.id === g.trackId && !t.mute),
+      )
+      .map((g) => g.sourceTrackId),
+  );
   next.tracks = next.tracks.map((t) =>
-    t.kind === 'audio' ? { ...t, mute: t.id === replacement, solo: false } : t,
+    t.kind === 'audio'
+      ? { ...t, mute: t.id === replacement || effectSources.has(t.id), solo: false }
+      : t,
   );
   return next;
 }
 export function trackLabel(track: Track) {
-  return track.kind === 'original'
-    ? 'original'
-    : track.kind === 'dubbing'
-      ? 'dubbingTrack'
-      : `stem.${track.role}`;
+  return (
+    track.name ??
+    (track.kind === 'original'
+      ? 'original'
+      : track.kind === 'dubbing'
+        ? 'dubbingTrack'
+        : `stem.${track.role}`)
+  );
 }

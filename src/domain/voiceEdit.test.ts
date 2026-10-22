@@ -6,6 +6,7 @@ import { editVoice, editDuration, voicePlan, resetVoiceEdit } from './voiceEdit'
 import { rebaseProject } from './rebase';
 import type { Generation } from './types';
 import { envelopeLevel } from './voiceEnvelope';
+import { defaultEffect } from './audioEffects';
 function fixture() {
   const p = demoProject();
   p.formatVersion = 5;
@@ -38,6 +39,38 @@ function fixture() {
   ];
   return p;
 }
+it('replaces effects on a selected range and preserves them through gain, split and stretch edits', () => {
+  const base = fixture();
+  const pitch = defaultEffect('pitch');
+  pitch.parameters.semitones = 3;
+  let p = editVoice(base, 'take', 400, 1200, { kind: 'effects', effects: [pitch] });
+  expect(p.formatVersion).toBe(18);
+  validateProject(p);
+  expect(p.voiceEdits!.take.pieces[1].effects![0].parameters.semitones).toBe(3);
+  p = editVoice(p, 'take', 400, 1200, { kind: 'gain', gain: 0.7 });
+  p = editVoice(p, 'take', 400, 1200, { kind: 'stretch', durationMs: 1000 });
+  expect(p.voiceEdits!.take.pieces[1].effects![0].parameters.semitones).toBe(3);
+  const next = editVoice(p, 'take', 400, 1400, {
+    kind: 'effects',
+    effects: [{ ...pitch, parameters: { semitones: 6 } }],
+  });
+  expect(next.voiceEdits!.take.pieces[1].effects).toHaveLength(1);
+  expect(next.voiceEdits!.take.pieces[1].effects![0].parameters.semitones).toBe(6);
+  expect(base.voiceEdits).toBeUndefined();
+  expect(next.generations).toEqual(base.generations);
+});
+it('removes selected effects without merging adjacent ranges that still have different effects', () => {
+  let p = editVoice(fixture(), 'take', 0, 1000, {
+    kind: 'effects',
+    effects: [defaultEffect('echo')],
+  });
+  p = editVoice(p, 'take', 500, 1500, { kind: 'effects', effects: [] });
+  validateProject(p);
+  expect(p.voiceEdits!.take.pieces[0].effects).toHaveLength(1);
+  expect(p.voiceEdits!.take.pieces.slice(1).every((piece) => !piece.effects?.length)).toBe(true);
+  const old = { ...p, formatVersion: 17 };
+  expect(() => validateProject(old)).toThrow('INVALID_AUDIO_EFFECTS');
+});
 it('applies adjustable fades to a selection without changing duration or original files', () => {
   const base = fixture(),
     p = editVoice(base, 'take', 500, 1500, { kind: 'fade', fadeInMs: 100, fadeOutMs: 200 });

@@ -1,5 +1,7 @@
 # AI Dubbing Studio — phases 1–7
 
+**v0.26.0 — Effets locaux et volume global des pistes.** Vingt effets, douze préréglages, chaînes réglables sur les répliques et les pistes entières ou par portion. Le volume global 0–400 % est accessible directement sur la timeline et reste indépendant des zones. Notifications discrètes au début et à la fin des tâches ; médias et essais originaux conservés. [Guide et captures](docs/AUDIO-EFFECTS.md).
+
 **v0.25.0 — Durée des traitements en direct.** Le panneau Traitements affiche le temps écoulé pendant chaque tâche et conserve sa durée à la fin. L’attente et les pauses sont exclues ; chaque nouvelle tentative possède son propre compteur. [Détails et capture](docs/TASK-DURATION.md).
 
 **v0.24.0 — Orientation de traduction et démarrage vocal corrigé.** Donnez au LLM des consignes de personnage, registre, vulgarité et longueur souhaitée. Les créneaux disponibles guident la concision ; les propositions restent à relire avant application. Correction de `ModuleNotFoundError: No module named 'cosyvoice_worker'` avec VoxCPM2, Chatterbox Multilingual et la conversion de timbre dans le Python Windows isolé. Les modèles déjà installés sont réutilisés.
@@ -93,7 +95,7 @@
 
 *Interface React réelle avec audio de démonstration synthétique et inventaire natif simulé.*
 
-[Version anglaise et captures de l’interface](README.md) · [Téléchargements Windows](https://github.com/jontechlabs/ai-dubbing-studio/releases/tag/v0.25.0)
+[Version anglaise et captures de l’interface](README.md) · [Téléchargements Windows](https://github.com/jontechlabs/ai-dubbing-studio/releases/tag/v0.26.0)
 
 Studio desktop local de travail texte, voix et vidéo. Tauri 2, React, TypeScript strict et Rust.
 

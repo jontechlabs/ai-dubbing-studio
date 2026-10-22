@@ -76,6 +76,8 @@ pub struct AudioRegion {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Track {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
     pub id: String,
     pub kind: String,
     pub language: String,
@@ -269,7 +271,7 @@ impl Project {
         references.iter().find(|r| r.id == id)
     }
     pub fn validate(&self) -> Result<(), String> {
-        if !(1..=17).contains(&self.format_version) {
+        if !(1..=18).contains(&self.format_version) {
             return Err("UNSUPPORTED_PROJECT_VERSION".into());
         }
         if !self.translation_approvals.is_empty()
@@ -421,14 +423,21 @@ impl Project {
                 valid_relative(path)?;
             }
         }
-        if self
-            .tracks
-            .iter()
-            .any(|t| !t.gain.is_finite() || !(0.0..=2.0).contains(&t.gain))
-        {
+        if self.tracks.iter().any(|t| {
+            !t.gain.is_finite()
+                || !(0.0..=4.0).contains(&t.gain)
+                || (t.gain > 2.0 && self.format_version < 18)
+        }) {
             return Err("INVALID_PROJECT".into());
         }
         for track in &self.tracks {
+            if track
+                .name
+                .as_ref()
+                .is_some_and(|n| n.is_empty() || n.chars().count() > 160 || n.contains('\0'))
+            {
+                return Err("INVALID_PROJECT".into());
+            }
             if track.kind == "dubbing"
                 && (self.format_version < 6 || track.id != "dubbing" || track.path.is_some())
             {
@@ -470,6 +479,11 @@ impl Project {
                         .role
                         .as_deref()
                         .is_none_or(|role| !["speech", "music", "sfx"].contains(&role))
+                        && !(self.format_version >= 18
+                            && self
+                                .generations
+                                .iter()
+                                .any(|g| g["kind"] == "audioEffects" && g["trackId"] == track.id))
                     || track.duration_ms.is_none_or(|duration| duration == 0))
             {
                 return Err("INVALID_PROJECT".into());
@@ -527,6 +541,7 @@ impl Project {
         crate::voice_capture::validate(self)?;
         crate::prosody::validate(self)?;
         crate::voice_edit::validate(self)?;
+        crate::audio_fx_job::validate_project(self)?;
         crate::inpaint::validate(self)?;
         crate::audio_patch::validate(self)?;
         Ok(())

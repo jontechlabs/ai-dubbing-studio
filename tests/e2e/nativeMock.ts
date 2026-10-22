@@ -21,6 +21,25 @@ export async function nativeMock(page: Page, large = false) {
     const host=window as unknown as Record<string,any>,callbacks=new Map<number,(data:any)=>void>(),listeners=new Map<string,number>();let counter=0,project=JSON.parse(localStorage.getItem('nativeMockProject')||'null')||structuredClone(initial),job:any;
     const emit=(name:string,payload:any)=>{const id=listeners.get(name);if(id)callbacks.get(id)?.({event:name,id,payload});};
     host.__timedJob=(value:any)=>{job=structuredClone(value);emit('job-changed',job);};
+    host.__completeEffects=()=>{
+      if(job.status==='cancelled')return;
+      const o=host.__pendingEffects,id=crypto.randomUUID(),relative=`stems/patch-${id}.wav`;
+      undoStack.push(structuredClone(project));project.formatVersion=18;
+      const old=project.generations.find((g:any)=>g.kind==='audioEffects'&&g.trackId===o.trackId);
+      if(o.scope==='track'&&old){project.tracks.find((t:any)=>t.id===o.trackId).path=relative;old.path=relative;old.effects=o.effects;}
+      else if(o.scope==='track'){
+        const source=project.tracks.find((t:any)=>t.id===o.trackId),before=source.mute;
+        project.tracks.push({...structuredClone(source),id,kind:'audio',path:relative,name:o.name,durationMs:project.media.durationMs,sourcePath:project.media.path,mute:!o.replaceInMix});
+        if(o.replaceInMix)source.mute=true;
+        project.generations.push({kind:'audioEffects',id,trackId:id,sourceTrackId:o.trackId,path:relative,sourcePath:project.media.path,sourceMuteBefore:before,replaceInMix:o.replaceInMix,effects:o.effects,effectsSourcePath:`stems/patch-${id}-dry.wav`});
+      }else{
+        const previous=project.generations.find((g:any)=>g.kind==='audioPatch'&&g.operation==='effects'&&g.trackId===o.trackId&&g.startMs===o.startMs&&g.endMs===o.endMs);
+        project.generations=project.generations.filter((g:any)=>g!==previous);
+        project.generations.push({kind:'audioPatch',id,operationId:id,operation:'effects',sourcePath:project.media.path,sourceTrackId:o.trackId,trackId:o.trackId,startMs:o.startMs,endMs:o.endMs,mode:'replace',path:relative,gain:1,effects:o.effects,effectsSourcePath:previous?.effectsSourcePath??`stems/patch-${id}-dry.wav`});
+      }
+      project.revision++;localStorage.setItem('nativeMockProject',JSON.stringify(project));emit('project-changed',structuredClone(project));
+      job={...job,status:'succeeded',stage:'done',progress:1,timing:{elapsedMs:1250,observedAtMs:Date.now()}};emit('job-changed',job);
+    };
     host.__calls=[];host.__downloadError=false;host.__installed=false;
     host.__getMockProject=()=>structuredClone(project);
     let mcpEnabled=localStorage.getItem('mockMcpEnabled')==='true';const mcpRequests=new Map<string,any>(),mcpAudit:any[]=[];
@@ -166,6 +185,7 @@ export async function nativeMock(page: Page, large = false) {
       }
       if(command==='convert_voice_timbre'){host.__pendingConversion=structuredClone(args.options);job={id:'conversion-job',projectId:project.id,kind:'voiceConversion',status:'running',stage:'vcConvert',progress:.4,logs:[],error:null};emit('job-changed',job);return job.id;}
       if(command==='generation_path')return `C:/Studio/generations/${args.id}.wav`;
+      if(command==='apply_audio_effects'){host.__pendingEffects=structuredClone(args.options);job={id:crypto.randomUUID(),projectId:project.id,kind:'audioEffects',status:'running',stage:'fxRender',progress:.1,logs:[],error:null,timing:{elapsedMs:0,observedAtMs:Date.now()}};emit('job-changed',job);return job.id;}
       if(command==='dubbing_path'){
         if(args.edit&&host.__deferEdit)await new Promise((resolve,reject)=>{host.__releaseEdit=(error=false)=>error?reject(Error('VOICE_EDIT_FAILED Invalid data found when processing input')):resolve(null);});
         if(args.edit&&host.__editRenderFail)throw Error('VOICE_EDIT_FAILED Invalid data found when processing input');

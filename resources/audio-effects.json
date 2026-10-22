@@ -1,0 +1,1017 @@
+{
+  "version": 1,
+  "maxChain": 8,
+  "effects": [
+    {
+      "id": "equalizer",
+      "label": {
+        "fr": "Égaliseur",
+        "en": "Equalizer"
+      },
+      "group": "tone",
+      "parameters": [
+        {
+          "id": "bass",
+          "label": {
+            "fr": "Graves",
+            "en": "Bass"
+          },
+          "min": -18,
+          "max": 18,
+          "step": 0.5,
+          "default": 0,
+          "unit": "dB"
+        },
+        {
+          "id": "mid",
+          "label": {
+            "fr": "Médiums",
+            "en": "Midrange"
+          },
+          "min": -18,
+          "max": 18,
+          "step": 0.5,
+          "default": 0,
+          "unit": "dB"
+        },
+        {
+          "id": "midHz",
+          "label": {
+            "fr": "Fréquence médiums",
+            "en": "Mid frequency"
+          },
+          "min": 200,
+          "max": 5000,
+          "step": 50,
+          "default": 1200,
+          "unit": "Hz"
+        },
+        {
+          "id": "treble",
+          "label": {
+            "fr": "Aigus",
+            "en": "Treble"
+          },
+          "min": -18,
+          "max": 18,
+          "step": 0.5,
+          "default": 0,
+          "unit": "dB"
+        }
+      ]
+    },
+    {
+      "id": "pitch",
+      "label": {
+        "fr": "Pitch / hauteur",
+        "en": "Pitch"
+      },
+      "group": "tone",
+      "parameters": [
+        {
+          "id": "semitones",
+          "label": {
+            "fr": "Demi-tons",
+            "en": "Semitones"
+          },
+          "min": -12,
+          "max": 12,
+          "step": 0.25,
+          "default": 0,
+          "unit": ""
+        },
+        {
+          "id": "formants",
+          "label": {
+            "fr": "Préserver les formants",
+            "en": "Preserve formants"
+          },
+          "min": 0,
+          "max": 1,
+          "step": 1,
+          "default": 1,
+          "unit": ""
+        }
+      ]
+    },
+    {
+      "id": "highpass",
+      "label": {
+        "fr": "Coupe-bas",
+        "en": "High-pass"
+      },
+      "group": "tone",
+      "parameters": [
+        {
+          "id": "frequency",
+          "label": {
+            "fr": "Fréquence",
+            "en": "Frequency"
+          },
+          "min": 30,
+          "max": 8000,
+          "step": 10,
+          "default": 90,
+          "unit": "Hz"
+        }
+      ]
+    },
+    {
+      "id": "lowpass",
+      "label": {
+        "fr": "Coupe-haut",
+        "en": "Low-pass"
+      },
+      "group": "tone",
+      "parameters": [
+        {
+          "id": "frequency",
+          "label": {
+            "fr": "Fréquence",
+            "en": "Frequency"
+          },
+          "min": 200,
+          "max": 10000,
+          "step": 50,
+          "default": 6500,
+          "unit": "Hz"
+        }
+      ]
+    },
+    {
+      "id": "compressor",
+      "label": {
+        "fr": "Compresseur",
+        "en": "Compressor"
+      },
+      "group": "dynamics",
+      "parameters": [
+        {
+          "id": "threshold",
+          "label": {
+            "fr": "Seuil",
+            "en": "Threshold"
+          },
+          "min": -60,
+          "max": 0,
+          "step": 1,
+          "default": -20,
+          "unit": "dB"
+        },
+        {
+          "id": "ratio",
+          "label": {
+            "fr": "Ratio",
+            "en": "Ratio"
+          },
+          "min": 1,
+          "max": 20,
+          "step": 0.5,
+          "default": 3,
+          "unit": ""
+        },
+        {
+          "id": "attack",
+          "label": {
+            "fr": "Attaque",
+            "en": "Attack"
+          },
+          "min": 0.1,
+          "max": 100,
+          "step": 0.1,
+          "default": 10,
+          "unit": "ms"
+        },
+        {
+          "id": "release",
+          "label": {
+            "fr": "Relâchement",
+            "en": "Release"
+          },
+          "min": 10,
+          "max": 1000,
+          "step": 10,
+          "default": 150,
+          "unit": "ms"
+        },
+        {
+          "id": "makeup",
+          "label": {
+            "fr": "Gain de sortie",
+            "en": "Make-up gain"
+          },
+          "min": 0,
+          "max": 18,
+          "step": 0.5,
+          "default": 0,
+          "unit": "dB"
+        }
+      ]
+    },
+    {
+      "id": "limiter",
+      "label": {
+        "fr": "Limiteur",
+        "en": "Limiter"
+      },
+      "group": "dynamics",
+      "parameters": [
+        {
+          "id": "threshold",
+          "label": {
+            "fr": "Plafond",
+            "en": "Ceiling"
+          },
+          "min": -18,
+          "max": 0,
+          "step": 0.5,
+          "default": -1,
+          "unit": "dB"
+        },
+        {
+          "id": "release",
+          "label": {
+            "fr": "Relâchement",
+            "en": "Release"
+          },
+          "min": 20,
+          "max": 500,
+          "step": 10,
+          "default": 70,
+          "unit": "ms"
+        }
+      ]
+    },
+    {
+      "id": "gate",
+      "label": {
+        "fr": "Gate / expandeur",
+        "en": "Gate / expander"
+      },
+      "group": "dynamics",
+      "parameters": [
+        {
+          "id": "threshold",
+          "label": {
+            "fr": "Seuil",
+            "en": "Threshold"
+          },
+          "min": -80,
+          "max": -10,
+          "step": 1,
+          "default": -45,
+          "unit": "dB"
+        },
+        {
+          "id": "ratio",
+          "label": {
+            "fr": "Ratio",
+            "en": "Ratio"
+          },
+          "min": 1,
+          "max": 20,
+          "step": 0.5,
+          "default": 3,
+          "unit": ""
+        }
+      ]
+    },
+    {
+      "id": "normalize",
+      "label": {
+        "fr": "Nivellement automatique",
+        "en": "Automatic leveling"
+      },
+      "group": "dynamics",
+      "parameters": [
+        {
+          "id": "maximum",
+          "label": {
+            "fr": "Gain maximum",
+            "en": "Maximum gain"
+          },
+          "min": 1,
+          "max": 10,
+          "step": 0.5,
+          "default": 4,
+          "unit": ""
+        }
+      ]
+    },
+    {
+      "id": "denoise",
+      "label": {
+        "fr": "Réduction de bruit",
+        "en": "Noise reduction"
+      },
+      "group": "cleanup",
+      "parameters": [
+        {
+          "id": "reduction",
+          "label": {
+            "fr": "Réduction",
+            "en": "Reduction"
+          },
+          "min": 1,
+          "max": 40,
+          "step": 1,
+          "default": 12,
+          "unit": "dB"
+        }
+      ]
+    },
+    {
+      "id": "deesser",
+      "label": {
+        "fr": "Dé-esseur",
+        "en": "De-esser"
+      },
+      "group": "cleanup",
+      "parameters": [
+        {
+          "id": "intensity",
+          "label": {
+            "fr": "Intensité",
+            "en": "Intensity"
+          },
+          "min": 0,
+          "max": 1,
+          "step": 0.05,
+          "default": 0.4,
+          "unit": ""
+        }
+      ]
+    },
+    {
+      "id": "echo",
+      "label": {
+        "fr": "Écho",
+        "en": "Echo"
+      },
+      "group": "space",
+      "parameters": [
+        {
+          "id": "delay",
+          "label": {
+            "fr": "Retard",
+            "en": "Delay"
+          },
+          "min": 20,
+          "max": 1500,
+          "step": 10,
+          "default": 240,
+          "unit": "ms"
+        },
+        {
+          "id": "decay",
+          "label": {
+            "fr": "Niveau de l’écho",
+            "en": "Echo level"
+          },
+          "min": 0,
+          "max": 0.8,
+          "step": 0.05,
+          "default": 0.3,
+          "unit": ""
+        }
+      ]
+    },
+    {
+      "id": "reverb",
+      "label": {
+        "fr": "Réverbération légère",
+        "en": "Light reverb"
+      },
+      "group": "space",
+      "parameters": [
+        {
+          "id": "size",
+          "label": {
+            "fr": "Taille / diffusion",
+            "en": "Size / diffusion"
+          },
+          "min": 40,
+          "max": 500,
+          "step": 10,
+          "default": 180,
+          "unit": "ms"
+        },
+        {
+          "id": "amount",
+          "label": {
+            "fr": "Présence",
+            "en": "Amount"
+          },
+          "min": 0,
+          "max": 0.8,
+          "step": 0.05,
+          "default": 0.25,
+          "unit": ""
+        }
+      ]
+    },
+    {
+      "id": "saturation",
+      "label": {
+        "fr": "Saturation douce",
+        "en": "Soft saturation"
+      },
+      "group": "character",
+      "parameters": [
+        {
+          "id": "drive",
+          "label": {
+            "fr": "Drive",
+            "en": "Drive"
+          },
+          "min": 0,
+          "max": 24,
+          "step": 0.5,
+          "default": 4,
+          "unit": "dB"
+        }
+      ]
+    },
+    {
+      "id": "distortion",
+      "label": {
+        "fr": "Distorsion",
+        "en": "Distortion"
+      },
+      "group": "character",
+      "parameters": [
+        {
+          "id": "drive",
+          "label": {
+            "fr": "Drive",
+            "en": "Drive"
+          },
+          "min": 0,
+          "max": 30,
+          "step": 0.5,
+          "default": 12,
+          "unit": "dB"
+        }
+      ]
+    },
+    {
+      "id": "robot",
+      "label": {
+        "fr": "Robot / modulation en anneau",
+        "en": "Robot / ring modulation"
+      },
+      "group": "character",
+      "parameters": [
+        {
+          "id": "frequency",
+          "label": {
+            "fr": "Fréquence de modulation",
+            "en": "Modulation frequency"
+          },
+          "min": 15,
+          "max": 120,
+          "step": 1,
+          "default": 45,
+          "unit": "Hz"
+        }
+      ]
+    },
+    {
+      "id": "chorus",
+      "label": {
+        "fr": "Chorus / doublage",
+        "en": "Chorus / doubling"
+      },
+      "group": "modulation",
+      "parameters": [
+        {
+          "id": "depth",
+          "label": {
+            "fr": "Profondeur",
+            "en": "Depth"
+          },
+          "min": 0.1,
+          "max": 5,
+          "step": 0.1,
+          "default": 2,
+          "unit": "ms"
+        },
+        {
+          "id": "speed",
+          "label": {
+            "fr": "Vitesse",
+            "en": "Rate"
+          },
+          "min": 0.1,
+          "max": 2,
+          "step": 0.1,
+          "default": 0.4,
+          "unit": "Hz"
+        }
+      ]
+    },
+    {
+      "id": "flanger",
+      "label": {
+        "fr": "Flanger",
+        "en": "Flanger"
+      },
+      "group": "modulation",
+      "parameters": [
+        {
+          "id": "depth",
+          "label": {
+            "fr": "Profondeur",
+            "en": "Depth"
+          },
+          "min": 0,
+          "max": 10,
+          "step": 0.5,
+          "default": 3,
+          "unit": "ms"
+        },
+        {
+          "id": "speed",
+          "label": {
+            "fr": "Vitesse",
+            "en": "Rate"
+          },
+          "min": 0.1,
+          "max": 5,
+          "step": 0.1,
+          "default": 0.4,
+          "unit": "Hz"
+        },
+        {
+          "id": "feedback",
+          "label": {
+            "fr": "Réinjection",
+            "en": "Feedback"
+          },
+          "min": -70,
+          "max": 70,
+          "step": 5,
+          "default": 20,
+          "unit": "%"
+        }
+      ]
+    },
+    {
+      "id": "phaser",
+      "label": {
+        "fr": "Phaser",
+        "en": "Phaser"
+      },
+      "group": "modulation",
+      "parameters": [
+        {
+          "id": "speed",
+          "label": {
+            "fr": "Vitesse",
+            "en": "Rate"
+          },
+          "min": 0.1,
+          "max": 2,
+          "step": 0.1,
+          "default": 0.5,
+          "unit": "Hz"
+        },
+        {
+          "id": "depth",
+          "label": {
+            "fr": "Profondeur",
+            "en": "Depth"
+          },
+          "min": 0,
+          "max": 0.9,
+          "step": 0.05,
+          "default": 0.4,
+          "unit": ""
+        }
+      ]
+    },
+    {
+      "id": "tremolo",
+      "label": {
+        "fr": "Trémolo (volume)",
+        "en": "Tremolo (volume)"
+      },
+      "group": "modulation",
+      "parameters": [
+        {
+          "id": "speed",
+          "label": {
+            "fr": "Vitesse",
+            "en": "Rate"
+          },
+          "min": 0.1,
+          "max": 20,
+          "step": 0.1,
+          "default": 5,
+          "unit": "Hz"
+        },
+        {
+          "id": "depth",
+          "label": {
+            "fr": "Profondeur",
+            "en": "Depth"
+          },
+          "min": 0,
+          "max": 1,
+          "step": 0.05,
+          "default": 0.5,
+          "unit": ""
+        }
+      ]
+    },
+    {
+      "id": "vibrato",
+      "label": {
+        "fr": "Vibrato (hauteur)",
+        "en": "Vibrato (pitch)"
+      },
+      "group": "modulation",
+      "parameters": [
+        {
+          "id": "speed",
+          "label": {
+            "fr": "Vitesse",
+            "en": "Rate"
+          },
+          "min": 0.1,
+          "max": 15,
+          "step": 0.1,
+          "default": 5,
+          "unit": "Hz"
+        },
+        {
+          "id": "depth",
+          "label": {
+            "fr": "Profondeur",
+            "en": "Depth"
+          },
+          "min": 0,
+          "max": 0.8,
+          "step": 0.05,
+          "default": 0.2,
+          "unit": ""
+        }
+      ]
+    }
+  ],
+  "presets": [
+    {
+      "id": "clean",
+      "label": {
+        "fr": "Voix claire",
+        "en": "Clear voice"
+      },
+      "chain": [
+        {
+          "kind": "highpass",
+          "enabled": true,
+          "parameters": {
+            "frequency": 80
+          }
+        },
+        {
+          "kind": "denoise",
+          "enabled": true,
+          "parameters": {
+            "reduction": 10
+          }
+        },
+        {
+          "kind": "deesser",
+          "enabled": true,
+          "parameters": {
+            "intensity": 0.35
+          }
+        },
+        {
+          "kind": "compressor",
+          "enabled": true,
+          "parameters": {
+            "threshold": -22,
+            "ratio": 3,
+            "attack": 10,
+            "release": 150,
+            "makeup": 0
+          }
+        },
+        {
+          "kind": "limiter",
+          "enabled": true,
+          "parameters": {
+            "threshold": -1,
+            "release": 70
+          }
+        }
+      ]
+    },
+    {
+      "id": "warm",
+      "label": {
+        "fr": "Chaleureux",
+        "en": "Warm"
+      },
+      "chain": [
+        {
+          "kind": "equalizer",
+          "enabled": true,
+          "parameters": {
+            "bass": 3,
+            "mid": 0,
+            "midHz": 1200,
+            "treble": -1
+          }
+        }
+      ]
+    },
+    {
+      "id": "presence",
+      "label": {
+        "fr": "Présence / intelligibilité",
+        "en": "Presence / intelligibility"
+      },
+      "chain": [
+        {
+          "kind": "equalizer",
+          "enabled": true,
+          "parameters": {
+            "bass": 0,
+            "mid": 2,
+            "midHz": 2200,
+            "treble": 2
+          }
+        },
+        {
+          "kind": "compressor",
+          "enabled": true,
+          "parameters": {
+            "threshold": -20,
+            "ratio": 2,
+            "attack": 10,
+            "release": 150,
+            "makeup": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "telephone",
+      "label": {
+        "fr": "Téléphone",
+        "en": "Telephone"
+      },
+      "chain": [
+        {
+          "kind": "highpass",
+          "enabled": true,
+          "parameters": {
+            "frequency": 400
+          }
+        },
+        {
+          "kind": "lowpass",
+          "enabled": true,
+          "parameters": {
+            "frequency": 3200
+          }
+        },
+        {
+          "kind": "compressor",
+          "enabled": true,
+          "parameters": {
+            "threshold": -24,
+            "ratio": 4,
+            "attack": 10,
+            "release": 150,
+            "makeup": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "radio",
+      "label": {
+        "fr": "Radio",
+        "en": "Radio"
+      },
+      "chain": [
+        {
+          "kind": "highpass",
+          "enabled": true,
+          "parameters": {
+            "frequency": 220
+          }
+        },
+        {
+          "kind": "lowpass",
+          "enabled": true,
+          "parameters": {
+            "frequency": 4500
+          }
+        },
+        {
+          "kind": "saturation",
+          "enabled": true,
+          "parameters": {
+            "drive": 6
+          }
+        },
+        {
+          "kind": "compressor",
+          "enabled": true,
+          "parameters": {
+            "threshold": -20,
+            "ratio": 4,
+            "attack": 10,
+            "release": 150,
+            "makeup": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "megaphone",
+      "label": {
+        "fr": "Mégaphone",
+        "en": "Megaphone"
+      },
+      "chain": [
+        {
+          "kind": "highpass",
+          "enabled": true,
+          "parameters": {
+            "frequency": 500
+          }
+        },
+        {
+          "kind": "lowpass",
+          "enabled": true,
+          "parameters": {
+            "frequency": 4200
+          }
+        },
+        {
+          "kind": "distortion",
+          "enabled": true,
+          "parameters": {
+            "drive": 10
+          }
+        },
+        {
+          "kind": "limiter",
+          "enabled": true,
+          "parameters": {
+            "threshold": -2,
+            "release": 70
+          }
+        }
+      ]
+    },
+    {
+      "id": "room",
+      "label": {
+        "fr": "Petite pièce",
+        "en": "Small room"
+      },
+      "chain": [
+        {
+          "kind": "reverb",
+          "enabled": true,
+          "parameters": {
+            "size": 90,
+            "amount": 0.2
+          }
+        }
+      ]
+    },
+    {
+      "id": "cave",
+      "label": {
+        "fr": "Caverne / souvenir",
+        "en": "Cave / memory"
+      },
+      "chain": [
+        {
+          "kind": "reverb",
+          "enabled": true,
+          "parameters": {
+            "size": 380,
+            "amount": 0.4
+          }
+        },
+        {
+          "kind": "echo",
+          "enabled": true,
+          "parameters": {
+            "delay": 420,
+            "decay": 0.25
+          }
+        }
+      ]
+    },
+    {
+      "id": "robot",
+      "label": {
+        "fr": "Robot",
+        "en": "Robot"
+      },
+      "chain": [
+        {
+          "kind": "pitch",
+          "enabled": true,
+          "parameters": {
+            "semitones": -2,
+            "formants": 1
+          }
+        },
+        {
+          "kind": "robot",
+          "enabled": true,
+          "parameters": {
+            "frequency": 45
+          }
+        }
+      ]
+    },
+    {
+      "id": "monster",
+      "label": {
+        "fr": "Créature / voix grave",
+        "en": "Creature / deep voice"
+      },
+      "chain": [
+        {
+          "kind": "pitch",
+          "enabled": true,
+          "parameters": {
+            "semitones": -5,
+            "formants": 0
+          }
+        },
+        {
+          "kind": "equalizer",
+          "enabled": true,
+          "parameters": {
+            "bass": 4,
+            "mid": 0,
+            "midHz": 1200,
+            "treble": 0
+          }
+        },
+        {
+          "kind": "saturation",
+          "enabled": true,
+          "parameters": {
+            "drive": 5
+          }
+        }
+      ]
+    },
+    {
+      "id": "high",
+      "label": {
+        "fr": "Voix aiguë",
+        "en": "High voice"
+      },
+      "chain": [
+        {
+          "kind": "pitch",
+          "enabled": true,
+          "parameters": {
+            "semitones": 5,
+            "formants": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "ethereal",
+      "label": {
+        "fr": "Éthéré / rêve",
+        "en": "Ethereal / dream"
+      },
+      "chain": [
+        {
+          "kind": "chorus",
+          "enabled": true,
+          "parameters": {
+            "depth": 2,
+            "speed": 0.3
+          }
+        },
+        {
+          "kind": "reverb",
+          "enabled": true,
+          "parameters": {
+            "size": 260,
+            "amount": 0.3
+          }
+        }
+      ]
+    }
+  ]
+}

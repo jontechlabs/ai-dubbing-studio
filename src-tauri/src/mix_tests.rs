@@ -243,6 +243,7 @@ async fn voice_fades_reach_real_mkv_export_without_changing_other_timing() {
 fn voice_fades_reject_non_finite_out_of_bounds_and_unordered_envelopes() {
     use crate::voice_edit::{Edit, Piece, Point};
     let good = Piece {
+        effects: vec![],
         source_start_ms: Some(0),
         source_end_ms: Some(1000),
         duration_ms: 1000,
@@ -306,6 +307,7 @@ fn voice_fades_reject_non_finite_out_of_bounds_and_unordered_envelopes() {
     ] {
         assert!(Edit {
             pieces: vec![Piece {
+                effects: vec![],
                 envelope: Some(points),
                 ..good.clone()
             }]
@@ -400,6 +402,7 @@ async fn voice_local_edits_render_silence_gain_deletion_and_preserve_original() 
     .unwrap();
     let silent = crate::voice_edit::Edit {
         pieces: vec![crate::voice_edit::Piece {
+            effects: vec![],
             source_start_ms: None,
             source_end_ms: None,
             duration_ms: 120,
@@ -474,6 +477,7 @@ async fn voice_local_stretch_preserves_pitch_exact_length_and_does_not_stretch_o
     }
     let changed = crate::voice_edit::Edit {
         pieces: vec![crate::voice_edit::Piece {
+            effects: vec![],
             source_start_ms: Some(0),
             source_end_ms: Some(1500),
             duration_ms: 750,
@@ -499,10 +503,10 @@ async fn voice_local_stretch_preserves_pitch_exact_length_and_does_not_stretch_o
 #[tokio::test]
 async fn voice_local_edits_are_used_by_real_mkv_export_and_cancel_before_render() {
     let (_temporary, root, mut p) = fixture().await;
-    p.format_version = 11;
+    p.format_version = 18;
     let edit = serde_json::from_value(serde_json::json!({"pieces":[
       {"sourceStartMs":0,"sourceEndMs":500,"durationMs":500,"gain":0},
-      {"sourceStartMs":500,"sourceEndMs":1500,"durationMs":1000,"gain":0.5}
+      {"sourceStartMs":500,"sourceEndMs":1500,"durationMs":1000,"gain":0.5,"effects":[{"kind":"limiter","enabled":true,"parameters":{"threshold":-20}}]}
     ]}))
     .unwrap();
     p.voice_edits.insert("voice".into(), edit);
@@ -546,7 +550,7 @@ async fn voice_local_edits_are_used_by_real_mkv_export_and_cancel_before_render(
         .all(|v| v.abs() < 0.00001));
     assert!(samples[1700 * 96..1900 * 96]
         .iter()
-        .all(|v| (*v - 0.1).abs() < 0.002));
+        .all(|v| (*v - 0.05).abs() < 0.002));
     assert_eq!(
         crate::voice_edit::render(
             &root,
@@ -564,6 +568,7 @@ async fn voice_local_edits_are_used_by_real_mkv_export_and_cancel_before_render(
 fn voice_local_edit_validation_rejects_corrupt_ranges_and_unbounded_plans() {
     use crate::voice_edit::{Edit, Piece};
     let piece = Piece {
+        effects: vec![],
         source_start_ms: Some(0),
         source_end_ms: Some(1000),
         duration_ms: 1000,
@@ -577,18 +582,22 @@ fn voice_local_edit_validation_rejects_corrupt_ranges_and_unbounded_plans() {
     .is_ok());
     for p in [
         Piece {
+            effects: vec![],
             source_end_ms: Some(1001),
             ..piece.clone()
         },
         Piece {
+            effects: vec![],
             gain: f64::NAN,
             ..piece.clone()
         },
         Piece {
+            effects: vec![],
             duration_ms: 0,
             ..piece.clone()
         },
         Piece {
+            effects: vec![],
             source_start_ms: None,
             ..piece.clone()
         },

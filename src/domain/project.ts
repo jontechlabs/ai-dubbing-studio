@@ -8,7 +8,9 @@ import { validateLipVideos } from './inpaint';
 import { validateVoiceEdit } from './voiceEdit';
 import { validateProsody } from './prosody';
 import { validateTakeOrigins } from './voiceCapture';
-export const APP_VERSION = '0.23.0';
+import { validateEffectsProject } from './audioEffects';
+import packageInfo from '../../package.json';
+export const APP_VERSION = packageInfo.version;
 
 export function blankProject(name = 'Untitled', source = 'ja', target = 'fr'): Project {
   const now = new Date().toISOString();
@@ -107,7 +109,7 @@ export function validateProject(value: unknown): Project {
   if (
     !Number.isInteger(project.formatVersion) ||
     project.formatVersion < 1 ||
-    project.formatVersion > 17
+    project.formatVersion > 18
   )
     throw new Error('UNSUPPORTED_PROJECT_VERSION');
   if (project.voiceEdits !== undefined) {
@@ -122,6 +124,8 @@ export function validateProject(value: unknown): Project {
       const g = project.generations.find((g) => g.kind === 'tts' && g.id === id);
       if (!g) throw Error('INVALID_VOICE_EDIT');
       validateVoiceEdit(edit, Number(g.durationMs));
+      if (project.formatVersion < 18 && edit.pieces.some((p) => p.effects?.length))
+        throw Error('INVALID_AUDIO_EFFECTS');
       if (project.formatVersion < 12 && edit.pieces.some((p) => p.envelope !== undefined))
         throw Error('INVALID_VOICE_EDIT');
     }
@@ -204,6 +208,7 @@ export function validateProject(value: unknown): Project {
   ] as const) {
     if (!Array.isArray(project[key])) throw new Error('INVALID_PROJECT');
   }
+  validateEffectsProject(project);
   for (const cue of [...project.sourceCues, ...project.targetCues]) {
     if (
       !cue.id ||
@@ -221,7 +226,17 @@ export function validateProject(value: unknown): Project {
       (project.formatVersion < 6 || track.id !== 'dubbing' || track.path !== undefined)
     )
       throw new Error('INVALID_PROJECT');
-    if (!Number.isFinite(track.gain) || track.gain < 0 || track.gain > 2)
+    if (
+      !Number.isFinite(track.gain) ||
+      track.gain < 0 ||
+      track.gain > 4 ||
+      (track.gain > 2 && project.formatVersion < 18) ||
+      (track.name !== undefined &&
+        (typeof track.name !== 'string' ||
+          !track.name ||
+          track.name.length > 160 ||
+          track.name.includes('\0')))
+    )
       throw new Error('INVALID_PROJECT');
     if (track.regions !== undefined || track.regionsEnabled !== undefined) {
       if (

@@ -1,5 +1,7 @@
 mod audio_edit;
+mod audio_effects;
 mod audio_files;
+mod audio_fx_job;
 mod audio_patch;
 mod domain;
 mod downloads;
@@ -1143,6 +1145,18 @@ fn list_jobs(core: State<'_, Shared>) -> Result<Vec<Job>, String> {
         .collect())
 }
 #[tauri::command]
+fn audio_effects_catalog() -> serde_json::Value {
+    audio_effects::catalog().clone()
+}
+#[tauri::command]
+fn apply_audio_effects(
+    app: tauri::AppHandle,
+    core: State<'_, Shared>,
+    options: audio_fx_job::Options,
+) -> Result<String, String> {
+    audio_fx_job::enqueue(core.inner().clone(), app, options)
+}
+#[tauri::command]
 fn cancel_job(core: State<'_, Shared>, id: String) -> Result<(), String> {
     let jobs = core.jobs.lock().map_err(io_error)?;
     let job = jobs.get(&id).ok_or("INVALID_PROJECT")?;
@@ -1182,6 +1196,18 @@ fn retry_job(app: tauri::AppHandle, core: State<'_, Shared>, id: String) -> Resu
         .ok_or("INVALID_PROJECT")?
         .saved
         .clone();
+    if let Some(request) = record.audio_effects {
+        let guard = core.session.lock().map_err(io_error)?;
+        if guard.as_ref().is_none_or(|s| {
+            s.root != request.root
+                || s.project.id != request.project_id
+                || s.project.revision != request.revision
+        }) {
+            return Err("STALE_REVISION".into());
+        }
+        drop(guard);
+        return audio_fx_job::enqueue(core.inner().clone(), app, request.options);
+    }
     if record.translation_install {
         return translation_llm::install(core.inner().clone(), app);
     }
@@ -1542,6 +1568,8 @@ pub fn run() {
             export_audio_track,
             export_mkv,
             list_jobs,
+            audio_effects_catalog,
+            apply_audio_effects,
             cancel_job,
             pause_job,
             retry_job,

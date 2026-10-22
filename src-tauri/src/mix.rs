@@ -145,6 +145,62 @@ fn default_track(kind: &str, mute: bool) -> Track {
     )
     .unwrap()
 }
+pub(crate) async fn render_dubbing_raw<R: tauri::Runtime>(
+    core: &Arc<Core>,
+    app: &tauri::AppHandle<R>,
+    key: &str,
+    p: &Project,
+    root: &Path,
+    output: &Path,
+    flag: &Arc<AtomicBool>,
+) -> Result<(), String> {
+    let executable = media::binary(app, "ffmpeg")?;
+    let mut selected = clips(p);
+    selected.retain(|c| c.slot_ms > 0);
+    for clip in &mut selected {
+        let edited = crate::voice_edit::render(
+            root,
+            &clip.path,
+            p.voice_edits.get(&clip.id),
+            &executable,
+            flag,
+        )
+        .await?;
+        let relative = edited
+            .strip_prefix(root)
+            .map_err(io_error)?
+            .to_string_lossy()
+            .replace('\\', "/");
+        let fitted = crate::voice_fit::take_with_duration(
+            root,
+            &relative,
+            clip.slot_ms,
+            clip.exact_duration,
+            &executable,
+            flag,
+        )
+        .await?;
+        clip.path = fitted
+            .strip_prefix(root)
+            .map_err(io_error)?
+            .to_string_lossy()
+            .replace('\\', "/");
+    }
+    let duration = p.media.as_ref().ok_or("MEDIA_MISSING")?.info.duration_ms;
+    let root = root.to_path_buf();
+    let output = output.to_path_buf();
+    let flag = flag.clone();
+    let core = core.clone();
+    let app = app.clone();
+    let key = key.to_owned();
+    tauri::async_runtime::spawn_blocking(move || {
+        assemble(&root, &selected, duration, &output, &flag, |value| {
+            jobs::update(&core, &app, &key, |j| j.progress = Some(value))
+        })
+    })
+    .await
+    .map_err(io_error)?
+}
 pub(crate) fn tracks(p: &Project) -> Vec<Track> {
     let mut result = vec![p
         .tracks

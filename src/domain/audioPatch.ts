@@ -5,7 +5,7 @@ export interface AudioPatch {
   kind: 'audioPatch';
   id: string;
   operationId: string;
-  operation: 'copy' | 'move' | 'swap';
+  operation: 'copy' | 'move' | 'swap' | 'effects';
   sourcePath: string;
   trackId: string;
   sourceTrackId: string;
@@ -108,8 +108,9 @@ export function validateAudioPatches(p: Project) {
       e.startMs < 0 ||
       e.endMs > 86400000 ||
       e.endMs - e.startMs < 10 ||
-      e.endMs - e.startMs > 60000 ||
-      !['copy', 'move', 'swap'].includes(e.operation) ||
+      e.endMs - e.startMs > (e.operation === 'effects' ? 120000 : 60000) ||
+      !['copy', 'move', 'swap', 'effects'].includes(e.operation) ||
+      (e.operation === 'effects' && p.formatVersion < 18) ||
       !['add', 'replace', 'silence'].includes(e.mode) ||
       !Number.isFinite(e.gain) ||
       e.gain < 0 ||

@@ -94,6 +94,7 @@ export interface AudioSelection {
   regionId?: string;
 }
 export interface Track {
+  name?: string;
   id: string;
   kind: 'video' | 'original' | 'subtitle' | 'audio' | 'dubbing';
   role?: 'speech' | 'music' | 'sfx';

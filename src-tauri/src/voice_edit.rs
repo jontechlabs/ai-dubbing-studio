@@ -19,6 +19,8 @@ pub struct Point {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct Piece {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub effects: Vec<crate::audio_effects::Effect>,
     pub source_start_ms: Option<u64>,
     pub source_end_ms: Option<u64>,
     pub duration_ms: u64,
@@ -41,6 +43,7 @@ impl Edit {
         }
         let mut duration = 0u64;
         for p in &self.pieces {
+            crate::audio_effects::validate(&p.effects)?;
             let valid_source = match (p.source_start_ms, p.source_end_ms) {
                 (None, None) => true,
                 (Some(start), Some(end)) => start < end && end <= source_ms,
@@ -91,6 +94,9 @@ pub fn validate(p: &crate::domain::Project) -> Result<(), String> {
             .find(|g| g["kind"] == "tts" && g["id"] == *id)
             .ok_or("INVALID_VOICE_EDIT")?;
         edit.validate(g["durationMs"].as_u64().ok_or("INVALID_VOICE_EDIT")?)?;
+        if p.format_version < 18 && edit.pieces.iter().any(|p| !p.effects.is_empty()) {
+            return Err("INVALID_AUDIO_EFFECTS".into());
+        }
         if p.format_version < 12 && edit.pieces.iter().any(|p| p.envelope.is_some()) {
             return Err("INVALID_VOICE_EDIT".into());
         }
@@ -118,7 +124,7 @@ pub async fn render(
     edit.validate(frames / 24)?;
     let target = edit.duration() * 24;
     let mut hash = Sha256::new();
-    hash.update(b"voice-local-edit-v2-sample-clock");
+    hash.update(b"voice-local-edit-v3-audio-effects");
     hash.update(key(Some(edit)));
     hash.update(std::fs::read(&source).map_err(io_error)?);
     let name = format!("voice-edit-{:x}.wav", hash.finalize());
@@ -173,6 +179,12 @@ pub async fn render(
                     }
                     chain.push_str(&format!(",rubberband=tempo={ratio:.12}:pitch=1"));
                 }
+                let effect_chain = crate::audio_effects::filter_chain(&p.effects)?;
+                if !effect_chain.is_empty() {
+                    chain.push(',');
+                    chain.push_str(&effect_chain);
+                    chain.push_str(",aresample=24000,asetpts=N/SR/TB");
+                }
                 chain.push_str(&format!(
                     ",volume={:.9},apad=whole_len={n},atrim=end_sample={n}",
                     p.gain
@@ -207,11 +219,20 @@ pub async fn render(
         ));
     }
     filters.push(format!(
-        "{}concat=n={}:v=0:a=1[out]",
+        "{}concat=n={}:v=0:a=1{}[out]",
         (0..edit.pieces.len())
             .map(|i| format!("[p{i}]"))
             .collect::<String>(),
-        edit.pieces.len()
+        edit.pieces.len(),
+        if edit
+            .pieces
+            .iter()
+            .any(|p| p.effects.iter().any(|e| e.enabled))
+        {
+            ",alimiter=limit=0.98:level=0:latency=1"
+        } else {
+            ""
+        }
     ));
     std::fs::write(script.path(), filters.join(";\n")).map_err(io_error)?;
     let mut child = media::command(ffmpeg)

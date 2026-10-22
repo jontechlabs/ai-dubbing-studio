@@ -114,12 +114,15 @@ export function useProject() {
       })
       .catch((e) => setError(String(e)));
     void bridge.jobs().then((items) => {
-      if (!disposed) setJobs(items);
+      if (!disposed) {
+        setJobs(items);
+        document.dispatchEvent(new CustomEvent('studio-jobs-restored', { detail: items }));
+      }
     });
     void bridge
       .subscribe(load, (job) => {
         setJobs((current) => [job, ...current.filter((j) => j.id !== job.id)].slice(0, 100));
-        if (job.status === 'failed' && job.error) setError(job.error);
+        document.dispatchEvent(new CustomEvent('studio-job-event', { detail: job }));
       })
       .then((fn) => {
         if (disposed) fn();

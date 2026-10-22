@@ -156,6 +156,24 @@ try {
     const vcSpace=await call('studio_voice_install_space',{variantId:'chatterbox-vc'});assert(vcSpace.modelBytes===1056484620 && vcSpace.requiredBytes>vcSpace.modelBytes);
     await fs.access(path.join(path.dirname(args.exe),'workers/voice_conversion_worker.py'));
     proofs.microphonePcmCapture=true;proofs.microphoneOriginalsPreserved=true;proofs.reopenFormat17=true;proofs.voiceConversionSpacePreflight=true;
+    // Real native DSP through the shipped UI/MCP, retaining every source/take.
+    const effectsCatalog=await call('studio_audio_effects_catalog');assert.equal(effectsCatalog.effects.length,20);assert.equal(effectsCatalog.presets.length,12);
+    await call('studio_edit_voice',{context:await context(),id:baseId,startMs:0,endMs:2000,operation:{kind:'effects',effects:[{kind:'pitch',enabled:true,parameters:{semitones:4}}]}});
+    const fxProject=await call('studio_get_project');assert.equal(fxProject.formatVersion,18);assert.equal(fxProject.voiceEdits[baseId].pieces[0].effects[0].parameters.semitones,4);
+    const rendered=await call('studio_dubbing_path',{id:baseId,slotMs:2000,exactDuration:true,edit:fxProject.voiceEdits[baseId]});assert((await fs.stat(rendered)).size>44);
+    assert.deepEqual(await fs.readFile(path.join(projectRoot,basePath)),baseWave);
+    await call('studio_set_track',{context:await context(),id:'original',changes:{gain:4}});assert.equal((await call('studio_get_project')).tracks.find(t=>t.id==='original').gain,4);
+    const fxOptions={trackId:'original',scope:'track',startMs:0,endMs:16000,effects:[{kind:'equalizer',enabled:true,parameters:{bass:6}}],replaceInMix:true,name:'Original FX'};
+    await job(await call('studio_apply_audio_effects',{context:await context(),options:fxOptions}));
+    let fx=await call('studio_get_project'),record=fx.generations.find(g=>g.kind==='audioEffects');assert(record);const copyId=record.trackId,dryPath=record.effectsSourcePath,oldPath=record.path,trackCount=fx.tracks.length;
+    assert.equal(fx.tracks.find(t=>t.id===copyId).gain,4);assert.equal(fx.tracks.find(t=>t.id==='original').mute,true);
+    await job(await call('studio_apply_audio_effects',{context:await context(),options:{...fxOptions,trackId:copyId,effects:[]}}));
+    fx=await call('studio_get_project');record=fx.generations.find(g=>g.kind==='audioEffects');assert.equal(fx.tracks.length,trackCount);assert.equal(record.effectsSourcePath,dryPath);assert.notEqual(record.path,oldPath);await fs.access(path.join(projectRoot,oldPath));
+    await job(await call('studio_apply_audio_effects',{context:await context(),options:{...fxOptions,scope:'selection',startMs:3000,endMs:4000,effects:[{kind:'echo',enabled:true,parameters:{}}]}}));
+    assert((await call('studio_get_project')).generations.some(g=>g.kind==='audioPatch'&&g.operation==='effects'));
+    await call('studio_open_project',{path:projectRoot});assert.equal((await call('studio_get_project')).formatVersion,18);
+    assert.equal(createHash('sha256').update(await fs.readFile(args.movie)).digest('hex'),originalHash);
+    proofs.audioEffectsCatalog=20;proofs.voiceEffectsRendered=true;proofs.trackEffectsAndDryBaseline=true;proofs.selectionEffects=true;proofs.globalGain400=true;proofs.reopenFormat18=true;
     await fs.writeFile(args.proof,JSON.stringify(proofs,null,2)+'\n','utf8');
     console.log('MCP_NATIVE_PROOF '+JSON.stringify(proofs));
 } catch(error){if(stderr)console.error(stderr.slice(-2000));throw error;}

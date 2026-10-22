@@ -8,6 +8,9 @@ import { browserStore, downloadText, pickBrowserFile } from './browserStore';
 import { audioPeaks, type Waveform } from '../domain/waveform';
 
 export const native = isTauri();
+export function applyAudioEffects(options: import('../domain/audioEffects').AudioEffectsOptions) {
+  return invoke<string>('apply_audio_effects', { options });
+}
 export function transferAudio(options: import('../domain/audioPatch').TransferOptions) {
   return invoke<string>('transfer_audio', { options });
 }

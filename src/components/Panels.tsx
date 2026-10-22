@@ -473,6 +473,7 @@ function JobsPanel({ jobs, onError }: { jobs: Job[]; onError: (s: string) => voi
             'faceDetection',
             'audioTransfer',
             'prosodyTransfer',
+            'audioEffects',
           ].includes(job.kind) &&
             ['failed', 'cancelled', 'interrupted'].includes(job.status) && (
               <button

@@ -8,10 +8,12 @@ import {
 import type { Generation, Project } from './types';
 import { dubbingClips, dubbingBounds, resizeDubbing } from './mix';
 import { MAX_VOICE_DURATION_MS, fitPieceDurations } from './voiceLimits';
+import { validateEffects, type AudioEffect } from './audioEffects';
 
 // Source coordinates always refer to the immutable generated WAV. Output
 // durations describe the edited take; null coordinates are inserted silence.
 export interface VoicePiece {
+  effects?: AudioEffect[];
   sourceStartMs: number | null;
   sourceEndMs: number | null;
   durationMs: number;
@@ -23,6 +25,7 @@ export interface VoiceEdit {
 }
 export const editDuration = (edit: VoiceEdit) => edit.pieces.reduce((n, p) => n + p.durationMs, 0);
 export function validateVoiceEdit(edit: VoiceEdit, duration: number) {
+  if (Array.isArray(edit?.pieces)) for (const p of edit.pieces) validateEffects(p.effects ?? []);
   if (
     !edit ||
     !Array.isArray(edit.pieces) ||
@@ -116,6 +119,7 @@ function split(pieces: VoicePiece[], at: number): [VoicePiece[], VoicePiece[]] {
   return [before, after];
 }
 export type VoiceOperation =
+  | { kind: 'effects'; effects: AudioEffect[] }
   | { kind: 'silence'; durationMs: number }
   | { kind: 'delete' }
   | { kind: 'gain'; gain: number }
@@ -154,6 +158,13 @@ export function editVoice(
       ...before,
       { sourceStartMs: null, sourceEndMs: null, durationMs: operation.durationMs, gain: 1 },
       ...tail,
+    ];
+  } else if (operation.kind === 'effects') {
+    validateEffects(operation.effects);
+    pieces = [
+      ...before,
+      ...selected.map((p) => ({ ...p, effects: structuredClone(operation.effects) })),
+      ...after,
     ];
   } else if (operation.kind === 'delete') pieces = [...before, ...after];
   else if (operation.kind === 'gain')
@@ -204,6 +215,7 @@ export function editVoice(
       !last.envelope &&
       !p.envelope &&
       last.gain === p.gain &&
+      JSON.stringify(last.effects ?? []) === JSON.stringify(p.effects ?? []) &&
       ((last.sourceStartMs === null && p.sourceStartMs === null) ||
         (last.sourceEndMs === p.sourceStartMs &&
           p.sourceStartMs !== null &&
@@ -225,6 +237,7 @@ export function editVoice(
   (changed.voiceEdits ??= {})[generationId] = edit;
   const next = resizeDubbing(changed, clip.line.id, duration);
   next.formatVersion = Math.max(pieces.some((p) => p.envelope) ? 12 : 11, next.formatVersion);
+  if (pieces.some((p) => p.effects?.length)) next.formatVersion = Math.max(18, next.formatVersion);
   (next.voiceEdits ??= {})[generationId] = edit;
   const line = next.dialogues.find((l) => l.id === clip.line.id)!;
   if (line.status === 'validated') line.status = 'review';

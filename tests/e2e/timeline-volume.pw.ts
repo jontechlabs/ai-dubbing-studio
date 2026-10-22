@@ -66,6 +66,10 @@ test('inline volume changes actual playback only within the selected range and k
   const pos = async (t: number) => { await page.locator('video').evaluate((v: HTMLVideoElement, t) => { v.currentTime = t; }, t); await expect(page.locator('video')).toHaveJSProperty('seeking', false); };
   await pos(1.5); await page.getByRole('button', { name: 'Lecture', exact: true }).click(); await expect.poll(rms).toBeGreaterThan(.015);
   const baseline = await rms(); // Includes the user's master volume.
+  await page.getByRole('button',{name:'Volume global · Voix',exact:true}).click();
+  const global=page.getByRole('dialog',{name:'Volume global · Voix',exact:true});
+  await global.getByRole('slider').fill('4');await pos(1.5);await expect.poll(rms).toBeGreaterThan(baseline*3.5);
+  await global.getByRole('button',{name:'100 %',exact:true}).click();await global.getByRole('slider').focus();await page.keyboard.press('Escape');
   await controls.getByRole('slider', { name: 'Volume de la sélection' }).fill('0.5'); await pos(1.5); await expect.poll(rms).toBeLessThan(baseline * .65); await expect.poll(rms).toBeGreaterThan(baseline * .35);
   await controls.getByRole('slider', { name: 'Volume de la sélection' }).fill('2'); await pos(1.5); await expect.poll(rms).toBeGreaterThan(baseline * 1.7);
   await controls.getByRole('button', { name: 'Rendre la zone silencieuse', exact: true }).click(); await pos(1.5); await expect.poll(rms).toBeLessThan(.000001);

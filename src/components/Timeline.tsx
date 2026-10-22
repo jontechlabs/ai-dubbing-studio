@@ -44,6 +44,7 @@ import {
 import { useTimelineZoom } from '../hooks/useTimelineZoom';
 import { VoiceRegionEditor } from './VoiceRegionEditor';
 import { TimelineAudioSelection } from './TimelineAudioSelection';
+import { TrackVolume } from './TrackVolume';
 
 export const Timeline = memo(function Timeline({
   project,
@@ -288,7 +289,7 @@ export const Timeline = memo(function Timeline({
           (track) => track.kind === 'audio' && track.sourcePath === project.media?.path,
         ) ?? []
       ).map((track) => ({
-        key: `stem.${track.role}`,
+        key: track.name ?? `stem.${track.role}`,
         icon: AudioLines,
         style: 'audio',
         exists: true,
@@ -413,11 +414,16 @@ export const Timeline = memo(function Timeline({
             <div className="ruler-label" />
             <div>
               {tracks.map(({ key, icon: Icon, style, track }) => (
-                <div className={`track-label ${style}`} key={key} style={{ height: rowHeight }}>
+                <div
+                  className={`track-label ${style}`}
+                  key={track?.id ?? key}
+                  style={{ height: rowHeight }}
+                >
                   <Icon size={13} />
                   <span>{t(key)}</span>
                   {style === 'audio' && track && (
                     <div className="timeline-track-controls">
+                      <TrackVolume track={track} onEdit={onEdit} busy={busy} />
                       <button
                         title={t(track.mute ? 'enableTrack' : 'muteTrack', { name: t(key) })}
                         aria-label={t(track.mute ? 'enableTrack' : 'muteTrack', { name: t(key) })}
@@ -506,7 +512,7 @@ export const Timeline = memo(function Timeline({
             </div>
             {tracks.map(({ key, style, track }) => (
               <div
-                key={key}
+                key={track?.id ?? key}
                 className={`timeline-track ${style} ${audioTool && track ? 'audio-selection-tool' : ''}`}
                 data-track-id={track?.id}
                 style={{ height: rowHeight }}

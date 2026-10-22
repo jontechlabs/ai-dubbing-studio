@@ -1,6 +1,6 @@
 # Piloter le studio avec une IA via MCP
 
-Le studio fournit **95 outils MCP** en v0.20.0 : 70 commandes natives et 25 commandes d’édition, d’état et de lecture. Le serveur utilise **stdio** et le même exécutable que l’application. Cette première intégration pilote **l’application ouverte** ; aucun environnement Node.js ou Python supplémentaire n’est requis pour la connexion.
+Le studio fournit **99 outils MCP** en v0.26.0 : 73 commandes natives et 26 commandes d’édition, d’état et de lecture. Le serveur utilise **stdio** et le même exécutable que l’application. Cette intégration pilote **l’application ouverte** ; aucun environnement Node.js ou Python supplémentaire n’est requis pour la connexion.
 
 ## Connexion
 
@@ -16,6 +16,8 @@ Pour Codex, ajoutez le bloc TOML généré dans `~/.codex/config.toml` ou dans l
 *Interface réelle avec commandes natives simulées pour la capture. Le diagnostic Windows vérifie séparément le SDK officiel avec l’exécutable portable et le WebView réels.*
 
 Les tâches exposent aussi leur [durée active](TASK-DURATION.md) dans `timing.elapsedMs` et l’instant de mesure `timing.observedAtMs`. Les anciennes tâches peuvent ne pas avoir de mesure.
+
+Les [effets audio](AUDIO-EFFECTS.md) sont accessibles avec `studio_audio_effects_catalog` et `studio_apply_audio_effects`. L’opération `effects` de `studio_edit_voice` remplace la chaîne sur une portion de prise ; `studio_set_track` accepte un gain global de 0 à 4 (0–400 %), indépendant des volumes locaux.
 
 ## Commandes disponibles
 

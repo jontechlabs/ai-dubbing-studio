@@ -3,6 +3,7 @@ import { AudioLines, ChevronUp, LoaderCircle, ShieldCheck, X } from 'lucide-reac
 import { useTranslation } from 'react-i18next';
 import { MicrophoneIndicator } from './components/VoiceCapture';
 import { JobDuration } from './components/JobDuration';
+import { JobNotifications } from './components/JobNotifications';
 import { readMicrophone } from './services/microphone';
 import { Dialogues } from './components/Dialogues';
 import { Editor } from './components/Editor';
@@ -498,6 +499,7 @@ export default function App() {
           <ChevronUp size={12} />
         </button>
       </footer>
+      <JobNotifications onOpen={showJobs} />
       <Panels
         batchIds={batchIds}
         activeGenerationId={generationAudio.active}

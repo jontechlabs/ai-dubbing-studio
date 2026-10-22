@@ -1,3 +1,4 @@
+import { removeEffectsTrack } from '../domain/audioEffects';
 import { useEffect, useState } from 'react';
 import { Download, LoaderCircle, RefreshCw, Scissors, Volume2, VolumeX } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -5,6 +6,7 @@ import type { AudioSelection, Dialogue, Job, Project } from '../domain/types';
 import type { RefObject } from 'react';
 import { AudioQuickControls } from './AudioQuickControls';
 import { AudioRegionsEditor } from './AudioRegionsEditor';
+import { AudioEffectsPanel } from './AudioEffectsPanel';
 import { audioTracks, editTrack, trackLabel, dubbingMix } from '../domain/audio';
 import { setAudioSource } from '../domain/audioPatch';
 import { mixReport } from '../domain/mix';
@@ -58,6 +60,7 @@ export function AudioPanel({
         'speakers',
         'modelMove',
         'audioTransfer',
+        'audioEffects',
         'tts',
         'ttsInstall',
         'voiceInstall',
@@ -261,7 +264,7 @@ export function AudioPanel({
                   aria-label={`${t('trackGain')} ${t(trackLabel(track))}`}
                   type="range"
                   min="0"
-                  max="2"
+                  max="4"
                   step="0.05"
                   value={track.gain}
                   onChange={(event) =>
@@ -269,10 +272,27 @@ export function AudioPanel({
                   }
                 />
                 <span>{Math.round(track.gain * 100)}%</span>
+                {project!.generations.some(
+                  (g) => g.kind === 'audioEffects' && g.trackId === track.id,
+                ) && (
+                  <button
+                    className="text-button"
+                    disabled={
+                      active ||
+                      project!.generations.some(
+                        (g) => g.kind === 'audioEffects' && g.sourceTrackId === track.id,
+                      )
+                    }
+                    aria-label={t('fxRemoveTrack', { name: t(trackLabel(track)) })}
+                    onClick={() => onEdit((p) => removeEffectsTrack(p, track.id))}
+                  >
+                    × FX
+                  </button>
+                )}
                 {track.kind === 'audio' && (
                   <button
                     className="mixer-export"
-                    aria-label={t('exportSourceTrack', { name: t(`stem.${track.role}`) })}
+                    aria-label={t('exportSourceTrack', { name: t(trackLabel(track)) })}
                     onClick={() =>
                       void run(async () => {
                         await bridge.exportAudioTrack(project!, track.id);
@@ -286,6 +306,16 @@ export function AudioPanel({
               </div>
             ))}
           </div>
+          {project?.media && (
+            <AudioEffectsPanel
+              key={`${project.media.id}:${selection?.trackId}:${selection?.startMs}:${selection?.endMs}`}
+              project={project}
+              selection={selection}
+              busy={active || working}
+              run={run}
+              onError={onError}
+            />
+          )}
           {project?.media && (
             <AudioRegionsEditor
               key={`${project.media.id}:${selection?.trackId}:${selection?.regionId}:${selection?.startMs}:${selection?.endMs}`}

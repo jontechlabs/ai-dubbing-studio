@@ -82,6 +82,7 @@ const mapping = {
   'inpaint_batch::Selection': 'InpaintBatchSelection',
   'tts_batch::Selection': 'DubbingBatchSelection',
   'audio_patch::Options': 'TransferOptions',
+  'audio_fx_job::Options': 'AudioEffectsOptions',
   'mix::Options': 'MkvOptions',
 };
 const object = (properties) => ({
@@ -104,8 +105,10 @@ function rustSchema(type) {
   throw Error('Unknown native parameter type: ' + type);
 }
 const readOnly =
-  /^(environment|graphics_info|.*_status|.*_result|latest_.*|.*_path|.*_paths|list_jobs|model_storage_info|model_storage_size|voice_install_space|preview_.*|reference_audio_info|get_waveform)$/;
+  /^(environment|graphics_info|.*_status|.*_result|latest_.*|audio_effects_catalog|.*_path|.*_paths|list_jobs|model_storage_info|model_storage_size|voice_install_space|preview_.*|reference_audio_info|get_waveform)$/;
 const notes = {
+  apply_audio_effects: 'Render local audio effects onto a non-destructive track copy or a replace layer (selection up to 120 seconds). Read studio_audio_effects_catalog for allowed kinds and numeric parameters. Whole-track copies can replace the source in the mix; originals remain unchanged. Poll jobs.',
+  audio_effects_catalog: 'List the 20 local audio effects, parameter bounds/defaults and 12 presets. Voice edit operations also support kind effects.',
   suggest_translation:
     'Propose a local translation without applying it. Optional direction (up to 2000 characters) guides character, register, tone and desired spoken length; subtitle timings are supplied automatically. Poll jobs, review the proposal, then explicitly apply it.',
   convert_voice_timbre:
@@ -137,7 +140,7 @@ const context = object({
   expectedRevision: { type: 'integer', minimum: 0 },
 });
 const projectCommands = new Set(
-  'convert_voice_timbre transfer_voice_prosody generate_line generate_dubbing_batch start_inpaint_batch inpaint_lips detect_inpaint_faces transfer_audio analyze_lips suggest_translation identify_speakers transcribe_voice_reference import_voice_reference import_dubbing_reference import_media prepare_proxy import_subtitles import_embedded_subtitles history separate_audio export_mkv export_generation export_audio_track export_subtitles'.split(
+  'apply_audio_effects convert_voice_timbre transfer_voice_prosody generate_line generate_dubbing_batch start_inpaint_batch inpaint_lips detect_inpaint_faces transfer_audio analyze_lips suggest_translation identify_speakers transcribe_voice_reference import_voice_reference import_dubbing_reference import_media prepare_proxy import_subtitles import_embedded_subtitles history separate_audio export_mkv export_generation export_audio_track export_subtitles'.split(
     ' ',
   ),
 );
@@ -345,7 +348,7 @@ tool(
 );
 tool(
   'studio_edit_voice',
-  'Cut, add silence, stretch, set gain or apply fades to a generated take. Its original WAV is preserved. Render is checked before committing.',
+  'Cut, add silence, stretch, set gain, apply fades or replace an audio effects chain on a generated take. Its original WAV is preserved. Render is checked before committing.',
   {
     id: string,
     startMs: integer,
@@ -357,12 +360,12 @@ tool(
 );
 tool(
   'studio_set_track',
-  'Change track mute, solo and gain independently. Gains range from zero to two.',
+  'Change track mute, solo and global gain independently. Global gains range from zero to four (0–400%), independently of region gains.',
   {
     id: string,
     changes: {
       type: 'object',
-      properties: { mute: bool, solo: bool, gain: { type: 'number', minimum: 0, maximum: 2 } },
+      properties: { mute: bool, solo: bool, gain: { type: 'number', minimum: 0, maximum: 4 } },
       additionalProperties: false,
     },
   },

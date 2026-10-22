@@ -14,6 +14,8 @@ import { envelopeLevel } from '../domain/voiceEnvelope';
 import { generationUrl, dubbingUrl } from '../services/bridge';
 import { beginVoicePlayback } from '../services/voicePlayback';
 import { VoicePlayhead } from './VoicePlayhead';
+import { EffectsChainEditor } from './EffectsChainEditor';
+import type { VoiceEdit } from '../domain/voiceEdit';
 
 function releaseAudio(
   playback: { context: AudioContext; source: AudioBufferSourceNode | null } | null,
@@ -245,7 +247,13 @@ export function VoiceRegionEditor({
     const token = editToken.current;
     try {
       if (blocked) throw Error('VOICE_EDIT_NO_ROOM');
-      const candidate = editVoice(project, generation.id, start, end, operation);
+      const candidate = editVoice(
+        project,
+        generation.id,
+        operation.kind === 'effects' && !length ? 0 : start,
+        operation.kind === 'effects' && !length ? total : end,
+        operation,
+      );
       const clip = dubbingClips(candidate).find((c) => c.generation.id === generation.id)!;
       const expected = editBasis(candidate);
       editLock.current = true;
@@ -260,7 +268,13 @@ export function VoiceRegionEditor({
       );
       if (editToken.current !== token) return;
       onEdit((p) => {
-        const next = editVoice(p, generation.id, start, end, operation);
+        const next = editVoice(
+          p,
+          generation.id,
+          operation.kind === 'effects' && !length ? 0 : start,
+          operation.kind === 'effects' && !length ? total : end,
+          operation,
+        );
         if (editBasis(next) !== expected) throw Error('VOICE_EDIT_STALE');
         return next;
       });
@@ -292,7 +306,7 @@ export function VoiceRegionEditor({
         Math.round(((clientX - surface.current!.getBoundingClientRect().left) / width) * total),
       ),
     );
-  const preview = async (original = false) => {
+  const preview = async (original = false, previewPlan?: VoiceEdit) => {
     document.dispatchEvent(new Event('studio-voice-preview'));
     stop();
     const token = request.current;
@@ -306,7 +320,7 @@ export function VoiceRegionEditor({
       const context = new AudioContext();
       audio.current = { context, source: null };
       await context.resume();
-      const url = await generationUrl(generation.id, original ? undefined : plan);
+      const url = await generationUrl(generation.id, original ? undefined : (previewPlan ?? plan));
       if (request.current !== token) return;
       const response = await fetch(url);
       if (!response.ok) throw Error('TTS_AUDIO_MISSING');
@@ -646,8 +660,44 @@ export function VoiceRegionEditor({
           {t('voiceResetEdit')}
         </button>
       </div>
+      <details className="voice-effects-panel">
+        <summary>{t('fxTitle')}</summary>
+        <p className="panel-description">
+          {t(length > 0 ? 'fxVoiceSelectionHint' : 'fxVoiceWholeHint')}
+        </p>
+        <EffectsChainEditor
+          key={`${generation.id}:${start}:${end}:${JSON.stringify(plan.pieces.map((p) => p.effects ?? []))}`}
+          initial={(() => {
+            let offset = 0;
+            for (const piece of plan.pieces) {
+              offset += piece.durationMs;
+              if (offset > (length > 0 ? start : 0)) return piece.effects ?? [];
+            }
+            return [];
+          })()}
+          disabled={busy || validating || loading}
+          allowEmpty
+          applyLabel={t('fxApplyVoice')}
+          onApply={(effects) => void apply({ kind: 'effects', effects })}
+          onPreview={(effects) => {
+            try {
+              const candidate = editVoice(
+                project,
+                generation.id,
+                length > 0 ? start : 0,
+                length > 0 ? end : total,
+                { kind: 'effects', effects },
+              );
+              void preview(false, candidate.voiceEdits?.[generation.id]);
+            } catch (e) {
+              setError(String(e));
+            }
+          }}
+        />
+      </details>
       {validating && <p role="status">{t('voiceEditValidating')}</p>}
       <small>{t('voiceOriginalKept')}</small>
+      <small>{t('fxWaveformHint')}</small>
       <small>{t('voiceEditHint')}</small>
       {error && <p role="alert">{t(error)}</p>}
     </section>

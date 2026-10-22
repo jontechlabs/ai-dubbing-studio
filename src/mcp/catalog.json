@@ -1046,18 +1046,59 @@
           "edit_VoicePiece_1": {
             "type": "object",
             "properties": {
+              "effects": {
+                "anyOf": [{ "type": "array", "items": { "$ref": "#/$defs/edit_AudioEffect_2" } }]
+              },
               "sourceStartMs": { "anyOf": [{ "type": "null" }, { "type": "number" }] },
               "sourceEndMs": { "anyOf": [{ "type": "null" }, { "type": "number" }] },
               "durationMs": { "type": "number" },
               "gain": { "type": "number" },
               "envelope": {
-                "anyOf": [{ "type": "array", "items": { "$ref": "#/$defs/edit_VoicePoint_2" } }]
+                "anyOf": [{ "type": "array", "items": { "$ref": "#/$defs/edit_VoicePoint_3" } }]
               }
             },
             "required": ["sourceStartMs", "sourceEndMs", "durationMs", "gain"],
             "additionalProperties": false
           },
-          "edit_VoicePoint_2": {
+          "edit_AudioEffect_2": {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "anyOf": [
+                  { "type": "string", "const": "equalizer" },
+                  { "type": "string", "const": "pitch" },
+                  { "type": "string", "const": "highpass" },
+                  { "type": "string", "const": "lowpass" },
+                  { "type": "string", "const": "compressor" },
+                  { "type": "string", "const": "limiter" },
+                  { "type": "string", "const": "gate" },
+                  { "type": "string", "const": "normalize" },
+                  { "type": "string", "const": "denoise" },
+                  { "type": "string", "const": "deesser" },
+                  { "type": "string", "const": "echo" },
+                  { "type": "string", "const": "reverb" },
+                  { "type": "string", "const": "saturation" },
+                  { "type": "string", "const": "distortion" },
+                  { "type": "string", "const": "robot" },
+                  { "type": "string", "const": "chorus" },
+                  { "type": "string", "const": "flanger" },
+                  { "type": "string", "const": "phaser" },
+                  { "type": "string", "const": "tremolo" },
+                  { "type": "string", "const": "vibrato" }
+                ]
+              },
+              "enabled": { "type": "boolean" },
+              "parameters": {
+                "type": "object",
+                "properties": {},
+                "required": [],
+                "additionalProperties": { "type": "number" }
+              }
+            },
+            "required": ["kind", "enabled", "parameters"],
+            "additionalProperties": false
+          },
+          "edit_VoicePoint_3": {
             "type": "object",
             "properties": { "atMs": { "type": "number" }, "level": { "type": "number" } },
             "required": ["atMs", "level"],
@@ -1091,18 +1132,59 @@
           "edit_VoicePiece_1": {
             "type": "object",
             "properties": {
+              "effects": {
+                "anyOf": [{ "type": "array", "items": { "$ref": "#/$defs/edit_AudioEffect_2" } }]
+              },
               "sourceStartMs": { "anyOf": [{ "type": "null" }, { "type": "number" }] },
               "sourceEndMs": { "anyOf": [{ "type": "null" }, { "type": "number" }] },
               "durationMs": { "type": "number" },
               "gain": { "type": "number" },
               "envelope": {
-                "anyOf": [{ "type": "array", "items": { "$ref": "#/$defs/edit_VoicePoint_2" } }]
+                "anyOf": [{ "type": "array", "items": { "$ref": "#/$defs/edit_VoicePoint_3" } }]
               }
             },
             "required": ["sourceStartMs", "sourceEndMs", "durationMs", "gain"],
             "additionalProperties": false
           },
-          "edit_VoicePoint_2": {
+          "edit_AudioEffect_2": {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "anyOf": [
+                  { "type": "string", "const": "equalizer" },
+                  { "type": "string", "const": "pitch" },
+                  { "type": "string", "const": "highpass" },
+                  { "type": "string", "const": "lowpass" },
+                  { "type": "string", "const": "compressor" },
+                  { "type": "string", "const": "limiter" },
+                  { "type": "string", "const": "gate" },
+                  { "type": "string", "const": "normalize" },
+                  { "type": "string", "const": "denoise" },
+                  { "type": "string", "const": "deesser" },
+                  { "type": "string", "const": "echo" },
+                  { "type": "string", "const": "reverb" },
+                  { "type": "string", "const": "saturation" },
+                  { "type": "string", "const": "distortion" },
+                  { "type": "string", "const": "robot" },
+                  { "type": "string", "const": "chorus" },
+                  { "type": "string", "const": "flanger" },
+                  { "type": "string", "const": "phaser" },
+                  { "type": "string", "const": "tremolo" },
+                  { "type": "string", "const": "vibrato" }
+                ]
+              },
+              "enabled": { "type": "boolean" },
+              "parameters": {
+                "type": "object",
+                "properties": {},
+                "required": [],
+                "additionalProperties": { "type": "number" }
+              }
+            },
+            "required": ["kind", "enabled", "parameters"],
+            "additionalProperties": false
+          },
+          "edit_VoicePoint_3": {
             "type": "object",
             "properties": { "atMs": { "type": "number" }, "level": { "type": "number" } },
             "required": ["atMs", "level"],
@@ -1146,18 +1228,59 @@
           "edit_VoicePiece_1": {
             "type": "object",
             "properties": {
+              "effects": {
+                "anyOf": [{ "type": "array", "items": { "$ref": "#/$defs/edit_AudioEffect_2" } }]
+              },
               "sourceStartMs": { "anyOf": [{ "type": "null" }, { "type": "number" }] },
               "sourceEndMs": { "anyOf": [{ "type": "null" }, { "type": "number" }] },
               "durationMs": { "type": "number" },
               "gain": { "type": "number" },
               "envelope": {
-                "anyOf": [{ "type": "array", "items": { "$ref": "#/$defs/edit_VoicePoint_2" } }]
+                "anyOf": [{ "type": "array", "items": { "$ref": "#/$defs/edit_VoicePoint_3" } }]
               }
             },
             "required": ["sourceStartMs", "sourceEndMs", "durationMs", "gain"],
             "additionalProperties": false
           },
-          "edit_VoicePoint_2": {
+          "edit_AudioEffect_2": {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "anyOf": [
+                  { "type": "string", "const": "equalizer" },
+                  { "type": "string", "const": "pitch" },
+                  { "type": "string", "const": "highpass" },
+                  { "type": "string", "const": "lowpass" },
+                  { "type": "string", "const": "compressor" },
+                  { "type": "string", "const": "limiter" },
+                  { "type": "string", "const": "gate" },
+                  { "type": "string", "const": "normalize" },
+                  { "type": "string", "const": "denoise" },
+                  { "type": "string", "const": "deesser" },
+                  { "type": "string", "const": "echo" },
+                  { "type": "string", "const": "reverb" },
+                  { "type": "string", "const": "saturation" },
+                  { "type": "string", "const": "distortion" },
+                  { "type": "string", "const": "robot" },
+                  { "type": "string", "const": "chorus" },
+                  { "type": "string", "const": "flanger" },
+                  { "type": "string", "const": "phaser" },
+                  { "type": "string", "const": "tremolo" },
+                  { "type": "string", "const": "vibrato" }
+                ]
+              },
+              "enabled": { "type": "boolean" },
+              "parameters": {
+                "type": "object",
+                "properties": {},
+                "required": [],
+                "additionalProperties": { "type": "number" }
+              }
+            },
+            "required": ["kind", "enabled", "parameters"],
+            "additionalProperties": false
+          },
+          "edit_VoicePoint_3": {
             "type": "object",
             "properties": { "atMs": { "type": "number" }, "level": { "type": "number" } },
             "required": ["atMs", "level"],
@@ -2094,6 +2217,100 @@
       "annotations": { "readOnlyHint": true, "destructiveHint": false, "openWorldHint": false }
     },
     {
+      "name": "studio_audio_effects_catalog",
+      "command": "audio_effects_catalog",
+      "description": "List the 20 local audio effects, parameter bounds/defaults and 12 presets. Voice edit operations also support kind effects.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "annotations": { "readOnlyHint": true, "destructiveHint": false, "openWorldHint": false }
+    },
+    {
+      "name": "studio_apply_audio_effects",
+      "command": "apply_audio_effects",
+      "description": "Render local audio effects onto a non-destructive track copy or a replace layer (selection up to 120 seconds). Read studio_audio_effects_catalog for allowed kinds and numeric parameters. Whole-track copies can replace the source in the mix; originals remain unchanged. Poll jobs.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "options": { "$ref": "#/$defs/options_AudioEffectsOptions_0" },
+          "context": {
+            "type": "object",
+            "properties": {
+              "projectId": { "type": "string" },
+              "expectedRevision": { "type": "integer", "minimum": 0 }
+            },
+            "required": ["projectId", "expectedRevision"],
+            "additionalProperties": false
+          }
+        },
+        "required": ["options", "context"],
+        "additionalProperties": false,
+        "$defs": {
+          "options_AudioEffectsOptions_0": {
+            "type": "object",
+            "properties": {
+              "name": { "anyOf": [{ "type": "string" }] },
+              "trackId": { "type": "string" },
+              "scope": {
+                "anyOf": [
+                  { "type": "string", "const": "track" },
+                  { "type": "string", "const": "selection" }
+                ]
+              },
+              "startMs": { "type": "number" },
+              "endMs": { "type": "number" },
+              "effects": { "type": "array", "items": { "$ref": "#/$defs/options_AudioEffect_1" } },
+              "replaceInMix": { "type": "boolean" }
+            },
+            "required": ["trackId", "scope", "startMs", "endMs", "effects", "replaceInMix"],
+            "additionalProperties": false
+          },
+          "options_AudioEffect_1": {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "anyOf": [
+                  { "type": "string", "const": "equalizer" },
+                  { "type": "string", "const": "pitch" },
+                  { "type": "string", "const": "highpass" },
+                  { "type": "string", "const": "lowpass" },
+                  { "type": "string", "const": "compressor" },
+                  { "type": "string", "const": "limiter" },
+                  { "type": "string", "const": "gate" },
+                  { "type": "string", "const": "normalize" },
+                  { "type": "string", "const": "denoise" },
+                  { "type": "string", "const": "deesser" },
+                  { "type": "string", "const": "echo" },
+                  { "type": "string", "const": "reverb" },
+                  { "type": "string", "const": "saturation" },
+                  { "type": "string", "const": "distortion" },
+                  { "type": "string", "const": "robot" },
+                  { "type": "string", "const": "chorus" },
+                  { "type": "string", "const": "flanger" },
+                  { "type": "string", "const": "phaser" },
+                  { "type": "string", "const": "tremolo" },
+                  { "type": "string", "const": "vibrato" }
+                ]
+              },
+              "enabled": { "type": "boolean" },
+              "parameters": {
+                "type": "object",
+                "properties": {},
+                "required": [],
+                "additionalProperties": { "type": "number" }
+              }
+            },
+            "required": ["kind", "enabled", "parameters"],
+            "additionalProperties": false
+          }
+        }
+      },
+      "annotations": { "readOnlyHint": false, "destructiveHint": true, "openWorldHint": false }
+    },
+    {
       "name": "studio_cancel_job",
       "command": "cancel_job",
       "description": "cancel job. Uses the current desktop session. Local file paths must be absolute; long operations return job IDs. Existing native validation applies.",
@@ -2395,7 +2612,7 @@
     },
     {
       "name": "studio_edit_voice",
-      "description": "Cut, add silence, stretch, set gain or apply fades to a generated take. Its original WAV is preserved. Render is checked before committing.",
+      "description": "Cut, add silence, stretch, set gain, apply fades or replace an audio effects chain on a generated take. Its original WAV is preserved. Render is checked before committing.",
       "inputSchema": {
         "type": "object",
         "properties": {
@@ -2404,6 +2621,15 @@
           "endMs": { "type": "integer", "minimum": 0 },
           "operation": {
             "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "kind": { "type": "string", "const": "effects" },
+                  "effects": { "type": "array", "items": { "$ref": "#/$defs/AudioEffect_0" } }
+                },
+                "required": ["kind", "effects"],
+                "additionalProperties": false
+              },
               {
                 "type": "object",
                 "properties": {
@@ -2460,13 +2686,53 @@
           }
         },
         "required": ["id", "startMs", "endMs", "operation", "context"],
-        "additionalProperties": false
+        "additionalProperties": false,
+        "$defs": {
+          "AudioEffect_0": {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "anyOf": [
+                  { "type": "string", "const": "equalizer" },
+                  { "type": "string", "const": "pitch" },
+                  { "type": "string", "const": "highpass" },
+                  { "type": "string", "const": "lowpass" },
+                  { "type": "string", "const": "compressor" },
+                  { "type": "string", "const": "limiter" },
+                  { "type": "string", "const": "gate" },
+                  { "type": "string", "const": "normalize" },
+                  { "type": "string", "const": "denoise" },
+                  { "type": "string", "const": "deesser" },
+                  { "type": "string", "const": "echo" },
+                  { "type": "string", "const": "reverb" },
+                  { "type": "string", "const": "saturation" },
+                  { "type": "string", "const": "distortion" },
+                  { "type": "string", "const": "robot" },
+                  { "type": "string", "const": "chorus" },
+                  { "type": "string", "const": "flanger" },
+                  { "type": "string", "const": "phaser" },
+                  { "type": "string", "const": "tremolo" },
+                  { "type": "string", "const": "vibrato" }
+                ]
+              },
+              "enabled": { "type": "boolean" },
+              "parameters": {
+                "type": "object",
+                "properties": {},
+                "required": [],
+                "additionalProperties": { "type": "number" }
+              }
+            },
+            "required": ["kind", "enabled", "parameters"],
+            "additionalProperties": false
+          }
+        }
       },
       "annotations": { "readOnlyHint": false, "destructiveHint": true, "openWorldHint": false }
     },
     {
       "name": "studio_set_track",
-      "description": "Change track mute, solo and gain independently. Gains range from zero to two.",
+      "description": "Change track mute, solo and global gain independently. Global gains range from zero to four (0–400%), independently of region gains.",
       "inputSchema": {
         "type": "object",
         "properties": {
@@ -2476,7 +2742,7 @@
             "properties": {
               "mute": { "type": "boolean" },
               "solo": { "type": "boolean" },
-              "gain": { "type": "number", "minimum": 0, "maximum": 2 }
+              "gain": { "type": "number", "minimum": 0, "maximum": 4 }
             },
             "additionalProperties": false
           },
@@ -2796,7 +3062,7 @@
                   "type": "object",
                   "properties": {},
                   "required": [],
-                  "additionalProperties": { "$ref": "#/$defs/TranslationApproval_4" }
+                  "additionalProperties": { "$ref": "#/$defs/TranslationApproval_5" }
                 }
               ]
             },
@@ -2851,17 +3117,17 @@
               "required": ["source", "target"],
               "additionalProperties": false
             },
-            "media": { "anyOf": [{ "type": "null" }, { "$ref": "#/$defs/MediaAsset_5" }] },
-            "sourceCues": { "type": "array", "items": { "$ref": "#/$defs/Cue_7" } },
-            "targetCues": { "type": "array", "items": { "$ref": "#/$defs/Cue_7" } },
-            "dialogues": { "type": "array", "items": { "$ref": "#/$defs/Dialogue_8" } },
-            "tracks": { "type": "array", "items": { "$ref": "#/$defs/Track_10" } },
-            "characters": { "type": "array", "items": { "$ref": "#/$defs/Character_12" } },
+            "media": { "anyOf": [{ "type": "null" }, { "$ref": "#/$defs/MediaAsset_6" }] },
+            "sourceCues": { "type": "array", "items": { "$ref": "#/$defs/Cue_8" } },
+            "targetCues": { "type": "array", "items": { "$ref": "#/$defs/Cue_8" } },
+            "dialogues": { "type": "array", "items": { "$ref": "#/$defs/Dialogue_9" } },
+            "tracks": { "type": "array", "items": { "$ref": "#/$defs/Track_11" } },
+            "characters": { "type": "array", "items": { "$ref": "#/$defs/Character_13" } },
             "voiceReferences": {
-              "anyOf": [{ "type": "array", "items": { "$ref": "#/$defs/VoiceReference_13" } }]
+              "anyOf": [{ "type": "array", "items": { "$ref": "#/$defs/VoiceReference_14" } }]
             },
             "speakerAnalysis": {
-              "anyOf": [{ "type": "null" }, { "$ref": "#/$defs/SpeakerAnalysis_14" }]
+              "anyOf": [{ "type": "null" }, { "$ref": "#/$defs/SpeakerAnalysis_15" }]
             },
             "modelPreferences": {
               "anyOf": [
@@ -2890,7 +3156,7 @@
               "type": "array",
               "items": {
                 "anyOf": [
-                  { "$ref": "#/$defs/Generation_15" },
+                  { "$ref": "#/$defs/Generation_16" },
                   {
                     "type": "object",
                     "properties": {
@@ -2941,24 +3207,65 @@
         "VoicePiece_2": {
           "type": "object",
           "properties": {
+            "effects": {
+              "anyOf": [{ "type": "array", "items": { "$ref": "#/$defs/AudioEffect_3" } }]
+            },
             "sourceStartMs": { "anyOf": [{ "type": "null" }, { "type": "number" }] },
             "sourceEndMs": { "anyOf": [{ "type": "null" }, { "type": "number" }] },
             "durationMs": { "type": "number" },
             "gain": { "type": "number" },
             "envelope": {
-              "anyOf": [{ "type": "array", "items": { "$ref": "#/$defs/VoicePoint_3" } }]
+              "anyOf": [{ "type": "array", "items": { "$ref": "#/$defs/VoicePoint_4" } }]
             }
           },
           "required": ["sourceStartMs", "sourceEndMs", "durationMs", "gain"],
           "additionalProperties": false
         },
-        "VoicePoint_3": {
+        "AudioEffect_3": {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "anyOf": [
+                { "type": "string", "const": "equalizer" },
+                { "type": "string", "const": "pitch" },
+                { "type": "string", "const": "highpass" },
+                { "type": "string", "const": "lowpass" },
+                { "type": "string", "const": "compressor" },
+                { "type": "string", "const": "limiter" },
+                { "type": "string", "const": "gate" },
+                { "type": "string", "const": "normalize" },
+                { "type": "string", "const": "denoise" },
+                { "type": "string", "const": "deesser" },
+                { "type": "string", "const": "echo" },
+                { "type": "string", "const": "reverb" },
+                { "type": "string", "const": "saturation" },
+                { "type": "string", "const": "distortion" },
+                { "type": "string", "const": "robot" },
+                { "type": "string", "const": "chorus" },
+                { "type": "string", "const": "flanger" },
+                { "type": "string", "const": "phaser" },
+                { "type": "string", "const": "tremolo" },
+                { "type": "string", "const": "vibrato" }
+              ]
+            },
+            "enabled": { "type": "boolean" },
+            "parameters": {
+              "type": "object",
+              "properties": {},
+              "required": [],
+              "additionalProperties": { "type": "number" }
+            }
+          },
+          "required": ["kind", "enabled", "parameters"],
+          "additionalProperties": false
+        },
+        "VoicePoint_4": {
           "type": "object",
           "properties": { "atMs": { "type": "number" }, "level": { "type": "number" } },
           "required": ["atMs", "level"],
           "additionalProperties": false
         },
-        "TranslationApproval_4": {
+        "TranslationApproval_5": {
           "type": "object",
           "properties": {
             "sourceLanguage": { "type": "string" },
@@ -2969,7 +3276,7 @@
           "required": ["sourceLanguage", "targetLanguage", "sourceText", "targetText"],
           "additionalProperties": false
         },
-        "MediaAsset_5": {
+        "MediaAsset_6": {
           "type": "object",
           "properties": {
             "id": { "type": "string" },
@@ -2978,7 +3285,7 @@
             "audioStreamIndex": { "anyOf": [{ "type": "null" }, { "type": "number" }] },
             "originalName": { "type": "string" },
             "durationMs": { "type": "number" },
-            "streams": { "type": "array", "items": { "$ref": "#/$defs/MediaStream_6" } }
+            "streams": { "type": "array", "items": { "$ref": "#/$defs/MediaStream_7" } }
           },
           "required": [
             "id",
@@ -2991,7 +3298,7 @@
           ],
           "additionalProperties": false
         },
-        "MediaStream_6": {
+        "MediaStream_7": {
           "type": "object",
           "properties": {
             "index": { "type": "number" },
@@ -3017,7 +3324,7 @@
           ],
           "additionalProperties": false
         },
-        "Cue_7": {
+        "Cue_8": {
           "type": "object",
           "properties": {
             "id": { "type": "string" },
@@ -3028,7 +3335,7 @@
           "required": ["id", "startMs", "endMs", "text"],
           "additionalProperties": false
         },
-        "Dialogue_8": {
+        "Dialogue_9": {
           "type": "object",
           "properties": {
             "id": { "type": "string" },
@@ -3054,7 +3361,7 @@
               "required": [],
               "additionalProperties": { "type": "string" }
             },
-            "voiceSettings": { "anyOf": [{ "$ref": "#/$defs/VoiceSettings_9" }] }
+            "voiceSettings": { "anyOf": [{ "$ref": "#/$defs/VoiceSettings_10" }] }
           },
           "required": [
             "id",
@@ -3070,7 +3377,7 @@
           ],
           "additionalProperties": false
         },
-        "VoiceSettings_9": {
+        "VoiceSettings_10": {
           "type": "object",
           "properties": {
             "mood": {
@@ -3153,9 +3460,10 @@
           "required": ["device", "referenceMode", "referenceId", "mode", "speed", "seed"],
           "additionalProperties": false
         },
-        "Track_10": {
+        "Track_11": {
           "type": "object",
           "properties": {
+            "name": { "anyOf": [{ "type": "string" }] },
             "id": { "type": "string" },
             "kind": {
               "anyOf": [
@@ -3182,7 +3490,7 @@
             "solo": { "type": "boolean" },
             "gain": { "type": "number" },
             "regions": {
-              "anyOf": [{ "type": "array", "items": { "$ref": "#/$defs/AudioRegion_11" } }]
+              "anyOf": [{ "type": "array", "items": { "$ref": "#/$defs/AudioRegion_12" } }]
             },
             "regionsEnabled": {
               "anyOf": [
@@ -3194,7 +3502,7 @@
           "required": ["id", "kind", "language", "mute", "solo", "gain"],
           "additionalProperties": false
         },
-        "AudioRegion_11": {
+        "AudioRegion_12": {
           "type": "object",
           "properties": {
             "id": { "type": "string" },
@@ -3206,19 +3514,19 @@
           "required": ["id", "startMs", "endMs", "gain", "mute"],
           "additionalProperties": false
         },
-        "Character_12": {
+        "Character_13": {
           "type": "object",
           "properties": {
             "id": { "type": "string" },
             "name": { "type": "string" },
             "color": { "type": "string" },
-            "references": { "type": "array", "items": { "$ref": "#/$defs/VoiceReference_13" } },
+            "references": { "type": "array", "items": { "$ref": "#/$defs/VoiceReference_14" } },
             "defaultReferenceId": { "anyOf": [{ "type": "null" }, { "type": "string" }] }
           },
           "required": ["id", "name", "color", "references", "defaultReferenceId"],
           "additionalProperties": false
         },
-        "VoiceReference_13": {
+        "VoiceReference_14": {
           "type": "object",
           "properties": {
             "id": { "type": "string" },
@@ -3231,7 +3539,7 @@
           "required": ["id", "label", "path", "durationMs", "transcript"],
           "additionalProperties": false
         },
-        "SpeakerAnalysis_14": {
+        "SpeakerAnalysis_15": {
           "type": "object",
           "properties": {
             "id": { "type": "string" },
@@ -3281,11 +3589,11 @@
           "required": ["id", "sourcePath", "lines", "assignments", "clusters"],
           "additionalProperties": false
         },
-        "Generation_15": {
+        "Generation_16": {
           "type": "object",
           "properties": {
-            "takeOrigin": { "anyOf": [{ "$ref": "#/$defs/TakeOrigin_16" }] },
-            "prosodyTransfer": { "anyOf": [{ "$ref": "#/$defs/ProsodyTransfer_17" }] },
+            "takeOrigin": { "anyOf": [{ "$ref": "#/$defs/TakeOrigin_17" }] },
+            "prosodyTransfer": { "anyOf": [{ "$ref": "#/$defs/ProsodyTransfer_18" }] },
             "kind": { "type": "string", "const": "tts" },
             "id": { "type": "string" },
             "dialogueId": { "type": "string" },
@@ -3301,7 +3609,7 @@
             "characterId": { "anyOf": [{ "type": "null" }, { "type": "string" }] },
             "durationMs": { "type": "number" },
             "sampleRate": { "type": "number" },
-            "options": { "$ref": "#/$defs/VoiceSettings_9" },
+            "options": { "$ref": "#/$defs/VoiceSettings_10" },
             "referenceTranscript": { "type": "string" },
             "referenceId": { "anyOf": [{ "type": "null" }, { "type": "string" }] },
             "device": { "type": "string" },
@@ -3343,7 +3651,7 @@
           ],
           "additionalProperties": false
         },
-        "TakeOrigin_16": {
+        "TakeOrigin_17": {
           "type": "object",
           "properties": {
             "type": {
@@ -3359,14 +3667,14 @@
           "required": ["type"],
           "additionalProperties": false
         },
-        "ProsodyTransfer_17": {
+        "ProsodyTransfer_18": {
           "type": "object",
           "properties": {
             "algorithm": { "type": "string", "const": "praat-psola-v1" },
             "sourceGenerationId": { "type": "string" },
             "sourceDurationMs": { "type": "number" },
             "guideDurationMs": { "type": "number" },
-            "options": { "$ref": "#/$defs/ProsodyOptions_18" }
+            "options": { "$ref": "#/$defs/ProsodyOptions_19" }
           },
           "required": [
             "algorithm",
@@ -3377,7 +3685,7 @@
           ],
           "additionalProperties": false
         },
-        "ProsodyOptions_18": {
+        "ProsodyOptions_19": {
           "type": "object",
           "properties": {
             "generationId": { "type": "string" },
@@ -3560,18 +3868,59 @@
         "VoicePiece_1": {
           "type": "object",
           "properties": {
+            "effects": {
+              "anyOf": [{ "type": "array", "items": { "$ref": "#/$defs/AudioEffect_2" } }]
+            },
             "sourceStartMs": { "anyOf": [{ "type": "null" }, { "type": "number" }] },
             "sourceEndMs": { "anyOf": [{ "type": "null" }, { "type": "number" }] },
             "durationMs": { "type": "number" },
             "gain": { "type": "number" },
             "envelope": {
-              "anyOf": [{ "type": "array", "items": { "$ref": "#/$defs/VoicePoint_2" } }]
+              "anyOf": [{ "type": "array", "items": { "$ref": "#/$defs/VoicePoint_3" } }]
             }
           },
           "required": ["sourceStartMs", "sourceEndMs", "durationMs", "gain"],
           "additionalProperties": false
         },
-        "VoicePoint_2": {
+        "AudioEffect_2": {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "anyOf": [
+                { "type": "string", "const": "equalizer" },
+                { "type": "string", "const": "pitch" },
+                { "type": "string", "const": "highpass" },
+                { "type": "string", "const": "lowpass" },
+                { "type": "string", "const": "compressor" },
+                { "type": "string", "const": "limiter" },
+                { "type": "string", "const": "gate" },
+                { "type": "string", "const": "normalize" },
+                { "type": "string", "const": "denoise" },
+                { "type": "string", "const": "deesser" },
+                { "type": "string", "const": "echo" },
+                { "type": "string", "const": "reverb" },
+                { "type": "string", "const": "saturation" },
+                { "type": "string", "const": "distortion" },
+                { "type": "string", "const": "robot" },
+                { "type": "string", "const": "chorus" },
+                { "type": "string", "const": "flanger" },
+                { "type": "string", "const": "phaser" },
+                { "type": "string", "const": "tremolo" },
+                { "type": "string", "const": "vibrato" }
+              ]
+            },
+            "enabled": { "type": "boolean" },
+            "parameters": {
+              "type": "object",
+              "properties": {},
+              "required": [],
+              "additionalProperties": { "type": "number" }
+            }
+          },
+          "required": ["kind", "enabled", "parameters"],
+          "additionalProperties": false
+        },
+        "VoicePoint_3": {
           "type": "object",
           "properties": { "atMs": { "type": "number" }, "level": { "type": "number" } },
           "required": ["atMs", "level"],
@@ -3905,6 +4254,68 @@
         }
       }
     },
+    "AudioEffectsOptions": {
+      "$ref": "#/$defs/AudioEffectsOptions_0",
+      "$defs": {
+        "AudioEffectsOptions_0": {
+          "type": "object",
+          "properties": {
+            "name": { "anyOf": [{ "type": "string" }] },
+            "trackId": { "type": "string" },
+            "scope": {
+              "anyOf": [
+                { "type": "string", "const": "track" },
+                { "type": "string", "const": "selection" }
+              ]
+            },
+            "startMs": { "type": "number" },
+            "endMs": { "type": "number" },
+            "effects": { "type": "array", "items": { "$ref": "#/$defs/AudioEffect_1" } },
+            "replaceInMix": { "type": "boolean" }
+          },
+          "required": ["trackId", "scope", "startMs", "endMs", "effects", "replaceInMix"],
+          "additionalProperties": false
+        },
+        "AudioEffect_1": {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "anyOf": [
+                { "type": "string", "const": "equalizer" },
+                { "type": "string", "const": "pitch" },
+                { "type": "string", "const": "highpass" },
+                { "type": "string", "const": "lowpass" },
+                { "type": "string", "const": "compressor" },
+                { "type": "string", "const": "limiter" },
+                { "type": "string", "const": "gate" },
+                { "type": "string", "const": "normalize" },
+                { "type": "string", "const": "denoise" },
+                { "type": "string", "const": "deesser" },
+                { "type": "string", "const": "echo" },
+                { "type": "string", "const": "reverb" },
+                { "type": "string", "const": "saturation" },
+                { "type": "string", "const": "distortion" },
+                { "type": "string", "const": "robot" },
+                { "type": "string", "const": "chorus" },
+                { "type": "string", "const": "flanger" },
+                { "type": "string", "const": "phaser" },
+                { "type": "string", "const": "tremolo" },
+                { "type": "string", "const": "vibrato" }
+              ]
+            },
+            "enabled": { "type": "boolean" },
+            "parameters": {
+              "type": "object",
+              "properties": {},
+              "required": [],
+              "additionalProperties": { "type": "number" }
+            }
+          },
+          "required": ["kind", "enabled", "parameters"],
+          "additionalProperties": false
+        }
+      }
+    },
     "MkvOptions": {
       "$ref": "#/$defs/MkvOptions_0",
       "$defs": {
@@ -3941,6 +4352,15 @@
     },
     "VoiceOperation": {
       "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "kind": { "type": "string", "const": "effects" },
+            "effects": { "type": "array", "items": { "$ref": "#/$defs/AudioEffect_0" } }
+          },
+          "required": ["kind", "effects"],
+          "additionalProperties": false
+        },
         {
           "type": "object",
           "properties": {
@@ -3984,7 +4404,47 @@
           "required": ["kind", "fadeInMs", "fadeOutMs"],
           "additionalProperties": false
         }
-      ]
+      ],
+      "$defs": {
+        "AudioEffect_0": {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "anyOf": [
+                { "type": "string", "const": "equalizer" },
+                { "type": "string", "const": "pitch" },
+                { "type": "string", "const": "highpass" },
+                { "type": "string", "const": "lowpass" },
+                { "type": "string", "const": "compressor" },
+                { "type": "string", "const": "limiter" },
+                { "type": "string", "const": "gate" },
+                { "type": "string", "const": "normalize" },
+                { "type": "string", "const": "denoise" },
+                { "type": "string", "const": "deesser" },
+                { "type": "string", "const": "echo" },
+                { "type": "string", "const": "reverb" },
+                { "type": "string", "const": "saturation" },
+                { "type": "string", "const": "distortion" },
+                { "type": "string", "const": "robot" },
+                { "type": "string", "const": "chorus" },
+                { "type": "string", "const": "flanger" },
+                { "type": "string", "const": "phaser" },
+                { "type": "string", "const": "tremolo" },
+                { "type": "string", "const": "vibrato" }
+              ]
+            },
+            "enabled": { "type": "boolean" },
+            "parameters": {
+              "type": "object",
+              "properties": {},
+              "required": [],
+              "additionalProperties": { "type": "number" }
+            }
+          },
+          "required": ["kind", "enabled", "parameters"],
+          "additionalProperties": false
+        }
+      }
     }
   }
 }
