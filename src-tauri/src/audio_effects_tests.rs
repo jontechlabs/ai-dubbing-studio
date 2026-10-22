@@ -59,7 +59,9 @@ fn samples(path: &Path) -> Vec<i16> {
     }
     let len = u32::from_le_bytes(bytes[at + 4..at + 8].try_into().unwrap()) as usize;
     bytes[at + 8..at + 8 + len]
-        .as_chunks::<2>().0.iter()
+        .as_chunks::<2>()
+        .0
+        .iter()
         .map(|b| i16::from_le_bytes(b.try_into().unwrap()))
         .collect()
 }

@@ -146,7 +146,9 @@ async fn selection_becomes_ordered_replace_layer_without_baking_volume_twice() {
     assert!(decoded.status.success());
     let samples: Vec<f32> = decoded
         .stdout
-        .as_chunks::<4>().0.iter()
+        .as_chunks::<4>()
+        .0
+        .iter()
         .map(|c| f32::from_le_bytes(c.try_into().unwrap()))
         .collect();
     for time in [200, 900, 2000] {
