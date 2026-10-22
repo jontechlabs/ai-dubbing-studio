@@ -85,13 +85,40 @@ it('removes a processed copy and restores the previous mute state without touchi
 });
 it('preparing the dubbing mix keeps an active processed stem from doubling its dry source', () => {
   const p = processed();
-  p.tracks[0].kind = 'audio';
-  p.tracks[0].role = 'music';
-  p.tracks[0].path = 'stems/music.wav';
-  p.tracks[0].sourcePath = p.media!.path;
+  p.tracks.push({
+    id: 'stem',
+    kind: 'audio',
+    role: 'music',
+    language: 'ja',
+    mute: true,
+    solo: false,
+    gain: 1,
+    path: 'stems/music.wav',
+    durationMs: 16000,
+    sourcePath: p.media!.path,
+  });
+  (p.generations[0] as { [key: string]: unknown }).sourceTrackId = 'stem';
   const next = dubbingMix(p);
-  expect(next.tracks.find((t) => t.id === 'original')!.mute).toBe(true);
+  expect(next.tracks.find((t) => t.id === 'stem')!.mute).toBe(true);
   expect(next.tracks.find((t) => t.id === 'fx')!.mute).toBe(false);
+  p.tracks.find((t) => t.id === 'stem')!.role = 'speech';
+  const speech = dubbingMix(p);
+  expect(speech.tracks.find((t) => t.id === 'fx')!.mute).toBe(true);
+  const voice = processed();
+  (voice.generations[0] as { [key: string]: unknown }).sourceTrackId = 'dubbing';
+  voice.tracks.push({
+    id: 'dubbing',
+    kind: 'dubbing',
+    language: 'fr',
+    gain: 1,
+    mute: true,
+    solo: false,
+  });
+  expect(dubbingMix(voice).tracks.find((t) => t.id === 'dubbing')!.mute).toBe(true);
+  voice.tracks.find((t) => t.id === 'fx')!.mute = true;
+  const inactive = dubbingMix(voice);
+  expect(inactive.tracks.find((t) => t.id === 'fx')!.mute).toBe(true);
+  expect(inactive.tracks.find((t) => t.id === 'dubbing')!.mute).toBe(false);
 });
 it('protects effect source paths and copies that are still used as another effect source', () => {
   const p = processed();

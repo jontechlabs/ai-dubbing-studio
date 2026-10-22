@@ -32,6 +32,8 @@ Dans **Audio → Effets audio**, choisissez la piste et l’étendue :
 
 Les volumes globaux et locaux restent indépendants des effets et ne sont pas appliqués deux fois. Une copie garde les réglages de volume et les zones de la piste d’origine. Le rendu entier comprend les couches audio présentes au moment de sa création. Il s’agit d’une copie figée : changer ensuite les répliques sources ne régénère pas automatiquement cette copie.
 
+**Préparer le mix de doublage** coupe aussi les copies avec effets de la voix source à remplacer. Une copie traitée du doublage déjà active garde le doublage sec coupé ; une copie volontairement coupée reste coupée.
+
 Pour modifier les effets, choisissez la copie `… · FX` dans ce même panneau, puis **Mettre à jour les effets de la piste**. Les réglages repartent du WAV sec conservé ; ils ne s’accumulent pas à chaque rendu. Une portion déjà traitée réutilise aussi sa référence sèche si aucune couche ajoutée ensuite ne recouvre cet intervalle. Une nouvelle couche recouvrante demande un nouveau traitement de l’état courant.
 
 Le bouton × de la copie dans le mixeur la retire du projet et restaure l’état muet initial de sa source. Une copie servant de source à une autre copie ne peut pas être retirée avant sa dérivée. Ctrl+Z restaure le résultat ; les fichiers conservés pour l’historique ne sont pas effacés. Une portion traitée peut être retirée comme les autres transferts audio.

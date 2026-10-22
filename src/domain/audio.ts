@@ -243,20 +243,37 @@ export function dubbingMix(project: Project) {
     chosen && chosen !== 'auto'
       ? chosen
       : audioTracks(project).find((t) => t.role === 'speech')?.id;
+  const copies = project.generations.filter((g) => g.kind === 'audioEffects') as {
+    id: string;
+    trackId: string;
+    sourceTrackId: string;
+    replaceInMix: boolean;
+  }[];
+  const replacementIds = new Set(replacement ? [replacement] : []);
+  // A processed source voice is still a source voice. Replace its copies too.
+  for (let pass = 0; pass < copies.length; pass++) {
+    const size = replacementIds.size;
+    for (const copy of copies)
+      if (replacementIds.has(copy.sourceTrackId)) replacementIds.add(copy.trackId);
+    if (replacementIds.size === size) break;
+  }
   const effectSources = new Set(
-    project.generations
+    copies
       .filter(
-        (g) =>
-          g.kind === 'audioEffects' &&
-          g.replaceInMix &&
-          project.tracks.some((t) => t.id === g.trackId && !t.mute),
+        (copy) => copy.replaceInMix && project.tracks.some((t) => t.id === copy.trackId && !t.mute),
       )
-      .map((g) => (g as { sourceTrackId?: string }).sourceTrackId),
+      .map((copy) => copy.sourceTrackId),
   );
+  const copyIds = new Set(copies.map((copy) => copy.trackId));
   next.tracks = next.tracks.map((t) =>
-    t.kind === 'audio'
-      ? { ...t, mute: t.id === replacement || effectSources.has(t.id), solo: false }
-      : t,
+    !['audio', 'dubbing'].includes(t.kind)
+      ? t
+      : {
+          ...t,
+          solo: false,
+          mute:
+            replacementIds.has(t.id) || effectSources.has(t.id) || (copyIds.has(t.id) && t.mute),
+        },
   );
   return next;
 }
