@@ -149,7 +149,7 @@ async fn selection_becomes_ordered_replace_layer_without_baking_volume_twice() {
         .as_chunks::<4>()
         .0
         .iter()
-        .map(|c| f32::from_le_bytes(c.try_into().unwrap()))
+        .map(|c| f32::from_le_bytes(*c))
         .collect();
     for time in [200, 900, 2000] {
         let at = time * 96;

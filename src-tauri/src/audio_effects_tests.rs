@@ -62,7 +62,7 @@ fn samples(path: &Path) -> Vec<i16> {
         .as_chunks::<2>()
         .0
         .iter()
-        .map(|b| i16::from_le_bytes(b.try_into().unwrap()))
+        .map(|b| i16::from_le_bytes(*b))
         .collect()
 }
 #[test]

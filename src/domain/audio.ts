@@ -251,7 +251,7 @@ export function dubbingMix(project: Project) {
           g.replaceInMix &&
           project.tracks.some((t) => t.id === g.trackId && !t.mute),
       )
-      .map((g) => g.sourceTrackId),
+      .map((g) => (g as { sourceTrackId?: string }).sourceTrackId),
   );
   next.tracks = next.tracks.map((t) =>
     t.kind === 'audio'
