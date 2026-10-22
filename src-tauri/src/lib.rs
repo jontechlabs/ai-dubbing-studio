@@ -1408,8 +1408,31 @@ pub fn run() {
     };
     let mut context = tauri::generate_context!();
     if test_data.is_some() {
+        // WebView2 ignores fake-capture switches supplied through its env
+        // variable. A dedicated explicit test flag applies them to this
+        // isolated test window only; production microphone permissions stay
+        // under Windows/WebView2 control.
+        let microphone = if args
+            .get(3)
+            .is_some_and(|arg| arg == "--synthetic-microphone")
+        {
+            let wav = test_data.as_ref().unwrap().join("synthetic-microphone.wav");
+            if !wav.is_file() {
+                eprintln!("MIC_TEST_AUDIO_MISSING");
+                return;
+            }
+            Some(format!(" --use-fake-ui-for-media-stream --use-fake-device-for-media-stream --use-file-for-fake-audio-capture=\"{}\"",wav.display()))
+        } else {
+            None
+        };
         for window in &mut context.config_mut().app.windows {
             window.visible = false;
+            if let Some(arguments) = &microphone {
+                window
+                    .additional_browser_args
+                    .get_or_insert_with(String::new)
+                    .push_str(arguments);
+            }
         }
     }
     tauri::Builder::default()
