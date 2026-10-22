@@ -26,6 +26,7 @@ test('global faders reach 400 percent independently of regions and persist with 
   ]) {
     const before = await project(page),
       regions = before.tracks.find((t: any) => t.id === id)?.regions;
+    await page.locator(`.timeline-track[data-track-id="${id}"]`).scrollIntoViewIfNeeded();
     const row = page
       .locator('.track-label')
       .filter({ has: page.getByRole('button', { name: `Volume global · ${name}`, exact: true }) });

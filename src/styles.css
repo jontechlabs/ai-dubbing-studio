@@ -2957,8 +2957,9 @@ pre {
 .job-notifications {
   position: fixed;
   z-index: 220;
-  bottom: 45px;
-  left: 18px;
+  top: 112px;
+  left: 50%;
+  transform: translateX(-50%);
   display: grid;
   gap: 8px;
   width: min(340px, calc(100vw - 36px));
