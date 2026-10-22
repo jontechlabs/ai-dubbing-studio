@@ -29,7 +29,8 @@ ffmpeg=ROOT/'src-tauri/binaries/ffmpeg.exe'
 source_audio,rate=sf.read(WORK/'chatterbox-multilingual-v3-0.wav',dtype='float32')
 assert rate==24000
 # Exercise a real neural window boundary, not only a single short utterance.
-source=np.tile(np.concatenate([source_audio,np.zeros(2400,dtype=np.float32)]),3)
+period=np.concatenate([source_audio,np.zeros(2400,dtype=np.float32)])
+source=np.tile(period,max(3,int(np.ceil(9*rate/len(period)))))
 assert 8*rate<len(source)<30*rate
 source_path=WORK/'vc-source.wav';reference=WORK/'vc-target.wav'
 sf.write(source_path,source,rate,subtype='PCM_16')

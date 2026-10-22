@@ -41,16 +41,21 @@ def convert_windows(source, convert, progress=lambda _: None):
     for start in range(0, len(source), window - overlap):
         end = min(start + window, len(source))
         left, right = max(0, start - context), min(len(source), end + context)
-        rendered = np.asarray(convert(source[left:right]), dtype=np.float32).reshape(-1)
-        # Token quantisation adds/removes a few milliseconds, never justify
-        # cutting a word or padding an arbitrarily truncated model result.
-        ratio = len(rendered) / (right - left)
-        if not .9 <= ratio <= 1.1 or not np.isfinite(rendered).all() or np.max(np.abs(rendered), initial=0) < .001:
-            raise ValueError('VC_DURATION_MISMATCH')
-        if len(rendered) != right - left:
-            import librosa
-            rendered = librosa.effects.time_stretch(rendered, rate=ratio)
-            rendered = librosa.util.fix_length(rendered, size=right-left)
+        segment = source[left:right]
+        if np.max(np.abs(segment), initial=0) < .001:
+            # An explicitly silent editing region must not invent speech.
+            rendered = np.zeros(len(segment), dtype=np.float32)
+        else:
+            # Give the speech encoder enough context for very short takes.
+            padded = np.pad(segment, (0, max(0, RATE-len(segment))))
+            rendered = np.asarray(convert(padded), dtype=np.float32).reshape(-1)
+            ratio = len(rendered) / len(padded)
+            if not .9 <= ratio <= 1.1 or not np.isfinite(rendered).all() or np.max(np.abs(rendered), initial=0) < .001:
+                raise ValueError('VC_DURATION_MISMATCH')
+            if len(rendered) != len(padded):
+                import librosa
+                rendered = librosa.util.fix_length(librosa.effects.time_stretch(rendered, rate=ratio), size=len(padded))
+            rendered = rendered[:len(segment)]
         rendered = rendered[start-left:end-left]
         weight = np.ones(end-start, dtype=np.float32)
         if start:
@@ -65,7 +70,22 @@ def convert_windows(source, convert, progress=lambda _: None):
             break
     if np.any(weights <= 0):
         raise ValueError('VC_DURATION_MISMATCH')
-    return np.clip(out / weights, -1, 1)
+    output = np.clip(out / weights, -1, 1)
+    # Preserve digital silence introduced by mute/delete/insert edits. Runs
+    # of >=10 ms count; isolated waveform zero crossings are left alone.
+    silent = np.abs(source) < 1e-7
+    edges = np.diff(np.concatenate(([False], silent, [False])).astype(np.int8))
+    for start, end in zip(np.flatnonzero(edges == 1), np.flatnonzero(edges == -1)):
+        if end-start < RATE//100:
+            continue
+        output[start:end] = 0
+        fade = min(RATE//200, start)
+        if fade:
+            output[start-fade:start] *= np.linspace(1, 0, fade, endpoint=False)
+        fade = min(RATE//200, len(output)-end)
+        if fade:
+            output[end:end+fade] *= np.linspace(0, 1, fade, endpoint=False)
+    return output
 
 
 def generate(request):

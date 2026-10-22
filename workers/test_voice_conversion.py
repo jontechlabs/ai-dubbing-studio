@@ -29,4 +29,15 @@ class VoiceConversionTests(unittest.TestCase):
         for render in [lambda a:a[:100],lambda a:np.zeros(len(a)),lambda a:a*float('nan')]:
             with self.assertRaises(ValueError):vc.convert_windows(source,render)
 
+    def test_muted_edit_regions_remain_silent_after_conversion(self):
+        import numpy as np
+        source=np.sin(np.arange(vc.RATE*18,dtype=np.float32)*.023)*.3
+        source[vc.RATE:vc.RATE*2]=0
+        source[vc.RATE*5:vc.RATE*17]=0
+        output=vc.convert_windows(source,lambda a:np.ones(len(a),dtype=np.float32)*.2)
+        self.assertEqual(len(output),len(source))
+        self.assertTrue(np.all(output[vc.RATE:vc.RATE*2]==0))
+        self.assertTrue(np.all(output[vc.RATE*5:vc.RATE*17]==0))
+        self.assertGreater(output[-500],.01)
+
 if __name__=='__main__':unittest.main()

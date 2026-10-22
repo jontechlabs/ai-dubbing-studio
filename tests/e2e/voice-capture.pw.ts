@@ -1,6 +1,9 @@
 import {test,expect} from '@playwright/test';
-import {nativeMock} from './nativeMock';
-test.use({launchOptions:{args:['--use-fake-ui-for-media-stream','--use-fake-device-for-media-stream']},permissions:['microphone']});
+import {nativeMock,wav} from './nativeMock';
+import fs from 'node:fs';
+import path from 'node:path';
+const micFile=path.resolve('.cache/microphone-input.wav');fs.mkdirSync(path.dirname(micFile),{recursive:true});fs.writeFileSync(micFile,wav(16));
+test.use({launchOptions:{args:['--use-fake-ui-for-media-stream','--use-fake-device-for-media-stream',`--use-file-for-fake-audio-capture=${micFile}`]},permissions:['microphone']});
 
 test('real Web Audio microphone capture is auditioned, saved as another take, and survives reload',async({page})=>{
   await nativeMock(page);await page.goto('/');

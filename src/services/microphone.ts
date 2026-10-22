@@ -42,6 +42,7 @@ let chunks: Float32Array[] = [],
   epoch = 0,
   basis = '';
 let finish: (() => void) | null = null;
+let stopping: Promise<void> | null = null;
 export function microphoneBasis(p: Project, line: Dialogue) {
   return JSON.stringify([
     p.id,
@@ -152,6 +153,11 @@ export async function startMicrophone(project: Project, line: Dialogue, deviceId
       channelCount: 1,
       channelCountMode: 'explicit',
     });
+    node.onprocessorerror = () => {
+      if (token !== epoch) return;
+      discardMicrophone();
+      update({ error: 'MIC_UNAVAILABLE' });
+    };
     node.port.onmessage = (event: MessageEvent<{ samples?: Float32Array; done?: boolean }>) => {
       if (token !== epoch) return;
       if (event.data.samples) {
@@ -216,15 +222,29 @@ export async function startMicrophone(project: Project, line: Dialogue, deviceId
   }
 }
 export async function stopMicrophone() {
+  if (stopping) return stopping;
   if (state.phase === 'requesting') {
     discardMicrophone();
     return;
   }
   if (state.phase !== 'recording' || !node) return;
-  await new Promise<void>((resolve) => {
+  const token = epoch;
+  const timer = setTimeout(() => {
+    if (token === epoch && state.phase === 'recording') {
+      discardMicrophone();
+      update({ error: 'MIC_UNAVAILABLE' });
+    }
+  }, 3000);
+  stopping = new Promise<void>((resolve) => {
     finish = resolve;
     node!.port.postMessage('stop');
   });
+  try {
+    await stopping;
+  } finally {
+    clearTimeout(timer);
+    stopping = null;
+  }
 }
 export async function saveMicrophone(
   project: Project,
