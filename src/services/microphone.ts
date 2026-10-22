@@ -188,7 +188,14 @@ export async function startMicrophone(project: Project, line: Dialogue, deviceId
             url: URL.createObjectURL(new Blob([wav], { type: 'audio/wav' })),
           });
         } catch {
-          update({ phase: 'idle', error: 'MIC_INVALID_AUDIO' });
+          update({
+            phase: 'idle',
+            projectId: null,
+            lineId: null,
+            durationMs: 0,
+            level: 0,
+            error: 'MIC_INVALID_AUDIO',
+          });
         }
         finish?.();
         finish = null;

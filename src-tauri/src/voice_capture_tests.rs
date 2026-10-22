@@ -34,7 +34,8 @@ fn core(root: &Path) -> Arc<Core> {
 #[test]
 fn recording_commits_new_takes_and_reloads_without_overwriting_originals() {
     let dir = tempfile::tempdir().unwrap();
-    let core = core(dir.path());
+    let root = dir.path().canonicalize().unwrap();
+    let core = core(&root);
     let app = tauri::test::mock_app();
     let p = core
         .session
@@ -59,17 +60,14 @@ fn recording_commits_new_takes_and_reloads_without_overwriting_originals() {
     };
     let p = save(&p);
     let first = p.generations[0].clone();
-    let path = project::asset(dir.path(), first["path"].as_str().unwrap()).unwrap();
+    let path = project::asset(&root, first["path"].as_str().unwrap()).unwrap();
     let original = std::fs::read(&path).unwrap();
     let p = save(&p);
     assert_eq!(p.generations.len(), 2);
     assert_eq!(p.generations[0], first);
     assert_eq!(std::fs::read(path).unwrap(), original);
     assert_eq!(p.format_version, 17);
-    assert_eq!(
-        project::load(dir.path()).unwrap().generations,
-        p.generations
-    );
+    assert_eq!(project::load(&root).unwrap().generations, p.generations);
     let mut session = core.session.lock().unwrap();
     let s = session.as_mut().unwrap();
     let undo = s.history(false).unwrap();
@@ -79,7 +77,8 @@ fn recording_commits_new_takes_and_reloads_without_overwriting_originals() {
 #[test]
 fn invalid_recording_and_stale_commit_never_change_the_project() {
     let dir = tempfile::tempdir().unwrap();
-    let core = core(dir.path());
+    let root = dir.path().canonicalize().unwrap();
+    let core = core(&root);
     let app = tauri::test::mock_app();
     let p = core
         .session
@@ -105,6 +104,6 @@ fn invalid_recording_and_stale_commit_never_change_the_project() {
             &bytes
         )
         .is_err());
-        assert!(project::load(dir.path()).unwrap().generations.is_empty());
+        assert!(project::load(&root).unwrap().generations.is_empty());
     }
 }
