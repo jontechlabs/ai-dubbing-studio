@@ -58,3 +58,9 @@ Sources consultées le 18 octobre 2026 :
 - [Quantification LM Studio Community](https://huggingface.co/lmstudio-community/Qwen3-4B-Instruct-2507-GGUF/tree/4edb920b6f14e3b9284d4502a6485103d72cde05) — révision et fichier Q4_K_M épinglés.
 - [Moteur llama.cpp b11718](https://github.com/ggml-org/llama.cpp/releases/tag/b11718) — licence MIT et notices incluses dans l’archive installée.
 - [API et sélection des périphériques llama.cpp](https://github.com/ggml-org/llama.cpp/blob/b11718/tools/server/README.md) — sorties JSON contraintes, modèle local et choix explicite du périphérique.
+
+## Orientation de traduction
+
+![Consignes de personnage et de longueur](screenshots/translation-direction-fr.png)
+
+Interface React réelle avec commandes natives simulées pour cette capture. Validation du modèle local réel : voir VALIDATION.md.

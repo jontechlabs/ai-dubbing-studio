@@ -1,11 +1,11 @@
 {
-  "version": "0.23.0",
-  "notes": "Enregistrement local des répliques au microphone, écoute puis conservation comme nouvel essai. Conversion locale du timbre avec Chatterbox VC, référence du personnage ou fichier audio avec choix de début et de fin. Durée exacte et zones muettes préservées ; essais précédents conservés. Contrôle MCP et format de projet 17.",
-  "pub_date": "2026-10-22T07:59:11Z",
+  "version": "0.24.0",
+  "notes": "Orientation libre des traductions : personnage, registre, ton et longueur souhaitée, avec créneaux disponibles transmis au LLM. Propositions toujours à relire avant application. Démarrage individuel de VoxCPM2, Chatterbox et conversion de timbre corrigé sous Python Windows isolé. Modèles déjà installés réutilisés.",
+  "pub_date": "2026-10-22T15:13:15Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSdFFyMUJGTFp3NkNUcVI1VzEyWW9pUjBrbzgrRzF5QnBtV1BnaWdJbXFnMHZhV2RndmxFMm5GeGFDdCtOcHlUWCt4N2FTTFhpVGE0S0FSS1U2YW1aZjhOakNWUXl6UFFRPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkyNjUzNzk0CWZpbGU6QUkgRHViYmluZyBTdHVkaW9fMC4yMy4wX3g2NC1zZXR1cC5leGUJdmVyc2lvbjowLjIzLjAKMGppbW1WaWduWEY1bVhkajBneCsyZVRqMnJJT3U0aUpYa1NBek1OYlRxRFh0WUdKNEhHenh1MC9XMmZxajB2eG9kYVpQc1htS0dUaEZyRThHRmRGQWc9PQo=",
-      "url": "https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.23.0/AI-Dubbing-Studio-0.23.0-Setup.exe"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSdFFyMUJGTFp3NkN1Qk02S01Eb2JpVFJ5cVByNTFsR2Q1NmQvRURRa3k4NXRic21XU3JLN1dvenJGVlVFQ1doN2FudnJKSCtsU25zbUpqcFZKRVFXRjh4N2JFVCtOd3dZPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkyNjc5MzQ4CWZpbGU6QUkgRHViYmluZyBTdHVkaW9fMC4yNC4wX3g2NC1zZXR1cC5leGUJdmVyc2lvbjowLjI0LjAKTGIzOXRHTTZqNnBTenhTRFFML1FFV3pqQk5BcGNIazZ0V25hbUtaQ3NkQ3BLVjNsZmlBRkFYNDFJd3RTZDNIcURVcXVPT2s4M2p4eXE2VzBaRFNzQ1E9PQo=",
+      "url": "https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.24.0/AI-Dubbing-Studio-0.24.0-Setup.exe"
     }
   }
 }
