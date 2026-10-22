@@ -175,6 +175,8 @@ export interface Project {
   pronunciation: Record<string, string>;
 }
 export interface Job {
+  /** Active execution, excluding queue and pauses; absent on older job records. */
+  timing?: { elapsedMs: number; observedAtMs: number };
   batch?: {
     total: number;
     completed: number;

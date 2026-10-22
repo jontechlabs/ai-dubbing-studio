@@ -15,6 +15,8 @@ Pour Codex, ajoutez le bloc TOML généré dans `~/.codex/config.toml` ou dans l
 
 *Interface réelle avec commandes natives simulées pour la capture. Le diagnostic Windows vérifie séparément le SDK officiel avec l’exécutable portable et le WebView réels.*
 
+Les tâches exposent aussi leur [durée active](TASK-DURATION.md) dans `timing.elapsedMs` et l’instant de mesure `timing.observedAtMs`. Les anciennes tâches peuvent ne pas avoir de mesure.
+
 ## Commandes disponibles
 
 | Domaine | Exemples de commandes |

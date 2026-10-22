@@ -1110,5 +1110,9 @@
   "llmDirection": "Translation direction (optional)",
   "llmDirectionPlaceholder": "A villain says this line, using vulgar language. Keep the translated line close to the original spoken length.",
   "llmDirectionHint": "Character, register, tone, vocabulary and desired length. Available duration: {{seconds}} s. This is a soft goal: actual spoken duration depends on the voice generation. These instructions are kept on this PC for future proposals.",
-  "llmUsedDirection": "Direction used: {{direction}}"
+  "llmUsedDirection": "Direction used: {{direction}}",
+  "jobElapsed": "Elapsed: {{time}}",
+  "jobDuration": "Execution time: {{time}}",
+  "jobDurationHint": "Active execution time (hours:minutes:seconds), excluding queue and pauses.",
+  "jobDurationUnknownHint": "Duration was not recorded for this older job."
 }

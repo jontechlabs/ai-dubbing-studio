@@ -1,3 +1,4 @@
+import { JobDuration } from './JobDuration';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { LoaderCircle, ScanLine, Play, Pause } from 'lucide-react';
@@ -384,6 +385,7 @@ export function LipAnalysisPanel({
         <div role="status">
           <p>{t('jobStages.lipsDecode')}</p>
           <progress max="1" value={job?.progress ?? undefined} />
+          {job && <JobDuration job={job} />}
           <button
             className="text-button"
             disabled={!id}

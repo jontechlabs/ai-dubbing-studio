@@ -9,9 +9,14 @@ use std::{
         atomic::{AtomicBool, Ordering},
         Arc,
     },
+    time::{Duration, Instant},
 };
 use tauri::Emitter;
 use tokio::io::{AsyncBufReadExt, AsyncReadExt, AsyncWriteExt, BufReader};
+
+#[cfg(test)]
+#[path = "job_timing_tests.rs"]
+mod timing_tests;
 
 #[derive(Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -25,7 +30,49 @@ pub struct Job {
     pub error: Option<String>,
     pub logs: Vec<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub timing: Option<Timing>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub batch: Option<crate::tts_batch::Progress>,
+}
+/// Active execution only; queued and paused time is excluded. The timestamp is
+/// the observation time, allowing the UI to animate between worker messages.
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct Timing {
+    pub elapsed_ms: u64,
+    pub observed_at_ms: u64,
+}
+
+#[derive(Default)]
+struct ExecutionClock {
+    elapsed: Duration,
+    running_since: Option<Instant>,
+}
+impl ExecutionClock {
+    fn elapsed_at(&self, now: Instant) -> Duration {
+        self.elapsed
+            + self
+                .running_since
+                .map(|start| now.saturating_duration_since(start))
+                .unwrap_or_default()
+    }
+    fn transition(&mut self, status: &str, now: Instant) {
+        if status == "running" {
+            self.running_since.get_or_insert(now);
+        } else if self.running_since.is_some() {
+            self.elapsed = self.elapsed_at(now);
+            self.running_since = None;
+        }
+    }
+    fn snapshot(&self, now: Instant, observed_at_ms: u64) -> Timing {
+        Timing {
+            elapsed_ms: self.elapsed_at(now).as_millis().min(u64::MAX as u128) as u64,
+            observed_at_ms,
+        }
+    }
+}
+fn timestamp_ms() -> u64 {
+    chrono::Utc::now().timestamp_millis().max(0) as u64
 }
 #[derive(Clone, Serialize, Deserialize)]
 pub struct ImportRequest {
@@ -97,6 +144,55 @@ pub struct Control {
     pub saved: PersistedJob,
     pub cancel: Arc<AtomicBool>,
     pub paused: Arc<AtomicBool>,
+    clock: ExecutionClock,
+}
+
+impl Control {
+    pub fn restore(mut saved: PersistedJob) -> Self {
+        // A stopped application cannot execute work. Keep the last checkpoint,
+        // never add the time spent closed, and leave legacy durations unknown.
+        if ["queued", "running", "paused"].contains(&saved.record.status.as_str()) {
+            saved.record.status = "interrupted".into();
+        }
+        let elapsed = saved.record.timing.as_ref().map_or(0, |t| t.elapsed_ms);
+        Self {
+            saved,
+            cancel: Arc::new(AtomicBool::new(false)),
+            paused: Arc::new(AtomicBool::new(false)),
+            clock: ExecutionClock {
+                elapsed: Duration::from_millis(elapsed),
+                running_since: None,
+            },
+        }
+    }
+    pub fn snapshot(&self) -> Job {
+        self.snapshot_at(Instant::now(), timestamp_ms())
+    }
+    fn snapshot_at(&self, now: Instant, timestamp: u64) -> Job {
+        let mut record = self.saved.record.clone();
+        if record.timing.is_some() {
+            record.timing = Some(self.clock.snapshot(now, timestamp));
+        }
+        record
+    }
+}
+
+/// Checkpoint even silent model loading, without sending events or writing on
+/// every UI tick. An unexpected exit retains the latest successful checkpoint.
+pub fn start_timing_checkpoints(core: Arc<Core>) {
+    tauri::async_runtime::spawn(async move {
+        let mut interval = tokio::time::interval(Duration::from_secs(5));
+        loop {
+            interval.tick().await;
+            let running = core
+                .jobs
+                .lock()
+                .is_ok_and(|jobs| jobs.values().any(|c| c.saved.record.status == "running"));
+            if running {
+                persist(&core);
+            }
+        }
+    });
 }
 
 pub fn create<R: tauri::Runtime>(
@@ -116,6 +212,10 @@ pub fn create<R: tauri::Runtime>(
         stage: "probe".into(),
         error: None,
         logs: vec![],
+        timing: Some(Timing {
+            elapsed_ms: 0,
+            observed_at_ms: timestamp_ms(),
+        }),
         batch: None,
     };
     if let Ok(mut jobs) = core.jobs.lock() {
@@ -149,6 +249,7 @@ pub fn create<R: tauri::Runtime>(
                 },
                 cancel: Arc::new(AtomicBool::new(false)),
                 paused: Arc::new(AtomicBool::new(false)),
+                clock: ExecutionClock::default(),
             },
         );
     }
@@ -158,7 +259,14 @@ pub fn create<R: tauri::Runtime>(
 }
 pub fn persist(core: &Core) {
     if let Ok(jobs) = core.jobs.lock() {
-        let saved: Vec<_> = jobs.values().map(|j| j.saved.clone()).collect();
+        let saved: Vec<_> = jobs
+            .values()
+            .map(|j| {
+                let mut saved = j.saved.clone();
+                saved.record = j.snapshot();
+                saved
+            })
+            .collect();
         if let Ok(bytes) = serde_json::to_vec(&saved) {
             let _ = project::atomic_write(&core.data_dir.join("jobs.json"), &bytes);
         }
@@ -173,6 +281,10 @@ pub fn update<R: tauri::Runtime>(
     let record = core.jobs.lock().ok().and_then(|mut jobs| {
         jobs.get_mut(key).map(|c| {
             change(&mut c.saved.record);
+            c.clock.transition(&c.saved.record.status, Instant::now());
+            if c.saved.record.timing.is_some() {
+                c.saved.record.timing = Some(c.clock.snapshot(Instant::now(), timestamp_ms()));
+            }
             if c.saved.record.logs.len() > 160 {
                 let extra = c.saved.record.logs.len() - 160;
                 c.saved.record.logs.drain(..extra);

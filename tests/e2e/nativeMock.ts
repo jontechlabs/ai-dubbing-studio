@@ -20,6 +20,7 @@ export async function nativeMock(page: Page, large = false) {
   await page.addInitScript(({initial})=>{
     const host=window as unknown as Record<string,any>,callbacks=new Map<number,(data:any)=>void>(),listeners=new Map<string,number>();let counter=0,project=JSON.parse(localStorage.getItem('nativeMockProject')||'null')||structuredClone(initial),job:any;
     const emit=(name:string,payload:any)=>{const id=listeners.get(name);if(id)callbacks.get(id)?.({event:name,id,payload});};
+    host.__timedJob=(value:any)=>{job=structuredClone(value);emit('job-changed',job);};
     host.__calls=[];host.__downloadError=false;host.__installed=false;
     host.__getMockProject=()=>structuredClone(project);
     let mcpEnabled=localStorage.getItem('mockMcpEnabled')==='true';const mcpRequests=new Map<string,any>(),mcpAudit:any[]=[];

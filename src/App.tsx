@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { AudioLines, ChevronUp, LoaderCircle, ShieldCheck, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { MicrophoneIndicator } from './components/VoiceCapture';
+import { JobDuration } from './components/JobDuration';
 import { readMicrophone } from './services/microphone';
 import { Dialogues } from './components/Dialogues';
 import { Editor } from './components/Editor';
@@ -493,6 +494,7 @@ export default function App() {
               ? `${t(`jobStages.${running.stage}`)} ${running.progress === null ? '' : `${Math.round(running.progress * 100)}%`}`
               : t('noJobs')}
           </span>
+          {running && <JobDuration job={running} />}
           <ChevronUp size={12} />
         </button>
       </footer>

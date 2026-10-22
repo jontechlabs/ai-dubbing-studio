@@ -1110,5 +1110,9 @@
   "llmDirection": "Orientation de traduction (facultatif)",
   "llmDirectionPlaceholder": "Phrase prononcée par un méchant, il est vulgaire. La réplique traduite doit avoir une longueur proche de la source.",
   "llmDirectionHint": "Rôle, registre, ton, vocabulaire et longueur souhaitée. Durée disponible : {{seconds}} s. Objectif indicatif : la durée parlée réelle dépendra du doublage. Ces consignes sont conservées sur ce PC pour les prochaines propositions.",
-  "llmUsedDirection": "Orientation utilisée : {{direction}}"
+  "llmUsedDirection": "Orientation utilisée : {{direction}}",
+  "jobElapsed": "Temps écoulé : {{time}}",
+  "jobDuration": "Durée d’exécution : {{time}}",
+  "jobDurationHint": "Temps d’exécution actif (heures:minutes:secondes), hors attente et pauses.",
+  "jobDurationUnknownHint": "Durée non enregistrée pour cette ancienne tâche."
 }

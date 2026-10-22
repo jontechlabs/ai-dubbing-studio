@@ -1,3 +1,4 @@
+import { JobDuration } from './JobDuration';
 import {
   AudioLines,
   ArrowUpRight,
@@ -165,6 +166,7 @@ export function Player({
                   value={importJob.progress ?? undefined}
                   max="1"
                 />
+                <JobDuration job={importJob} />
                 {importJob.progress !== null && (
                   <span>{Math.round(importJob.progress * 100)}%</span>
                 )}

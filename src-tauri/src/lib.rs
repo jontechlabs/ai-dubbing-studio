@@ -1139,7 +1139,7 @@ fn list_jobs(core: State<'_, Shared>) -> Result<Vec<Job>, String> {
         .lock()
         .map_err(io_error)?
         .values()
-        .map(|c| c.saved.record.clone())
+        .map(Control::snapshot)
         .collect())
 }
 #[tauri::command]
@@ -1455,28 +1455,20 @@ pub fn run() {
             let mut restored = HashMap::new();
             if let Ok(bytes) = std::fs::read(data_dir.join("jobs.json")) {
                 if let Ok(records) = serde_json::from_slice::<Vec<PersistedJob>>(&bytes) {
-                    for mut saved in records {
-                        if ["queued", "running", "paused"].contains(&saved.record.status.as_str()) {
-                            saved.record.status = "interrupted".into();
-                        }
-                        restored.insert(
-                            saved.record.id.clone(),
-                            Control {
-                                saved,
-                                cancel: Arc::new(AtomicBool::new(false)),
-                                paused: Arc::new(AtomicBool::new(false)),
-                            },
-                        );
+                    for saved in records {
+                        restored.insert(saved.record.id.clone(), Control::restore(saved));
                     }
                 }
             }
-            app.manage(Arc::new(Core {
+            let core = Arc::new(Core {
                 session: Mutex::new(None),
                 jobs: Mutex::new(restored),
                 gate: Arc::new(tokio::sync::Semaphore::new(1)),
                 model_dir: Mutex::new(model_storage::load(&data_dir)?),
                 data_dir: data_dir.clone(),
-            }));
+            });
+            jobs::start_timing_checkpoints(core.clone());
+            app.manage(core);
             let automation = mcp::Controller::new(app.handle().clone(), data_dir);
             automation.restore();
             app.manage(automation);

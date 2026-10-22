@@ -1,3 +1,4 @@
+import { JobDuration } from './JobDuration';
 import { useEffect, useState } from 'react';
 import { Languages, LoaderCircle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -233,6 +234,7 @@ export function TranslationSuggestion({
               )}
             </p>
           )}
+          {job && <JobDuration job={job} />}
           {job?.status === 'cancelled' && <p role="status">{t('jobCancelled')}</p>}
           {message && (
             <p className="warning" role="alert">

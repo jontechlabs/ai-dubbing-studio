@@ -24,7 +24,11 @@ const job=async id=>{
     const until=Date.now()+120000;
     while(Date.now()<until){
         const rows=await call('studio_list_jobs');const row=rows.find(row=>row.id===id);
-        if(row?.status==='succeeded')return row;
+        if(row){
+            assert(Number.isSafeInteger(row.timing?.elapsedMs) && row.timing.elapsedMs >= 0);
+            assert(Number.isSafeInteger(row.timing.observedAtMs) && row.timing.observedAtMs > 0);
+        }
+        if(row?.status==='succeeded'){proofs.jobExecutionTiming=true;return row;}
         if(row&&['failed','cancelled','interrupted'].includes(row.status))throw Error(JSON.stringify(row));
         await new Promise(resolve=>setTimeout(resolve,200));
     }

@@ -12,6 +12,7 @@ import type {
 import { APP_VERSION } from '../domain/project';
 import { McpSettings } from './McpSettings';
 import { jobProgress } from '../domain/batchProgress';
+import { JobDuration } from './JobDuration';
 import type { Panel } from './Header';
 import { ImportPanel } from './ImportPanel';
 import { IconButton } from './IconButton';
@@ -414,6 +415,7 @@ function JobsPanel({ jobs, onError }: { jobs: Job[]; onError: (s: string) => voi
             </span>
           </div>
           <progress value={jobProgress(job) ?? undefined} max="1" />
+          <JobDuration job={job} />
           {job.batch && (
             <p className="batch-job-summary">
               {t('batchJobSummary', {
@@ -435,7 +437,9 @@ function JobsPanel({ jobs, onError }: { jobs: Job[]; onError: (s: string) => voi
                     ? 'jobFailed'
                     : job.status === 'cancelled' || job.status === 'interrupted'
                       ? 'jobCancelled'
-                      : 'jobRunning',
+                      : job.status === 'queued'
+                        ? 'jobQueued'
+                        : 'jobRunning',
             )}
           </span>
           {['running', 'queued', 'paused'].includes(job.status) && (

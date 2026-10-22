@@ -1,3 +1,4 @@
+import { JobDuration } from './JobDuration';
 import { useEffect, useState } from 'react';
 import { FolderOpen, HardDrive, LoaderCircle, RefreshCw } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -177,6 +178,7 @@ export function ModelStorageSettings({
             aria-label={t('modelStorageProgress')}
           />
           {job.progress !== null && <span>{Math.round(job.progress * 100)}%</span>}
+          <JobDuration job={job} />
           {['queued', 'running'].includes(job.status) && job.stage !== 'modelCommit' && (
             <button
               className="text-button"

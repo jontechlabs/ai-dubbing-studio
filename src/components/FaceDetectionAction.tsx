@@ -1,3 +1,4 @@
+import { JobDuration } from './JobDuration';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Job, Project } from '../domain/types';
@@ -85,6 +86,7 @@ export function FaceDetectionAction({
           <p role="status">
             {t('faceDetectProgress')} {Math.round((job.progress ?? 0) * 100)}%
           </p>
+          <JobDuration job={job} />
           <button
             className="text-button"
             onClick={() => void bridge.cancelJob(job.id).catch((e) => onError(String(e)))}

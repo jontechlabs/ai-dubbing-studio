@@ -1,3 +1,4 @@
+import { JobDuration } from './JobDuration';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Download, LoaderCircle, Play, Pause, ScanFace } from 'lucide-react';
@@ -875,6 +876,7 @@ export function InpaintPanel({
             <div role="status">
               <p>{t(`jobStages.${job.stage}`)}</p>
               <progress value={job.progress ?? undefined} max="1" />
+              <JobDuration job={job} />
               <button
                 className="text-button"
                 onClick={() => void bridge.cancelJob(job.id).catch((e) => onError(String(e)))}
