@@ -1,0 +1,61 @@
+name: Complete immutable Windows package validation
+on:
+  workflow_dispatch:
+  push:
+    branches: [codex/microphone-voice-conversion]
+    paths: [.github/workflows/continue-package-validation.yml]
+permissions:
+  contents: read
+  actions: read
+jobs:
+  validate:
+    runs-on: windows-latest
+    timeout-minutes: 60
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+      PYTHONUTF8: '1'
+      PYTHONIOENCODING: utf-8
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
+        with:
+          node-version: '24'
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: 3.12.10
+      - uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53
+        with:
+          artifact-ids: '12408877433'
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          run-id: 39735610417
+          path: .cache/reused-build
+      - name: Verify functional source identity and original package checksums
+        run: ./scripts/continue-package-validation.ps1
+      - name: Install pinned JavaScript validation dependencies
+        run: |
+          npm install --global pnpm@11.25.0
+          pnpm install --frozen-lockfile
+      - name: Packaged desktop and real synthetic microphone through MCP
+        run: ./scripts/test-mcp.ps1
+      - name: Prepare verified ASR model and recheck packaged transcription
+        run: ./scripts/test-reference-transcription.ps1
+      - name: Full official TTS and voice conversion models with French ASR
+        run: ./scripts/test-multilingual.ps1
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: windows-x64-development-build
+          path: artifacts/*
+          if-no-files-found: error
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: failure()
+        with:
+          name: continuation-failure
+          path: |
+            artifacts/*
+            .cache/mcp-native/**/*.stdout.log
+            .cache/mcp-native/**/*.stderr.log
+            .cache/multilingual-validation/*.log
+            .cache/multilingual-validation/*.json
+          include-hidden-files: true
