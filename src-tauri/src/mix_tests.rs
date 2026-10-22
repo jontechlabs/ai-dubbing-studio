@@ -506,7 +506,7 @@ async fn voice_local_edits_are_used_by_real_mkv_export_and_cancel_before_render(
     p.format_version = 18;
     let edit = serde_json::from_value(serde_json::json!({"pieces":[
       {"sourceStartMs":0,"sourceEndMs":500,"durationMs":500,"gain":0},
-      {"sourceStartMs":500,"sourceEndMs":1500,"durationMs":1000,"gain":0.5,"effects":[{"kind":"limiter","enabled":true,"parameters":{"threshold":-20}}]}
+      {"sourceStartMs":500,"sourceEndMs":1500,"durationMs":1000,"gain":0.5,"effects":[{"kind":"limiter","enabled":true,"parameters":{"threshold":-18}}]}
     ]}))
     .unwrap();
     p.voice_edits.insert("voice".into(), edit);
@@ -550,7 +550,7 @@ async fn voice_local_edits_are_used_by_real_mkv_export_and_cancel_before_render(
         .all(|v| v.abs() < 0.00001));
     assert!(samples[1700 * 96..1900 * 96]
         .iter()
-        .all(|v| (*v - 0.05).abs() < 0.002));
+        .all(|v| (*v - 0.5 * 10f32.powf(-18.0 / 20.0)).abs() < 0.002));
     assert_eq!(
         crate::voice_edit::render(
             &root,

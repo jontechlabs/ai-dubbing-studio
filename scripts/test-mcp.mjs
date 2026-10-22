@@ -158,6 +158,7 @@ try {
     proofs.microphonePcmCapture=true;proofs.microphoneOriginalsPreserved=true;proofs.reopenFormat17=true;proofs.voiceConversionSpacePreflight=true;
     // Real native DSP through the shipped UI/MCP, retaining every source/take.
     const effectsCatalog=await call('studio_audio_effects_catalog');assert.equal(effectsCatalog.effects.length,20);assert.equal(effectsCatalog.presets.length,12);
+    await call('studio_select_take',{context:await context(),id:baseId});
     await call('studio_edit_voice',{context:await context(),id:baseId,startMs:0,endMs:2000,operation:{kind:'effects',effects:[{kind:'pitch',enabled:true,parameters:{semitones:4}}]}});
     const fxProject=await call('studio_get_project');assert.equal(fxProject.formatVersion,18);assert.equal(fxProject.voiceEdits[baseId].pieces[0].effects[0].parameters.semitones,4);
     const rendered=await call('studio_dubbing_path',{id:baseId,slotMs:2000,exactDuration:true,edit:fxProject.voiceEdits[baseId]});assert((await fs.stat(rendered)).size>44);

@@ -9,7 +9,7 @@ import { validateVoiceEdit } from './voiceEdit';
 import { validateProsody } from './prosody';
 import { validateTakeOrigins } from './voiceCapture';
 import { validateEffectsProject } from './audioEffects';
-import packageInfo from '../../package.json';
+import packageInfo from '../../package.json' with { type: 'json' };
 export const APP_VERSION = packageInfo.version;
 
 export function blankProject(name = 'Untitled', source = 'ja', target = 'fr'): Project {

@@ -1,4 +1,4 @@
-import data from '../../resources/audio-effects.json';
+import data from '../../resources/audio-effects.json' with { type: 'json' };
 export type EffectKind =
   | 'equalizer'
   | 'pitch'
