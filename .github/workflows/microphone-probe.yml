@@ -1,0 +1,20 @@
+name: WebView2 microphone diagnostic
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  probe:
+    runs-on: windows-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - name: Capture synthetic microphone through WebView2 and production CSP
+        shell: powershell
+        run: powershell.exe -NoProfile -STA -File scripts/probe-webview-microphone.ps1
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: webview-microphone-probe
+          path: .cache/webview-microphone-probe/result.json
+          include-hidden-files: true

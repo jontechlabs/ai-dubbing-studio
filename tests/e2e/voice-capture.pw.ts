@@ -7,6 +7,7 @@ test.use({launchOptions:{args:['--use-fake-ui-for-media-stream','--use-fake-devi
 
 test('real Web Audio microphone capture is auditioned, saved as another take, and survives reload',async({page})=>{
   await nativeMock(page);await page.goto('/');
+  await page.evaluate(policy=>{const meta=document.createElement('meta');meta.httpEquiv='Content-Security-Policy';meta.content=policy;document.head.appendChild(meta);},JSON.parse(fs.readFileSync('src-tauri/tauri.conf.json','utf8')).app.security.csp);
   await page.locator('.dialogue-card').first().getByRole('button',{name:'Doubler',exact:true}).click();
   const panel=page.getByRole('dialog',{name:'Doublage'});
   await panel.locator('.microphone-panel summary').click();

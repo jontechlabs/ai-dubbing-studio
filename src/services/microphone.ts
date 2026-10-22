@@ -11,6 +11,7 @@ export interface MicrophoneState {
   clipped: boolean;
   url: string;
   error: string | null;
+  errorDetail: string | null;
 }
 let state: MicrophoneState = {
   phase: 'idle',
@@ -21,6 +22,7 @@ let state: MicrophoneState = {
   clipped: false,
   url: '',
   error: null,
+  errorDetail: null,
 };
 const listeners = new Set<() => void>();
 export const readMicrophone = () => state;
@@ -112,6 +114,7 @@ export function discardMicrophone() {
     clipped: false,
     url: '',
     error: null,
+    errorDetail: null,
   });
 }
 export async function startMicrophone(project: Project, line: Dialogue, deviceId = '') {
@@ -125,10 +128,12 @@ export async function startMicrophone(project: Project, line: Dialogue, deviceId
     projectId: project.id,
     lineId: line.id,
     error: null,
+    errorDetail: null,
     durationMs: 0,
     level: 0,
     clipped: false,
   });
+  let startupStage = 'getUserMedia';
   try {
     const acquired = await navigator.mediaDevices.getUserMedia({
       video: false,
@@ -145,8 +150,11 @@ export async function startMicrophone(project: Project, line: Dialogue, deviceId
       return;
     }
     stream = acquired;
+    startupStage = 'AudioContext';
     context = new AudioContext({ sampleRate: MIC_RATE });
+    startupStage = 'AudioContext sampleRate=' + context.sampleRate;
     if (context.sampleRate !== MIC_RATE) throw Error('MIC_UNAVAILABLE');
+    startupStage = 'AudioWorklet module';
     await context.audioWorklet.addModule('/microphone-worklet.js');
     if (token !== epoch || !context) return;
     node = new AudioWorkletNode(context, 'studio-microphone', {
@@ -211,6 +219,7 @@ export async function startMicrophone(project: Project, line: Dialogue, deviceId
         void stopMicrophone();
       };
     });
+    startupStage = 'AudioContext resume';
     await context.resume();
     update({ phase: 'recording' });
   } catch (error) {
@@ -220,6 +229,10 @@ export async function startMicrophone(project: Project, line: Dialogue, deviceId
       phase: 'idle',
       projectId: null,
       lineId: null,
+      errorDetail:
+        startupStage +
+        ': ' +
+        (error instanceof Error ? error.name + ': ' + error.message : String(error)),
       error:
         error instanceof DOMException && error.name === 'NotAllowedError'
           ? 'MIC_PERMISSION_DENIED'

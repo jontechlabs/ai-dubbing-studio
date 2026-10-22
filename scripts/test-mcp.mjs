@@ -141,7 +141,7 @@ try {
     assert.equal((await call('studio_microphone',{action:'status',context:await context()})).phase,'idle');
     await call('studio_microphone',{action:'start',lineId:beforeRecording.dialogues[lineIndex].id,context:await context()});
     const captureUntil=Date.now()+30000;
-    while(true){const mic=(await state()).microphone;if(mic.error)throw Error(mic.error);if(mic.phase==='recording'&&mic.durationMs>=750)break;if(Date.now()>captureUntil)throw Error('Synthetic WebView microphone did not start');await new Promise(r=>setTimeout(r,150));}
+    while(true){const mic=(await state()).microphone;if(mic.error)throw Error(JSON.stringify(mic));if(mic.phase==='recording'&&mic.durationMs>=750)break;if(Date.now()>captureUntil)throw Error('Synthetic WebView microphone did not start');await new Promise(r=>setTimeout(r,150));}
     await call('studio_microphone',{action:'stop',context:await context()});
     assert.equal((await state()).microphone.phase,'ready');
     await call('studio_microphone',{action:'save',context:await context()});

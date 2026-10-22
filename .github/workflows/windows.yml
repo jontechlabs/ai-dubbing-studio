@@ -121,6 +121,7 @@ jobs:
         with:
           name: failure-diagnostics
           path: |
+            artifacts/*
             test-results/
             .cache/reference-transcription/**/*.log
             .cache/reference-transcription/**/*.json

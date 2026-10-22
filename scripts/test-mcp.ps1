@@ -11,7 +11,7 @@ $executable=Join-Path $testRoot 'AI-Dubbing-Studio-Windows/AI Dubbing Studio.exe
 [IO.File]::WriteAllText((Join-Path $dataRoot 'mcp-enabled'),'1')
 $stdout=Join-Path $testRoot 'desktop.stdout.log'
 $stderr=Join-Path $testRoot 'desktop.stderr.log'
-$microphoneFile=Join-Path $testRoot 'microphone-input.wav'
+$microphoneFile=Join-Path $repoRoot '.cache/microphone-native-input.wav'
 $audioStream=[IO.File]::Create($microphoneFile)
 $audioWriter=[IO.BinaryWriter]::new($audioStream)
 try {
