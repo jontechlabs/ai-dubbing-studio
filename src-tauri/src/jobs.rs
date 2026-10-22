@@ -43,6 +43,8 @@ pub struct PersistedJob {
     #[serde(default)]
     pub prosody: Option<crate::prosody::Request>,
     #[serde(default)]
+    pub voice_conversion: Option<crate::voice_capture::Request>,
+    #[serde(default)]
     pub face_detection: Option<crate::face_detection::Request>,
     #[serde(default)]
     pub inpaint_batch: Option<String>,
@@ -122,6 +124,7 @@ pub fn create<R: tauri::Runtime>(
             Control {
                 saved: PersistedJob {
                     prosody: None,
+                    voice_conversion: None,
                     face_detection: None,
                     inpaint_batch: None,
                     translation_install: false,

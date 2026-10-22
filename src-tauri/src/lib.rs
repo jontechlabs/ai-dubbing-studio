@@ -28,6 +28,7 @@ mod tts;
 mod tts_batch;
 mod tts_session;
 mod voice_accent;
+mod voice_capture;
 mod voice_edit;
 mod voice_engines;
 mod voice_fit;
@@ -83,6 +84,43 @@ async fn mcp_set_enabled(
         .map_err(domain::io_error)?
 }
 
+#[tauri::command]
+async fn mcp_store_microphone_take(
+    app: tauri::AppHandle,
+    core: State<'_, Shared>,
+    request: tauri::ipc::Request<'_>,
+) -> Result<Project, String> {
+    let capture: voice_capture::Capture = serde_json::from_str(
+        request
+            .headers()
+            .get("x-studio-capture")
+            .ok_or("MIC_INVALID_AUDIO")?
+            .to_str()
+            .map_err(domain::io_error)?,
+    )
+    .map_err(domain::io_error)?;
+    let tauri::ipc::InvokeBody::Raw(bytes) = request.body() else {
+        return Err("MIC_INVALID_AUDIO".into());
+    };
+    if bytes.len() > 44 + 120000 * 48 {
+        return Err("MIC_INVALID_AUDIO".into());
+    }
+    let bytes = bytes.clone();
+    let core = core.inner().clone();
+    tauri::async_runtime::spawn_blocking(move || {
+        voice_capture::save_microphone(core, app, capture, &bytes)
+    })
+    .await
+    .map_err(domain::io_error)?
+}
+#[tauri::command]
+fn convert_voice_timbre(
+    app: tauri::AppHandle,
+    core: State<'_, Shared>,
+    options: voice_capture::Options,
+) -> Result<String, String> {
+    voice_capture::start(core.inner().clone(), app, options)
+}
 #[tauri::command]
 fn prosody_status(app: tauri::AppHandle) -> serde_json::Value {
     prosody::status(&app)
@@ -1172,6 +1210,9 @@ fn retry_job(app: tauri::AppHandle, core: State<'_, Shared>, id: String) -> Resu
             record.inpaint_model.as_deref().unwrap_or(inpaint::MUSE),
         );
     }
+    if let Some(request) = record.voice_conversion {
+        return voice_capture::enqueue(core.inner().clone(), app, request);
+    }
     if let Some(request) = record.prosody {
         let session = core.session.lock().map_err(io_error)?;
         let s = session.as_ref().ok_or("NO_PROJECT")?;
@@ -1444,6 +1485,8 @@ pub fn run() {
             install_tts_runtime,
             generate_line,
             prosody_status,
+            mcp_store_microphone_take,
+            convert_voice_timbre,
             transfer_voice_prosody,
             generation_path,
             dubbing_path,

@@ -24,3 +24,6 @@ if ($LASTEXITCODE) { throw 'Pinned headless dependency installation failed' }
 if ($LASTEXITCODE) { throw 'CPU Torch profile installation failed' }
 & $pythonPath -B (Join-Path $PSScriptRoot 'test-multilingual.py')
 if ($LASTEXITCODE) { throw 'Actual multilingual inference failed' }
+
+& $pythonPath -B (Join-Path $PSScriptRoot 'test-voice-conversion.py')
+if ($LASTEXITCODE) { throw 'Actual offline voice conversion failed' }

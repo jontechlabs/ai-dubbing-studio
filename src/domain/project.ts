@@ -7,7 +7,8 @@ import { validateAudioPatches } from './audioPatch';
 import { validateLipVideos } from './inpaint';
 import { validateVoiceEdit } from './voiceEdit';
 import { validateProsody } from './prosody';
-export const APP_VERSION = '0.22.0';
+import { validateTakeOrigins } from './voiceCapture';
+export const APP_VERSION = '0.23.0';
 
 export function blankProject(name = 'Untitled', source = 'ja', target = 'fr'): Project {
   const now = new Date().toISOString();
@@ -106,7 +107,7 @@ export function validateProject(value: unknown): Project {
   if (
     !Number.isInteger(project.formatVersion) ||
     project.formatVersion < 1 ||
-    project.formatVersion > 16
+    project.formatVersion > 17
   )
     throw new Error('UNSUPPORTED_PROJECT_VERSION');
   if (project.voiceEdits !== undefined) {
@@ -374,6 +375,7 @@ export function validateProject(value: unknown): Project {
       )
         throw Error('INVALID_GENERATION');
   }
+  validateTakeOrigins(project);
   validateProsody(project);
   validateLipVideos(project);
   validateAudioPatches(project);

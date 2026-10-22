@@ -1,5 +1,8 @@
 # AI Dubbing Studio
 
+Enregistrement au microphone et conversion locale du timbre : [guide v0.23.0](docs/MICROPHONE-VOICE-CONVERSION.md). Les références de personnages et fichiers audio avec choix de début/fin sont disponibles ; chaque opération ajoute un nouvel essai.
+
+
 **v0.22.0 — VoxCPM2 and Chatterbox Multilingual V3.** Install and generate individual or batch voice takes, with an isolated CUDA 12.8 runtime, disk-space preflight and preserved takes. Drama 3 now receives the target language even with Auto accent, to prevent Japanese-reference language drift. [Installation, capabilities, limits and screenshots](docs/VOXCPM2-CHATTERBOX.md).
 
 **v0.21.0 — 43 acting directions.** Dying, stressed, laughing, panicked, exhausted and more, grouped by intention. Available for individual and batch dubbing with CosyVoice3, Fish S2 and Drama 3. Clarified the CosyVoice3 accent / reference acting trade-off. [Full list, guide and screenshot (French)](docs/VOICE-ACTING.md).

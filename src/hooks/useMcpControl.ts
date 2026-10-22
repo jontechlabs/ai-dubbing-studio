@@ -13,6 +13,14 @@ import { translationState } from '../domain/translation';
 import { validateProject } from '../domain/project';
 import { dubbingClips } from '../domain/mix';
 import { APP_VERSION } from '../domain/project';
+import {
+  readMicrophone,
+  startMicrophone,
+  stopMicrophone,
+  discardMicrophone,
+  saveMicrophone,
+} from '../services/microphone';
+import { storeMicrophoneTake } from '../services/bridge';
 import { readVoicePlayback } from '../services/voicePlayback';
 import type { Updater } from './useUpdater';
 
@@ -74,6 +82,35 @@ export function useMcpControl(control: Control) {
           result = await invoke(command.command, parameters);
           if (result && typeof result === 'object' && 'formatVersion' in result)
             studio.load(validateProject(result));
+        } else if (tool === 'studio_microphone') {
+          checkContext(project, args.context as Context);
+          const action = args.action;
+          if (action === 'start' || action === 'save') {
+            if (!project) throw Error('NO_PROJECT');
+            const line = project.dialogues.find(
+              (l) => l.id === (args.lineId ?? readMicrophone().lineId ?? c.selectedId),
+            );
+            if (!line) throw Error('NO_DIALOGUES');
+            c.select(line);
+            c.setPanel('dub');
+            if (action === 'start') {
+              c.stopAudio();
+              transport.videoRef.current?.pause();
+              void startMicrophone(project, line, String(args.deviceId ?? '')).catch((error) =>
+                studio.setError(String(error)),
+              );
+            } else
+              studio.load(
+                await saveMicrophone(project, line, (bytes) =>
+                  storeMicrophoneTake(project.id, project.revision, line.id, bytes),
+                ),
+              );
+          } else if (action === 'stop') await stopMicrophone();
+          else if (action === 'discard') discardMicrophone();
+          else if (action !== 'status') throw Error('MCP_INVALID_ARGUMENTS');
+          const { url: _url, ...status } = readMicrophone();
+          void _url;
+          result = status;
         } else if (tool === 'studio_get_project') result = project;
         else if (tool === 'studio_save')
           result = {
@@ -83,6 +120,7 @@ export function useMcpControl(control: Control) {
         else if (tool === 'studio_get_state')
           result = {
             version: APP_VERSION,
+            microphone: { ...readMicrophone(), url: undefined },
             context: project && { projectId: project.id, expectedRevision: project.revision },
             name: project?.name ?? null,
             media: project?.media ?? null,

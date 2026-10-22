@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { AudioLines, ChevronUp, LoaderCircle, ShieldCheck, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { MicrophoneIndicator } from './components/VoiceCapture';
+import { readMicrophone } from './services/microphone';
 import { Dialogues } from './components/Dialogues';
 import { Editor } from './components/Editor';
 import { Header, type Panel } from './components/Header';
@@ -317,6 +319,14 @@ export default function App() {
         ]);
       }}
     >
+      <MicrophoneIndicator
+        onOpen={() => {
+          const id = readMicrophone().lineId;
+          const line = studio.project?.dialogues.find((l) => l.id === id);
+          if (line) select(line);
+          setPanel('dub');
+        }}
+      />
       <Header
         project={studio.project}
         saveState={studio.saveState}

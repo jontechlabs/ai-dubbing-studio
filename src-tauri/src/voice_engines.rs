@@ -37,11 +37,17 @@ pub const IDS: &[&str] = &[
     "qwen3-17b-gguf-q8",
     "fish-s2-fp8",
     "drama3-comfy-fp8",
+    "chatterbox-vc",
     "voxcpm2-bf16",
     "chatterbox-multilingual-v3",
 ];
 pub(crate) fn multilingual(id: &str) -> bool {
-    ["voxcpm2-bf16", "chatterbox-multilingual-v3"].contains(&id)
+    [
+        "voxcpm2-bf16",
+        "chatterbox-multilingual-v3",
+        "chatterbox-vc",
+    ]
+    .contains(&id)
 }
 pub fn root(core: &Core) -> PathBuf {
     crate::model_storage::root(core).join("voice-engines")
@@ -81,6 +87,8 @@ pub fn installed(core: &Core, id: &str) -> bool {
                     .join(id)
                     .join(if id == "voxcpm2-bf16" {
                         "model.safetensors"
+                    } else if id == "chatterbox-vc" {
+                        "s3gen.safetensors"
                     } else {
                         "t3_mtl23ls_v3.safetensors"
                     })

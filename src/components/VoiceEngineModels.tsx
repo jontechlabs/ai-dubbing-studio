@@ -143,6 +143,16 @@ export function VoiceEngineModels({
             </div>
           );
         })}
+      <MultilingualModel
+        id="chatterbox-vc"
+        name="Chatterbox · conversion de timbre"
+        installed={status?.variants.find((v) => v.id === 'chatterbox-vc')?.installed}
+        size={status?.variants.find((v) => v.id === 'chatterbox-vc')?.sizeBytes}
+        busy={busy}
+        completion={completion}
+        onStarted={onStarted}
+        onError={onError}
+      />
     </>
   );
 }

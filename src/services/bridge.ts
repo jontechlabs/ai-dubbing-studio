@@ -134,6 +134,21 @@ export function installTtsRuntime(cuda: boolean) {
 export function generateLine(lineId: string, options: import('../domain/types').VoiceSettings) {
   return invoke<string>('generate_line', { lineId, options });
 }
+export function storeMicrophoneTake(
+  projectId: string,
+  expectedRevision: number,
+  lineId: string,
+  bytes: ArrayBuffer,
+) {
+  return invokeNative<Project>('mcp_store_microphone_take', bytes, {
+    headers: { 'x-studio-capture': JSON.stringify({ projectId, expectedRevision, lineId }) },
+  });
+}
+export function convertVoiceTimbre(
+  options: import('../domain/voiceCapture').VoiceConversionOptions,
+) {
+  return invoke<string>('convert_voice_timbre', { options });
+}
 export function prosodyStatus() {
   return invoke<{
     available: boolean;

@@ -9,7 +9,7 @@
     {
       "id": "fish-s2-gguf-q8",
       "providerId": "fish-s2",
-      "name": "Fish S2 Pro · GGUF Q8_0",
+      "name": "Fish S2 Pro \u00b7 GGUF Q8_0",
       "engine": "audiocpp",
       "revision": "f861648c0c1f4da9f18e9a0ce5e217b0679bb2f5",
       "files": [
@@ -24,7 +24,7 @@
     {
       "id": "qwen3-06b-gguf-q8",
       "providerId": "qwen3-tts",
-      "name": "Qwen3-TTS Base 0.6B · GGUF Q8_0",
+      "name": "Qwen3-TTS Base 0.6B \u00b7 GGUF Q8_0",
       "engine": "audiocpp",
       "revision": "f861648c0c1f4da9f18e9a0ce5e217b0679bb2f5",
       "files": [
@@ -39,7 +39,7 @@
     {
       "id": "qwen3-17b-gguf-q8",
       "providerId": "qwen3-tts",
-      "name": "Qwen3-TTS Base 1.7B · GGUF Q8_0",
+      "name": "Qwen3-TTS Base 1.7B \u00b7 GGUF Q8_0",
       "engine": "audiocpp",
       "revision": "f861648c0c1f4da9f18e9a0ce5e217b0679bb2f5",
       "files": [
@@ -54,7 +54,7 @@
     {
       "id": "fish-s2-fp8",
       "providerId": "fish-s2",
-      "name": "Fish S2 Pro · FP8 E4M3",
+      "name": "Fish S2 Pro \u00b7 FP8 E4M3",
       "engine": "fish-fp8",
       "revision": "f4639232dd9081b8f9327fca20af73c272a207c7",
       "files": [
@@ -117,7 +117,7 @@
     {
       "id": "drama3-comfy-fp8",
       "providerId": "fish-drama3",
-      "name": "Fish Audio Drama 3 · FP8 · experts en RAM",
+      "name": "Fish Audio Drama 3 \u00b7 FP8 \u00b7 experts en RAM",
       "engine": "drama3",
       "revision": "9063c072019aa578895e51adb5489c6cd2c834b0",
       "files": [
@@ -138,7 +138,7 @@
     {
       "id": "voxcpm2-bf16",
       "providerId": "voxcpm2",
-      "name": "VoxCPM2 · 2B · BF16",
+      "name": "VoxCPM2 \u00b7 2B \u00b7 BF16",
       "engine": "multilingual",
       "revision": "32279effe8c19989596f05d353d1447f51d9e915",
       "files": [
@@ -189,7 +189,7 @@
     {
       "id": "chatterbox-multilingual-v3",
       "providerId": "chatterbox",
-      "name": "Chatterbox Multilingual V3 · 500M",
+      "name": "Chatterbox Multilingual V3 \u00b7 500M",
       "engine": "multilingual",
       "revision": "5bb1f6ee58e50c3b8d408bc82a6d3740c2db6e18",
       "files": [
@@ -228,6 +228,21 @@
           "url": "https://github.com/explosion/spacy-pkuseg/releases/download/v0.0.26/spacy_ontonotes.zip",
           "size": 34567143,
           "sha256": "b216e7f92de7ae285aeab8feba2faa8ea8216e5995ff6fb3d391cc8356db1bfe"
+        }
+      ]
+    },
+    {
+      "id": "chatterbox-vc",
+      "providerId": "chatterbox-vc",
+      "name": "Chatterbox \u00b7 conversion de timbre",
+      "engine": "multilingual",
+      "revision": "5bb1f6ee58e50c3b8d408bc82a6d3740c2db6e18",
+      "files": [
+        {
+          "name": "s3gen.safetensors",
+          "url": "https://huggingface.co/ResembleAI/chatterbox/resolve/5bb1f6ee58e50c3b8d408bc82a6d3740c2db6e18/s3gen.safetensors",
+          "size": 1056484620,
+          "sha256": "2b78103c654207393955e4900aac14a12de8ef25f4b09424f1ef91941f161d4e"
         }
       ]
     }

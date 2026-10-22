@@ -56,7 +56,15 @@ export function MultilingualModel({
               : 'ttsNotInstalled',
         )}
       </p>
-      <p>{t(id === 'voxcpm2-bf16' ? 'voxcpmGenerationHint' : 'chatterboxGenerationHint')}</p>
+      <p>
+        {t(
+          id === 'chatterbox-vc'
+            ? 'capture.vcModelHint'
+            : id === 'voxcpm2-bf16'
+              ? 'voxcpmGenerationHint'
+              : 'chatterboxGenerationHint',
+        )}
+      </p>
       <p className="panel-description">{t('multilingualHardwareHint')}</p>
       {size !== undefined && (
         <small>

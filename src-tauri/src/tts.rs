@@ -48,6 +48,9 @@ impl Options {
         {
             return Err("TTS_STYLE_UNSUPPORTED".into());
         }
+        if self.variant() == "chatterbox-vc" {
+            return Err("INVALID_TTS_REQUEST".into());
+        }
         if self.variant() != "cosy3-official"
             && !crate::voice_engines::IDS.contains(&self.variant())
         {

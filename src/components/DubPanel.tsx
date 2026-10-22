@@ -21,6 +21,7 @@ import { accentSupported, voiceAccents } from '../domain/voiceAccents';
 import { ReferenceFileImport } from './ReferenceFileImport';
 import { BatchDubbingAction } from './BatchDubbingAction';
 import { DubbingTimingControls } from './DubbingTimingControls';
+import { VoiceCapture } from './VoiceCapture';
 import { ProsodyTransfer } from './ProsodyTransfer';
 import { moodGroup, moodGroups, voiceMoods } from '../domain/voiceMoods';
 
@@ -321,6 +322,21 @@ export function DubPanel({
   return (
     <div className="panel-body dub-panel">
       <h3>{variant.name}</h3>
+      {!batch && (
+        <VoiceCapture
+          key={project.id + line.id}
+          project={project}
+          line={line}
+          takes={generations}
+          chosen={chosen}
+          jobs={jobs}
+          snapshot={snapshot}
+          run={run}
+          onStarted={onStarted}
+          onError={onError}
+          onModels={onModels}
+        />
+      )}
       {!batch && chosen && project.media && (
         <div className="settings-section">
           <button className="button accent wide" onClick={onLips} disabled={busy}>
@@ -828,6 +844,15 @@ export function DubPanel({
                   <small>{t('ttsPeakVram', { mb: generation.peakVramMb })}</small>
                 )}
                 {generation.compatibilityMode && <small>{t('ttsCompatibleTake')}</small>}
+                {generation.takeOrigin && (
+                  <small className="model-state">
+                    {t(
+                      generation.takeOrigin.type === 'microphone'
+                        ? 'capture.recordedTake'
+                        : 'capture.convertedTake',
+                    )}
+                  </small>
+                )}
                 {generation.prosodyTransfer && (
                   <small>
                     {t('prosody.take', {

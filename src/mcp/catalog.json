@@ -2,6 +2,42 @@
   "protocolVersion": "2025-11-25",
   "commands": [
     {
+      "name": "studio_convert_voice_timbre",
+      "command": "convert_voice_timbre",
+      "description": "Convert the timbre of any existing voice take, using a stored character/file reference. Local Chatterbox VC, no TTS. Creates another immutable take; poll jobs.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "options": { "$ref": "#/$defs/options_VoiceConversionOptions_0" },
+          "context": {
+            "type": "object",
+            "properties": {
+              "projectId": { "type": "string" },
+              "expectedRevision": { "type": "integer", "minimum": 0 }
+            },
+            "required": ["projectId", "expectedRevision"],
+            "additionalProperties": false
+          }
+        },
+        "required": ["options", "context"],
+        "additionalProperties": false,
+        "$defs": {
+          "options_VoiceConversionOptions_0": {
+            "type": "object",
+            "properties": {
+              "generationId": { "type": "string" },
+              "referenceId": { "type": "string" },
+              "characterId": { "anyOf": [{ "type": "null" }, { "type": "string" }] },
+              "device": { "type": "string" }
+            },
+            "required": ["generationId", "referenceId", "characterId", "device"],
+            "additionalProperties": false
+          }
+        }
+      },
+      "annotations": { "readOnlyHint": false, "destructiveHint": true, "openWorldHint": false }
+    },
+    {
       "name": "studio_prosody_status",
       "command": "prosody_status",
       "description": "prosody status. Uses the current desktop session. Local file paths must be absolute; long operations return job IDs. Existing native validation applies.",
@@ -2145,6 +2181,30 @@
       "annotations": { "readOnlyHint": true, "destructiveHint": false, "openWorldHint": false }
     },
     {
+      "name": "studio_microphone",
+      "description": "Record a local microphone take for a dialogue in the open studio. status/start/stop/discard/save. start may require the Windows microphone permission prompt; max 120 seconds. save adds an immutable take. Existing takes stay intact.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "action": { "type": "string", "enum": ["status", "start", "stop", "discard", "save"] },
+          "lineId": { "type": "string" },
+          "deviceId": { "type": "string" },
+          "context": {
+            "type": "object",
+            "properties": {
+              "projectId": { "type": "string" },
+              "expectedRevision": { "type": "integer", "minimum": 0 }
+            },
+            "required": ["projectId", "expectedRevision"],
+            "additionalProperties": false
+          }
+        },
+        "required": ["action", "context"],
+        "additionalProperties": false
+      },
+      "annotations": { "readOnlyHint": false, "destructiveHint": true, "openWorldHint": false }
+    },
+    {
       "name": "studio_save",
       "description": "Flush pending desktop edits to disk. No project change is discarded.",
       "inputSchema": {
@@ -3223,7 +3283,8 @@
         "Generation_15": {
           "type": "object",
           "properties": {
-            "prosodyTransfer": { "anyOf": [{ "$ref": "#/$defs/ProsodyTransfer_16" }] },
+            "takeOrigin": { "anyOf": [{ "$ref": "#/$defs/TakeOrigin_16" }] },
+            "prosodyTransfer": { "anyOf": [{ "$ref": "#/$defs/ProsodyTransfer_17" }] },
             "kind": { "type": "string", "const": "tts" },
             "id": { "type": "string" },
             "dialogueId": { "type": "string" },
@@ -3281,14 +3342,30 @@
           ],
           "additionalProperties": false
         },
-        "ProsodyTransfer_16": {
+        "TakeOrigin_16": {
+          "type": "object",
+          "properties": {
+            "type": {
+              "anyOf": [
+                { "type": "string", "const": "microphone" },
+                { "type": "string", "const": "conversion" }
+              ]
+            },
+            "sourceGenerationId": { "anyOf": [{ "type": "string" }] },
+            "referenceId": { "anyOf": [{ "type": "string" }] },
+            "characterId": { "anyOf": [{ "type": "null" }, { "type": "string" }] }
+          },
+          "required": ["type"],
+          "additionalProperties": false
+        },
+        "ProsodyTransfer_17": {
           "type": "object",
           "properties": {
             "algorithm": { "type": "string", "const": "praat-psola-v1" },
             "sourceGenerationId": { "type": "string" },
             "sourceDurationMs": { "type": "number" },
             "guideDurationMs": { "type": "number" },
-            "options": { "$ref": "#/$defs/ProsodyOptions_17" }
+            "options": { "$ref": "#/$defs/ProsodyOptions_18" }
           },
           "required": [
             "algorithm",
@@ -3299,7 +3376,7 @@
           ],
           "additionalProperties": false
         },
-        "ProsodyOptions_17": {
+        "ProsodyOptions_18": {
           "type": "object",
           "properties": {
             "generationId": { "type": "string" },
@@ -3326,6 +3403,22 @@
             "rhythm",
             "energy"
           ],
+          "additionalProperties": false
+        }
+      }
+    },
+    "VoiceConversionOptions": {
+      "$ref": "#/$defs/VoiceConversionOptions_0",
+      "$defs": {
+        "VoiceConversionOptions_0": {
+          "type": "object",
+          "properties": {
+            "generationId": { "type": "string" },
+            "referenceId": { "type": "string" },
+            "characterId": { "anyOf": [{ "type": "null" }, { "type": "string" }] },
+            "device": { "type": "string" }
+          },
+          "required": ["generationId", "referenceId", "characterId", "device"],
           "additionalProperties": false
         }
       }

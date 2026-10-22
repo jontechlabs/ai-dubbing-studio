@@ -15,7 +15,7 @@ class FishTests(unittest.TestCase):
     def test_model_and_runtime_manifests_include_all_engines_and_verified_files(self):
         root=Path(__file__).parent
         manifest=json.loads((root/'voice-engines.json').read_text(encoding='utf-8'))
-        self.assertEqual(len(manifest['variants']),7)
+        self.assertEqual(len(manifest['variants']),8)
         self.assertTrue(manifest['engine']['name'].endswith('vulkan-portable.zip'))
         runtime=json.loads((root/'fish-runtime.json').read_text(encoding='utf-8'))
         self.assertGreater(len(runtime['files']),100)

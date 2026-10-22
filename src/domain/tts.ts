@@ -59,10 +59,10 @@ export function selectedGeneration(project: Project, line: Dialogue) {
   );
 }
 export function staleGeneration(project: Project, line: Dialogue, generation: Generation) {
-  if (generation.options.referenceMode === 'file') {
+  if (!generation.takeOrigin && generation.options.referenceMode === 'file') {
     const reference = project.voiceReferences?.find((r) => r.id === generation.referenceId);
     if (!reference || reference.transcript !== generation.referenceTranscript) return true;
-  } else if (generation.options.referenceMode !== 'current') {
+  } else if (!generation.takeOrigin && generation.options.referenceMode !== 'current') {
     const character = project.characters.find((c) => c.id === line.characterId);
     const reference = character?.references.find(
       (r) =>
@@ -81,6 +81,7 @@ export function staleGeneration(project: Project, line: Dialogue, generation: Ge
     )
       return true;
   } else if (
+    !generation.takeOrigin &&
     generation.options.mode === 'zeroShot' &&
     dialogueText(project, line, 'source') !== generation.referenceTranscript
   )

@@ -1,0 +1,55 @@
+import {test,expect} from '@playwright/test';
+import {nativeMock} from './nativeMock';
+test.use({launchOptions:{args:['--use-fake-ui-for-media-stream','--use-fake-device-for-media-stream']},permissions:['microphone']});
+
+test('real Web Audio microphone capture is auditioned, saved as another take, and survives reload',async({page})=>{
+  await nativeMock(page);await page.goto('/');
+  await page.locator('.dialogue-card').first().getByRole('button',{name:'Doubler',exact:true}).click();
+  const panel=page.getByRole('dialog',{name:'Doublage'});
+  await panel.locator('.microphone-panel summary').click();
+  await panel.getByRole('button',{name:'Commencer l’enregistrement',exact:true}).click();
+  await expect(page.locator('.microphone-indicator')).toContainText('Enregistrement en cours');
+  await expect.poll(()=>panel.getByRole('meter').getAttribute('value')).not.toBe('0');
+  await panel.getByRole('button',{name:'Arrêter l’enregistrement',exact:true}).click();
+  const recording=panel.locator('audio[aria-label="Écouter l’enregistrement"]');
+  await expect(recording).toBeVisible();
+  await expect.poll(()=>recording.evaluate((a:HTMLAudioElement)=>a.readyState)).toBeGreaterThanOrEqual(1);
+  expect(await recording.evaluate((a:HTMLAudioElement)=>a.duration)).toBeGreaterThan(.15);
+  await recording.evaluate((a:HTMLAudioElement)=>a.play());
+  await expect.poll(()=>recording.evaluate((a:HTMLAudioElement)=>a.currentTime)).toBeGreaterThan(0);
+  await recording.evaluate((a:HTMLAudioElement)=>a.pause());
+  await page.screenshot({path:'docs/screenshots/microphone-recording-fr.png'});
+  await panel.getByRole('button',{name:'Conserver comme nouvel essai',exact:true}).click();
+  await expect(page.locator('.microphone-indicator')).toHaveCount(0);
+  await expect(panel.getByText('Prise enregistrée au microphone',{exact:true})).toBeVisible();
+  const saved=await page.evaluate(()=>(window as any).__getMockProject());
+  expect(saved.formatVersion).toBe(17);expect(saved.generations.at(-1).takeOrigin.type).toBe('microphone');
+  expect(await page.evaluate(()=>(window as any).__microphoneBytes)).toBeGreaterThan(44+7200);
+  await page.reload();await page.locator('.dialogue-card').first().getByRole('button',{name:'Régénérer',exact:true}).click();
+  await expect(panel.getByText('Prise enregistrée au microphone',{exact:true})).toBeVisible();
+  const p=await page.evaluate(()=>(window as any).__getMockProject());expect(p.generations).toEqual(saved.generations);
+  await panel.locator('.conversion-panel summary').click();
+  await expect(panel.getByRole('button',{name:'Créer un essai avec ce timbre'})).toBeDisabled();
+  const refs=await panel.getByRole('combobox',{name:'Référence pour le timbre'}).locator('option').allTextContents();
+  expect(refs.length).toBeGreaterThan(0);
+  await page.evaluate(()=>{const p=(window as any).__getMockProject();p.voiceReferences=[{id:'french',label:'Référence française',path:'references/french.wav',durationMs:3000,transcript:''}];localStorage.setItem('nativeMockProject',JSON.stringify(p));});
+  await page.reload();await page.locator('.dialogue-card').first().getByRole('button',{name:'Régénérer',exact:true}).click();
+  await panel.locator('.conversion-panel summary').click();
+  await panel.getByRole('combobox',{name:'Référence pour le timbre'}).selectOption('file:french');
+  await panel.getByRole('combobox',{name:'Périphérique de conversion du timbre'}).selectOption('cuda:0');
+  await page.screenshot({path:'docs/screenshots/voice-conversion-fr.png'});
+  await panel.getByRole('button',{name:'Créer un essai avec ce timbre'}).click();
+  const options=await page.evaluate(()=>(window as any).__pendingConversion);
+  expect(options).toEqual({generationId:saved.generations.at(-1).id,referenceId:'french',characterId:null,device:'cuda:0'});
+  expect((await page.evaluate(()=>(window as any).__getMockProject())).generations).toEqual(saved.generations);
+});
+
+test('discard closes microphone tracks and never adds a take',async({page})=>{
+  await nativeMock(page);await page.goto('/');await page.locator('.dialogue-card').first().getByRole('button',{name:'Doubler',exact:true}).click();
+  const panel=page.getByRole('dialog',{name:'Doublage'});await panel.locator('.microphone-panel summary').click();
+  await panel.getByRole('button',{name:'Commencer l’enregistrement',exact:true}).click();
+  await expect(page.locator('.microphone-indicator')).toContainText('Enregistrement en cours');
+  await page.locator('.microphone-indicator').getByRole('button',{name:'Abandonner la prise'}).click();
+  await expect(page.locator('.microphone-indicator')).toHaveCount(0);
+  expect((await page.evaluate(()=>(window as any).__getMockProject())).generations).toHaveLength(0);
+});

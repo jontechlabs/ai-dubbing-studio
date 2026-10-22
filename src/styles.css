@@ -2786,3 +2786,37 @@ pre {
   flex-wrap: wrap;
   gap: 10px;
 }
+
+.voice-capture details {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px;
+  margin: 10px 0;
+}
+.voice-capture summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-weight: 600;
+}
+.voice-capture audio,
+.voice-capture meter {
+  width: 100%;
+  margin: 8px 0;
+}
+.microphone-indicator {
+  position: fixed;
+  top: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  background: #3b2030;
+  border: 1px solid #de7c99;
+  border-radius: 8px;
+  box-shadow: 0 3px 15px #0008;
+}
