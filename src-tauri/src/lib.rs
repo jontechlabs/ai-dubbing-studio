@@ -1407,7 +1407,7 @@ pub fn run() {
         None
     };
     let mut context = tauri::generate_context!();
-    if test_data.is_some() {
+    if let Some(test_folder) = &test_data {
         // WebView2 ignores fake-capture switches supplied through its env
         // variable. A dedicated explicit test flag applies them to this
         // isolated test window only; production microphone permissions stay
@@ -1416,7 +1416,7 @@ pub fn run() {
             .get(3)
             .is_some_and(|arg| arg == "--synthetic-microphone")
         {
-            let wav = test_data.as_ref().unwrap().join("synthetic-microphone.wav");
+            let wav = test_folder.join("synthetic-microphone.wav");
             if !wav.is_file() {
                 eprintln!("MIC_TEST_AUDIO_MISSING");
                 return;
