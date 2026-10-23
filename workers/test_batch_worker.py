@@ -149,14 +149,15 @@ class BatchSessionTests(unittest.TestCase):
         fake['librosa']=types.SimpleNamespace(resample=lambda audio,**kwargs:audio)
         with tempfile.TemporaryDirectory() as directory:
             path=Path(directory)/'ref.wav';sf.write(path,np.ones(24000,dtype=np.float32)*.1,24000)
-            request=dict(text='Bonjour',referenceTranscript='Original 1',speed=1,seed=1,outputPath=str(Path(directory)/'out.wav'),resultPath=str(Path(directory)/'out.json'))
+            request=dict(variantId='fish-s2-fp8',text='Bonjour',referenceTranscript='Original 1',speed=1,seed=1,outputPath=str(Path(directory)/'out.wav'),resultPath=str(Path(directory)/'out.json'))
             state={}
             with patch.dict(sys.modules,fake):
                 fish.synthesize(request,path,Path(directory),'cuda','cuda:0','Protocol test',session=state)
-                fish.synthesize(dict(request,text='Bonsoir',seed=2,referenceTranscript='Original 2'),path,Path(directory),'cuda','cuda:0','Protocol test',session=state)
+                fish.synthesize(dict(request,text='Bonsoir',seed=2,referenceTranscript='Original 2',quality={'temperature':.6}),path,Path(directory),'cuda','cuda:0','Protocol test',session=state)
             self.assertEqual(engine.call_count,1);launch.assert_called_once();decoder.assert_called_once()
             self.assertEqual([r['text'] for r in requests],['Bonjour','Bonsoir'])
             self.assertEqual([r['seed'] for r in requests],[1,2])
+            self.assertEqual([r['temperature'] for r in requests],[.8,.6])
             self.assertEqual([r['references'][0].text for r in requests],['Original 1','Original 2'])
             self.assertTrue(all(r['use_memory_cache']=='off' for r in requests))
 

@@ -21,6 +21,8 @@ mod tests;
 #[serde(rename_all = "camelCase")]
 pub struct Options {
     #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub quality: Option<serde_json::Value>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub mood: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub accent: Option<String>,
@@ -40,6 +42,7 @@ impl Options {
         self.variant_id.as_deref().unwrap_or("cosy3-official")
     }
     pub fn validate(&self) -> Result<(), String> {
+        crate::voice_quality::validate(self.variant(), self.quality.as_ref())?;
         crate::voice_accent::validate(self, None)?;
         let mood = self.mood.as_deref().unwrap_or("default");
         if crate::voice_mood::spec(Some(mood)).is_none()
@@ -82,6 +85,9 @@ impl Options {
         Ok(())
     }
     pub fn required_format(&self) -> u32 {
+        if self.quality.is_some() {
+            return 19;
+        }
         crate::voice_mood::format_version(self.mood.as_deref()).max(
             if crate::voice_engines::multilingual(self.variant()) {
                 16
@@ -652,7 +658,7 @@ pub(crate) async fn execute_with_session<R: tauri::Runtime>(
     } else {
         raw_text.clone()
     };
-    let input_value = serde_json::json!({"preparedReferenceAudio":ref_prepared,"variantId":request.options.variant(),"text":raw_text,"promptText":prompt_text,"mood":request.options.mood,"accent":request.options.accent,"language":p.languages.target,"referenceAudio":reference_audio,"referenceTranscript":transcript,"modelDir":launch.model,"outputPath":destination,"resultPath":result_path,"device":request.options.device,"speed":request.options.speed,"mode":request.options.mode,"seed":request.options.seed});
+    let input_value = serde_json::json!({"preparedReferenceAudio":ref_prepared,"variantId":request.options.variant(),"quality":request.options.quality,"text":raw_text,"promptText":prompt_text,"mood":request.options.mood,"accent":request.options.accent,"language":p.languages.target,"referenceAudio":reference_audio,"referenceTranscript":transcript,"modelDir":launch.model,"outputPath":destination,"resultPath":result_path,"device":request.options.device,"speed":request.options.speed,"mode":request.options.mode,"seed":request.options.seed});
     project::atomic_write(&input, &serde_json::to_vec(&input_value).map_err(io_error)?)?;
     let result = tokio::time::timeout(Duration::from_secs(if request.options.variant()=="drama3-comfy-fp8"{3600}else{900}), async {
         if request.options.variant().contains("gguf") {

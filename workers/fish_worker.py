@@ -100,7 +100,10 @@ def synthesize(request, reference, directory, execution_device, metadata_device,
         if session is not None:
             session['engine'] = engine
     report(stage='ttsGenerate', progress=None, deviceName=name)
-    options = ServeTTSRequest(text=request.get('promptText', request['text']), references=[ServeReferenceAudio(audio=reference.read_bytes(), text=request['referenceTranscript'])], seed=int(request.get('seed', 0)), streaming=False, max_new_tokens=max_new_tokens, use_memory_cache='off')
+    from voice_quality import quality_options
+    quality = quality_options(request)
+    report(log='Generation controls: ' + json.dumps(quality, sort_keys=True))
+    options = ServeTTSRequest(temperature=quality['temperature'], top_p=quality['topP'], repetition_penalty=quality['repetitionPenalty'], text=request.get('promptText', request['text']), references=[ServeReferenceAudio(audio=reference.read_bytes(), text=request['referenceTranscript'])], seed=int(request.get('seed', 0)), streaming=False, max_new_tokens=max_new_tokens, use_memory_cache='off')
     final = None
     for result in engine.inference(options):
         if result.code == 'error': raise RuntimeError(f'TTS_ENGINE_FAILED: {result.error}')

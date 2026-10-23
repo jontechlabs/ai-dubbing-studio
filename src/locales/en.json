@@ -361,7 +361,8 @@
     "AUDIO_EFFECTS_TOO_LONG": "The result exceeds the supported 4 GiB WAV limit. Use shorter ranges.",
     "AUDIO_EFFECTS_DISK_REQUIRED": "Not enough free disk space for temporary copies and processed audio.",
     "AUDIO_EFFECTS_FAILED": "Audio processing failed. Original audio and the previous edit are kept.",
-    "AUDIO_EFFECTS_SOURCE_IN_USE": "Remove the processed copies using this track first."
+    "AUDIO_EFFECTS_SOURCE_IN_USE": "Remove the processed copies using this track first.",
+    "INVALID_TTS_QUALITY": "Quality settings are invalid or unsupported by this engine."
   },
   "preparingVideo": "Preparing video…",
   "loadingVideo": "Loading video…",
@@ -1207,5 +1208,45 @@
   "meterResetHint": "Maximum: {{max}} dBFS · click to clear the maximum and clipping indicator",
   "meterResetAll": "Reset all peaks",
   "meterClip": "CLIP",
-  "meterUnavailable": "Audio metering unavailable; playback remains available."
+  "meterUnavailable": "Audio metering unavailable; playback remains available.",
+  "quality": {
+    "title": "Generation quality",
+    "advanced": "Advanced engine controls",
+    "presets": {
+      "standard": "Standard · current defaults",
+      "fast": "Fast",
+      "natural": "Natural · reduce artifacts",
+      "detailed": "Detailed · slower",
+      "stable": "Stable · less variation",
+      "expressive": "Expressive · more variation",
+      "custom": "Custom"
+    },
+    "voxHint": "For metallic speech, try Natural: 20 steps and guidance 1.6. More steps take longer; stronger guidance may increase artifacts. Compare new takes.",
+    "stepsHint": "Steps control acoustic decoder computation. Detailed takes longer; it does not guarantee a better result for every voice.",
+    "samplingHint": "These controls change stability and voice variation. They do not change model weights or quantization. Higher does not mean better quality.",
+    "chatterHint": "For Japanese reference audio and French text, prefer guidance 0 to reduce accent and language leakage.",
+    "referenceHint": "A clean reference without music and speed close to 1× help reduce artifacts. Settings are stored with each new take; existing takes are preserved.",
+    "params": {
+      "inferenceSteps": "Synthesis steps",
+      "cfgStrength": "Guidance strength",
+      "temperature": "Temperature",
+      "topP": "Top P",
+      "topK": "Top K",
+      "repetitionPenalty": "Repetition penalty",
+      "minP": "Min P",
+      "cfgWeight": "Reference guidance",
+      "exaggeration": "Expressiveness"
+    },
+    "hints": {
+      "inferenceSteps": "More steps: more computation and slower generation.",
+      "cfgStrength": "VoxCPM2: try 1.5–1.6 for buzzing. Strong guidance may cause artifacts.",
+      "temperature": "Lower: less variation. Higher: more diversity, with a risk of instability.",
+      "topP": "Limits choices to the most likely candidates.",
+      "topK": "Number of retained candidates; 0 disables this filter when supported.",
+      "repetitionPenalty": "Reduces repetition; excessive values can distort diction.",
+      "minP": "Removes candidates that are too unlikely.",
+      "cfgWeight": "Higher values may strengthen the reference accent.",
+      "exaggeration": "Strengthens acting; high values may change the rhythm."
+    }
+  }
 }

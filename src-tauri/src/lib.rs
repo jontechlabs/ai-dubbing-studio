@@ -35,6 +35,7 @@ mod voice_edit;
 mod voice_engines;
 mod voice_fit;
 mod voice_mood;
+mod voice_quality;
 mod voice_space;
 mod waveform;
 pub fn smoke_test(path: &std::path::Path) -> Result<(), String> {

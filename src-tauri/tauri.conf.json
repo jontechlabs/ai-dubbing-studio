@@ -84,6 +84,8 @@
       "../workers/latentsync-runtime.json": "workers/latentsync-runtime.json",
       "../workers/vendor/latentsync/": "workers/vendor/latentsync/",
       "../workers/voice_mood.py": "workers/voice_mood.py",
+      "../workers/voice_quality.py": "workers/voice_quality.py",
+      "../workers/voice-quality.json": "workers/voice-quality.json",
       "../workers/voice-moods.json": "workers/voice-moods.json",
       "../workers/multilingual_worker.py": "workers/multilingual_worker.py",
       "../workers/multilingual-runtime.json": "workers/multilingual-runtime.json",

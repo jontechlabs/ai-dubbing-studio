@@ -65,3 +65,23 @@ with torch.inference_mode():
     assert not final and conditioned.shape[-1] == 40
 
 print('PASS: actual causal vocoder; final acoustic-silence context; full tail at 0.5x/1x/2x; unmodified non-final chunks and mel cache')
+
+# Execute the shipped causal flow method with small real Torch tensors and a
+# recording decoder. This checks dispatch, not learned speech quality.
+tree = ast.parse((root / 'workers/vendor/cosyvoice3/cosyvoice/flow/flow.py').read_text(encoding='utf-8'))
+cls = next(n for n in tree.body if isinstance(n, ast.ClassDef) and n.name == 'CausalMaskedDiffWithDiT')
+method = next(n for n in cls.body if isinstance(n, ast.FunctionDef) and n.name == 'inference')
+scope = {'torch': torch, 'F': F, 'make_pad_mask': lambda lengths: torch.arange(int(lengths.max()))[None, :] >= lengths[:, None]}
+exec(compile(ast.fix_missing_locations(ast.Module(body=[method], type_ignores=[])), 'causal-flow-inference', 'exec'), scope)
+steps = []
+def decoder(**values):
+    steps.append(values['n_timesteps'])
+    return values['mu'], None
+flow = SimpleNamespace(spk_embed_affine_layer=torch.nn.Identity(), input_embedding=torch.nn.Embedding(8, 4), pre_lookahead_layer=torch.nn.Identity(), token_mel_ratio=2, output_size=4, decoder=decoder)
+for count in (None, 20, 6, 10):
+    if count is not None:
+        flow.inference_steps = count
+    feat, _ = scope['inference'](flow, torch.zeros(1, 3, dtype=torch.long), torch.tensor([3]), torch.zeros(1, 1, dtype=torch.long), torch.tensor([1]), torch.zeros(1, 2, 4), torch.tensor([2]), torch.ones(1, 4), False, True)
+    assert feat.shape == (1, 4, 6) and torch.isfinite(feat).all()
+assert steps == [10, 20, 6, 10], steps
+print('PASS: shipped causal flow dispatches 10/20/6/10 steps on the same instance; standard reset retains tensor shape and finiteness')

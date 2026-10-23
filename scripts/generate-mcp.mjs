@@ -252,6 +252,7 @@ tool(
   false,
   true,
 );
+tool('studio_voice_quality_catalog', 'Read supported generation quality controls, bounds, defaults and model-specific presets. Apply quality in VoiceSettings for single or batch generation. Existing takes are preserved.', {}, [], false, true);
 tool(
   'studio_audio_levels',
   'Read live stereo sample-peak/RMS dBFS levels after track gain, regions and effects, before player listening volume. $mix is the summed final mix before export clipping. Reset clears latched clipping and maxima for one track ID or all tracks when id is omitted. This never changes project audio or gain.',

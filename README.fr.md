@@ -1,6 +1,8 @@
 # AI Dubbing Studio — phases 1–7
 
-**v0.27.0 — Niveaux audio stéréo en direct.** Barres RMS, crêtes et voyants de saturation mémorisés pour chaque piste et le mix final, sur la timeline et dans Audio. Mesure du signal réel après les volumes, zones et effets rendus, avant le volume d’écoute du lecteur. Remise à zéro sans modifier le projet et pilotage MCP (100 outils). [Guide et captures](docs/AUDIO-LEVELS.md).
+**v0.27.0 — Qualité de génération et niveaux audio en direct.** Profils et paramètres propres à chaque moteur, par réplique et par lot, dont VoxCPM2 Naturel (20 étapes, guidage 1,6). Réglages enregistrés avec chaque essai et anciens essais conservés. [Guide qualité et capture](docs/VOICE-QUALITY.md).
+
+Barres RMS, crêtes et voyants de saturation mémorisés pour chaque piste et le mix final, sur la timeline et dans Audio. Mesure du signal réel après les volumes, zones et effets rendus, avant le volume d’écoute du lecteur. Remise à zéro sans modifier le projet et pilotage MCP (101 outils). [Guide et captures](docs/AUDIO-LEVELS.md).
 
 **v0.26.0 — Effets locaux et volume global des pistes.** Vingt effets, douze préréglages, chaînes réglables sur les répliques et les pistes entières ou par portion. Le volume global 0–400 % est accessible directement sur la timeline et reste indépendant des zones. Notifications discrètes au début et à la fin des tâches ; médias et essais originaux conservés. [Guide et captures](docs/AUDIO-EFFECTS.md).
 

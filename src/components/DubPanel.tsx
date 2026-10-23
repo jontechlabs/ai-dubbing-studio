@@ -22,6 +22,8 @@ import { ReferenceFileImport } from './ReferenceFileImport';
 import { BatchDubbingAction } from './BatchDubbingAction';
 import { DubbingTimingControls } from './DubbingTimingControls';
 import { VoiceCapture } from './VoiceCapture';
+import { VoiceQualityControls } from './VoiceQualityControls';
+import { qualityPreset, resolvedQuality } from '../domain/voiceQuality';
 import { ProsodyTransfer } from './ProsodyTransfer';
 import { moodGroup, moodGroups, voiceMoods } from '../domain/voiceMoods';
 
@@ -364,6 +366,7 @@ export function DubPanel({
             const next = voiceVariant(e.target.value)!;
             edit({
               variantId: next.id,
+              quality: undefined,
               device: 'auto',
               mood: ['qwen3-tts', 'chatterbox'].includes(next.providerId) ? 'default' : mood,
               accent: accentSupported(next.id, project.languages.target) ? accent : 'auto',
@@ -664,6 +667,12 @@ export function DubPanel({
             : 'ttsAccentUnsupported',
         )}
       </p>
+      <VoiceQualityControls
+        variant={variant.id}
+        value={settings.quality}
+        disabled={busy}
+        onChange={(quality) => edit({ quality })}
+      />
       <label className="field">
         <span>
           {t('ttsSpeed')} · {settings.speed.toFixed(2)}×
@@ -840,6 +849,26 @@ export function DubPanel({
                     ? ` · ${t(`accents.${voiceAccents.find((a) => a.id === generation.options.accent)?.labelKey}`)}`
                     : ''}
                 </small>
+                {!generation.takeOrigin && (
+                  <details className="generation-quality">
+                    <summary>
+                      {t('quality.title')} ·{' '}
+                      {t(
+                        `quality.presets.${qualityPreset(generation.options.variantId ?? 'cosy3-official', generation.options.quality)}`,
+                      )}
+                    </summary>
+                    {Object.entries(
+                      resolvedQuality(
+                        generation.options.variantId ?? 'cosy3-official',
+                        generation.options.quality,
+                      ),
+                    ).map(([key, number]) => (
+                      <small key={key}>
+                        {t(`quality.params.${key}`)} : {number}
+                      </small>
+                    ))}
+                  </details>
+                )}
                 {generation.peakVramMb > 0 && (
                   <small>{t('ttsPeakVram', { mb: generation.peakVramMb })}</small>
                 )}

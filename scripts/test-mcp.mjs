@@ -18,6 +18,10 @@ const call=async(name,arguments_={})=>{
     if(response.isError)throw Error(response.content.map(item=>item.text??'').join('\n'));
     return response.structuredContent.value;
 };
+const effectJob=async options=>{
+    const until=Date.now()+10000;
+    while(true){try{return await call('studio_apply_audio_effects',{context:await context(),options});}catch(error){if(String(error)!=='Error: BUSY'||Date.now()>=until)throw error;await new Promise(resolve=>setTimeout(resolve,200));}}
+};
 const state=()=>call('studio_get_state');
 const context=async()=> (await state()).context;
 const job=async id=>{
@@ -179,16 +183,24 @@ try {
     assert.deepEqual(await fs.readFile(path.join(projectRoot,basePath)),baseWave);
     await call('studio_set_track',{context:await context(),id:'original',changes:{gain:4}});assert.equal((await call('studio_get_project')).tracks.find(t=>t.id==='original').gain,4);
     const fxOptions={trackId:'original',scope:'track',startMs:0,endMs:16000,effects:[{kind:'equalizer',enabled:true,parameters:{bass:6}}],replaceInMix:true,name:'Original FX'};
-    await job(await call('studio_apply_audio_effects',{context:await context(),options:fxOptions}));
+    await job(await effectJob(fxOptions));
     let fx=await call('studio_get_project'),record=fx.generations.find(g=>g.kind==='audioEffects');assert(record);const copyId=record.trackId,dryPath=record.effectsSourcePath,oldPath=record.path,trackCount=fx.tracks.length;
     assert.equal(fx.tracks.find(t=>t.id===copyId).gain,4);assert.equal(fx.tracks.find(t=>t.id==='original').mute,true);
-    await job(await call('studio_apply_audio_effects',{context:await context(),options:{...fxOptions,trackId:copyId,effects:[]}}));
+    await job(await effectJob({...fxOptions,trackId:copyId,effects:[]}));
     fx=await call('studio_get_project');record=fx.generations.find(g=>g.kind==='audioEffects');assert.equal(fx.tracks.length,trackCount);assert.equal(record.effectsSourcePath,dryPath);assert.notEqual(record.path,oldPath);await fs.access(path.join(projectRoot,oldPath));
-    await job(await call('studio_apply_audio_effects',{context:await context(),options:{...fxOptions,scope:'selection',startMs:3000,endMs:4000,effects:[{kind:'echo',enabled:true,parameters:{}}]}}));
+    await job(await effectJob({...fxOptions,scope:'selection',startMs:3000,endMs:4000,effects:[{kind:'echo',enabled:true,parameters:{}}]}));
     assert((await call('studio_get_project')).generations.some(g=>g.kind==='audioPatch'&&g.operation==='effects'));
     await call('studio_open_project',{path:projectRoot});assert.equal((await call('studio_get_project')).formatVersion,18);
     assert.equal(createHash('sha256').update(await fs.readFile(args.movie)).digest('hex'),originalHash);
     proofs.audioEffectsCatalog=20;proofs.voiceEffectsRendered=true;proofs.trackEffectsAndDryBaseline=true;proofs.selectionEffects=true;proofs.globalGain400=true;proofs.reopenFormat18=true;
+    const qualityCatalog=await call('studio_voice_quality_catalog');
+    assert.equal(Object.keys(qualityCatalog.variants).length,8);
+    assert.deepEqual(qualityCatalog.variants['voxcpm2-bf16'].presets.natural,{inferenceSteps:20,cfgStrength:1.6});
+    const beforeQuality=await call('studio_get_project');
+    await call('studio_project_patch',{context:await context(),patches:[{op:'replace',path:'/formatVersion',value:19},{op:'replace',path:`/dialogues/${lineIndex}/voiceSettings`,value:{...voiceOptions,variantId:'voxcpm2-bf16',mood:'default',mode:'crossLingual',quality:{inferenceSteps:20,cfgStrength:1.6}}}]});
+    await call('studio_open_project',{path:projectRoot});
+    const qualityProject=await call('studio_get_project');assert.equal(qualityProject.formatVersion,19);assert.deepEqual(qualityProject.dialogues[lineIndex].voiceSettings.quality,{inferenceSteps:20,cfgStrength:1.6});assert.deepEqual(qualityProject.generations,beforeQuality.generations);
+    proofs.qualityCatalog=8;proofs.reopenFormat19=true;proofs.qualityOldTakesPreserved=true;
     await fs.writeFile(args.proof,JSON.stringify(proofs,null,2)+'\n','utf8');
     console.log('MCP_NATIVE_PROOF '+JSON.stringify(proofs));
 } catch(error){if(stderr)console.error(stderr.slice(-2000));throw error;}

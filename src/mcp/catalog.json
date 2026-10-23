@@ -936,6 +936,7 @@
           "options_VoiceSettings_0": {
             "type": "object",
             "properties": {
+              "quality": { "anyOf": [{ "$ref": "#/$defs/options_VoiceQuality_1" }] },
               "mood": {
                 "anyOf": [
                   { "type": "string", "const": "happy" },
@@ -1014,6 +1015,22 @@
               "seed": { "type": "number" }
             },
             "required": ["device", "referenceMode", "referenceId", "mode", "speed", "seed"],
+            "additionalProperties": false
+          },
+          "options_VoiceQuality_1": {
+            "type": "object",
+            "properties": {
+              "inferenceSteps": { "anyOf": [{ "type": "number" }] },
+              "cfgStrength": { "anyOf": [{ "type": "number" }] },
+              "temperature": { "anyOf": [{ "type": "number" }] },
+              "topP": { "anyOf": [{ "type": "number" }] },
+              "topK": { "anyOf": [{ "type": "number" }] },
+              "repetitionPenalty": { "anyOf": [{ "type": "number" }] },
+              "minP": { "anyOf": [{ "type": "number" }] },
+              "cfgWeight": { "anyOf": [{ "type": "number" }] },
+              "exaggeration": { "anyOf": [{ "type": "number" }] }
+            },
+            "required": [],
             "additionalProperties": false
           }
         }
@@ -1453,6 +1470,7 @@
           "options_VoiceSettings_0": {
             "type": "object",
             "properties": {
+              "quality": { "anyOf": [{ "$ref": "#/$defs/options_VoiceQuality_1" }] },
               "mood": {
                 "anyOf": [
                   { "type": "string", "const": "happy" },
@@ -1531,6 +1549,22 @@
               "seed": { "type": "number" }
             },
             "required": ["device", "referenceMode", "referenceId", "mode", "speed", "seed"],
+            "additionalProperties": false
+          },
+          "options_VoiceQuality_1": {
+            "type": "object",
+            "properties": {
+              "inferenceSteps": { "anyOf": [{ "type": "number" }] },
+              "cfgStrength": { "anyOf": [{ "type": "number" }] },
+              "temperature": { "anyOf": [{ "type": "number" }] },
+              "topP": { "anyOf": [{ "type": "number" }] },
+              "topK": { "anyOf": [{ "type": "number" }] },
+              "repetitionPenalty": { "anyOf": [{ "type": "number" }] },
+              "minP": { "anyOf": [{ "type": "number" }] },
+              "cfgWeight": { "anyOf": [{ "type": "number" }] },
+              "exaggeration": { "anyOf": [{ "type": "number" }] }
+            },
+            "required": [],
             "additionalProperties": false
           }
         }
@@ -1584,6 +1618,7 @@
           "selection_VoiceSettings_1": {
             "type": "object",
             "properties": {
+              "quality": { "anyOf": [{ "$ref": "#/$defs/selection_VoiceQuality_2" }] },
               "mood": {
                 "anyOf": [
                   { "type": "string", "const": "happy" },
@@ -1662,6 +1697,22 @@
               "seed": { "type": "number" }
             },
             "required": ["device", "referenceMode", "referenceId", "mode", "speed", "seed"],
+            "additionalProperties": false
+          },
+          "selection_VoiceQuality_2": {
+            "type": "object",
+            "properties": {
+              "inferenceSteps": { "anyOf": [{ "type": "number" }] },
+              "cfgStrength": { "anyOf": [{ "type": "number" }] },
+              "temperature": { "anyOf": [{ "type": "number" }] },
+              "topP": { "anyOf": [{ "type": "number" }] },
+              "topK": { "anyOf": [{ "type": "number" }] },
+              "repetitionPenalty": { "anyOf": [{ "type": "number" }] },
+              "minP": { "anyOf": [{ "type": "number" }] },
+              "cfgWeight": { "anyOf": [{ "type": "number" }] },
+              "exaggeration": { "anyOf": [{ "type": "number" }] }
+            },
+            "required": [],
             "additionalProperties": false
           }
         }
@@ -1714,6 +1765,7 @@
           "selection_VoiceSettings_1": {
             "type": "object",
             "properties": {
+              "quality": { "anyOf": [{ "$ref": "#/$defs/selection_VoiceQuality_2" }] },
               "mood": {
                 "anyOf": [
                   { "type": "string", "const": "happy" },
@@ -1792,6 +1844,22 @@
               "seed": { "type": "number" }
             },
             "required": ["device", "referenceMode", "referenceId", "mode", "speed", "seed"],
+            "additionalProperties": false
+          },
+          "selection_VoiceQuality_2": {
+            "type": "object",
+            "properties": {
+              "inferenceSteps": { "anyOf": [{ "type": "number" }] },
+              "cfgStrength": { "anyOf": [{ "type": "number" }] },
+              "temperature": { "anyOf": [{ "type": "number" }] },
+              "topP": { "anyOf": [{ "type": "number" }] },
+              "topK": { "anyOf": [{ "type": "number" }] },
+              "repetitionPenalty": { "anyOf": [{ "type": "number" }] },
+              "minP": { "anyOf": [{ "type": "number" }] },
+              "cfgWeight": { "anyOf": [{ "type": "number" }] },
+              "exaggeration": { "anyOf": [{ "type": "number" }] }
+            },
+            "required": [],
             "additionalProperties": false
           }
         }
@@ -2363,6 +2431,17 @@
     {
       "name": "studio_get_state",
       "description": "Read project identity/revision, selection, playback, jobs and UI preferences. Read this before an edit and pass its context to mutations.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "annotations": { "readOnlyHint": true, "destructiveHint": false, "openWorldHint": false }
+    },
+    {
+      "name": "studio_voice_quality_catalog",
+      "description": "Read supported generation quality controls, bounds, defaults and model-specific presets. Apply quality in VoiceSettings for single or batch generation. Existing takes are preserved.",
       "inputSchema": {
         "type": "object",
         "properties": {},
@@ -3135,13 +3214,13 @@
             "sourceCues": { "type": "array", "items": { "$ref": "#/$defs/Cue_8" } },
             "targetCues": { "type": "array", "items": { "$ref": "#/$defs/Cue_8" } },
             "dialogues": { "type": "array", "items": { "$ref": "#/$defs/Dialogue_9" } },
-            "tracks": { "type": "array", "items": { "$ref": "#/$defs/Track_11" } },
-            "characters": { "type": "array", "items": { "$ref": "#/$defs/Character_13" } },
+            "tracks": { "type": "array", "items": { "$ref": "#/$defs/Track_12" } },
+            "characters": { "type": "array", "items": { "$ref": "#/$defs/Character_14" } },
             "voiceReferences": {
-              "anyOf": [{ "type": "array", "items": { "$ref": "#/$defs/VoiceReference_14" } }]
+              "anyOf": [{ "type": "array", "items": { "$ref": "#/$defs/VoiceReference_15" } }]
             },
             "speakerAnalysis": {
-              "anyOf": [{ "type": "null" }, { "$ref": "#/$defs/SpeakerAnalysis_15" }]
+              "anyOf": [{ "type": "null" }, { "$ref": "#/$defs/SpeakerAnalysis_16" }]
             },
             "modelPreferences": {
               "anyOf": [
@@ -3170,7 +3249,7 @@
               "type": "array",
               "items": {
                 "anyOf": [
-                  { "$ref": "#/$defs/Generation_16" },
+                  { "$ref": "#/$defs/Generation_17" },
                   {
                     "type": "object",
                     "properties": {
@@ -3394,6 +3473,7 @@
         "VoiceSettings_10": {
           "type": "object",
           "properties": {
+            "quality": { "anyOf": [{ "$ref": "#/$defs/VoiceQuality_11" }] },
             "mood": {
               "anyOf": [
                 { "type": "string", "const": "happy" },
@@ -3474,7 +3554,23 @@
           "required": ["device", "referenceMode", "referenceId", "mode", "speed", "seed"],
           "additionalProperties": false
         },
-        "Track_11": {
+        "VoiceQuality_11": {
+          "type": "object",
+          "properties": {
+            "inferenceSteps": { "anyOf": [{ "type": "number" }] },
+            "cfgStrength": { "anyOf": [{ "type": "number" }] },
+            "temperature": { "anyOf": [{ "type": "number" }] },
+            "topP": { "anyOf": [{ "type": "number" }] },
+            "topK": { "anyOf": [{ "type": "number" }] },
+            "repetitionPenalty": { "anyOf": [{ "type": "number" }] },
+            "minP": { "anyOf": [{ "type": "number" }] },
+            "cfgWeight": { "anyOf": [{ "type": "number" }] },
+            "exaggeration": { "anyOf": [{ "type": "number" }] }
+          },
+          "required": [],
+          "additionalProperties": false
+        },
+        "Track_12": {
           "type": "object",
           "properties": {
             "name": { "anyOf": [{ "type": "string" }] },
@@ -3504,7 +3600,7 @@
             "solo": { "type": "boolean" },
             "gain": { "type": "number" },
             "regions": {
-              "anyOf": [{ "type": "array", "items": { "$ref": "#/$defs/AudioRegion_12" } }]
+              "anyOf": [{ "type": "array", "items": { "$ref": "#/$defs/AudioRegion_13" } }]
             },
             "regionsEnabled": {
               "anyOf": [
@@ -3516,7 +3612,7 @@
           "required": ["id", "kind", "language", "mute", "solo", "gain"],
           "additionalProperties": false
         },
-        "AudioRegion_12": {
+        "AudioRegion_13": {
           "type": "object",
           "properties": {
             "id": { "type": "string" },
@@ -3528,19 +3624,19 @@
           "required": ["id", "startMs", "endMs", "gain", "mute"],
           "additionalProperties": false
         },
-        "Character_13": {
+        "Character_14": {
           "type": "object",
           "properties": {
             "id": { "type": "string" },
             "name": { "type": "string" },
             "color": { "type": "string" },
-            "references": { "type": "array", "items": { "$ref": "#/$defs/VoiceReference_14" } },
+            "references": { "type": "array", "items": { "$ref": "#/$defs/VoiceReference_15" } },
             "defaultReferenceId": { "anyOf": [{ "type": "null" }, { "type": "string" }] }
           },
           "required": ["id", "name", "color", "references", "defaultReferenceId"],
           "additionalProperties": false
         },
-        "VoiceReference_14": {
+        "VoiceReference_15": {
           "type": "object",
           "properties": {
             "id": { "type": "string" },
@@ -3553,7 +3649,7 @@
           "required": ["id", "label", "path", "durationMs", "transcript"],
           "additionalProperties": false
         },
-        "SpeakerAnalysis_15": {
+        "SpeakerAnalysis_16": {
           "type": "object",
           "properties": {
             "id": { "type": "string" },
@@ -3603,11 +3699,11 @@
           "required": ["id", "sourcePath", "lines", "assignments", "clusters"],
           "additionalProperties": false
         },
-        "Generation_16": {
+        "Generation_17": {
           "type": "object",
           "properties": {
-            "takeOrigin": { "anyOf": [{ "$ref": "#/$defs/TakeOrigin_17" }] },
-            "prosodyTransfer": { "anyOf": [{ "$ref": "#/$defs/ProsodyTransfer_18" }] },
+            "takeOrigin": { "anyOf": [{ "$ref": "#/$defs/TakeOrigin_18" }] },
+            "prosodyTransfer": { "anyOf": [{ "$ref": "#/$defs/ProsodyTransfer_19" }] },
             "kind": { "type": "string", "const": "tts" },
             "id": { "type": "string" },
             "dialogueId": { "type": "string" },
@@ -3665,7 +3761,7 @@
           ],
           "additionalProperties": false
         },
-        "TakeOrigin_17": {
+        "TakeOrigin_18": {
           "type": "object",
           "properties": {
             "type": {
@@ -3681,14 +3777,14 @@
           "required": ["type"],
           "additionalProperties": false
         },
-        "ProsodyTransfer_18": {
+        "ProsodyTransfer_19": {
           "type": "object",
           "properties": {
             "algorithm": { "type": "string", "const": "praat-psola-v1" },
             "sourceGenerationId": { "type": "string" },
             "sourceDurationMs": { "type": "number" },
             "guideDurationMs": { "type": "number" },
-            "options": { "$ref": "#/$defs/ProsodyOptions_19" }
+            "options": { "$ref": "#/$defs/ProsodyOptions_20" }
           },
           "required": [
             "algorithm",
@@ -3699,7 +3795,7 @@
           ],
           "additionalProperties": false
         },
-        "ProsodyOptions_19": {
+        "ProsodyOptions_20": {
           "type": "object",
           "properties": {
             "generationId": { "type": "string" },
@@ -3786,6 +3882,7 @@
         "VoiceSettings_0": {
           "type": "object",
           "properties": {
+            "quality": { "anyOf": [{ "$ref": "#/$defs/VoiceQuality_1" }] },
             "mood": {
               "anyOf": [
                 { "type": "string", "const": "happy" },
@@ -3864,6 +3961,22 @@
             "seed": { "type": "number" }
           },
           "required": ["device", "referenceMode", "referenceId", "mode", "speed", "seed"],
+          "additionalProperties": false
+        },
+        "VoiceQuality_1": {
+          "type": "object",
+          "properties": {
+            "inferenceSteps": { "anyOf": [{ "type": "number" }] },
+            "cfgStrength": { "anyOf": [{ "type": "number" }] },
+            "temperature": { "anyOf": [{ "type": "number" }] },
+            "topP": { "anyOf": [{ "type": "number" }] },
+            "topK": { "anyOf": [{ "type": "number" }] },
+            "repetitionPenalty": { "anyOf": [{ "type": "number" }] },
+            "minP": { "anyOf": [{ "type": "number" }] },
+            "cfgWeight": { "anyOf": [{ "type": "number" }] },
+            "exaggeration": { "anyOf": [{ "type": "number" }] }
+          },
+          "required": [],
           "additionalProperties": false
         }
       }
@@ -4163,6 +4276,7 @@
         "VoiceSettings_1": {
           "type": "object",
           "properties": {
+            "quality": { "anyOf": [{ "$ref": "#/$defs/VoiceQuality_2" }] },
             "mood": {
               "anyOf": [
                 { "type": "string", "const": "happy" },
@@ -4241,6 +4355,22 @@
             "seed": { "type": "number" }
           },
           "required": ["device", "referenceMode", "referenceId", "mode", "speed", "seed"],
+          "additionalProperties": false
+        },
+        "VoiceQuality_2": {
+          "type": "object",
+          "properties": {
+            "inferenceSteps": { "anyOf": [{ "type": "number" }] },
+            "cfgStrength": { "anyOf": [{ "type": "number" }] },
+            "temperature": { "anyOf": [{ "type": "number" }] },
+            "topP": { "anyOf": [{ "type": "number" }] },
+            "topK": { "anyOf": [{ "type": "number" }] },
+            "repetitionPenalty": { "anyOf": [{ "type": "number" }] },
+            "minP": { "anyOf": [{ "type": "number" }] },
+            "cfgWeight": { "anyOf": [{ "type": "number" }] },
+            "exaggeration": { "anyOf": [{ "type": "number" }] }
+          },
+          "required": [],
           "additionalProperties": false
         }
       }

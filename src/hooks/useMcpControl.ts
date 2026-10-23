@@ -8,6 +8,7 @@ import type { Panel } from '../components/Header';
 import { native, dubbingUrl } from '../services/bridge';
 import { checkContext, editProject, type Context } from '../mcp/actions';
 import catalog from '../mcp/catalog.json';
+import qualityCatalog from '../../workers/voice-quality.json';
 import { dialogueText } from '../domain/subtitles';
 import { translationState } from '../domain/translation';
 import { validateProject } from '../domain/project';
@@ -111,7 +112,8 @@ export function useMcpControl(control: Control) {
           const { url: _url, ...status } = readMicrophone();
           void _url;
           result = status;
-        } else if (tool === 'studio_audio_levels') {
+        } else if (tool === 'studio_voice_quality_catalog') result = qualityCatalog;
+        else if (tool === 'studio_audio_levels') {
           if (args.action === 'reset') {
             if (
               args.id !== undefined &&

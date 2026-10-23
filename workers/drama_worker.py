@@ -206,6 +206,9 @@ def synthesize(request, directory, reference, cache, session=None):
             session.update(model=model, cache=cache)
     report(log=f'Drama 3 target language: {request["language"]}; target text: {request["text"]!r}; '
                'reference transcript is kept separate in its original language.')
+    from voice_quality import quality_options
+    quality = quality_options(request)
+    report(log='Generation controls: ' + json.dumps(quality, sort_keys=True))
     reference_pair = (request['referenceTranscript'], codes)
     first = latest = None
     frames = []
@@ -223,7 +226,7 @@ def synthesize(request, directory, reference, cache, session=None):
             def on_frame(step):
                 if step % 10 == 0:
                     report(stage='ttsGenerate', progress=None, log=f'Drama 3: chunk {index+1}/{len(chunks)}, {step+1} audio frames')
-            result = generate(model, prompt, max_frames, 1.0, 30, 0.9, request['seed'] + index, on_frame)
+            result = generate(model, prompt, max_frames, quality['temperature'], int(quality['topK']), quality['topP'], request['seed'] + index, on_frame)
             if len(result) >= max_frames:
                 raise ValueError('TTS_DRAMA_FRAME_LIMIT')
             frames.append(result[:, 1:].T.contiguous())

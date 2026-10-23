@@ -5,6 +5,7 @@ use std::{collections::HashMap, sync::Mutex};
 
 fn options() -> Options {
     Options {
+        quality: None,
         mood: None,
         accent: None,
         variant_id: None,
@@ -16,6 +17,20 @@ fn options() -> Options {
         speed: 1.0,
         seed: 7,
     }
+}
+#[test]
+fn quality_settings_require_format19_and_preserve_legacy_defaults() {
+    let mut value = options();
+    assert_eq!(value.required_format(), 5);
+    value.variant_id = Some("voxcpm2-bf16".into());
+    value.quality = Some(serde_json::json!({"inferenceSteps":20,"cfgStrength":1.6}));
+    value.validate().unwrap();
+    assert_eq!(value.required_format(), 19);
+    let saved = serde_json::to_value(&value).unwrap();
+    let reopened: Options = serde_json::from_value(saved).unwrap();
+    assert_eq!(reopened.quality, value.quality);
+    value.quality = Some(serde_json::json!({"inferenceSteps":1000}));
+    assert!(value.validate().is_err());
 }
 #[test]
 fn multilingual_profiles_survive_disk_reload_and_choose_their_isolated_worker() {

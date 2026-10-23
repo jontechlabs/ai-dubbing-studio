@@ -312,6 +312,12 @@ impl Session {
             body["options"] =
                 serde_json::json!({"x_vector_only_mode":input["mode"]=="crossLingual"});
         }
+        if body["options"].is_null() {
+            body["options"] = serde_json::json!({});
+        }
+        for (name, value) in crate::voice_quality::gguf_options(input)? {
+            body["options"][name] = value.into();
+        }
         if input["mode"] == "zeroShot" {
             body["reference_text"] = input["referenceTranscript"].clone();
         }

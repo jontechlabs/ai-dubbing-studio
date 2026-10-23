@@ -361,7 +361,8 @@
     "AUDIO_EFFECTS_TOO_LONG": "Le résultat dépasse la limite de 4 Gio du WAV pris en charge. Utilisez des portions plus courtes.",
     "AUDIO_EFFECTS_DISK_REQUIRED": "Espace disque insuffisant pour les copies temporaires et la piste traitée.",
     "AUDIO_EFFECTS_FAILED": "Le traitement audio a échoué. Les originaux et le montage précédent sont conservés.",
-    "AUDIO_EFFECTS_SOURCE_IN_USE": "Retirez d’abord les copies avec effets qui utilisent cette piste."
+    "AUDIO_EFFECTS_SOURCE_IN_USE": "Retirez d’abord les copies avec effets qui utilisent cette piste.",
+    "INVALID_TTS_QUALITY": "Réglages de qualité invalides ou incompatibles avec ce moteur."
   },
   "preparingVideo": "Préparation de la vidéo…",
   "loadingVideo": "Chargement de la vidéo…",
@@ -1207,5 +1208,45 @@
   "meterResetHint": "Maximum : {{max}} dBFS · cliquer pour effacer le maximum et le voyant de saturation",
   "meterResetAll": "Réinitialiser toutes les crêtes",
   "meterClip": "SAT",
-  "meterUnavailable": "Mesure audio indisponible ; la lecture reste disponible."
+  "meterUnavailable": "Mesure audio indisponible ; la lecture reste disponible.",
+  "quality": {
+    "title": "Qualité de génération",
+    "advanced": "Réglages avancés du moteur",
+    "presets": {
+      "standard": "Standard · réglages actuels",
+      "fast": "Rapide",
+      "natural": "Naturel · atténuer les artefacts",
+      "detailed": "Détaillé · plus lent",
+      "stable": "Stable · variation réduite",
+      "expressive": "Expressif · plus de variation",
+      "custom": "Personnalisé"
+    },
+    "voxHint": "Pour une voix métallique, essayez Naturel : 20 étapes et guidage 1,6. Davantage d’étapes prend plus de temps ; un guidage plus fort peut accentuer les artefacts. Comparez les nouveaux essais.",
+    "stepsHint": "Les étapes règlent le calcul du décodeur acoustique. Le profil Détaillé prend plus de temps ; il ne garantit pas un meilleur résultat pour chaque voix.",
+    "samplingHint": "Ces réglages modifient la stabilité et la variation de la voix. Ils ne changent ni les poids du modèle ni sa quantification. Plus élevé ne signifie pas meilleure qualité.",
+    "chatterHint": "Avec une référence japonaise et un texte français, gardez de préférence le guidage à 0 pour limiter le transfert d’accent et de langue.",
+    "referenceHint": "Une référence propre, sans musique, et une vitesse proche de 1× aident à limiter les artefacts. Les réglages sont conservés avec chaque essai ; les essais existants restent intacts.",
+    "params": {
+      "inferenceSteps": "Étapes de synthèse",
+      "cfgStrength": "Force du guidage",
+      "temperature": "Température",
+      "topP": "Top P",
+      "topK": "Top K",
+      "repetitionPenalty": "Pénalité de répétition",
+      "minP": "Min P",
+      "cfgWeight": "Guidage de la référence",
+      "exaggeration": "Expressivité"
+    },
+    "hints": {
+      "inferenceSteps": "Plus d’étapes : davantage de calcul, génération plus lente.",
+      "cfgStrength": "VoxCPM2 : essayez 1,5–1,6 en cas de bourdonnement. Un guidage élevé peut produire des artefacts.",
+      "temperature": "Plus bas : moins de variation. Plus haut : plus de diversité, avec un risque d’instabilité.",
+      "topP": "Limite les choix aux candidats les plus probables.",
+      "topK": "Nombre de candidats conservés ; 0 désactive cette limite lorsque le moteur le permet.",
+      "repetitionPenalty": "Réduit les répétitions ; une valeur excessive peut déformer la diction.",
+      "minP": "Écarte les candidats trop peu probables.",
+      "cfgWeight": "Une valeur élevée peut renforcer l’influence de l’accent de référence.",
+      "exaggeration": "Renforce l’interprétation ; une valeur élevée peut modifier le rythme."
+    }
+  }
 }

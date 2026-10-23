@@ -89,6 +89,8 @@ for id in worker.IDS:
                        referenceAudio=str(reference), referenceTranscript='', mode='crossLingual',
                        mood='default', accent='auto', speed=1, seed=0, modelDir=str(model),
                        outputPath=str(WORK / f'{id}-{index}.wav'), resultPath=str(WORK / f'{id}-{index}.json'))
+        if index == 0:
+            request['quality'] = {'inferenceSteps': 20, 'cfgStrength': 1.6} if id == 'voxcpm2-bf16' else {'temperature': .6, 'topP': .9}
         path = WORK / f'{id}-{index}.request.json'
         path.write_text(json.dumps(request), encoding='utf-8-sig')
         requests.append(request)
@@ -104,6 +106,9 @@ for id in worker.IDS:
     assert [e for e in events if 'requestDone' in e] == [{'requestDone': '0'}, {'requestDone': '1'}], events[-5:]
     assert sum(e.get('stage') == 'ttsLoad' for e in events) == 1
     assert sum(e.get('stage') == 'ttsReuse' for e in events) == 1
+    from voice_quality import quality_options
+    controls = [json.loads(e['log'].removeprefix('Generation controls: ')) for e in events if e.get('log', '').startswith('Generation controls: ')]
+    assert controls == [quality_options(request) for request in requests], controls
     for request in requests:
         audio, rate = sf.read(request['outputPath'])
         assert rate == 24000 and 0 < len(audio) <= 120 * rate and np.isfinite(audio).all() and np.max(np.abs(audio)) > .001
@@ -136,6 +141,6 @@ for id in worker.IDS:
     assert re.search(r'auto-detected language: fr\b', speech.stderr), speech.stderr[-1000:]
     assert len(set(re.findall(r'\w+', transcript.lower())) & {'bonjour', 'je', 'suis', 'heureux', 'de', 'vous', 'revoir'}) >= 4, transcript
     proof['engines'].append(dict(id=id, revision=spec['revision'], seconds=round(time.monotonic()-started, 2),
-                                frenchTranscript=transcript, batchRequests=2, modelLoads=1, reuses=1, standaloneRequests=1))
+                                qualityOverrides=requests[0]['quality'], hotQualityReset=True, frenchTranscript=transcript, batchRequests=2, modelLoads=1, reuses=1, standaloneRequests=1))
     print('ACTUAL_MULTILINGUAL_PROOF', json.dumps(proof['engines'][-1], ensure_ascii=False), flush=True)
 (ROOT / 'artifacts/multilingual-inference-validation.json').write_text(json.dumps(proof, indent=2, ensure_ascii=False) + '\n', encoding='utf-8')

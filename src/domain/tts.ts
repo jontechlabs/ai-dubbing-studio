@@ -3,12 +3,14 @@ import { dialogueText } from './subtitles';
 import { voiceVariant, voiceSettingsFormat } from './voiceEngines';
 import { validAccent } from './voiceAccents';
 import { validMood } from './voiceMoods';
+import { validQuality } from './voiceQuality';
 export function validVoiceSettings(value: unknown): value is VoiceSettings {
   if (!value || typeof value !== 'object') return false;
   const s = value as VoiceSettings;
   return (
     validAccent(s.accent, s.variantId ?? undefined) &&
     validMood(s.mood) &&
+    validQuality(s.quality, s.variantId) &&
     (!(s.variantId?.startsWith('qwen3') || s.variantId?.startsWith('chatterbox')) ||
       !s.mood ||
       s.mood === 'default') &&

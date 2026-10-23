@@ -1,6 +1,8 @@
 # AI Dubbing Studio
 
-**v0.27.0 — Live stereo audio meters.** See RMS levels, sample peaks and latched clipping for every audio track and the final mix directly on the timeline and in Audio. Measures the actual signal after gain, regions and rendered effects, before player listening volume. Maxima reset without changing the project. Also available through MCP (100 tools). [Guide and screenshots](docs/AUDIO-LEVELS.md).
+**v0.27.0 — Voice quality controls and live stereo audio meters.** Model-specific presets and advanced synthesis controls for individual and batch dubbing, including VoxCPM2 Natural (20 steps, guidance 1.6), with saved take settings and all previous takes retained. [Quality guide and screenshot](docs/VOICE-QUALITY.md).
+
+See RMS levels, sample peaks and latched clipping for every audio track and the final mix directly on the timeline and in Audio. Measures the actual signal after gain, regions and rendered effects, before player listening volume. Maxima reset without changing the project. Also available through MCP (101 tools). [Guide and screenshots](docs/AUDIO-LEVELS.md).
 
 **v0.26.0 — Local audio effects and global track volume.** Twenty effects, twelve presets, editable effect chains on voice regions and whole/partial tracks, independent 0–400% track faders directly on the timeline, and brief task start/completion notifications. Original takes and media are retained. [Guide and screenshots](docs/AUDIO-EFFECTS.md).
 

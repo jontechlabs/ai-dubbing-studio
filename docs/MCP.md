@@ -1,6 +1,6 @@
 # Piloter le studio avec une IA via MCP
 
-Le studio fournit **100 outils MCP** en v0.27.0 : 73 commandes natives et 27 commandes d’édition, d’état et de lecture. Le serveur utilise **stdio** et le même exécutable que l’application. Cette intégration pilote **l’application ouverte** ; aucun environnement Node.js ou Python supplémentaire n’est requis pour la connexion.
+Le studio fournit **101 outils MCP** en v0.27.0 : 73 commandes natives et 28 commandes d’édition, d’état et de lecture. Le serveur utilise **stdio** et le même exécutable que l’application. Cette intégration pilote **l’application ouverte** ; aucun environnement Node.js ou Python supplémentaire n’est requis pour la connexion.
 
 `studio_audio_levels` mesure les niveaux stéréo en dBFS et permet d’effacer les crêtes maximales/voyants, sans modifier le projet. Les valeurs sont aussi dans `studio_get_state.audioLevels`. [Mesure, mix final et limites](AUDIO-LEVELS.md).
 
@@ -65,3 +65,6 @@ Depuis v0.22.0, les variantes `voxcpm2-bf16` et `chatterbox-multilingual-v3` son
 Microphone et conversion de timbre (v0.23.0) : voir [le guide local](MICROPHONE-VOICE-CONVERSION.md). `studio_microphone` permet de démarrer/arrêter/abandonner/conserver une prise ; `studio_convert_voice_timbre` accepte l’essai et une référence du personnage ou un fichier importé. La capture doit être autorisée par Windows et reste signalée dans le studio.
 
 Depuis v0.24.0, `studio_suggest_translation` accepte aussi `direction` (facultatif, 2 000 caractères maximum) pour préciser personnage, registre, ton et longueur souhaitée. Le studio transmet les créneaux disponibles au modèle. `studio_translation_result` restitue les consignes utilisées avec la proposition ; appliquer le résultat reste une opération explicite.
+
+
+`studio_voice_quality_catalog` expose les paramètres de synthèse, leurs bornes, les valeurs standard et les profils de chaque moteur. Le champ `VoiceSettings.quality` est accepté pour la génération individuelle et par lot ; il est conservé avec les essais et nécessite le format de projet 19. [Guide qualité](VOICE-QUALITY.md).

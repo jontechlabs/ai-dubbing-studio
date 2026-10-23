@@ -54,7 +54,9 @@ def voxcpm_arguments(request, reference):
     text = request['text']
     if directions:
         text = '(' + ', '.join(directions) + ')' + text
-    options = dict(text=text, cfg_value=2.0, inference_timesteps=10,
+    from voice_quality import quality_options
+    quality = quality_options(request)
+    options = dict(text=text, cfg_value=quality["cfgStrength"], inference_timesteps=int(quality["inferenceSteps"]),
                    normalize=False, denoise=False, retry_badcase=True, retry_badcase_max_times=1,
                    max_len=1500)
     if request['mode'] == 'zeroShot':
@@ -67,8 +69,12 @@ def voxcpm_arguments(request, reference):
 def chatterbox_arguments(request, reference):
     # The language token is independent of the reference's language. Upstream
     # recommends CFG=0 for a cross-language reference to reduce language leakage.
+    from voice_quality import quality_options
+    quality = quality_options(request)
     return dict(text=request['text'], language_id=request['language'], audio_prompt_path=str(reference),
-                cfg_weight=0.0, exaggeration=0.5)
+                cfg_weight=quality['cfgWeight'], exaggeration=quality['exaggeration'],
+                temperature=quality['temperature'], top_p=quality['topP'], min_p=quality['minP'],
+                repetition_penalty=quality['repetitionPenalty'])
 
 
 def verify_models(request):
@@ -157,6 +163,8 @@ def generate(request, session=None):
     else:
         torch.random.default_generator.manual_seed(request['seed'])
     with prepare_reference(request['referenceAudio'], report, request.get('preparedReferenceAudio')) as reference:
+        from voice_quality import quality_options
+        report(log='Generation controls: ' + json.dumps(quality_options(request), sort_keys=True))
         report(stage='ttsGenerate', progress=None,
                log=f'{request["variantId"]}: target language {request["language"]}; selected device {name}')
         with torch.inference_mode():

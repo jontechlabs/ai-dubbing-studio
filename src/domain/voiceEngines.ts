@@ -42,8 +42,10 @@ export function voiceSettingsFormat(settings: {
   mood?: import('./voiceMoods').VoiceMood;
   accent?: string;
   referenceMode: string;
+  quality?: unknown;
 }) {
   return Math.max(
+    settings.quality !== undefined ? 19 : 5,
     multilingualVariant(settings.variantId) ? 16 : 5,
     (settings.accent && settings.accent !== 'auto') || settings.referenceMode === 'file' ? 9 : 5,
     moodFormatVersion(settings.mood),

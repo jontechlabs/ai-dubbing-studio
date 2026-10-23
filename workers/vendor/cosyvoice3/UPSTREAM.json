@@ -14,6 +14,7 @@
     "cosyvoice/utils/file_utils.py: decode reference audio with SoundFile and resample with SciPy, avoiding TorchAudio native backend dispatch on Windows.",
     "cosyvoice/cli/frontend.py: explicitly use CPU for reference tensors and both ONNX sessions. Neural inference still uses the selected CUDA device.",
     "cosyvoice/cli/cosyvoice.py and cli/model.py: explicitly pass the requested device through CosyVoice3 and its model. CPU construction disables CUDA-only acceleration, creates no CUDA stream and skips CUDA cleanup.",
-    "cosyvoice/cli/model.py: on CosyVoice3 finalization only, supply 8 frames (160 ms) of log-mel silence at log(1e-5) to the causal vocoder after speed interpolation, retaining its full output. Avoids an active zero-log-mel right boundary; does not change checkpoints, LLM tokens or existing takes."
+    "cosyvoice/cli/model.py: on CosyVoice3 finalization only, supply 8 frames (160 ms) of log-mel silence at log(1e-5) to the causal vocoder after speed interpolation, retaining its full output. Avoids an active zero-log-mel right boundary; does not change checkpoints, LLM tokens or existing takes.",
+    "cosyvoice/flow/flow.py: CosyVoice3 causal flow accepts a bounded inference_steps attribute (6–30); omitted retains 10. The worker sets it per request, including hot batches. Checkpoints and other flow classes are unchanged."
   ]
 }

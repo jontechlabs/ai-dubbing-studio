@@ -1,0 +1,274 @@
+{
+  "version": 1,
+  "variants": {
+    "cosy3-official": {
+      "parameters": {
+        "inferenceSteps": {
+          "min": 6,
+          "max": 30,
+          "step": 1,
+          "default": 10
+        }
+      },
+      "presets": {
+        "fast": {
+          "inferenceSteps": 6
+        },
+        "detailed": {
+          "inferenceSteps": 20
+        }
+      }
+    },
+    "voxcpm2-bf16": {
+      "parameters": {
+        "inferenceSteps": {
+          "min": 4,
+          "max": 30,
+          "step": 1,
+          "default": 10
+        },
+        "cfgStrength": {
+          "min": 1,
+          "max": 3,
+          "step": 0.1,
+          "default": 2
+        }
+      },
+      "presets": {
+        "fast": {
+          "inferenceSteps": 6
+        },
+        "natural": {
+          "inferenceSteps": 20,
+          "cfgStrength": 1.6
+        },
+        "detailed": {
+          "inferenceSteps": 30,
+          "cfgStrength": 2
+        }
+      }
+    },
+    "fish-s2-fp8": {
+      "parameters": {
+        "temperature": {
+          "min": 0.1,
+          "max": 1,
+          "step": 0.05,
+          "default": 0.8
+        },
+        "topP": {
+          "min": 0.1,
+          "max": 1,
+          "step": 0.05,
+          "default": 0.8
+        },
+        "repetitionPenalty": {
+          "min": 0.9,
+          "max": 2,
+          "step": 0.05,
+          "default": 1.1
+        }
+      },
+      "presets": {
+        "stable": {
+          "temperature": 0.6,
+          "topP": 0.7
+        },
+        "expressive": {
+          "temperature": 0.9,
+          "topP": 0.9
+        }
+      }
+    },
+    "fish-s2-gguf-q8": {
+      "parameters": {
+        "temperature": {
+          "min": 0.1,
+          "max": 1.5,
+          "step": 0.05,
+          "default": 0.8
+        },
+        "topK": {
+          "min": 1,
+          "max": 100,
+          "step": 1,
+          "default": 30
+        },
+        "topP": {
+          "min": 0.1,
+          "max": 1,
+          "step": 0.05,
+          "default": 0.8
+        }
+      },
+      "presets": {
+        "stable": {
+          "temperature": 0.6,
+          "topP": 0.7
+        },
+        "expressive": {
+          "temperature": 0.9,
+          "topP": 0.9
+        }
+      }
+    },
+    "drama3-comfy-fp8": {
+      "parameters": {
+        "temperature": {
+          "min": 0.1,
+          "max": 1.5,
+          "step": 0.05,
+          "default": 1
+        },
+        "topK": {
+          "min": 1,
+          "max": 100,
+          "step": 1,
+          "default": 30
+        },
+        "topP": {
+          "min": 0.1,
+          "max": 1,
+          "step": 0.05,
+          "default": 0.9
+        }
+      },
+      "presets": {
+        "stable": {
+          "temperature": 0.7,
+          "topP": 0.8
+        },
+        "expressive": {
+          "temperature": 1.1,
+          "topP": 0.95
+        }
+      }
+    },
+    "chatterbox-multilingual-v3": {
+      "parameters": {
+        "temperature": {
+          "min": 0.1,
+          "max": 1.5,
+          "step": 0.05,
+          "default": 0.8
+        },
+        "topP": {
+          "min": 0.1,
+          "max": 1,
+          "step": 0.05,
+          "default": 1
+        },
+        "minP": {
+          "min": 0,
+          "max": 0.2,
+          "step": 0.01,
+          "default": 0.05
+        },
+        "repetitionPenalty": {
+          "min": 1,
+          "max": 2,
+          "step": 0.05,
+          "default": 1.2
+        },
+        "cfgWeight": {
+          "min": 0,
+          "max": 1,
+          "step": 0.05,
+          "default": 0
+        },
+        "exaggeration": {
+          "min": 0,
+          "max": 1,
+          "step": 0.05,
+          "default": 0.5
+        }
+      },
+      "presets": {
+        "stable": {
+          "temperature": 0.6,
+          "topP": 0.9
+        },
+        "expressive": {
+          "temperature": 0.9,
+          "exaggeration": 0.7
+        }
+      }
+    },
+    "qwen3-06b-gguf-q8": {
+      "parameters": {
+        "temperature": {
+          "min": 0.1,
+          "max": 1.5,
+          "step": 0.05,
+          "default": 0.9
+        },
+        "topK": {
+          "min": 0,
+          "max": 100,
+          "step": 1,
+          "default": 50
+        },
+        "topP": {
+          "min": 0.1,
+          "max": 1,
+          "step": 0.05,
+          "default": 1
+        },
+        "repetitionPenalty": {
+          "min": 1,
+          "max": 2,
+          "step": 0.05,
+          "default": 1.05
+        }
+      },
+      "presets": {
+        "stable": {
+          "temperature": 0.7,
+          "topP": 0.9
+        },
+        "expressive": {
+          "temperature": 1,
+          "topP": 1
+        }
+      }
+    },
+    "qwen3-17b-gguf-q8": {
+      "parameters": {
+        "temperature": {
+          "min": 0.1,
+          "max": 1.5,
+          "step": 0.05,
+          "default": 0.9
+        },
+        "topK": {
+          "min": 0,
+          "max": 100,
+          "step": 1,
+          "default": 50
+        },
+        "topP": {
+          "min": 0.1,
+          "max": 1,
+          "step": 0.05,
+          "default": 1
+        },
+        "repetitionPenalty": {
+          "min": 1,
+          "max": 2,
+          "step": 0.05,
+          "default": 1.05
+        }
+      },
+      "presets": {
+        "stable": {
+          "temperature": 0.7,
+          "topP": 0.9
+        },
+        "expressive": {
+          "temperature": 1,
+          "topP": 1
+        }
+      }
+    }
+  }
+}

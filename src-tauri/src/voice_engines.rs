@@ -491,6 +491,9 @@ pub(crate) async fn generate_gguf_with_session<R: tauri::Runtime>(
             "2048".into(),
             "--log".into(),
         ];
+        for (name, value) in crate::voice_quality::gguf_options(input)? {
+            args.extend(["--request-option".into(), format!("{name}={value}")]);
+        }
         if selected.provider_id == "qwen3-tts" {
             args.extend([
                 "--language".into(),

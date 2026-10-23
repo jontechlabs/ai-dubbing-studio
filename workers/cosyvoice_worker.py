@@ -83,6 +83,8 @@ def verify_model(directory):
 
 
 def validate_request(request):
+    from voice_quality import quality_options
+    quality_options(request)
     from voice_accent import accent_spec
     accent_spec(request)
     from voice_mood import mood_spec
@@ -217,6 +219,10 @@ def track_reference(model):
 
 def render(model, request, reference, device, requested, name, compatible, torch, np, sf):
     report(stage='ttsReferenceAnalysis', progress=None, log='Reference analysis: SoundFile/SciPy and ONNX CPU; neural inference: ' + name)
+    from voice_quality import quality_options
+    quality = quality_options(request)
+    model.model.flow.inference_steps = int(quality['inferenceSteps'])
+    report(log='Generation controls: ' + json.dumps(quality, sort_keys=True))
     options = {'stream': False, 'speed': request['speed'], 'text_frontend': False}
     report(stage='ttsGenerate', progress=None,
            log='CosyVoice3: final vocoder context 160 ms; full decoded tail retained (no WAV fade or speech trimming).')
