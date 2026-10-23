@@ -41,7 +41,7 @@ for file in runtime['files']:
     assert distribution.version == version, name
     assert Path(distribution.locate_file('')).resolve().is_relative_to(Path(sys.prefix).resolve()), name
 assert 't3_model' in inspect.signature(ChatterboxMultilingualTTS.from_local).parameters
-assert set(worker.voxcpm_arguments(dict(text='Bonjour.', mood='default', accent='auto', mode='crossLingual'), 'ref')).issubset(inspect.signature(VoxCPM._generate).parameters)
+assert set(worker.voxcpm_arguments(dict(variantId='voxcpm2-bf16', text='Bonjour.', mood='default', accent='auto', mode='crossLingual'), 'ref')).issubset(inspect.signature(VoxCPM._generate).parameters)
 
 
 def fetch(url, destination, sha, size=None):

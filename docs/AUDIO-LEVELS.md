@@ -39,8 +39,8 @@ Les sondes sont branchées en parallèle ; elles ne changent pas le signal écou
 
 ## MCP
 
-Le catalogue comprend désormais **100 outils**. `studio_audio_levels` lit les niveaux avec `action: "status"`, ou efface les maxima/voyants avec `action: "reset"`. Un `id` limite la remise à zéro à une piste ; `$mix` désigne le mix final. Sans `id`, tous les indicateurs sont remis à zéro. La réponse contient l’état de mesure, l’état de lecture, l’heure du dernier relevé et, pour chaque canal, `peakDb`, `rmsDb` et `maxDb`, plus le voyant `clipped` de chaque piste. Les silences utilisent le plancher fini −96 dBFS, compatible JSON.
+Le catalogue comprend désormais **101 outils**. `studio_audio_levels` lit les niveaux avec `action: "status"`, ou efface les maxima/voyants avec `action: "reset"`. Un `id` limite la remise à zéro à une piste ; `$mix` désigne le mix final. Sans `id`, tous les indicateurs sont remis à zéro. La réponse contient l’état de mesure, l’état de lecture, l’heure du dernier relevé et, pour chaque canal, `peakDb`, `rmsDb` et `maxDb`, plus le voyant `clipped` de chaque piste. Les silences utilisent le plancher fini −96 dBFS, compatible JSON.
 
-`studio_get_state.audioLevels` expose aussi ces valeurs. Il n’y a pas de modification du projet ni de régénération vocale. Les projets restent au format 18.
+`studio_get_state.audioLevels` expose aussi ces valeurs. Il n’y a pas de modification du projet ni de régénération vocale. Les vumètres seuls ne changent pas le format du projet. Les nouveaux réglages de qualité vocale utilisent le format 19 : voir [Qualité de génération](VOICE-QUALITY.md).
 
 Les captures montrent l’interface réelle avec des signaux synthétiques et des commandes natives simulées. Les tests de l’application Windows empaquetée vérifient séparément le chargement du module et les mesures du véritable circuit audio via le SDK MCP officiel.
