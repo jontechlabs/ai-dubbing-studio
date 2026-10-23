@@ -7,6 +7,8 @@ import type { RefObject } from 'react';
 import { AudioQuickControls } from './AudioQuickControls';
 import { AudioRegionsEditor } from './AudioRegionsEditor';
 import { AudioEffectsPanel } from './AudioEffectsPanel';
+import { AudioMeter } from './AudioMeter';
+import { useAudioLevels } from '../hooks/useAudioLevels';
 import { audioTracks, editTrack, trackLabel, dubbingMix } from '../domain/audio';
 import { setAudioSource } from '../domain/audioPatch';
 import { mixReport } from '../domain/mix';
@@ -33,6 +35,7 @@ export function AudioPanel({
   videoRef: RefObject<HTMLVideoElement | null>;
 }) {
   const { t } = useTranslation();
+  const levels = useAudioLevels();
   const [runtime, setRuntime] = useState<Awaited<
     ReturnType<typeof bridge.separationStatus>
   > | null>(null);
@@ -236,73 +239,84 @@ export function AudioPanel({
             </>
           )}
           <p className="panel-description">{t('mixerHint')}</p>
+          <section className="audio-levels-overview">
+            <h4>{t('meterTitle')}</h4>
+            <p className="panel-description">{t('meterHint')}</p>
+            <AudioMeter name={t('meterMix')} />
+            <button className="text-button" onClick={() => levels.reset()}>
+              {t('meterResetAll')}
+            </button>
+          </section>
           <AudioQuickControls project={project!} onEdit={onEdit} />
           <p className="panel-description">{t('quickAudioHint')}</p>
           <div className="audio-mixer">
             {tracks.map((track) => (
-              <div className="mixer-row" key={track.id}>
-                <strong>{t(trackLabel(track))}</strong>
-                <button
-                  className={`mixer-toggle ${!track.mute ? 'active' : ''}`}
-                  aria-pressed={!track.mute}
-                  aria-label={t(track.mute ? 'enableTrack' : 'muteTrack', {
-                    name: t(trackLabel(track)),
-                  })}
-                  onClick={() => onEdit((p) => editTrack(p, track.id, { mute: !track.mute }))}
-                >
-                  {track.mute ? <VolumeX size={14} /> : <Volume2 size={14} />}
-                </button>
-                <button
-                  className={`mixer-toggle ${track.solo ? 'active' : ''}`}
-                  aria-pressed={track.solo}
-                  aria-label={`${t('solo')} ${t(trackLabel(track))}`}
-                  onClick={() => onEdit((p) => editTrack(p, track.id, { solo: !track.solo }))}
-                >
-                  S
-                </button>
-                <input
-                  aria-label={`${t('trackGain')} ${t(trackLabel(track))}`}
-                  type="range"
-                  min="0"
-                  max="4"
-                  step="0.05"
-                  value={track.gain}
-                  onChange={(event) =>
-                    onEdit((p) => editTrack(p, track.id, { gain: Number(event.target.value) }))
-                  }
-                />
-                <span>{Math.round(track.gain * 100)}%</span>
-                {project!.generations.some(
-                  (g) => g.kind === 'audioEffects' && g.trackId === track.id,
-                ) && (
+              <div className="mixer-track" key={track.id}>
+                <div className="mixer-row">
+                  <strong>{t(trackLabel(track))}</strong>
                   <button
-                    className="text-button"
-                    disabled={
-                      active ||
-                      project!.generations.some(
-                        (g) => g.kind === 'audioEffects' && g.sourceTrackId === track.id,
-                      )
-                    }
-                    aria-label={t('fxRemoveTrack', { name: t(trackLabel(track)) })}
-                    onClick={() => onEdit((p) => removeEffectsTrack(p, track.id))}
+                    className={`mixer-toggle ${!track.mute ? 'active' : ''}`}
+                    aria-pressed={!track.mute}
+                    aria-label={t(track.mute ? 'enableTrack' : 'muteTrack', {
+                      name: t(trackLabel(track)),
+                    })}
+                    onClick={() => onEdit((p) => editTrack(p, track.id, { mute: !track.mute }))}
                   >
-                    × FX
+                    {track.mute ? <VolumeX size={14} /> : <Volume2 size={14} />}
                   </button>
-                )}
-                {track.kind === 'audio' && (
                   <button
-                    className="mixer-export"
-                    aria-label={t('exportSourceTrack', { name: t(trackLabel(track)) })}
-                    onClick={() =>
-                      void run(async () => {
-                        await bridge.exportAudioTrack(project!, track.id);
-                        return null;
-                      })
-                    }
+                    className={`mixer-toggle ${track.solo ? 'active' : ''}`}
+                    aria-pressed={track.solo}
+                    aria-label={`${t('solo')} ${t(trackLabel(track))}`}
+                    onClick={() => onEdit((p) => editTrack(p, track.id, { solo: !track.solo }))}
                   >
-                    <Download size={14} />
+                    S
                   </button>
-                )}
+                  <input
+                    aria-label={`${t('trackGain')} ${t(trackLabel(track))}`}
+                    type="range"
+                    min="0"
+                    max="4"
+                    step="0.05"
+                    value={track.gain}
+                    onChange={(event) =>
+                      onEdit((p) => editTrack(p, track.id, { gain: Number(event.target.value) }))
+                    }
+                  />
+                  <span>{Math.round(track.gain * 100)}%</span>
+                  {project!.generations.some(
+                    (g) => g.kind === 'audioEffects' && g.trackId === track.id,
+                  ) && (
+                    <button
+                      className="text-button"
+                      disabled={
+                        active ||
+                        project!.generations.some(
+                          (g) => g.kind === 'audioEffects' && g.sourceTrackId === track.id,
+                        )
+                      }
+                      aria-label={t('fxRemoveTrack', { name: t(trackLabel(track)) })}
+                      onClick={() => onEdit((p) => removeEffectsTrack(p, track.id))}
+                    >
+                      × FX
+                    </button>
+                  )}
+                  {track.kind === 'audio' && (
+                    <button
+                      className="mixer-export"
+                      aria-label={t('exportSourceTrack', { name: t(trackLabel(track)) })}
+                      onClick={() =>
+                        void run(async () => {
+                          await bridge.exportAudioTrack(project!, track.id);
+                          return null;
+                        })
+                      }
+                    >
+                      <Download size={14} />
+                    </button>
+                  )}
+                </div>
+                <AudioMeter id={track.id} name={t(trackLabel(track))} />
               </div>
             ))}
           </div>

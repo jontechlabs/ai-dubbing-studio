@@ -1,5 +1,7 @@
 # AI Dubbing Studio — phases 1–7
 
+**v0.27.0 — Niveaux audio stéréo en direct.** Barres RMS, crêtes et voyants de saturation mémorisés pour chaque piste et le mix final, sur la timeline et dans Audio. Mesure du signal réel après les volumes, zones et effets rendus, avant le volume d’écoute du lecteur. Remise à zéro sans modifier le projet et pilotage MCP (100 outils). [Guide et captures](docs/AUDIO-LEVELS.md).
+
 **v0.26.0 — Effets locaux et volume global des pistes.** Vingt effets, douze préréglages, chaînes réglables sur les répliques et les pistes entières ou par portion. Le volume global 0–400 % est accessible directement sur la timeline et reste indépendant des zones. Notifications discrètes au début et à la fin des tâches ; médias et essais originaux conservés. [Guide et captures](docs/AUDIO-EFFECTS.md).
 
 **v0.25.0 — Durée des traitements en direct.** Le panneau Traitements affiche le temps écoulé pendant chaque tâche et conserve sa durée à la fin. L’attente et les pauses sont exclues ; chaque nouvelle tentative possède son propre compteur. [Détails et capture](docs/TASK-DURATION.md).
@@ -95,7 +97,7 @@
 
 *Interface React réelle avec audio de démonstration synthétique et inventaire natif simulé.*
 
-[Version anglaise et captures de l’interface](README.md) · [Téléchargements Windows](https://github.com/jontechlabs/ai-dubbing-studio/releases/tag/v0.26.0)
+[Version anglaise et captures de l’interface](README.md) · [Téléchargements Windows](https://github.com/jontechlabs/ai-dubbing-studio/releases/tag/v0.27.0)
 
 Studio desktop local de travail texte, voix et vidéo. Tauri 2, React, TypeScript strict et Rust.
 

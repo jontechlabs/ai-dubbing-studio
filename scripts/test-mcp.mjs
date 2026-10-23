@@ -75,7 +75,21 @@ try {
     await call('studio_playback',{action:'seek',timeMs:2000});await call('studio_playback',{action:'play'});
     const playingDeadline=Date.now()+15000;
     while((await state()).playback.timeMs<=2150){if(Date.now()>playingDeadline)throw Error('Native MCP playback did not start');await new Promise(resolve=>setTimeout(resolve,200));}
+    const levelDeadline=Date.now()+15000;
+    let meter;
+    while(true){meter=await call('studio_audio_levels',{action:'status'});if(meter.status==='ready'&&meter.tracks.original?.channels.some(c=>c.peakDb>-90))break;if(Date.now()>levelDeadline)throw Error('Packaged AudioWorklet stereo meter did not measure actual video audio');await new Promise(resolve=>setTimeout(resolve,100));}
+    assert.equal(meter.tracks.original.channels.length,2);assert.equal(meter.beforeListeningVolume,true);
+    await call('studio_playback',{action:'volume',value:0});
+    await new Promise(resolve=>setTimeout(resolve,200));
+    meter=await call('studio_audio_levels',{action:'status'});
+    assert(meter.tracks.original.channels.some(c=>c.peakDb>-90),'Listening mute must not hide mix levels');
+    assert(meter.tracks.$mix.channels.some(c=>c.peakDb>-90));
     await call('studio_playback',{action:'pause'});
+    await new Promise(resolve=>setTimeout(resolve,100));
+    meter=await call('studio_audio_levels',{action:'reset'});
+    assert.equal(meter.playing,false);assert(Object.values(meter.tracks).every(t=>!t.clipped&&t.channels.every(c=>c.peakDb===-96&&c.maxDb===-96)));
+    await call('studio_playback',{action:'volume',value:.8});
+    proofs.audioLevelMetering={stereo:true,beforeListeningVolume:true,reset:true};
     assert((await state()).playback.timeMs>2150);proofs.playback=true;
     // Actual CPU contour processing in the packaged app, with synthetic voiced
     // inputs; no TTS quality or Japanese-to-French prosody benchmark claim.

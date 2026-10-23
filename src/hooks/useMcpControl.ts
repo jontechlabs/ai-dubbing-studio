@@ -111,6 +111,22 @@ export function useMcpControl(control: Control) {
           const { url: _url, ...status } = readMicrophone();
           void _url;
           result = status;
+        } else if (tool === 'studio_audio_levels') {
+          if (args.action === 'reset') {
+            if (
+              args.id !== undefined &&
+              (typeof args.id !== 'string' ||
+                !Object.hasOwn(transport.audioLevels.getSnapshot().tracks, args.id))
+            )
+              throw Error('MCP_INVALID_ARGUMENTS');
+            transport.audioLevels.reset(args.id as string | undefined);
+          } else if (args.action !== 'status') throw Error('MCP_INVALID_ARGUMENTS');
+          result = {
+            ...transport.audioLevels.getSnapshot(),
+            units: 'dBFS',
+            measurement: 'samplePeakAndRms',
+            beforeListeningVolume: true,
+          };
         } else if (tool === 'studio_get_project') result = project;
         else if (tool === 'studio_save')
           result = {
@@ -121,6 +137,7 @@ export function useMcpControl(control: Control) {
           result = {
             version: APP_VERSION,
             microphone: { ...readMicrophone(), url: undefined },
+            audioLevels: transport.audioLevels.getSnapshot(),
             context: project && { projectId: project.id, expectedRevision: project.revision },
             name: project?.name ?? null,
             media: project?.media ?? null,

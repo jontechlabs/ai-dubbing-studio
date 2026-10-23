@@ -1194,5 +1194,18 @@
   },
   "fxRemoveTrack": "Retirer la copie avec effets · {{name}}",
   "transferEffects": "Effets audio",
-  "fxUpdateTrack": "Mettre à jour les effets de la piste"
+  "fxUpdateTrack": "Mettre à jour les effets de la piste",
+  "meterLabel": "Niveaux audio · {{name}}",
+  "meterLeft": "Gauche · {{name}}",
+  "meterRight": "Droite · {{name}}",
+  "meterMix": "Mix final",
+  "meterTitle": "Niveaux audio en direct",
+  "meterHint": "Mesure stéréo après les volumes, zones et effets, avant le volume d’écoute du lecteur. Barres : niveau moyen RMS ; trait : crête. Le voyant rouge signale une crête à 0 dBFS ou plus et reste allumé jusqu’à sa remise à zéro.",
+  "meterPeak": "Crête : {{peak}} dBFS · maximum : {{max}} dBFS",
+  "meterPeakValue": "Crête · {{name}}",
+  "meterReset": "Réinitialiser les crêtes · {{name}}",
+  "meterResetHint": "Maximum : {{max}} dBFS · cliquer pour effacer le maximum et le voyant de saturation",
+  "meterResetAll": "Réinitialiser toutes les crêtes",
+  "meterClip": "SAT",
+  "meterUnavailable": "Mesure audio indisponible ; la lecture reste disponible."
 }

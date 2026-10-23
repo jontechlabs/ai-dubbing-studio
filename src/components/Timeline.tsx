@@ -45,6 +45,7 @@ import { useTimelineZoom } from '../hooks/useTimelineZoom';
 import { VoiceRegionEditor } from './VoiceRegionEditor';
 import { TimelineAudioSelection } from './TimelineAudioSelection';
 import { TrackVolume } from './TrackVolume';
+import { AudioMeter } from './AudioMeter';
 
 export const Timeline = memo(function Timeline({
   project,
@@ -350,6 +351,10 @@ export const Timeline = memo(function Timeline({
             {project?.languages.target.toUpperCase()}
           </span>
         </div>
+        <div className="timeline-master-meter">
+          <span>{t('meterMix')}</span>
+          <AudioMeter name={t('meterMix')} compact />
+        </div>
         <div>
           <IconButton
             label={`${t('zoomOut')} (Ctrl+−)`}
@@ -421,6 +426,7 @@ export const Timeline = memo(function Timeline({
                 >
                   <Icon size={13} />
                   <span>{t(key)}</span>
+                  {style === 'audio' && track && <AudioMeter id={track.id} name={t(key)} compact />}
                   {style === 'audio' && track && (
                     <div className="timeline-track-controls">
                       <TrackVolume track={track} onEdit={onEdit} busy={busy} />

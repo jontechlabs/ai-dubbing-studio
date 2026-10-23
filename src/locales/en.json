@@ -1194,5 +1194,18 @@
   },
   "fxRemoveTrack": "Remove processed copy · {{name}}",
   "transferEffects": "Audio effects",
-  "fxUpdateTrack": "Update track effects"
+  "fxUpdateTrack": "Update track effects",
+  "meterLabel": "Audio levels · {{name}}",
+  "meterLeft": "Left · {{name}}",
+  "meterRight": "Right · {{name}}",
+  "meterMix": "Final mix",
+  "meterTitle": "Live audio levels",
+  "meterHint": "Stereo levels after gain, regions and effects, before the player's listening volume. Bars: RMS average; line: sample peak. A red indicator flags peaks at or above 0 dBFS and stays on until reset.",
+  "meterPeak": "Peak: {{peak}} dBFS · maximum: {{max}} dBFS",
+  "meterPeakValue": "Peak · {{name}}",
+  "meterReset": "Reset peaks · {{name}}",
+  "meterResetHint": "Maximum: {{max}} dBFS · click to clear the maximum and clipping indicator",
+  "meterResetAll": "Reset all peaks",
+  "meterClip": "CLIP",
+  "meterUnavailable": "Audio metering unavailable; playback remains available."
 }

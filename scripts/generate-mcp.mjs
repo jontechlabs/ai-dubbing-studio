@@ -253,6 +253,12 @@ tool(
   true,
 );
 tool(
+  'studio_audio_levels',
+  'Read live stereo sample-peak/RMS dBFS levels after track gain, regions and effects, before player listening volume. $mix is the summed final mix before export clipping. Reset clears latched clipping and maxima for one track ID or all tracks when id is omitted. This never changes project audio or gain.',
+  {action: choice('status', 'reset'), id: string},
+  ['action'],
+);
+tool(
   'studio_get_project',
   'Read the complete saved project JSON. For partial changes prefer the typed editing tools or atomic project patches.',
   {},

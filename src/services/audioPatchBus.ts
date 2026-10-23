@@ -39,6 +39,7 @@ export class AudioPatchBus {
   constructor(
     private context: AudioContext,
     private onError: (error: string) => void,
+    private output: (trackId: string) => AudioNode,
   ) {}
   private load(clip: AudioPatch) {
     const id = clip.id;
@@ -154,7 +155,7 @@ export class AudioPatchBus {
         source.buffer = buffer;
         source.playbackRate.value = rate;
         gain.gain.value = 0;
-        source.connect(gain).connect(this.context.destination);
+        source.connect(gain).connect(this.output(track.id));
         voice = { source, gain };
         this.voices.set(id, voice);
         source.onended = () => {

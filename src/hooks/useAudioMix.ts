@@ -5,8 +5,14 @@ import { audioUrls } from '../services/bridge';
 import { trackPatches, layerGate, layerChanges } from '../domain/audioPatch';
 import { AudioPatchBus } from '../services/audioPatchBus';
 import { DubbingBus } from '../services/dubbingBus';
+import { AudioLevelStore, AudioMeterRouter } from '../services/audioLevels';
 
-type Node = { gain: GainNode; audio: HTMLMediaElement; source: MediaElementAudioSourceNode };
+type Node = {
+  gain: GainNode;
+  audio: HTMLMediaElement;
+  source: MediaElementAudioSourceNode;
+  outputId: string;
+};
 type Graph = {
   context: AudioContext;
   nodes: Map<string, Node>;
@@ -15,6 +21,7 @@ type Graph = {
   schedule: () => void;
   dubbing: DubbingBus;
   patches: AudioPatchBus;
+  meters: AudioMeterRouter;
 };
 // One source node per media element, including React's effect replay.
 const graphs = new WeakMap<HTMLVideoElement, Graph>();
@@ -27,6 +34,7 @@ export function useAudioMix(
   onError: (message: string) => void,
 ) {
   const graph = useRef<Graph | null>(null);
+  const [audioLevels] = useState(() => new AudioLevelStore());
   const current = useRef({ project, volume });
   current.current = { project, volume };
   const [initialized, setInitialized] = useState<string | null>(null);
@@ -39,11 +47,18 @@ export function useAudioMix(
   const apply = (active: Graph) => {
     const state = current.current;
     const tracks = state.project ? audioTracks(state.project) : [];
+    active.meters.configure(tracks.map((t) => t.id));
+    active.meters.monitor.gain.setValueAtTime(state.volume, active.context.currentTime);
     for (const [id, node] of active.nodes) {
       const track = tracks.find(
         (track) => (track.kind === 'original' ? 'original' : track.id) === id,
       );
-      const gain = track ? effectiveGain(track, tracks, state.volume) : 0;
+      const gain = track ? effectiveGain(track, tracks, 1) : 0;
+      if (track && node.outputId !== track.id) {
+        node.gain.disconnect();
+        node.gain.connect(active.meters.output(track.id));
+        node.outputId = track.id;
+      }
       // The embedded soundtrack must also be cut at the media element itself.
       node.audio.muted = gain === 0;
     }
@@ -65,15 +80,20 @@ export function useAudioMix(
           const gain = context.createGain();
           gain.gain.value = 0;
           const source = context.createMediaElementSource(video);
-          source.connect(gain).connect(context.destination);
+          const meters = new AudioMeterRouter(context, audioLevels);
+          const outputId = current.current.project
+            ? audioTracks(current.current.project)[0].id
+            : 'original';
+          source.connect(gain).connect(meters.output(outputId));
           active = {
             context,
-            nodes: new Map([['original', { gain, audio: video, source }]]),
+            nodes: new Map([['original', { gain, audio: video, source, outputId }]]),
             released: false,
             sync: () => {},
             schedule: () => {},
-            dubbing: new DubbingBus(context, onError),
-            patches: new AudioPatchBus(context, onError),
+            dubbing: new DubbingBus(context, onError, (id) => meters.output(id)),
+            patches: new AudioPatchBus(context, onError, (id) => meters.output(id)),
+            meters,
           };
           graphs.set(video, active);
         } catch (error) {
@@ -88,6 +108,8 @@ export function useAudioMix(
     }
     active.released = false;
     const attached = active;
+    attached.meters.playing(false);
+    audioLevels.reset();
     graph.current = attached;
     video.volume = 1;
     attached.schedule = () => {
@@ -99,7 +121,7 @@ export function useAudioMix(
         const track = tracks.find(
           (track) => (track.kind === 'original' ? 'original' : track.id) === id,
         );
-        const base = track ? effectiveGain(track, tracks, state.volume) : 0;
+        const base = track ? effectiveGain(track, tracks, 1) : 0;
         const patches = state.project && track ? trackPatches(state.project, track.id) : [];
         node.gain.gain.cancelScheduledValues(now);
         node.gain.gain.setValueAtTime(
@@ -133,8 +155,14 @@ export function useAudioMix(
         .catch(() => onError('AUDIO_PLAYBACK_FAILED'));
     };
     attached.sync = () => {
-      attached.patches.tick(current.current.project, video, current.current.volume);
-      attached.dubbing.tick(current.current.project, video, current.current.volume);
+      attached.meters.playing(
+        !video.paused &&
+          !video.seeking &&
+          video.readyState >= 3 &&
+          attached.context.state === 'running',
+      );
+      attached.patches.tick(current.current.project, video, 1);
+      attached.dubbing.tick(current.current.project, video, 1);
       for (const [id, node] of attached.nodes) {
         if (node.audio === video) continue;
         if (node.audio.muted || video.paused || video.seeking || video.readyState < 3) {
@@ -211,12 +239,13 @@ export function useAudioMix(
         if (attached.released) {
           attached.dubbing.dispose();
           attached.patches.dispose();
+          attached.meters.dispose();
           graphs.delete(video);
           void attached.context.close();
         }
       });
     };
-  }, [key, url, videoRef, onError]);
+  }, [key, url, videoRef, onError, audioLevels]);
 
   useEffect(() => {
     const active = graph.current,
@@ -254,9 +283,9 @@ export function useAudioMix(
             const gain = active.context.createGain();
             gain.gain.value = 0;
             const source = active.context.createMediaElementSource(audio);
-            source.connect(gain).connect(active.context.destination);
+            source.connect(gain).connect(active.meters.output(id));
             audio.src = src;
-            active.nodes.set(id, { audio, gain, source });
+            active.nodes.set(id, { audio, gain, source, outputId: id });
             audio.addEventListener('error', () => onError('AUDIO_PLAYBACK_FAILED'));
           }
         applyRef.current(active);
@@ -274,16 +303,17 @@ export function useAudioMix(
   }, [project, volume]);
   const tracks = project ? audioTracks(project) : [];
   return {
+    audioLevels,
     prepare: async (time: number) => {
       if (graph.current) {
         await graph.current.context.resume();
         await Promise.all([
-          graph.current.dubbing.prepare(current.current.project, time, current.current.volume),
-          graph.current.patches.prepare(current.current.project, time, current.current.volume),
+          graph.current.dubbing.prepare(current.current.project, time, 1),
+          graph.current.patches.prepare(current.current.project, time, 1),
         ]);
       }
     },
     originalMuted:
-      !key || initialized !== key || !tracks[0] || effectiveGain(tracks[0], tracks, volume) === 0,
+      !key || initialized !== key || !tracks[0] || effectiveGain(tracks[0], tracks, 1) === 0,
   };
 }
