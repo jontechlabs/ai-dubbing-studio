@@ -1,11 +1,11 @@
 {
-  "version": "0.27.1",
-  "notes": "Correction de l’accumulation de relais MCP pendant le contrôle distant SSH. Fin explicite après la réponse, même si le canal conserve son entrée ouverte. Connexions MCP habituelles persistantes ; projets, essais, génération et effets conservés. Le transport SSH côté client doit également être mis à jour.",
-  "pub_date": "2026-10-23T14:24:04Z",
+  "version": "0.28.0",
+  "notes": "Nouvelle disposition : dialogues à gauche, lecteur au centre, sous-titres à droite et timeline sur toute la largeur. Panneaux redimensionnables avec largeurs mémorisées. Effets audio compacts : marche/arrêt par effet et réglages dans une fenêtre séparée. Prévisualisation, originaux, essais, volumes et annulation conservés.",
+  "pub_date": "2026-10-23T16:33:35Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSdFFyMUJGTFp3NkZXcGU5cGx0am13L0xGeFVuMGVZaElraitKYmltV3JTUEVpUkpuUEtFRXJINHVLQ25lNnZjR1d5blp1Q0gyMURNTVIyUUhWVVU0N2EzYzg2OTluNFFrPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkyNzY0ODU3CWZpbGU6QUkgRHViYmluZyBTdHVkaW9fMC4yNy4xX3g2NC1zZXR1cC5leGUJdmVyc2lvbjowLjI3LjEKdTh1TENpRVJ5MUpVZVlGOWdrZG1YVzNiWDFPYnlOWUpYY2Jza2FOaHpQKytFVTI2c1Y1enArYmZwT1FtWWlnTThYczlZenpXOHFzVFF1bVZRcnAzQXc9PQo=",
-      "url": "https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.27.1/AI-Dubbing-Studio-0.27.1-Setup.exe"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSdFFyMUJGTFp3NkJDZ1dzNTNaTDNmY1hVaXUvaitaZVd0cUN0MWI4YnY4a1Z6NnpmMWFxdzB0Sm9sMkYyRTVSM0ZzKzJWend3SUs4RDM0Ui9QZURXeHI5dStCYnduSUFvPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkyNzcyNDExCWZpbGU6QUkgRHViYmluZyBTdHVkaW9fMC4yOC4wX3g2NC1zZXR1cC5leGUJdmVyc2lvbjowLjI4LjAKT01yUFlLSEF4RFJNU0c4RGVRaUVQTEZHTUpOelZoam1maVV6NE0xT2VhaGtTcVJONFRYU0R2ZlJmV3ltQy92Y0lhaDRNSjFCY21CS255bnI1VG9uQ2c9PQo=",
+      "url": "https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.28.0/AI-Dubbing-Studio-0.28.0-Setup.exe"
     }
   }
 }
