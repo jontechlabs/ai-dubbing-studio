@@ -1,11 +1,11 @@
 {
-  "version": "0.27.0",
-  "notes": "Niveaux audio stéréo en temps réel pour chaque piste et le mix final, sur la timeline et dans Audio. Barres RMS, crêtes en dBFS, voyant de saturation mémorisé et remise à zéro. Mesure après les volumes, zones et effets, avant le volume d’écoute. Qualité par moteur et profils pour la génération individuelle ou par lot, dont VoxCPM2 Naturel. Essais précédents conservés. Pilotage MCP avec 101 outils. Aucun modèle supplémentaire.",
-  "pub_date": "2026-10-23T08:11:41Z",
+  "version": "0.27.1",
+  "notes": "Correction de l’accumulation de relais MCP pendant le contrôle distant SSH. Fin explicite après la réponse, même si le canal conserve son entrée ouverte. Connexions MCP habituelles persistantes ; projets, essais, génération et effets conservés. Le transport SSH côté client doit également être mis à jour.",
+  "pub_date": "2026-10-23T14:24:04Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSdFFyMUJGTFp3NkRVNDhkaGx5VWlQTEhoMWJRWDc4aEs4MUhYSXJaYzFsRUFaM1ZkR01SNDI5RHIwOWtDYld0OHFjSE5QZGJZeE1PTHRIMkI2VUhDemtzdnk4L2FWMGdRPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkyNzM2MzEwCWZpbGU6QUkgRHViYmluZyBTdHVkaW9fMC4yNy4wX3g2NC1zZXR1cC5leGUJdmVyc2lvbjowLjI3LjAKZG9ZSzZXTmphRmpPM2FiRmJRc0xFeFVBUUxBem00YTFFRnBMZDJFVVhPY1ROQlI1OU1hb0tNSUozYkNBLzNscC9POFRITS9BMmRhc1YzRVZwTE5zQXc9PQo=",
-      "url": "https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.27.0/AI-Dubbing-Studio-0.27.0-Setup.exe"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSdFFyMUJGTFp3NkZXcGU5cGx0am13L0xGeFVuMGVZaElraitKYmltV3JTUEVpUkpuUEtFRXJINHVLQ25lNnZjR1d5blp1Q0gyMURNTVIyUUhWVVU0N2EzYzg2OTluNFFrPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkyNzY0ODU3CWZpbGU6QUkgRHViYmluZyBTdHVkaW9fMC4yNy4xX3g2NC1zZXR1cC5leGUJdmVyc2lvbjowLjI3LjEKdTh1TENpRVJ5MUpVZVlGOWdrZG1YVzNiWDFPYnlOWUpYY2Jza2FOaHpQKytFVTI2c1Y1enArYmZwT1FtWWlnTThYczlZenpXOHFzVFF1bVZRcnAzQXc9PQo=",
+      "url": "https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.27.1/AI-Dubbing-Studio-0.27.1-Setup.exe"
     }
   }
 }
