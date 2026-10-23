@@ -165,6 +165,8 @@ test('five-hour films never mount all 18000 cue/voice buttons and every zoom ent
   const separator = page.getByRole('separator', { name: 'Redimensionner la timeline', exact: true });
   await separator.focus();
   for (let i = 0; i < 16; i++) await separator.press('ArrowUp');
+  await page.locator('.dialogue-card').filter({ hasText: 'Texte 3000' }).click();
+  await expect(page.locator('.target .subtitle-block.selected')).toHaveText('3000');
   await limited(page);
   await page.screenshot({ path: 'docs/screenshots/timeline-long-film-fr.png' });
 });
