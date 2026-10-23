@@ -28,7 +28,7 @@ for f in spec['files']:
     with path.open('rb') as stream:assert hashlib.file_digest(stream,'sha256').hexdigest()==f['sha256']
     assert path.stat().st_size==f['size']
 ffmpeg=ROOT/'src-tauri/binaries/ffmpeg.exe'
-source_audio,rate=sf.read(WORK/'chatterbox-multilingual-v3-0.wav',dtype='float32')
+source_audio,rate=sf.read(WORK/'chatterbox-multilingual-v3-standalone.wav',dtype='float32')
 assert rate==24000
 # Exercise a real neural window boundary, not only a single short utterance.
 period=np.concatenate([source_audio,np.zeros(2400,dtype=np.float32)])
@@ -36,7 +36,7 @@ source=np.tile(period,max(3,int(np.ceil(9*rate/len(period)))))
 assert 8*rate<len(source)<30*rate
 source_path=WORK/'vc-source.wav';reference=WORK/'vc-target.wav'
 sf.write(source_path,source,rate,subtype='PCM_16')
-subprocess.run([str(ffmpeg),'-v','error','-i',str(WORK/'Référence 日本語/ja.wav'),'-t','10','-ar','24000','-ac','1','-c:a','pcm_s16le','-y',str(reference)],check=True)
+subprocess.run([str(ffmpeg),'-v','error','-i',str(ROOT/'.cache/reference-transcription/Référence 日本語/ja.wav'),'-t','10','-ar','24000','-ac','1','-c:a','pcm_s16le','-y',str(reference)],check=True)
 originals={p:hashlib.sha256(p.read_bytes()).hexdigest() for p in [source_path,reference]}
 output=WORK/'converted-fr.wav';metadata=WORK/'vc-result.json';request=WORK/'vc-request.json'
 request.write_text(json.dumps(dict(variantId='chatterbox-vc',device='cpu',modelDir=str(folder),sourceAudio=str(source_path),referenceAudio=str(reference),outputPath=str(output),resultPath=str(metadata))),encoding='utf-8-sig')
@@ -55,6 +55,6 @@ assert speech.returncode==0,speech.stderr[-3000:]
 transcript=json.loads(asr.read_text(encoding='utf-8-sig'))['text']
 assert re.search(r'auto-detected language: fr\b',speech.stderr),speech.stderr[-1500:]
 assert len(set(re.findall(r'\w+',transcript.lower()))&{'bonjour','je','suis','heureux','de','vous','revoir'})>=4,transcript
-proof=dict(device='CPU',hardwareQualified=False,embeddedPython=True,packagedWorkers=True,model=spec['id'],revision=spec['revision'],exactDuration=True,sourceFrames=len(source),outputFrames=len(converted),sourceAndReferenceUnchanged=True,multiWindow=True,frenchTranscript=transcript,seconds=round(time.monotonic()-started,2))
+proof=dict(device='CPU',hardwareQualified=False,embeddedPython=True,packagedWorkers=True,model=spec['id'],revision=spec['revision'],exactDuration=True,sourceMode='standard',sourceTakeSha256=hashlib.sha256((WORK/'chatterbox-multilingual-v3-standalone.wav').read_bytes()).hexdigest(),sourceFrames=len(source),outputFrames=len(converted),sourceAndReferenceUnchanged=True,multiWindow=True,frenchTranscript=transcript,seconds=round(time.monotonic()-started,2))
 (ROOT/'artifacts/voice-conversion-validation.json').write_text(json.dumps(proof,indent=2,ensure_ascii=False)+'\n',encoding='utf-8')
 print('ACTUAL_VOICE_CONVERSION_PROOF',json.dumps(proof,ensure_ascii=False),flush=True)

@@ -21,7 +21,8 @@ BASE_RUN = int(os.environ['BASE_RUN_ID'])
 HEAD = subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=ROOT, text=True).strip()
 NEURAL = 'Actual VoxCPM2 and Chatterbox V3 French generation from Japanese reference'
 ALLOWED = {'.github/workflows/windows.yml', 'scripts/complete-neural-validation.py',
-           'scripts/test-multilingual.py', 'docs/VOICE-QUALITY.md'}
+           'scripts/test-multilingual.py', 'scripts/test-multilingual.ps1',
+           'scripts/test-voice-conversion.py', 'docs/VOICE-QUALITY.md'}
 
 
 def api(path):
@@ -134,6 +135,53 @@ proof = dict(baseRunId=BASE_RUN, baseJobId=job['id'], binaryCodeHead=base,
              changedFiles=sorted(changed), baseSuccessfulSteps=[s['name'] for s in steps[:boundary]],
              artifactId=artifact['id'], artifactDigest=artifact['digest'],
              buildHashes={name: sha(output / name) for name in sorted(build_names)})
+# A completed multilingual check can be reused independently of a later VC
+# fixture failure, under the same strict application-source identity rule.
+multilingual_run = os.environ.get('MULTILINGUAL_RUN_ID', '').strip()
+if multilingual_run:
+    prior = api(f'/actions/runs/{int(multilingual_run)}')
+    assert prior['status'] == 'completed' and prior['conclusion'] == 'failure'
+    assert prior['repository']['full_name'] == REPO
+    subprocess.run(['git', 'merge-base', '--is-ancestor', prior['head_sha'], HEAD], cwd=ROOT, check=True)
+    prior_changes = set(subprocess.check_output(['git', 'diff', '--name-only', base, prior['head_sha']], cwd=ROOT, text=True).splitlines())
+    assert prior_changes <= ALLOWED
+    previous_jobs = api(f'/actions/runs/{int(multilingual_run)}/jobs')['jobs']
+    previous_job = next(j for j in previous_jobs if j['name'] == 'windows-neural-completion')
+    assert [x['name'] for x in previous_job['steps'] if x['conclusion'] == 'failure'] == [NEURAL]
+    previous_artifact = next(a for a in api(f'/actions/runs/{int(multilingual_run)}/artifacts')['artifacts'] if a['name'] == 'failure-diagnostics' and not a['expired'])
+    req = urllib.request.Request(previous_artifact['archive_download_url'], headers={'Authorization': 'Bearer ' + TOKEN, 'User-Agent': 'Studio-validation'})
+    try:
+        urllib.request.build_opener(NoRedirect).open(req, timeout=60)
+        raise AssertionError('Expected artifact redirect')
+    except urllib.error.HTTPError as error:
+        assert error.code == 302
+        location = error.headers['Location']
+    with tempfile.TemporaryFile() as previous_file:
+        digest = hashlib.sha256()
+        received = 0
+        with urllib.request.urlopen(location, timeout=180) as response:
+            while data := response.read(1024 * 1024):
+                previous_file.write(data); digest.update(data); received += len(data)
+        assert received == previous_artifact['size_in_bytes']
+        assert previous_artifact['digest'] == 'sha256:' + digest.hexdigest()
+        previous_file.seek(0)
+        with zipfile.ZipFile(previous_file) as archive:
+            previous_proof = json.loads(archive.read('artifacts/recovery-validation.json'))
+            assert previous_proof['binaryCodeHead'] == base and previous_proof['validationHead'] == prior['head_sha']
+            assert previous_proof['buildHashes'] == proof['buildHashes']
+            content = archive.read('artifacts/multilingual-inference-validation.json')
+            multilingual = json.loads(content)
+            assert multilingual['device'] == 'CPU' and multilingual['packagedWorkers'] and multilingual['embeddedPython']
+            assert {e['id'] for e in multilingual['engines']} == {'voxcpm2-bf16', 'chatterbox-multilingual-v3'}
+            assert all(e['standardQuality'] and e['standardTextWordOverlap'] >= 4 and e['customLanguage'] == 'fr' and e['hotQualityReset'] for e in multilingual['engines'])
+            (output / 'multilingual-inference-validation.json').write_bytes(content)
+            standard = archive.read('.cache/multilingual-validation/chatterbox-multilingual-v3-standalone.wav')
+            assert standard[:4] == b'RIFF' and len(standard) > 44
+            standard_path = ROOT / '.cache/multilingual-validation/chatterbox-multilingual-v3-standalone.wav'
+            standard_path.parent.mkdir(parents=True, exist_ok=True)
+            standard_path.write_bytes(standard)
+    proof['multilingualValidation'] = dict(runId=int(multilingual_run), validationHead=prior['head_sha'], artifactId=previous_artifact['id'], artifactDigest=previous_artifact['digest'], proofSha256=hashlib.sha256(content).hexdigest(), standardSourceWavSha256=hashlib.sha256(standard).hexdigest())
+    print('Authenticated complete multilingual validation and its ASR-verified Standard source for the VC test.')
 (output / 'recovery-validation.json').write_text(json.dumps(proof, indent=2) + '\n', encoding='utf-8')
 print('Verified original build provenance, exact application source identity and all pre-neural checks.')
 print('Reused build commit:', base, 'Validation commit:', HEAD)
