@@ -6,8 +6,11 @@ export function wav(seconds=16) {
   for(let i=0;i<samples;i++){const value=Math.round(Math.sin(i/48000*440*2*Math.PI)*1000);bytes.writeInt16LE(value,44+i*4);bytes.writeInt16LE(value,46+i*4);}return bytes;
 }
 export async function nativeMock(page: Page, large = false) {
+  // Read the fixture before navigation: a cold Windows filesystem read must
+  // not hold the intercepted media response behind the readiness assertion.
+  const previewData=await fs.readFile('public/demo.mp4');
   await page.route('**/preview.mp4',async route=>{
-    const data=await fs.readFile('public/demo.mp4'),range=route.request().headers().range?.match(/^bytes=(\d+)-(\d*)$/);
+    const data=previewData,range=route.request().headers().range?.match(/^bytes=(\d+)-(\d*)$/);
     if(range){const start=Number(range[1]),end=Math.min(data.length-1,range[2]?Number(range[2]):data.length-1);await route.fulfill({status:206,contentType:'video/mp4',headers:{'Accept-Ranges':'bytes','Content-Range':`bytes ${start}-${end}/${data.length}`},body:data.subarray(start,end+1)});}
     else await route.fulfill({status:200,contentType:'video/mp4',headers:{'Accept-Ranges':'bytes'},body:data});
   });

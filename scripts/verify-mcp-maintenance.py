@@ -13,6 +13,7 @@ allowed = {
     'package.json', 'src-tauri/Cargo.toml', 'src-tauri/Cargo.lock',
     'src-tauri/tauri.conf.json', 'README.md', 'README.fr.md',
     'docs/MCP.md', 'docs/MCP-PROCESSES.md',
+    'tests/e2e/nativeMock.ts',
 }
 
 def git(*args):
@@ -39,6 +40,12 @@ for name in ['package.json', 'src-tauri/Cargo.toml', 'src-tauri/Cargo.lock', 'sr
 worker_tree = git('rev-parse', 'HEAD:workers')
 assert worker_tree == git('rev-parse', f'{base}:workers'), 'Workers or model/runtime manifests changed'
 assert git('rev-parse', 'HEAD:src/mcp/catalog.json') == git('rev-parse', f'{base}:src/mcp/catalog.json')
+fixture = 'tests/e2e/nativeMock.ts'
+old_fixture = subprocess.check_output(['git', 'show', f'{base}:{fixture}'], cwd=root).decode().replace('\r\n', '\n')
+new_fixture = (root / fixture).read_text(encoding='utf-8')
+prefetch = "  // Read the fixture before navigation: a cold Windows filesystem read must\n  // not hold the intercepted media response behind the readiness assertion.\n  const previewData=await fs.readFile('public/demo.mp4');\n"
+assert new_fixture.count(prefetch) == 1
+assert new_fixture.replace(prefetch, '').replace('const data=previewData,range=', "const data=await fs.readFile('public/demo.mp4'),range=") == old_fixture, 'Only fixture byte prefetch is permitted; assertions stay unchanged'
 report = {
     'baseline': baseline, 'baselineCommit': base, 'head': git('rev-parse', 'HEAD'),
     'workerTreeUnchanged': True, 'workerTree': worker_tree,
