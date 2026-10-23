@@ -5,12 +5,23 @@ on:
     branches: [main]
   pull_request:
   workflow_dispatch:
+    inputs:
+      complete_neural:
+        description: Complete neural validation of an identical previously built application
+        type: boolean
+        default: false
+      validation_base_run:
+        description: Failed Windows run whose only failure was the final neural step
+        type: string
+        default: ''
 
 permissions:
   contents: read
+  actions: read
 
 jobs:
   windows:
+    if: ${{ !inputs.complete_neural }}
     runs-on: windows-latest
     timeout-minutes: 90
     env:
@@ -129,5 +140,48 @@ jobs:
             .cache/mcp-native/**/*.stderr.log
             .cache/multilingual-validation/*.log
             .cache/multilingual-validation/*.json
+          include-hidden-files: true
+          if-no-files-found: ignore
+
+  windows-neural-completion:
+    if: ${{ inputs.complete_neural }}
+    runs-on: windows-latest
+    timeout-minutes: 60
+    env:
+      GH_TOKEN: ${{ github.token }}
+      BASE_RUN_ID: ${{ inputs.validation_base_run }}
+      PYTHONDONTWRITEBYTECODE: '1'
+      PYTHONUTF8: '1'
+      PYTHONIOENCODING: utf-8
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: '3.12.10'
+      - name: Authenticate previous checks, unchanged application source and exact build assets
+        run: python scripts/complete-neural-validation.py
+      - name: Verify real Japanese reference transcription
+        run: ./scripts/test-reference-transcription.ps1
+      - name: Actual VoxCPM2 and Chatterbox V3 French generation from Japanese reference
+        run: ./scripts/test-multilingual.ps1
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: windows-x64-development-build
+          path: artifacts/*
+          if-no-files-found: error
+      - name: Retain failure diagnostics
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: failure-diagnostics
+          path: |
+            artifacts/*
+            .cache/reference-transcription/**/*.log
+            .cache/reference-transcription/**/*.json
+            .cache/multilingual-validation/*.log
+            .cache/multilingual-validation/*.json
+            .cache/multilingual-validation/*.wav
           include-hidden-files: true
           if-no-files-found: ignore

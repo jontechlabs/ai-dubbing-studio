@@ -32,6 +32,8 @@ Davantage d’étapes demande plus de calcul. Le profil Détaillé n’est pas f
 
 Pour VoxCPM2, le guide officiel recommande d’essayer un guidage de 1,5–1,6 en cas de bourdonnement. Un guidage trop élevé peut renforcer certains artefacts. Pour Chatterbox avec une référence japonaise et un texte français, Standard garde le guidage à **0**, conformément à la recommandation du projet pour limiter le transfert de langue ; l’augmenter peut également renforcer l’accent de la référence.
 
+**La fidélité au texte reste à vérifier.** Une configuration personnalisée peut altérer la prononciation ou le respect des mots, même si le fichier est valide et la langue reste le français. Un essai Chatterbox à température réduite avec une référence japonaise a notamment obtenu une transcription de contrôle incomplète. Le profil Stable réduit la variation de l’échantillonnage ; il ne garantit pas davantage de justesse. Revenez à **Standard**, changez la graine ou utilisez une référence française propre si la diction se dégrade. Les tests distinguent le contrôle du texte en mode Standard de la vérification des paramètres personnalisés et de leur langue.
+
 Une référence isolée, sans musique, bruit, saturation ou réverbération marquée, aide davantage qu’une augmentation systématique des curseurs. Préférez plusieurs secondes de parole naturelle et une vitesse proche de 1×. Si le WAV seul est propre mais la timeline sonne métallique, comparez la vitesse et l’ajustement de durée avant de changer les paramètres de synthèse. Aucun filtre de « restauration » n’est ajouté automatiquement. Les essais restent au format WAV PCM 24 kHz du studio ; ce réglage ne convertit pas tout le pipeline vers une nouvelle fréquence.
 
 ## Lots, sauvegarde et MCP
