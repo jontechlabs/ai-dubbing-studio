@@ -1,11 +1,11 @@
 {
-  "version": "0.26.0",
-  "notes": "Effets audio locaux sur les répliques, portions et pistes entières : égaliseur, pitch, compression, écho, réverbération et transformations vocales. Vingt effets, douze préréglages, originaux conservés. Volume global des pistes de 0 à 400 % directement dans la timeline. Notifications discrètes au début et à la fin des traitements. Pilotage MCP des effets.",
-  "pub_date": "2026-10-22T20:35:24Z",
+  "version": "0.27.0",
+  "notes": "Niveaux audio stéréo en temps réel pour chaque piste et le mix final, sur la timeline et dans Audio. Barres RMS, crêtes en dBFS, voyant de saturation mémorisé et remise à zéro. Mesure après les volumes, zones et effets, avant le volume d’écoute. Qualité par moteur et profils pour la génération individuelle ou par lot, dont VoxCPM2 Naturel. Essais précédents conservés. Pilotage MCP avec 101 outils. Aucun modèle supplémentaire.",
+  "pub_date": "2026-10-23T08:11:41Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSdFFyMUJGTFp3Nk5QUmlVSnYwMkhyQWk4TDJzZDZhaVNLZHYzR2owWVo2MFJsMDBqcFFUdm9qVzl0VUZBQ2x5WTBFVjR6ZnRwYmJYbEdIN0J0VkFCTUJOZzN4aEFXSEFJPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkyNjk5MTk0CWZpbGU6QUkgRHViYmluZyBTdHVkaW9fMC4yNi4wX3g2NC1zZXR1cC5leGUJdmVyc2lvbjowLjI2LjAKaTEzQXBJa2ZyeDdBTktvT2pHWjA2MGRSSmJMaFJnQUh0a3RSM0hoMWJZT3JtejVzRmN2WkVUMjgrUkFLSzYvV1B2NFRkZmFpM3NBYkR5cFVBNGx3QWc9PQo=",
-      "url": "https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.26.0/AI-Dubbing-Studio-0.26.0-Setup.exe"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSdFFyMUJGTFp3NkRVNDhkaGx5VWlQTEhoMWJRWDc4aEs4MUhYSXJaYzFsRUFaM1ZkR01SNDI5RHIwOWtDYld0OHFjSE5QZGJZeE1PTHRIMkI2VUhDemtzdnk4L2FWMGdRPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkyNzM2MzEwCWZpbGU6QUkgRHViYmluZyBTdHVkaW9fMC4yNy4wX3g2NC1zZXR1cC5leGUJdmVyc2lvbjowLjI3LjAKZG9ZSzZXTmphRmpPM2FiRmJRc0xFeFVBUUxBem00YTFFRnBMZDJFVVhPY1ROQlI1OU1hb0tNSUozYkNBLzNscC9POFRITS9BMmRhc1YzRVZwTE5zQXc9PQo=",
+      "url": "https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.27.0/AI-Dubbing-Studio-0.27.0-Setup.exe"
     }
   }
 }
