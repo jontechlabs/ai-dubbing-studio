@@ -2,10 +2,14 @@ import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useStat
 import { useVirtualizer } from '@tanstack/react-virtual';
 import {
   AlertTriangle,
+  AudioLines,
   Captions,
   ChevronDown,
   FilePlus2,
   Play,
+  ListChecks,
+  ListX,
+  ScanFace,
   RefreshCw,
   Search,
   UserRound,
@@ -188,27 +192,41 @@ function DialoguesPane({
       <div className="batch-selection-actions">
         <button
           className="button subtle"
+          aria-label={t('batchCheckVisible')}
+          title={t('batchCheckVisible')}
           disabled={!lines.length}
           onClick={() => onCheck(lines.map((l) => l.id))}
         >
-          {t('batchCheckVisible')}
-        </button>
-        <button className="text-button" disabled={!checkedIds.length} onClick={() => onCheck([])}>
-          {t('batchClearSelection')}
-        </button>
-        <button
-          className="button accent"
-          disabled={!project?.dialogues.length || busy}
-          onClick={onBatch}
-        >
-          {t('batchDub')} {checkedIds.length > 0 && `(${checkedIds.length})`}
+          <ListChecks size={14} />
         </button>
         <button
           className="button subtle"
+          aria-label={t('batchClearSelection')}
+          title={t('batchClearSelection')}
+          disabled={!checkedIds.length}
+          onClick={() => onCheck([])}
+        >
+          <ListX size={14} />
+        </button>
+        <button
+          className="button accent"
+          aria-label={`${t('batchDub')}${checkedIds.length > 0 ? ` (${checkedIds.length})` : ''}`}
+          title={t('batchDub')}
+          disabled={!project?.dialogues.length || busy}
+          onClick={onBatch}
+        >
+          <AudioLines size={13} />
+          {t('batchDubCompact')} {checkedIds.length > 0 && `(${checkedIds.length})`}
+        </button>
+        <button
+          className="button subtle"
+          aria-label={t('inpaintBatch')}
+          title={t('inpaintBatch')}
           disabled={!project?.dialogues.length || busy}
           onClick={onLipBatch}
         >
-          {t('inpaintBatch')}
+          <ScanFace size={13} />
+          {t('batchLipCompact')}
         </button>
       </div>
       <div className="dialogue-scroll" ref={scrollRef}>

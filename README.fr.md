@@ -1,4 +1,11 @@
-# AI Dubbing Studio — phases 1–7
+# AI Dubbing Studio
+
+**v0.28.0 — Un espace de montage plus compact.** Dialogues à gauche, vidéo au centre, édition des sous-titres à droite et timeline sur toute la largeur en bas. Les panneaux se redimensionnent à la souris ou au clavier et mémorisent leur largeur. Les effets audio disposent de boutons marche/arrêt et d’une fenêtre de réglages séparée ; prévisualisation, ordre de traitement et originaux conservés. [Guide et captures](docs/COMPACT-WORKSPACE.md).
+
+![Espace de montage](docs/screenshots/workspace-three-panels-fr.png)
+
+*Interface réelle avec média synthétique et commandes natives simulées.*
+
 
 **v0.27.1 — Fin des relais MCP accumulés.** Le transport SSH ferme chaque relais après sa réponse, même si son entrée reste ouverte. Les connexions MCP classiques restent persistantes ; les projets, les essais et les moteurs IA sont conservés. [Diagnostic et fonctionnement](docs/MCP-PROCESSES.md).
 

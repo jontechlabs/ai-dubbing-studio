@@ -696,9 +696,12 @@ export function VoiceRegionEditor({
         />
       </details>
       {validating && <p role="status">{t('voiceEditValidating')}</p>}
-      <small>{t('voiceOriginalKept')}</small>
-      <small>{t('fxWaveformHint')}</small>
-      <small>{t('voiceEditHint')}</small>
+      <details className="voice-editor-help">
+        <summary>{t('voiceEditHelp')}</summary>
+        <small>{t('voiceOriginalKept')}</small>
+        <small>{t('fxWaveformHint')}</small>
+        <small>{t('voiceEditHint')}</small>
+      </details>
       {error && <p role="alert">{t(error)}</p>}
     </section>
   );

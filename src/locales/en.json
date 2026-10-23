@@ -1,6 +1,6 @@
 {
   "brand": "Dubbing Studio",
-  "local": "LOCAL · PHASE 09",
+  "local": "100% LOCAL",
   "import": "Import",
   "analyse": "Analyze",
   "audio": "Audio",
@@ -1139,7 +1139,7 @@
   "fxParameter": "{{effect}} {{number}} · {{parameter}}",
   "fxPreview": "Preview these effects",
   "fxClearDraft": "Clear chain",
-  "fxChainHint": "Processing runs from top to bottom; up to 8 effects. Uncheck an effect to bypass it. Apply the settings with the button above.",
+  "fxChainHint": "Processing runs from left to right, up to 8 effects. The power button bypasses an effect without losing settings. The settings button opens its parameters and ordering controls. Apply the chain to update the rendered audio.",
   "fxTrackHint": "A whole track creates an independent local copy; a selection adds a replacement layer. Original files are kept and Ctrl+Z undoes the operation. Track gain and region volume remain adjustable after processing.",
   "fxTrack": "Track to process",
   "fxScope": "Effect scope",
@@ -1248,5 +1248,20 @@
       "cfgWeight": "Higher values may strengthen the reference accent.",
       "exaggeration": "Strengthens acting; high values may change the rhythm."
     }
-  }
+  },
+  "resizeInspector": "Resize subtitle inspector",
+  "resizeWorkspaceHint": "Drag or use arrow keys; Shift for larger steps. Double-click to reset.",
+  "subtitleInspector": "Subtitle editor",
+  "fxSettings": "Adjust {{name}} · effect {{number}}",
+  "fxSettingsTitle": "Settings · {{name}}",
+  "fxOn": "On",
+  "fxOff": "Off",
+  "fxDone": "Done",
+  "fxPosition": "Effect {{number}} / {{total}}",
+  "fxHelp": "Help",
+  "fxChainLimit": "Up to 8 effects; bypassed effects keep their settings.",
+  "fxDraftHint": "These settings prepare the chain. Close this window, then apply the effects to update the rendered audio.",
+  "batchDubCompact": "Dubbing",
+  "batchLipCompact": "Lip sync",
+  "voiceEditHelp": "Editing help"
 }

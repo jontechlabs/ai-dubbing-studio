@@ -1,4 +1,4 @@
-# Effets audio, volume global et notifications — v0.26.0
+# Effets audio, volume global et notifications — v0.28.0
 
 Les effets fonctionnent entièrement en local avec FFmpeg livré avec le studio, sans modèle IA supplémentaire. Ils sont disponibles sur les répliques de doublage et les pistes audio.
 
@@ -14,14 +14,18 @@ Ce volume multiplie les réglages des portions : une piste à 200 % avec une zon
 
 1. Double-cliquez sur le bloc de doublage pour ouvrir son édition.
 2. Sélectionnez une portion dans la forme d’onde. Sans portion sélectionnée, toute la réplique est traitée.
-3. Déployez **Effets audio**, choisissez un préréglage ou ajoutez des effets, puis réglez leurs paramètres.
+3. Déployez **Effets audio**, choisissez un préréglage ou ajoutez un effet avec le bouton **+**. Chaque pastille possède un bouton marche/arrêt et un bouton de réglages. Les curseurs s’ouvrent dans une fenêtre modale ; **Terminer** conserve le brouillon et ferme cette fenêtre.
 4. **Écouter avec ces effets** prévisualise sans modifier le projet. **Appliquer les effets au doublage** rend et vérifie l’audio avant de valider le montage.
 
-Chaque portion possède une chaîne de huit effets au maximum, traités de haut en bas. Les flèches changent l’ordre, les cases permettent le contournement et les boutons permettent de retirer ou réinitialiser les effets. Modifier la chaîne **remplace** celle de la zone : changer un pitch de +4 à −3 demi-tons donne −3, sans accumuler les deux réglages. **Vider la chaîne**, puis appliquer, enlève les effets de la portion.
+Chaque portion possède une chaîne de huit effets au maximum, traités de haut en bas. Le traitement suit les pastilles numérotées de gauche à droite. Le bouton marche/arrêt permet le contournement sans perdre les paramètres. Les flèches et la réinitialisation sont dans la fenêtre de réglages ; × retire la pastille. Modifier la chaîne **remplace** celle de la zone : changer un pitch de +4 à −3 demi-tons donne −3, sans accumuler les deux réglages. **Vider la chaîne**, puis appliquer, enlève les effets de la portion.
 
 Le WAV original et les essais précédents restent conservés. Les effets suivent le montage, les fondus et les volumes locaux, avec annulation/rétablissement. L’écoute synchronisée, les exports WAV et MKV utilisent le rendu. La forme d’onde du petit éditeur représente toujours l’audio source. Les effets gardent la durée du montage ; les queues d’écho/réverbération sont limitées à la fin de la portion. Élargissez la portion dans une zone de silence si vous souhaitez entendre une queue plus longue, dans les limites habituelles de durée et de chevauchement.
 
 ![Effets dans l’édition du doublage](screenshots/audio-effects-voice-fr.png)
+
+![Réglages séparés d’un effet](screenshots/audio-effect-settings-fr.png)
+
+La fenêtre retient le focus au clavier. Échap ou un clic sur le fond la ferme ; le panneau Audio reste ouvert. Les réglages sont un brouillon : utilisez ensuite le bouton **Appliquer** de la chaîne pour mettre à jour le rendu. [Disposition de montage](COMPACT-WORKSPACE.md).
 
 ## Effets sur les pistes
 

@@ -1,5 +1,7 @@
 import { useState } from 'react';
+import { ArrowDown, ArrowUp, Plus, Power, RotateCcw, SlidersHorizontal, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { Modal } from './Modal';
 import {
   audioEffectsCatalog as catalog,
   defaultEffect,
@@ -26,141 +28,115 @@ export function EffectsChainEditor({
   const lang = i18n.language.startsWith('fr') ? 'fr' : 'en';
   const [chain, setChain] = useState<AudioEffect[]>(() => structuredClone(initial));
   const [kind, setKind] = useState<EffectKind>('equalizer');
+  const [editing, setEditing] = useState<number | null>(null);
   const replace = (index: number, update: Partial<AudioEffect>) =>
-    setChain((items) => items.map((e, i) => (i === index ? { ...e, ...update } : e)));
-  const move = (index: number, delta: number) =>
+    setChain((items) =>
+      items.map((effect, i) => (i === index ? { ...effect, ...update } : effect)),
+    );
+  const move = (index: number, delta: number) => {
     setChain((items) => {
       const next = [...items];
       [next[index], next[index + delta]] = [next[index + delta], next[index]];
       return next;
     });
+    setEditing(index + delta);
+  };
+  const effect = editing === null ? undefined : chain[editing];
+  const definition = catalog.effects.find((item) => item.id === effect?.kind);
   return (
     <div className="effects-chain">
-      <label className="field">
-        <span>{t('fxPreset')}</span>
+      <div className="effects-tools">
         <select
           aria-label={t('fxPreset')}
           defaultValue=""
           disabled={disabled}
-          onChange={(e) => {
-            const preset = catalog.presets.find((p) => p.id === e.target.value);
-            if (preset) setChain(structuredClone(preset.chain) as AudioEffect[]);
-            e.currentTarget.value = '';
+          onChange={(event) => {
+            const preset = catalog.presets.find((item) => item.id === event.target.value);
+            if (preset) {
+              setChain(structuredClone(preset.chain) as AudioEffect[]);
+              setEditing(null);
+            }
+            event.currentTarget.value = '';
           }}
         >
           <option value="">{t('fxPresetChoose')}</option>
-          {catalog.presets.map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.label[lang]}
+          {catalog.presets.map((preset) => (
+            <option key={preset.id} value={preset.id}>
+              {preset.label[lang]}
             </option>
           ))}
         </select>
-      </label>
-      <div className="effects-add">
-        <select
-          aria-label={t('fxChoose')}
-          value={kind}
-          disabled={disabled}
-          onChange={(e) => setKind(e.target.value as EffectKind)}
-        >
-          {catalog.effects.map((e) => (
-            <option key={e.id} value={e.id}>
-              {e.label[lang]}
-            </option>
-          ))}
-        </select>
-        <button
-          className="button subtle"
-          disabled={disabled || chain.length >= catalog.maxChain}
-          onClick={() => setChain([...chain, defaultEffect(kind)])}
-        >
-          {t('fxAdd')}
-        </button>
+        <div className="effects-add">
+          <select
+            aria-label={t('fxChoose')}
+            value={kind}
+            disabled={disabled}
+            onChange={(event) => setKind(event.target.value as EffectKind)}
+          >
+            {catalog.effects.map((item) => (
+              <option key={item.id} value={item.id}>
+                {item.label[lang]}
+              </option>
+            ))}
+          </select>
+          <button
+            className="button subtle"
+            aria-label={t('fxAdd')}
+            title={t('fxAdd')}
+            disabled={disabled || chain.length >= catalog.maxChain}
+            onClick={() => setChain([...chain, defaultEffect(kind)])}
+          >
+            <Plus size={15} />
+          </button>
+        </div>
+        <span className="effects-count" title={t('fxChainLimit')}>
+          {chain.length}/{catalog.maxChain}
+        </span>
       </div>
       {!chain.length && <p className="panel-description">{t('fxEmpty')}</p>}
-      {chain.map((effect, index) => {
-        const definition = catalog.effects.find((e) => e.id === effect.kind)!;
-        return (
-          <fieldset className="effect-card" key={`${index}:${effect.kind}`} disabled={disabled}>
-            <legend>
-              <label>
-                <input
-                  type="checkbox"
-                  aria-label={t('fxEnabled', { name: definition.label[lang], number: index + 1 })}
-                  checked={effect.enabled}
-                  onChange={(e) => replace(index, { enabled: e.target.checked })}
-                />
-                {index + 1}. {definition.label[lang]}
-              </label>
-            </legend>
-            <div className="effect-actions">
+      <div className="effect-chips">
+        {chain.map((item, index) => {
+          const label = catalog.effects.find((entry) => entry.id === item.kind)!.label[lang];
+          return (
+            <div
+              className={`effect-chip ${item.enabled ? 'enabled' : 'bypassed'}`}
+              key={`${index}:${item.kind}`}
+            >
               <button
-                aria-label={t('fxUp', { number: index + 1 })}
-                disabled={disabled || index === 0}
-                onClick={() => move(index, -1)}
+                className="effect-toggle"
+                disabled={disabled}
+                aria-label={t('fxEnabled', { name: label, number: index + 1 })}
+                aria-pressed={item.enabled}
+                title={`${label} · ${t(item.enabled ? 'fxOn' : 'fxOff')}`}
+                onClick={() => replace(index, { enabled: !item.enabled })}
               >
-                ↑
+                <span className="effect-number">{index + 1}</span>
+                <Power size={12} />
+                <span className="effect-name">{label}</span>
+                <small>{t(item.enabled ? 'fxOn' : 'fxOff')}</small>
               </button>
               <button
-                aria-label={t('fxDown', { number: index + 1 })}
-                disabled={disabled || index === chain.length - 1}
-                onClick={() => move(index, 1)}
+                className="effect-chip-settings"
+                disabled={disabled}
+                aria-label={t('fxSettings', { name: label, number: index + 1 })}
+                title={t('fxSettings', { name: label, number: index + 1 })}
+                onClick={() => setEditing(index)}
               >
-                ↓
+                <SlidersHorizontal size={13} />
               </button>
               <button
-                onClick={() =>
-                  replace(index, { parameters: defaultEffect(effect.kind).parameters })
-                }
-              >
-                {t('fxReset')}
-              </button>
-              <button
+                className="effect-chip-remove"
+                disabled={disabled}
                 aria-label={t('fxRemove', { number: index + 1 })}
+                title={t('fxRemove', { number: index + 1 })}
                 onClick={() => setChain(chain.filter((_, i) => i !== index))}
               >
-                ×
+                <X size={12} />
               </button>
             </div>
-            <div className="effect-parameters">
-              {definition.parameters.map((parameter) => {
-                const value = effect.parameters[parameter.id] ?? parameter.default;
-                const label = t('fxParameter', {
-                  effect: definition.label[lang],
-                  parameter: parameter.label[lang],
-                  number: index + 1,
-                });
-                return (
-                  <label key={parameter.id}>
-                    <span>{parameter.label[lang]}</span>
-                    <input
-                      type="range"
-                      aria-label={label}
-                      min={parameter.min}
-                      max={parameter.max}
-                      step={parameter.step}
-                      value={value}
-                      disabled={!effect.enabled || disabled}
-                      onChange={(e) =>
-                        replace(index, {
-                          parameters: {
-                            ...effect.parameters,
-                            [parameter.id]: Number(e.target.value),
-                          },
-                        })
-                      }
-                    />
-                    <output>
-                      {value}
-                      {parameter.unit ? ` ${parameter.unit}` : ''}
-                    </output>
-                  </label>
-                );
-              })}
-            </div>
-          </fieldset>
-        );
-      })}
+          );
+        })}
+      </div>
       <div className="effects-buttons">
         {onPreview && (
           <button className="button subtle" disabled={disabled} onClick={() => onPreview(chain)}>
@@ -177,12 +153,114 @@ export function EffectsChainEditor({
         <button
           className="text-button"
           disabled={disabled || !chain.length}
-          onClick={() => setChain([])}
+          onClick={() => {
+            setChain([]);
+            setEditing(null);
+          }}
         >
           {t('fxClearDraft')}
         </button>
+        <details className="effects-help">
+          <summary>{t('fxHelp')}</summary>
+          <p className="panel-description">{t('fxChainHint')}</p>
+        </details>
       </div>
-      <p className="panel-description">{t('fxChainHint')}</p>
+      {effect && definition && editing !== null && (
+        <Modal
+          title={t('fxSettingsTitle', { name: definition.label[lang] })}
+          onClose={() => setEditing(null)}
+        >
+          <div className="effect-modal-toolbar">
+            <button
+              className="button subtle effect-modal-toggle"
+              aria-pressed={effect.enabled}
+              disabled={disabled}
+              onClick={() => replace(editing, { enabled: !effect.enabled })}
+            >
+              <Power size={14} />
+              {t(effect.enabled ? 'fxOn' : 'fxOff')}
+            </button>
+            <span>{t('fxPosition', { number: editing + 1, total: chain.length })}</span>
+            <button
+              className="icon-button"
+              aria-label={t('fxUp', { number: editing + 1 })}
+              disabled={disabled || editing === 0}
+              onClick={() => move(editing, -1)}
+            >
+              <ArrowUp size={15} />
+            </button>
+            <button
+              className="icon-button"
+              aria-label={t('fxDown', { number: editing + 1 })}
+              disabled={disabled || editing === chain.length - 1}
+              onClick={() => move(editing, 1)}
+            >
+              <ArrowDown size={15} />
+            </button>
+            <button
+              className="button subtle"
+              disabled={disabled}
+              onClick={() =>
+                replace(editing, { parameters: defaultEffect(effect.kind).parameters })
+              }
+            >
+              <RotateCcw size={13} />
+              {t('fxReset')}
+            </button>
+          </div>
+          <div className="effect-parameters">
+            {definition.parameters.map((parameter) => {
+              const value = effect.parameters[parameter.id] ?? parameter.default;
+              const label = t('fxParameter', {
+                effect: definition.label[lang],
+                parameter: parameter.label[lang],
+                number: editing + 1,
+              });
+              return (
+                <label key={parameter.id}>
+                  <span>{parameter.label[lang]}</span>
+                  <input
+                    type="range"
+                    aria-label={label}
+                    min={parameter.min}
+                    max={parameter.max}
+                    step={parameter.step}
+                    value={value}
+                    disabled={disabled}
+                    onChange={(event) =>
+                      replace(editing, {
+                        parameters: {
+                          ...effect.parameters,
+                          [parameter.id]: Number(event.target.value),
+                        },
+                      })
+                    }
+                  />
+                  <output>
+                    {value}
+                    {parameter.unit ? ` ${parameter.unit}` : ''}
+                  </output>
+                </label>
+              );
+            })}
+          </div>
+          <p className="panel-description effect-draft-hint">{t('fxDraftHint')}</p>
+          <footer className="effect-modal-footer">
+            {onPreview && (
+              <button
+                className="button subtle"
+                disabled={disabled}
+                onClick={() => onPreview(chain)}
+              >
+                {t('fxPreview')}
+              </button>
+            )}
+            <button className="button accent" onClick={() => setEditing(null)}>
+              {t('fxDone')}
+            </button>
+          </footer>
+        </Modal>
+      )}
     </div>
   );
 }

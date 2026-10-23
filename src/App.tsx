@@ -7,6 +7,7 @@ import { JobNotifications } from './components/JobNotifications';
 import { readMicrophone } from './services/microphone';
 import { Dialogues } from './components/Dialogues';
 import { Editor } from './components/Editor';
+import { WorkspacePanels } from './components/WorkspacePanels';
 import { Header, type Panel } from './components/Header';
 import { Panels } from './components/Panels';
 import { Player } from './components/Player';
@@ -54,9 +55,8 @@ export default function App() {
   const openBatch = useCallback(() => setPanel('batchDub'), []);
   const openLipBatch = useCallback(() => setPanel('inpaintBatch'), []);
   const [translationFocus, setTranslationFocus] = useState(0);
-  const [left, setLeft] = useState(Number(localStorage.getItem('studio.left') ?? 36));
   const [timelineHeight, setTimelineHeight] = useState(
-    Number(localStorage.getItem('studio.timelineHeight') ?? 242),
+    Number(localStorage.getItem('studio.timelineHeight') ?? 320),
   );
   const [padding, setPadding] = useState(Number(localStorage.getItem('studio.padding') ?? 750));
   const [theme, setTheme] = useState(localStorage.getItem('studio.theme') ?? 'dark');
@@ -268,10 +268,9 @@ export default function App() {
     document.documentElement.lang = i18n.resolvedLanguage ?? 'en';
   }, [i18n.resolvedLanguage]);
   useEffect(() => {
-    localStorage.setItem('studio.left', String(left));
     localStorage.setItem('studio.timelineHeight', String(timelineHeight));
     localStorage.setItem('studio.padding', String(padding));
-  }, [left, timelineHeight, padding]);
+  }, [timelineHeight, padding]);
   useEffect(() => {
     setSelectedId(null);
   }, [studio.project?.id]);
@@ -360,10 +359,7 @@ export default function App() {
           </div>
         )}
         <main className="workspace">
-          <div
-            className="upper-workspace"
-            style={{ gridTemplateColumns: `${left}% 5px minmax(0, 1fr)` }}
-          >
+          <WorkspacePanels>
             <Dialogues
               checkedIds={batchIds}
               onCheck={checkBatch}
@@ -382,60 +378,39 @@ export default function App() {
               onTranslation={editTranslation}
               busy={busy}
             />
-            <div
-              className="resize-handle vertical"
-              role="separator"
-              aria-label={t('resizePanels')}
-              aria-orientation="vertical"
-              aria-valuenow={Math.round(left)}
-              tabIndex={0}
-              onKeyDown={(e) => {
-                if (e.key === 'ArrowLeft') setLeft(Math.max(28, left - 2));
-                if (e.key === 'ArrowRight') setLeft(Math.min(55, left + 2));
+            <Player
+              project={studio.project}
+              transport={transport}
+              onImport={() => setPanel('import')}
+              onOpen={() => {
+                void studio.run(bridge.openProject);
               }}
-              onPointerDown={(e) => e.currentTarget.setPointerCapture(e.pointerId)}
-              onPointerMove={(e) => {
-                if (e.currentTarget.hasPointerCapture(e.pointerId) && e.buttons === 1) {
-                  const rect = e.currentTarget.parentElement!.getBoundingClientRect();
-                  setLeft(Math.max(28, Math.min(55, ((e.clientX - rect.left) / rect.width) * 100)));
-                }
+              onDemo={() => {
+                void studio.run(bridge.loadDemo);
               }}
+              onStep={step}
+              onAudio={() => setPanel('audio')}
+              importJob={studio.jobs.find(
+                (job) =>
+                  job.kind === 'import' &&
+                  job.projectId === studio.project?.id &&
+                  ['queued', 'running'].includes(job.status),
+              )}
+              onJobs={showJobs}
+              onEdit={edit}
             />
-            <div className="right-workspace">
-              <Player
-                project={studio.project}
-                transport={transport}
-                onImport={() => setPanel('import')}
-                onOpen={() => {
-                  void studio.run(bridge.openProject);
-                }}
-                onDemo={() => {
-                  void studio.run(bridge.loadDemo);
-                }}
-                onStep={step}
-                onAudio={() => setPanel('audio')}
-                importJob={studio.jobs.find(
-                  (job) =>
-                    job.kind === 'import' &&
-                    job.projectId === studio.project?.id &&
-                    ['queued', 'running'].includes(job.status),
-                )}
-                onJobs={showJobs}
-                onEdit={edit}
-              />
-              <Editor
-                project={studio.project}
-                selected={selected}
-                onEdit={edit}
-                onPlay={transport.playOriginalLine}
-                busy={busy}
-                time={transport.time}
-                translationFocus={translationFocus}
-                jobs={studio.jobs}
-                snapshot={studio.snapshot}
-              />
-            </div>
-          </div>
+            <Editor
+              project={studio.project}
+              selected={selected}
+              onEdit={edit}
+              onPlay={transport.playOriginalLine}
+              busy={busy}
+              time={transport.time}
+              translationFocus={translationFocus}
+              jobs={studio.jobs}
+              snapshot={studio.snapshot}
+            />
+          </WorkspacePanels>
           <div
             className="resize-handle horizontal"
             role="separator"

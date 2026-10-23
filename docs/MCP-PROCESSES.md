@@ -30,7 +30,7 @@ Le script accepte le chemin de la configuration SSH comme premier argument. Cett
 
 Dans les paramètres du studio, désactivez **Activer le pilotage MCP local**, puis attendez quelques secondes. Les relais récents surveillent le serveur et quittent lorsqu’il s’arrête. Fermez ensuite normalement le studio avant l’installation. Après installation, réactivez MCP et reconnectez le client IA. Les anciens projets et essais restent disponibles.
 
-Le rapport de diagnostic en lecture seule sépare l’interface, les relais `--mcp`, les processus WebView2 et les moteurs. Il n’enregistre pas les lignes de commande, jetons ou contenus des projets. Un processus dont le parent est absent constitue un indice, pas une preuve suffisante de fuite.
+Le diagnostic intégré contient la version, l’environnement, les erreurs de commandes et les traitements. Il ne fournit pas encore un inventaire des processus Windows, et cet inventaire n’est pas exposé par MCP. Le nom d’un processus seul ne permet donc pas de confirmer son rôle. Les tests de fermeture ci-dessous suivent les processus qu’ils lancent et leur code de sortie.
 
 ## Validation
 
@@ -39,3 +39,5 @@ Les régressions de processus vérifient les entrées maintenues ouvertes, vingt
 La publication de maintenance vérifie que les workers, poids référencés, dépendances des moteurs et catalogue MCP sont identiques à v0.27.0. Elle refait les suites Windows et les tests natifs du bureau ; elle ne refait pas les longues générations neuronales inchangées. Les réglages de qualité et les vumètres v0.27.0 sont conservés.
 
 Pour appliquer une réverbération, un écho ou un autre effet à un essai existant : voir [Effets audio sur les doublages](AUDIO-EFFECTS.md#effets-sur-une-réplique).
+
+Une vérification supplémentaire sur une session distante réelle en v0.27.1 a exécuté vingt appels en lecture seule (état, traitements, environnement et catalogue qualité). Les vingt-trois canaux SSH, initialisation/catalogue/ping compris, ont tous terminé avec le code 0, sans fermeture forcée ni canal restant entre les appels. La commande SSH restreinte attend son enfant `--mcp` et en transmet le code de sortie. Cette mesure confirme la fin des relais de ce test ; elle ne constitue pas un inventaire global du Gestionnaire des tâches.

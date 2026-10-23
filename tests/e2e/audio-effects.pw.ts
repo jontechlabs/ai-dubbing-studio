@@ -67,10 +67,14 @@ test('voice effect preview keeps project dry until applied and later changes rep
     .getByRole('spinbutton', { name: 'Fin de la sélection (ms)', exact: true })
     .fill('900');
   const fx = editor.locator('.voice-effects-panel');
-  await fx.locator('summary').click();
+  await fx.locator(':scope > summary').click();
   await fx.getByRole('combobox', { name: 'Effet à ajouter', exact: true }).selectOption('pitch');
   await fx.getByRole('button', { name: 'Ajouter un effet', exact: true }).click();
-  await fx.getByRole('slider').first().fill('4');
+  await fx.getByRole('button', { name: 'Régler Pitch / hauteur · effet 1', exact: true }).click();
+  const settings = page.getByRole('dialog', { name: 'Réglages · Pitch / hauteur', exact: true });
+  await settings.getByRole('slider').first().fill('4');
+  await page.screenshot({ path: 'docs/screenshots/audio-effect-settings-fr.png' });
+  await settings.getByRole('button', { name: 'Terminer', exact: true }).click();
   const before = await project(page);
   await fx.getByRole('button', { name: 'Écouter avec ces effets', exact: true }).click();
   await expect
@@ -91,7 +95,9 @@ test('voice effect preview keeps project dry until applied and later changes rep
   expect(p.voiceEdits['take-1'].pieces.map((p: any) => p.durationMs)).toEqual([400, 500, 1100]);
   expect(p.voiceEdits['take-1'].pieces[1].effects[0].parameters.semitones).toBe(4);
   expect(p.generations).toEqual(before.generations);
-  await fx.getByRole('slider').first().fill('-3');
+  await fx.getByRole('button', { name: 'Régler Pitch / hauteur · effet 1', exact: true }).click();
+  await settings.getByRole('slider').first().fill('-3');
+  await settings.getByRole('button', { name: 'Terminer', exact: true }).click();
   await fx.getByRole('button', { name: 'Appliquer les effets au doublage', exact: true }).click();
   await saved(page);
   p = await project(page);
@@ -116,7 +122,7 @@ test('track effects create an independent copy, edit its immutable baseline and 
   await page.getByRole('button', { name: 'Audio', exact: true }).click();
   const panel = page.getByRole('dialog', { name: 'Audio', exact: true }),
     fx = panel.locator('.audio-effects-panel');
-  await fx.locator('summary').click();
+  await fx.locator(':scope > summary').click();
   await fx.getByRole('combobox', { name: 'Piste à traiter', exact: true }).selectOption('music');
   await fx.getByRole('combobox', { name: 'Préréglage audio', exact: true }).selectOption('warm');
   const before = await project(page);
@@ -137,7 +143,10 @@ test('track effects create an independent copy, edit its immutable baseline and 
   );
   await fx.getByRole('combobox', { name: 'Piste à traiter', exact: true }).selectOption(copy.id);
   const baseline = p.generations.at(-1).effectsSourcePath;
-  await fx.getByRole('slider').first().fill('8');
+  await fx.getByRole('button', { name: 'Régler Égaliseur · effet 1', exact: true }).click();
+  const settings = page.getByRole('dialog', { name: 'Réglages · Égaliseur', exact: true });
+  await settings.getByRole('slider').first().fill('8');
+  await settings.getByRole('button', { name: 'Terminer', exact: true }).click();
   await fx
     .getByRole('button', { name: 'Mettre à jour les effets de la piste', exact: true })
     .click();

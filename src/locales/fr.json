@@ -1,6 +1,6 @@
 {
   "brand": "Dubbing Studio",
-  "local": "LOCAL · PHASE 09",
+  "local": "100 % LOCAL",
   "import": "Importer",
   "analyse": "Analyser",
   "audio": "Audio",
@@ -1139,7 +1139,7 @@
   "fxParameter": "{{effect}} {{number}} · {{parameter}}",
   "fxPreview": "Écouter avec ces effets",
   "fxClearDraft": "Vider la chaîne",
-  "fxChainHint": "Ordre de traitement de haut en bas ; 8 effets au maximum. Décochez un effet pour le contourner. Les réglages sont appliqués par le bouton ci-dessus.",
+  "fxChainHint": "Traitement de gauche à droite, jusqu’à 8 effets. Le bouton marche/arrêt contourne un effet sans perdre ses réglages. Le bouton de réglages ouvre ses paramètres et permet de changer son ordre. Appliquez ensuite la chaîne pour mettre à jour le rendu.",
   "fxTrackHint": "Une piste entière produit une copie locale indépendante ; une portion ajoute une couche remplaçante. Les fichiers d’origine restent conservés et Ctrl+Z annule l’opération. Volume global et zones de volume restent ajustables après le traitement.",
   "fxTrack": "Piste à traiter",
   "fxScope": "Étendue des effets",
@@ -1248,5 +1248,20 @@
       "cfgWeight": "Une valeur élevée peut renforcer l’influence de l’accent de référence.",
       "exaggeration": "Renforce l’interprétation ; une valeur élevée peut modifier le rythme."
     }
-  }
+  },
+  "resizeInspector": "Redimensionner le panneau de sous-titres",
+  "resizeWorkspaceHint": "Glisser ou utiliser les flèches ; Maj pour accélérer. Double-clic pour réinitialiser.",
+  "subtitleInspector": "Édition des sous-titres",
+  "fxSettings": "Régler {{name}} · effet {{number}}",
+  "fxSettingsTitle": "Réglages · {{name}}",
+  "fxOn": "Actif",
+  "fxOff": "Inactif",
+  "fxDone": "Terminer",
+  "fxPosition": "Effet {{number}} / {{total}}",
+  "fxHelp": "Aide",
+  "fxChainLimit": "8 effets au maximum ; les effets désactivés gardent leurs réglages.",
+  "fxDraftHint": "Ces réglages préparent la chaîne. Fermez cette fenêtre, puis appliquez les effets pour modifier le rendu audio.",
+  "batchDubCompact": "Doublage",
+  "batchLipCompact": "Lèvres",
+  "voiceEditHelp": "Aide à l’édition"
 }
