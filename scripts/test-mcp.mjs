@@ -8,6 +8,8 @@ import path from 'node:path';
 import assert from 'node:assert/strict';
 import {execFileSync} from 'node:child_process';
 import {verifyRelayLifecycle} from './test-mcp-lifecycle.mjs';
+import {verifyOneShot} from './test-mcp-one-shot.mjs';
+import {verifySshTransport} from './test-mcp-ssh-stdio.mjs';
 const args=Object.fromEntries(process.argv.slice(2).reduce((rows,value,index,all)=>index%2===0?[...rows,[value.slice(2),all[index+1]]]:rows,[]));
 const client=new Client({name:'studio-native-validation',version:'1.0.0'},{capabilities:{}});
 const transport=new StdioClientTransport({command:args.exe,args:['--mcp','--endpoint',args.endpoint],stderr:'pipe'});
@@ -40,6 +42,7 @@ const job=async id=>{
 };
 try {
     proofs.relayLifecycle=await verifyRelayLifecycle(args.exe,args['test-root']);
+    proofs.relayOneShot=await verifyOneShot(args.exe,args['test-root']);
     await client.connect(transport);
     const tools=(await client.listTools()).tools;
     const catalog=JSON.parse(await fs.readFile(new URL('../src/mcp/catalog.json',import.meta.url),'utf8'));
@@ -50,6 +53,7 @@ try {
     assert(JSON.parse(schema.contents[0].text).$defs);proofs.resources=true;
     const until=Date.now()+90000;
     while(true){try {await state();break;}catch(error){if(!String(error).includes('MCP_UI_NOT_READY')||Date.now()>=until)throw error;await new Promise(resolve=>setTimeout(resolve,250));}}
+    proofs.packagedSshTransport=await verifySshTransport(args.exe,args.endpoint,args['test-root']);
     const name='Projet MCP 日本語';
     await call('studio_create_project',{parentPath:args['test-root'],name,source:'ja',target:'fr'});
     const originalHash=createHash('sha256').update(await fs.readFile(args.movie)).digest('hex');

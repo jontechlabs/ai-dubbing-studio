@@ -6,6 +6,10 @@ on:
   pull_request:
   workflow_dispatch:
     inputs:
+      mcp_maintenance:
+        description: MCP-only patch with unchanged workers; verify source identity and skip repeated full-weight TTS/VC
+        type: boolean
+        default: false
       complete_neural:
         description: Complete neural validation of an identical previously built application
         type: boolean
@@ -36,6 +40,11 @@ jobs:
       LIBCLANG_PATH: 'C:\Program Files\LLVM\bin'
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 0
+      - name: Verify MCP-only changes and identical inference workers
+        if: ${{ inputs.mcp_maintenance }}
+        run: python scripts/verify-mcp-maintenance.py
       - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
           node-version: '24'
@@ -123,6 +132,7 @@ jobs:
       - name: Packaged desktop controlled through the official MCP SDK
         run: ./scripts/test-mcp.ps1
       - name: Actual VoxCPM2 and Chatterbox V3 French generation from Japanese reference
+        if: ${{ !inputs.mcp_maintenance }}
         # Full official weights, two requests per hot worker, auto-language ASR.
         # CPU Torch 2.8 here; no RTX memory/speed qualification claim.
         run: ./scripts/test-multilingual.ps1

@@ -8,8 +8,57 @@ use std::{
         atomic::{AtomicBool, AtomicUsize, Ordering},
         mpsc, Arc, Mutex,
     },
-    time::Duration,
+    time::{Duration, Instant},
 };
+
+// Windows SSH can keep a forwarded stdin pipe open after a request completes.
+// The request-per-channel transport opts in before its first frame. Ordinary
+// MCP clients stay persistent, without an idle timeout.
+const ONE_SHOT: &str = "notifications/studio/one-shot";
+const ONE_SHOT_LIMIT: Duration = Duration::from_secs(210);
+#[derive(Default)]
+struct Lifecycle {
+    target: Mutex<Option<(Value, Instant)>>,
+    completed: AtomicBool,
+    output_failed: AtomicBool,
+}
+impl Lifecycle {
+    fn arm(&self, request: &Value) -> bool {
+        if request["jsonrpc"] != "2.0"
+            || request["method"] != ONE_SHOT
+            || request.get("id").is_some()
+        {
+            return false;
+        }
+        let id = &request["params"]["requestId"];
+        if id.is_string() || id.is_i64() || id.is_u64() {
+            if let Ok(mut target) = self.target.lock() {
+                if target.is_none() {
+                    *target = Some((id.clone(), Instant::now() + ONE_SHOT_LIMIT));
+                }
+            }
+        }
+        true
+    }
+    fn written(&self, response: &Value, success: bool) {
+        if !success {
+            self.output_failed.store(true, Ordering::Release);
+        } else if self.target.lock().is_ok_and(|target| {
+            target
+                .as_ref()
+                .is_some_and(|(id, _)| response.get("id") == Some(id))
+        }) {
+            self.completed.store(true, Ordering::Release);
+        }
+    }
+    fn expired(&self, now: Instant) -> bool {
+        self.target.lock().is_ok_and(|target| {
+            target
+                .as_ref()
+                .is_some_and(|(_, deadline)| now >= *deadline)
+        })
+    }
+}
 
 pub(super) fn exchange(endpoint: &Endpoint, mut request: Value) -> Result<Value, String> {
     if endpoint.port == 0 || endpoint.token.len() != 64 {
@@ -51,12 +100,13 @@ pub(super) fn exchange(endpoint: &Endpoint, mut request: Value) -> Result<Value,
             .into())
     }
 }
-fn write(output: &Mutex<std::io::Stdout>, response: Value) {
-    if let Ok(mut output) = output.lock() {
-        let _ = serde_json::to_writer(&mut *output, &response);
-        let _ = output.write_all(b"\n");
-        let _ = output.flush();
-    }
+fn write(output: &Mutex<std::io::Stdout>, response: Value, lifecycle: &Lifecycle) {
+    let success = output.lock().is_ok_and(|mut output| {
+        serde_json::to_writer(&mut *output, &response).is_ok()
+            && output.write_all(b"\n").is_ok()
+            && output.flush().is_ok()
+    });
+    lifecycle.written(&response, success);
 }
 fn endpoint(path: &Path) -> Result<Endpoint, String> {
     let bytes = std::fs::read(path)
@@ -65,7 +115,7 @@ fn endpoint(path: &Path) -> Result<Endpoint, String> {
 }
 struct HostMonitor(Arc<AtomicBool>);
 impl HostMonitor {
-    fn start(path: &Path, instance: &Endpoint) -> Self {
+    fn start(path: &Path, instance: &Endpoint, lifecycle: Arc<Lifecycle>) -> Self {
         let stopped = Arc::new(AtomicBool::new(false));
         let flag = stopped.clone();
         let path = path.to_owned();
@@ -77,7 +127,9 @@ impl HostMonitor {
                         && current.port == instance.port
                         && current.token == instance.token
                 });
-                if (!same || exchange(&instance, json!({"op":"ping"})).is_err())
+                if (lifecycle.expired(Instant::now())
+                    || !same
+                    || exchange(&instance, json!({"op":"ping"})).is_err())
                     && !flag.load(Ordering::Acquire)
                 {
                     // This is the separate --mcp CLI process, never the GUI.
@@ -97,7 +149,8 @@ impl Drop for HostMonitor {
 }
 pub fn stdio(path: &Path) -> Result<(), String> {
     let instance = endpoint(path)?;
-    let _monitor = HostMonitor::start(path, &instance);
+    let lifecycle = Arc::new(Lifecycle::default());
+    let _monitor = HostMonitor::start(path, &instance, lifecycle.clone());
     let output = Arc::new(Mutex::new(std::io::stdout()));
     let owner = uuid::Uuid::new_v4().to_string();
     let mut session = protocol::Session::default();
@@ -122,6 +175,11 @@ pub fn stdio(path: &Path) -> Result<(), String> {
     });
     let mut workers = vec![];
     loop {
+        if lifecycle.completed.load(Ordering::Acquire)
+            || lifecycle.output_failed.load(Ordering::Acquire)
+        {
+            break;
+        }
         let (read, line) = match receiver.recv_timeout(Duration::from_millis(250)) {
             Ok(value) => value?,
             Err(mpsc::RecvTimeoutError::Timeout) => continue,
@@ -134,6 +192,7 @@ pub fn stdio(path: &Path) -> Result<(), String> {
             write(
                 &output,
                 protocol::error(Value::Null, -32600, "Message too large"),
+                &lifecycle,
             );
             break;
         }
@@ -146,10 +205,14 @@ pub fn stdio(path: &Path) -> Result<(), String> {
                 write(
                     &output,
                     protocol::error(Value::Null, -32700, "Invalid JSON"),
+                    &lifecycle,
                 );
                 continue;
             }
         };
+        if lifecycle.arm(&request) {
+            continue;
+        }
         if request["method"] == "notifications/cancelled" && request.get("id").is_none() {
             if let Some(id) = request["params"].get("requestId") {
                 let _ = exchange(
@@ -167,6 +230,7 @@ pub fn stdio(path: &Path) -> Result<(), String> {
                 write(
                     &output,
                     protocol::error(request["id"].clone(), -32000, "MCP_BUSY"),
+                    &lifecycle,
                 );
                 continue;
             }
@@ -174,6 +238,7 @@ pub fn stdio(path: &Path) -> Result<(), String> {
             let output = output.clone();
             let owner = owner.clone();
             let active = active.clone();
+            let lifecycle = lifecycle.clone();
             let mut snapshot = session.clone();
             workers.push(std::thread::spawn(move || {
                 let id = request["id"].clone();
@@ -183,7 +248,7 @@ pub fn stdio(path: &Path) -> Result<(), String> {
                         json!({"owner":owner,"requestId":id,"tool":tool,"arguments":arguments}),
                     )
                 }) {
-                    write(&output, response);
+                    write(&output, response, &lifecycle);
                 }
                 active.fetch_sub(1, Ordering::SeqCst);
             }));
@@ -200,7 +265,7 @@ pub fn stdio(path: &Path) -> Result<(), String> {
         } else if let Some(response) =
             session.handle(request, |_, _| Err("MCP_INVALID_REQUEST".into()))
         {
-            write(&output, response);
+            write(&output, response, &lifecycle);
         }
     }
     let _ = exchange(&instance, json!({"op":"cancel","owner":owner}));
@@ -210,5 +275,48 @@ pub fn stdio(path: &Path) -> Result<(), String> {
             let _ = worker.join();
         }
     }
-    Ok(())
+    if lifecycle.output_failed.load(Ordering::Acquire) {
+        Err("MCP_STDOUT_FAILED".into())
+    } else {
+        Ok(())
+    }
+}
+
+#[cfg(test)]
+mod lifecycle_tests {
+    use super::*;
+    #[test]
+    fn normal_clients_have_no_deadline_and_remain_persistent() {
+        let state = Lifecycle::default();
+        assert!(!state.expired(Instant::now() + Duration::from_secs(86400)));
+        state.written(&json!({"id":1,"result":{}}), true);
+        assert!(!state.completed.load(Ordering::Acquire));
+    }
+    #[test]
+    fn one_shot_matches_exact_response_id_and_cannot_extend_lease() {
+        let state = Lifecycle::default();
+        assert!(state.arm(&json!({"jsonrpc":"2.0","method":ONE_SHOT,"params":{"requestId":12}})));
+        let original = state.target.lock().unwrap().clone().unwrap();
+        state.arm(&json!({"jsonrpc":"2.0","method":ONE_SHOT,"params":{"requestId":"other"}}));
+        assert_eq!(state.target.lock().unwrap().as_ref().unwrap(), &original);
+        state.written(&json!({"id":"12"}), true);
+        assert!(!state.completed.load(Ordering::Acquire));
+        state.written(&json!({"id":12,"error":{"code":-32602}}), true);
+        assert!(state.completed.load(Ordering::Acquire));
+        assert!(!state.expired(original.1 - Duration::from_millis(1)));
+        assert!(state.expired(original.1));
+    }
+    #[test]
+    fn malformed_notification_does_not_arm_and_output_failure_stops_relay() {
+        let state = Lifecycle::default();
+        for id in [Value::Null, json!(true), json!([]), json!({}), json!(1.25)] {
+            state.arm(&json!({"jsonrpc":"2.0","method":ONE_SHOT,"params":{"requestId":id}}));
+        }
+        assert!(
+            !state.arm(&json!({"jsonrpc":"2.0","id":3,"method":ONE_SHOT,"params":{"requestId":1}}))
+        );
+        assert!(state.target.lock().unwrap().is_none());
+        state.written(&json!({"id":1}), false);
+        assert!(state.output_failed.load(Ordering::Acquire));
+    }
 }

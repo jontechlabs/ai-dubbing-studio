@@ -58,6 +58,8 @@ Références : [transport stdio](https://modelcontextprotocol.io/specification/2
 
 Depuis v0.20.1, le relais quitte le processus à la fermeture du studio, à la désactivation de MCP ou au changement de session, même si le client garde son entrée ouverte. Reconnectez le client après un redémarrage du studio. Le serveur est suspendu avant une mise à jour, puis restauré si son lancement échoue. [Installation bloquée et procédure pour les anciennes versions](INSTALLATION-RECOVERY.md).
 
+Depuis v0.27.1, le transport SSH distant demande aussi la fin explicite de chaque relais après sa réponse. Cela évite leur accumulation si OpenSSH conserve une entrée ouverte alors que le studio reste lancé. Les connexions MCP classiques demeurent persistantes. Le studio et le transport SSH doivent tous deux être à jour : [processus MCP, nettoyage et diagnostic](MCP-PROCESSES.md).
+
 Depuis v0.21.0, `VoiceSettings.mood` accepte les 43 intentions du [catalogue d’interprétation](VOICE-ACTING.md), dont `dying`, `stressed` et `laughing`. Les réglages par réplique et les requêtes par lot les partagent. Un nouveau choix enregistré requiert le format de projet 15 ; le serveur et les workers rejettent les intentions inconnues et celles non prises en charge par Qwen3-TTS Base.
 
 Depuis v0.22.0, les variantes `voxcpm2-bf16` et `chatterbox-multilingual-v3` sont installables et générables, par réplique et en lot. `studio_voice_install_space` accepte `variantId` pour leur contrôle avant installation. Les réglages enregistrés nécessitent le format 16. Chatterbox utilise `mode: "crossLingual"`, `mood: "default"`, `accent: "auto"`. Voir [le guide des nouveaux moteurs](VOXCPM2-CHATTERBOX.md).

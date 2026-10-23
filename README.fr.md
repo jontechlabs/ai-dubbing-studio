@@ -1,5 +1,7 @@
 # AI Dubbing Studio — phases 1–7
 
+**v0.27.1 — Fin des relais MCP accumulés.** Le transport SSH ferme chaque relais après sa réponse, même si son entrée reste ouverte. Les connexions MCP classiques restent persistantes ; les projets, les essais et les moteurs IA sont conservés. [Diagnostic et fonctionnement](docs/MCP-PROCESSES.md).
+
 **v0.27.0 — Qualité de génération et niveaux audio en direct.** Profils et paramètres propres à chaque moteur, par réplique et par lot, dont VoxCPM2 Naturel (20 étapes, guidage 1,6). Réglages enregistrés avec chaque essai et anciens essais conservés. [Guide qualité et capture](docs/VOICE-QUALITY.md).
 
 Barres RMS, crêtes et voyants de saturation mémorisés pour chaque piste et le mix final, sur la timeline et dans Audio. Mesure du signal réel après les volumes, zones et effets rendus, avant le volume d’écoute du lecteur. Remise à zéro sans modifier le projet et pilotage MCP (101 outils). [Guide et captures](docs/AUDIO-LEVELS.md).
@@ -99,7 +101,7 @@ Barres RMS, crêtes et voyants de saturation mémorisés pour chaque piste et le
 
 *Interface React réelle avec audio de démonstration synthétique et inventaire natif simulé.*
 
-[Version anglaise et captures de l’interface](README.md) · [Téléchargements Windows](https://github.com/jontechlabs/ai-dubbing-studio/releases/tag/v0.27.0)
+[Version anglaise et captures de l’interface](README.md) · [Téléchargements Windows](https://github.com/jontechlabs/ai-dubbing-studio/releases/tag/v0.27.1)
 
 Studio desktop local de travail texte, voix et vidéo. Tauri 2, React, TypeScript strict et Rust.
 
