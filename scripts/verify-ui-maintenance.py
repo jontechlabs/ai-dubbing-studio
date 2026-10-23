@@ -4,22 +4,18 @@ import subprocess
 from pathlib import Path
 
 root = Path(__file__).resolve().parents[1]
-baseline = 'v0.27.1'
-expected_base = 'a796afa1f18d16b0c9cde8c9b5ccfa8aebadb92f'
+baseline = 'v0.28.0'
+expected_base = 'b8f3a6bea9decfa6da6248aeefeab658925c0a10'
 allowed = {
-    '.github/workflows/windows.yml', 'scripts/verify-ui-maintenance.py',
+    'scripts/verify-ui-maintenance.py',
     'package.json', 'src-tauri/Cargo.toml', 'src-tauri/Cargo.lock', 'src-tauri/tauri.conf.json',
-    'README.md', 'README.fr.md', 'docs/COMPACT-WORKSPACE.md', 'docs/AUDIO-EFFECTS.md', 'docs/MCP-PROCESSES.md',
-    'src/App.tsx', 'src/styles.css', 'src/locales/fr.json', 'src/locales/en.json',
-    'src/components/Dialogues.tsx', 'src/components/EffectsChainEditor.tsx',
-    'src/components/Modal.tsx', 'src/components/WorkspacePanels.tsx', 'src/components/VoiceRegionEditor.tsx',
-    'tests/e2e/audio-effects.pw.ts', 'tests/e2e/compact-workspace.pw.ts',
-    *('docs/screenshots/' + name for name in [
-        'audio-effects-track-fr.png', 'audio-effects-voice-fr.png', 'track-global-volume-fr.png',
-        'audio-effect-settings-fr.png', 'workspace-three-panels-fr.png', 'workspace-small-screen-fr.png',
-    ]),
+    'README.md', 'README.fr.md', 'docs/TIMELINE-PERFORMANCE.md', 'docs/TIMELINE-ZOOM.md',
+    'docs/screenshots/timeline-zoom.png', 'docs/screenshots/timeline-long-film-fr.png',
+    'src/components/Timeline.tsx', 'src/components/Waveform.tsx',
+    'src/components/timelineRendering.ts', 'src/components/timelineRendering.test.ts',
+    'src/hooks/useTimelineZoom.ts', 'src/locales/fr.json', 'src/locales/en.json',
+    'tests/e2e/nativeMock.ts', 'tests/e2e/timeline-performance.pw.ts',
 }
-
 def git(*args):
     return subprocess.check_output(['git', *args], cwd=root, text=True).strip()
 
@@ -33,20 +29,29 @@ for name in ['package.json', 'src-tauri/Cargo.toml', 'src-tauri/Cargo.lock', 'sr
     current = (root / name).read_bytes().replace(b'\r\n', b'\n')
     if name.endswith('.json'):
         old_json, new_json = json.loads(original), json.loads(current)
-        assert old_json['version'] == '0.27.1' and new_json['version'] == '0.28.0'
+        assert old_json['version'] == '0.28.0' and new_json['version'] == '0.28.1'
         new_json['version'] = old_json['version']
         assert new_json == old_json, f'Only root version changes permitted: {name}'
     else:
-        before = b'name = "ai-dubbing-studio"\nversion = "0.27.1"'
-        after = b'name = "ai-dubbing-studio"\nversion = "0.28.0"'
+        before = b'name = "ai-dubbing-studio"\nversion = "0.28.0"'
+        after = b'name = "ai-dubbing-studio"\nversion = "0.28.1"'
         assert current.count(after) == 1
         assert current.replace(after, before) == original, f'Only root version changes permitted: {name}'
-immutable = ['workers', 'src-tauri/src', 'resources', 'public', 'src/domain', 'src/services', 'src/hooks', 'src/mcp', 'pnpm-lock.yaml']
+immutable = ['workers', 'src-tauri/src', 'resources', 'public', 'src/domain', 'src/services', 'src/mcp', 'pnpm-lock.yaml']
 identities = {}
 for name in immutable:
     identities[name] = git('rev-parse', f'HEAD:{name}')
     assert identities[name] == git('rev-parse', f'{base}:{name}'), f'Inference, DSP, transport or project data code changed: {name}'
-localized = {'local', 'voiceEditHelp', 'batchDubCompact', 'batchLipCompact', 'resizeInspector', 'resizeWorkspaceHint', 'subtitleInspector', 'fxSettings', 'fxSettingsTitle', 'fxOn', 'fxOff', 'fxDone', 'fxPosition', 'fxHelp', 'fxChainLimit', 'fxDraftHint', 'fxChainHint'}
+# The only changed hook controls timeline presentation. All transport, playback,
+# generation, job, persistence and MCP hooks must remain byte-identical.
+hooks = git('ls-tree', '-r', '--name-only', base, 'src/hooks').splitlines()
+assert hooks == git('ls-tree', '-r', '--name-only', 'HEAD', 'src/hooks').splitlines()
+unchanged_hooks = {}
+for name in hooks:
+    if name == 'src/hooks/useTimelineZoom.ts': continue
+    unchanged_hooks[name] = git('rev-parse', f'HEAD:{name}')
+    assert unchanged_hooks[name] == git('rev-parse', f'{base}:{name}'), name
+localized = {'timelineZoomLimitedHint', 'fitTimelineLimited', 'timelineVisibleWindow'}
 for language in ['fr', 'en']:
     name = f'src/locales/{language}.json'
     before = json.loads(subprocess.check_output(['git', 'show', f'{base}:{name}'], cwd=root))
@@ -56,7 +61,7 @@ for language in ['fr', 'en']:
 report = {
     'baseline': baseline, 'baselineCommit': base, 'head': git('rev-parse', 'HEAD'),
     'workerTreeUnchanged': True, 'nativeTreeUnchanged': True, 'dspAndProjectCodeUnchanged': True,
-    'toolCatalogUnchanged': True, 'immutableIdentities': identities, 'changedFiles': sorted(changed),
+    'toolCatalogUnchanged': True, 'nonTimelineHooksUnchanged': True, 'unchangedHooks': unchanged_hooks, 'immutableIdentities': identities, 'changedFiles': sorted(changed),
     'scope': 'Fresh Windows suites, native build, SDK, relay lifecycle, ASR and diagnostics. Full-weight TTS/VC is not repeated for byte-identical engine code.',
 }
 destination = root/'artifacts/ui-maintenance-validation.json'

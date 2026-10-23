@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type RefObject } from 'react';
 
 import { navigationLeft, type TimelineNavigation } from '../domain/timeline';
+import { timelineZoomBounds } from '../components/timelineRendering';
 
 export function useTimelineZoom(
   scroll: RefObject<HTMLDivElement | null>,
@@ -9,16 +10,23 @@ export function useTimelineZoom(
   timeRef: RefObject<number>,
   projectId: string | undefined,
 ) {
-  const [zoom, setZoom] = useState(1);
+  const [setting, setSetting] = useState({ projectId, value: 1 });
+  const { minZoom, maxZoom } = timelineZoomBounds(duration, viewport);
+  // Clamp during rendering too: opening a long film must never mount its whole
+  // timeline for one frame before an effect corrects the initial zoom.
+  const zoom = Math.max(
+    minZoom,
+    Math.min(maxZoom, setting.projectId === projectId ? setting.value : 1),
+  );
   const current = useRef(1);
   const committed = useRef(1);
+  const previousProject = useRef(projectId);
   const pending = useRef<{ time: number; pixel: number } | null>(null);
   // Keep the browser canvas bounded while allowing sub-second detail on long films.
-  const maxZoom = Math.max(1, Math.min(duration / 500, 8_000_000 / viewport));
   const change = useCallback(
     (value: number, pixel?: number, time?: number) => {
       const element = scroll.current;
-      if (!element) return;
+      if (!element || !Number.isFinite(value)) return;
       const oldScale = (viewport * current.current) / duration;
       const left = pending.current
         ? pending.current.time * oldScale - pending.current.pixel
@@ -26,7 +34,7 @@ export function useTimelineZoom(
       const playhead = timeRef.current * oldScale - left;
       const anchor = pixel ?? (playhead >= 0 && playhead <= viewport ? playhead : viewport / 2);
       pending.current = { time: time ?? (left + anchor) / oldScale, pixel: anchor };
-      const next = Math.max(1, Math.min(maxZoom, value));
+      const next = Math.max(minZoom, Math.min(maxZoom, value));
       current.current = next;
       if (next === committed.current) {
         element.scrollLeft = Math.max(
@@ -37,26 +45,25 @@ export function useTimelineZoom(
       }
       // A shortcut may arrive before passive effects from the last zoom render.
       // Always enqueue it, even when its closure still sees an older zoom value.
-      setZoom(next);
+      setSetting({ projectId, value: next });
     },
-    [duration, maxZoom, scroll, timeRef, viewport],
+    [duration, minZoom, maxZoom, projectId, scroll, timeRef, viewport],
   );
   useLayoutEffect(() => {
     committed.current = zoom;
-    if (scroll.current && pending.current) {
+    current.current = zoom;
+    if (previousProject.current !== projectId) {
+      previousProject.current = projectId;
+      pending.current = null;
+      if (scroll.current) scroll.current.scrollLeft = 0;
+    } else if (scroll.current && pending.current) {
       scroll.current.scrollLeft = Math.max(
         0,
         (pending.current.time * viewport * zoom) / duration - pending.current.pixel,
       );
       pending.current = null;
     }
-  }, [duration, scroll, viewport, zoom]);
-  useEffect(() => {
-    current.current = 1;
-    pending.current = null;
-    setZoom(1);
-    if (scroll.current) scroll.current.scrollLeft = 0;
-  }, [projectId, scroll]);
+  }, [duration, projectId, scroll, viewport, zoom]);
   const reveal = useCallback(
     (request: TimelineNavigation) => {
       const scale = (viewport * current.current) / duration;
@@ -68,10 +75,10 @@ export function useTimelineZoom(
     },
     [change, duration, viewport],
   );
-  const fit = useCallback(() => change(1, 0, 0), [change]);
-  useEffect(() => {
-    if (zoom > maxZoom) change(maxZoom);
-  }, [change, maxZoom, zoom]);
+  const fit = useCallback(
+    () => (minZoom > 1 ? change(minZoom, viewport * 0.2, timeRef.current) : change(1, 0, 0)),
+    [change, minZoom, timeRef, viewport],
+  );
   const focus = (start: number, end: number) =>
     change(duration / Math.max(500, (end - start) * 1.6), viewport / 2, (start + end) / 2);
   useEffect(() => {
@@ -131,5 +138,5 @@ export function useTimelineZoom(
     document.addEventListener('studio-timeline-zoom', control);
     return () => document.removeEventListener('studio-timeline-zoom', control);
   }, [change, fit]);
-  return { zoom, maxZoom, change, fit, focus, reveal };
+  return { zoom, minZoom, maxZoom, change, fit, focus, reveal };
 }

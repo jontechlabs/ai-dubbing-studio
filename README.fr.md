@@ -1,5 +1,8 @@
 # AI Dubbing Studio
 
+**v0.28.1 — Timeline allégée sur les longues vidéos.** La vue est limitée à deux minutes, y compris avec les raccourcis, la molette, le curseur et MCP. Seuls les blocs de sous-titres et de doublage visibles sont affichés ; les crêtes audio sont indexées une fois pour éviter de reparcourir tout le fichier à chaque défilement. Les vidéos courtes restent affichées entièrement. [Détails et capture](docs/TIMELINE-PERFORMANCE.md).
+
+
 **v0.28.0 — Un espace de montage plus compact.** Dialogues à gauche, vidéo au centre, édition des sous-titres à droite et timeline sur toute la largeur en bas. Les panneaux se redimensionnent à la souris ou au clavier et mémorisent leur largeur. Les effets audio disposent de boutons marche/arrêt et d’une fenêtre de réglages séparée ; prévisualisation, ordre de traitement et originaux conservés. [Guide et captures](docs/COMPACT-WORKSPACE.md).
 
 ![Espace de montage](docs/screenshots/workspace-three-panels-fr.png)

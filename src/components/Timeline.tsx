@@ -79,9 +79,9 @@ export const Timeline = memo(function Timeline({
   const head = useRef<HTMLDivElement>(null);
   const [audioTool, setAudioTool] = useState(false);
   const [voiceEditor, setVoiceEditor] = useState<string | null>(null);
-  const selectedVoice = project && dubbingClips(project).find((c) => c.line.id === selected?.id);
-  const editingVoice =
-    project && dubbingClips(project).find((c) => c.generation.id === voiceEditor);
+  const clips = useMemo(() => (project ? dubbingClips(project) : []), [project]);
+  const selectedVoice = clips.find((c) => c.line.id === selected?.id);
+  const editingVoice = clips.find((c) => c.generation.id === voiceEditor);
   const [audioDrag, setAudioDrag] = useState<{
     trackId: string;
     anchor: number;
@@ -160,11 +160,18 @@ export const Timeline = memo(function Timeline({
       return project;
     }
   }, [project, dubbingDrag]);
+  const previewClips = useMemo(
+    () => (dubbingDrag && dubbingPreview ? dubbingClips(dubbingPreview) : clips),
+    [clips, dubbingDrag, dubbingPreview],
+  );
   const suppressDubbingClick = useRef(false);
-  const duration = Math.max(
-    project?.media?.durationMs ?? 0,
-    ...(project?.dialogues.map((d) => d.endMs) ?? []),
-    1000,
+  const duration = useMemo(
+    () =>
+      project?.dialogues.reduce(
+        (end, line) => Math.max(end, line.endMs),
+        Math.max(project.media?.durationMs ?? 0, 1000),
+      ) ?? 1000,
+    [project],
   );
   const view = useTimelineZoom(scroll, duration, viewport, timeRef, project?.id);
   const { zoom, reveal } = view;
@@ -256,7 +263,7 @@ export const Timeline = memo(function Timeline({
   ).filter((tick) => tick <= duration);
   const selectionZoom = () => {
     if (!selected) return;
-    const clip = project && dubbingClips(project).find((c) => c.line.id === selected.id);
+    const clip = clips.find((c) => c.line.id === selected.id);
     view.focus(clip ? clip.startMs : selected.startMs, clip ? clip.endMs : selected.endMs);
   };
   const seek = (event: React.PointerEvent<HTMLDivElement>) => {
@@ -359,7 +366,7 @@ export const Timeline = memo(function Timeline({
           <IconButton
             label={`${t('zoomOut')} (Ctrl+−)`}
             onClick={() => view.change(zoom / 1.5)}
-            disabled={zoom === 1}
+            disabled={zoom <= view.minZoom}
           >
             <Minus size={15} />
           </IconButton>
@@ -370,10 +377,24 @@ export const Timeline = memo(function Timeline({
             max="100"
             step="1"
             aria-label={t('timelineZoom')}
-            value={view.maxZoom === 1 ? 0 : (Math.log(zoom) / Math.log(view.maxZoom)) * 100}
-            onChange={(event) => view.change(view.maxZoom ** (Number(event.target.value) / 100))}
+            value={
+              view.maxZoom === view.minZoom
+                ? 0
+                : (Math.log(zoom / view.minZoom) / Math.log(view.maxZoom / view.minZoom)) * 100
+            }
+            onChange={(event) =>
+              view.change(
+                view.minZoom * (view.maxZoom / view.minZoom) ** (Number(event.target.value) / 100),
+              )
+            }
+            aria-valuetext={t('timelineVisibleWindow', {
+              seconds: Math.round(duration / zoom / 1000),
+            })}
           />
-          <span className="zoom-value" title={t('timelineZoomHint')}>
+          <span
+            className="zoom-value"
+            title={t(view.minZoom > 1 ? 'timelineZoomLimitedHint' : 'timelineZoomHint')}
+          >
             {Math.round(zoom * 100)}%
           </span>
           <IconButton
@@ -387,7 +408,10 @@ export const Timeline = memo(function Timeline({
           <IconButton label={t('zoomSelection')} disabled={!selected} onClick={selectionZoom}>
             <ScanLine size={15} />
           </IconButton>
-          <IconButton label={`${t('fit')} (Maj+Z)`} onClick={view.fit}>
+          <IconButton
+            label={`${t(view.minZoom > 1 ? 'fitTimelineLimited' : 'fit')} (Maj+Z)`}
+            onClick={view.fit}
+          >
             <Maximize size={15} />
           </IconButton>
         </div>
@@ -661,7 +685,7 @@ export const Timeline = memo(function Timeline({
                 onPointerCancel={() => setAudioDrag(null)}
               >
                 {track?.kind === 'dubbing' && project ? (
-                  dubbingClips(dubbingPreview ?? project)
+                  previewClips
                     .filter(
                       (c) =>
                         c.line.id === dubbingDrag?.lineId ||
@@ -738,7 +762,7 @@ export const Timeline = memo(function Timeline({
                               0,
                               timeRef.current,
                               clip.line.startMs,
-                              ...dubbingClips(project)
+                              ...clips
                                 .filter((other) => other.line.id !== clip.line.id)
                                 .flatMap((c) => [c.startMs, c.endMs]),
                             ];
