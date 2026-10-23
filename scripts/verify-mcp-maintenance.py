@@ -26,7 +26,16 @@ assert changed and changed <= allowed, f'Non-MCP application changes require ful
 for name in ['package.json', 'src-tauri/Cargo.toml', 'src-tauri/Cargo.lock', 'src-tauri/tauri.conf.json']:
     original = subprocess.check_output(['git', 'show', f'{base}:{name}'], cwd=root)
     current = (root / name).read_bytes().replace(b'\r\n', b'\n')
-    assert current.replace(b'0.27.1', b'0.27.0') == original.replace(b'\r\n', b'\n'), f'Only version changes permitted: {name}'
+    if name.endswith('.json'):
+        old_json, new_json = json.loads(original), json.loads(current)
+        assert old_json['version'] == '0.27.0' and new_json['version'] == '0.27.1'
+        new_json['version'] = old_json['version']
+        assert new_json == old_json, f'Only root version changes permitted: {name}'
+    else:
+        before = b'name = "ai-dubbing-studio"\nversion = "0.27.0"'
+        after = b'name = "ai-dubbing-studio"\nversion = "0.27.1"'
+        assert current.count(after) == 1
+        assert current.replace(after, before) == original.replace(b'\r\n', b'\n'), f'Only root version changes permitted: {name}'
 worker_tree = git('rev-parse', 'HEAD:workers')
 assert worker_tree == git('rev-parse', f'{base}:workers'), 'Workers or model/runtime manifests changed'
 assert git('rev-parse', 'HEAD:src/mcp/catalog.json') == git('rev-parse', f'{base}:src/mcp/catalog.json')
