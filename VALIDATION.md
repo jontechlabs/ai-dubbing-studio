@@ -1,5 +1,16 @@
 # Validation
 
+## v0.28.2 — 24 October 2026
+
+[Fresh Windows checks and packages 40070870413](https://github.com/jontechlabs/ai-dubbing-studio/actions/runs/40070870413) passed at `9bf1ecad5857a8b3556d1927116263f5b12c59d7`: 540 suite checks (154 TypeScript/JavaScript, 148 Rust, 159 Chrome, 79 Python), Clippy and formatting. The updater-signed installer and portable executable were built on that runner.
+
+The unapproved-only batch filter is verified in the actual native planner and worker coordinator: all/checked scope, duplicate IDs, edited or stale translation approvals, missing/formatting-only translation despite pronunciation text, existing current takes, forced new takes without overwriting files, persisted filter and legacy saved requests, exclusion counts, and stopping before loading the model when a queued translation becomes approved. A real FFmpeg/protocol-worker test executes only the eligible dialogue and verifies process release and saved approval preservation. Browser integration verifies both filter scopes, approved-only compatibility, force/skip behavior, preserved old takes and approval snapshots. The generated MCP schema exposes the optional flag; the packaged Windows desktop and official MCP SDK verify pending-only/approved-only previews and reject contradictory flags. UI screenshots use synthetic media and simulated native commands; native tests are separate.
+
+This is a full Windows run, with fresh complete-weight VoxCPM2 and Chatterbox CPU inference, hot batches with quality reset, standalone Standard French ASR content gates and offline voice conversion with unchanged sources and exact duration. Real Japanese reference ASR, local Japanese-to-French translation/cancellation, face detection, small Drama/LatentSync neural cores, CosyVoice finalization, packaged MCP lifecycle, audio effects/meters and immutable-source exports also passed. No new NVIDIA memory, speed, accent or speech-quality qualification is claimed; synthesis engines and weights are unchanged by this filter.
+
+Updater signature and modified-installer rejection, archive integrity, package/worker hashes, public asset digests and SHA-256 were checked. Only this validation document was finalized in the portable ZIP after CI; all other entries remain byte-identical. Source ZIP and tag share the final release commit. No real user project or remote application was modified during release testing.
+
+
 ## v0.28.1 — 24 October 2026
 
 [Fresh Windows checks and packages 40066187600](https://github.com/jontechlabs/ai-dubbing-studio/actions/runs/40066187600) passed at `4029012237db148e210e096cd4e4c216d8b6cd97`: 534 suite checks (154 TypeScript/JavaScript, 145 Rust, 156 Chrome, 79 Python), Clippy and formatting. The updater-signed installer and portable executable were built on that runner.

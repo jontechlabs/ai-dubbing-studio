@@ -1,11 +1,11 @@
 {
-  "version": "0.28.1",
-  "notes": "Fluidité des longues vidéos : dézoom limité à deux minutes, dès l’ouverture et pour le curseur, les raccourcis, la molette et MCP. Seuls les blocs visibles sont affichés. Formes d’onde indexées une fois, sans parcours complet à chaque défilement ; liste des doublages mémorisée. Les vidéos courtes restent affichées entièrement. Vidéos, audio, essais et timings conservés.",
-  "pub_date": "2026-10-24T05:57:15Z",
+  "version": "0.28.2",
+  "notes": "Doublage par lot : choisissez toutes les traductions, les traductions à valider uniquement ou les traductions validées uniquement. Compatible projet entier ou sélection cochée, configuration commune, forçage et MCP. Les répliques sans traduction sont exclues et tous les essais précédents sont conservés. Aperçu des exclusions et contrôle du statut avant chaque réplique.",
+  "pub_date": "2026-10-24T07:42:31Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSdFFyMUJGTFp3Nkg4UDU3Nk81N1VFQmFlMFFCMXhJeEhCQWZQYVBoWTQwVysveVRqZTV1d3JnQmFUd3ZuK1NIbmZvZmxidjk0UmkzbitFTlNESDk2RWNwL0Q0ODVMY1E4PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkyODIxMDE5CWZpbGU6QUkgRHViYmluZyBTdHVkaW9fMC4yOC4xX3g2NC1zZXR1cC5leGUJdmVyc2lvbjowLjI4LjEKWGpuSmY3U0lZd3pPZVF0VEUvVnF0UXVNVS83YWZwOFdNRENlZ2JRV2hhYlJEcHlIcmVBZUs5V1BoMDhsUytEYlJQVTY4NGZ1MERESUI5d3FLNk9lQnc9PQo=",
-      "url": "https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.28.1/AI-Dubbing-Studio-0.28.1-Setup.exe"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSdFFyMUJGTFp3NlBqOS9vemdIK3ZBaEdyYitjZU1MZmI3d1hkeEY5V0VFZWlyalE0TDRhblhpaDhJWm5HMVpWQ3VFVDBUNTFLUzRybTZzSnFRODJOWEdiT3NVa2lFcHc4PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkyODI1Njc1CWZpbGU6QUkgRHViYmluZyBTdHVkaW9fMC4yOC4yX3g2NC1zZXR1cC5leGUJdmVyc2lvbjowLjI4LjIKZ1Z1NU9lUzMzL1lJMHdqamtocVBDblBSN215djYrR0loem1vOFpiaUo2R2x3QmZXQzB1RlZxZ2FhRWJFWnhYNUdOQm9WbkgzcGZ1amxvdU9Uc0tOQXc9PQo=",
+      "url": "https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.28.2/AI-Dubbing-Studio-0.28.2-Setup.exe"
     }
   }
 }
