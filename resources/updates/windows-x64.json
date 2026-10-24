@@ -1,11 +1,11 @@
 {
-  "version": "0.28.0",
-  "notes": "Nouvelle disposition : dialogues à gauche, lecteur au centre, sous-titres à droite et timeline sur toute la largeur. Panneaux redimensionnables avec largeurs mémorisées. Effets audio compacts : marche/arrêt par effet et réglages dans une fenêtre séparée. Prévisualisation, originaux, essais, volumes et annulation conservés.",
-  "pub_date": "2026-10-23T16:33:35Z",
+  "version": "0.28.1",
+  "notes": "Fluidité des longues vidéos : dézoom limité à deux minutes, dès l’ouverture et pour le curseur, les raccourcis, la molette et MCP. Seuls les blocs visibles sont affichés. Formes d’onde indexées une fois, sans parcours complet à chaque défilement ; liste des doublages mémorisée. Les vidéos courtes restent affichées entièrement. Vidéos, audio, essais et timings conservés.",
+  "pub_date": "2026-10-24T05:57:15Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSdFFyMUJGTFp3NkJDZ1dzNTNaTDNmY1hVaXUvaitaZVd0cUN0MWI4YnY4a1Z6NnpmMWFxdzB0Sm9sMkYyRTVSM0ZzKzJWend3SUs4RDM0Ui9QZURXeHI5dStCYnduSUFvPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkyNzcyNDExCWZpbGU6QUkgRHViYmluZyBTdHVkaW9fMC4yOC4wX3g2NC1zZXR1cC5leGUJdmVyc2lvbjowLjI4LjAKT01yUFlLSEF4RFJNU0c4RGVRaUVQTEZHTUpOelZoam1maVV6NE0xT2VhaGtTcVJONFRYU0R2ZlJmV3ltQy92Y0lhaDRNSjFCY21CS255bnI1VG9uQ2c9PQo=",
-      "url": "https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.28.0/AI-Dubbing-Studio-0.28.0-Setup.exe"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSdFFyMUJGTFp3Nkg4UDU3Nk81N1VFQmFlMFFCMXhJeEhCQWZQYVBoWTQwVysveVRqZTV1d3JnQmFUd3ZuK1NIbmZvZmxidjk0UmkzbitFTlNESDk2RWNwL0Q0ODVMY1E4PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkyODIxMDE5CWZpbGU6QUkgRHViYmluZyBTdHVkaW9fMC4yOC4xX3g2NC1zZXR1cC5leGUJdmVyc2lvbjowLjI4LjEKWGpuSmY3U0lZd3pPZVF0VEUvVnF0UXVNVS83YWZwOFdNRENlZ2JRV2hhYlJEcHlIcmVBZUs5V1BoMDhsUytEYlJQVTY4NGZ1MERESUI5d3FLNk9lQnc9PQo=",
+      "url": "https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.28.1/AI-Dubbing-Studio-0.28.1-Setup.exe"
     }
   }
 }
