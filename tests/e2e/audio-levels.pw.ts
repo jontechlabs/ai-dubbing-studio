@@ -1,5 +1,20 @@
 import { test, expect, type Page } from '@playwright/test';
 import { nativeMock, wav } from './nativeMock';
+test.beforeEach(async ({ page }) => {
+  await page.addInitScript(() => {
+    // Real Web Audio processing with a clocked silent sink, independent of a
+    // Windows CI audio device. No samples or meter results are mocked.
+    // https://developer.chrome.com/blog/audiocontext-setsinkid
+    const BaseContext = window.AudioContext;
+    (window as any).__meterContexts = [];
+    window.AudioContext = class extends BaseContext {
+      constructor(options?: AudioContextOptions) {
+        super({ ...options, sinkId: { type: 'none' } } as AudioContextOptions);
+        (window as any).__meterContexts.push(this);
+      }
+    };
+  });
+});
 const call = (page: Page, tool: string, args: unknown = {}) => page.evaluate(({ tool, args }) => (window as any).__mcp(tool, args), { tool, args });
 const levels = (page: Page) => call(page, 'studio_audio_levels', { action: 'status' });
 const context = async (page: Page) => (await call(page, 'studio_get_state')).context;
@@ -13,6 +28,7 @@ async function ready(page: Page) {
   await page.getByRole('checkbox', { name: 'Activer le pilotage MCP local', exact: true }).check();
   await page.getByRole('button', { name: 'Fermer', exact: true }).click();
   await expect.poll(async () => (await levels(page)).status).toBe('ready');
+  await expect.poll(() => page.evaluate(() => (window as any).__meterContexts.at(-1).currentTime)).toBeGreaterThan(0);
   while (await page.locator('.job-notice .notice-close').count()) await page.locator('.job-notice .notice-close').first().click();
 }
 async function play(page: Page, timeMs = 1500) {
@@ -21,18 +37,28 @@ async function play(page: Page, timeMs = 1500) {
   await call(page, 'studio_playback', { action: 'play' });
 }
 const peak = async (page: Page, id: string) => Math.max(...(await levels(page)).tracks[id].channels.map((c: any) => c.peakDb));
-function constantWave(value: number, opposite = false) {
+function meterWave(value: number, opposite = false) {
   const bytes = wav(16);
-  for (let offset = 44; offset < bytes.length; offset += 4) { bytes.writeInt16LE(Math.round(32767 * value), offset); bytes.writeInt16LE(Math.round(32767 * value * (opposite ? -1 : 1)), offset + 2); }
+  const frames = (bytes.length - 44) / 4;
+  // A smooth ramp avoids a hard file edge. The constant plateau is independent
+  // of relative MediaElement clock phases; opposite stereo signs expose mono meters.
+  for (let frame = 0; frame < frames; frame++) {
+    const fade = Math.min(1, frame / 240, (frames - 1 - frame) / 240);
+    const sample = Math.round(32767 * value * fade);
+    bytes.writeInt16LE(sample, 44 + frame * 4);
+    bytes.writeInt16LE(sample * (opposite ? -1 : 1), 46 + frame * 4);
+  }
   return bytes;
 }
 
 test('real stereo meters follow global/region gain and solo/mute before the independent listening volume', async ({ page }) => {
   await nativeMock(page); await ready(page);
   await setTrack(page, 'speech', { solo: true, gain: 1 }); await play(page);
-  await expect.poll(() => peak(page, 'speech')).toBeGreaterThan(-35);
-  const baseline = await peak(page, 'speech'); expect(baseline).toBeLessThan(-27);
-  expect(await peak(page, '$mix')).toBeCloseTo(baseline, 0);
+  // nativeMock.wav has an exact 1000/32768 sample peak. Wait for the stable
+  // level instead of calibrating all later checks from a decoder seek transient.
+  const baseline = 20 * Math.log10(1000 / 32768);
+  await expect.poll(() => peak(page, 'speech')).toBeCloseTo(baseline, 1);
+  await expect.poll(() => peak(page, '$mix')).toBeCloseTo(baseline, 0);
   await call(page, 'studio_playback', { action: 'volume', value: 0 });
   await expect.poll(() => peak(page, '$mix')).toBeGreaterThan(baseline - 1);
   await setTrack(page, 'speech', { gain: 4 });
@@ -54,15 +80,18 @@ test('real stereo meters follow global/region gain and solo/mute before the inde
 
 test('final stereo sum clips with individually safe opposite-phase channels and latches/reset never edits the project', async ({ page }) => {
   await nativeMock(page);
-  for (const file of ['speech', 'music']) await page.route(`**/${file}.wav`, route => route.fulfill({ contentType: 'audio/wav', body: constantWave(.65, true) }));
+  for (const file of ['speech', 'music']) await page.route(`**/${file}.wav`, route => route.fulfill({ contentType: 'audio/wav', body: meterWave(.65, true) }));
   await ready(page); await setTrack(page, 'sfx', { mute: true });
   await call(page, 'studio_playback', { action: 'volume', value: 0 }); await play(page);
   await expect.poll(async () => (await levels(page)).tracks.$mix.clipped).toBe(true);
-  // Media decoding may ring briefly at the DC fixture's leading edge.
-  for (const id of ['speech', 'music']) await expect.poll(() => peak(page, id)).toBeCloseTo(20 * Math.log10(.65), 1);
-  const measured = await levels(page);
-  for (const id of ['speech', 'music']) { expect(measured.tracks[id].clipped).toBe(false); expect(measured.tracks[id].channels[0].peakDb).toBeCloseTo(20 * Math.log10(.65), 1); expect(measured.tracks[id].channels[1].peakDb).toBeCloseTo(20 * Math.log10(.65), 1); }
-  expect(measured.tracks.$mix.channels[0].peakDb).toBeGreaterThan(2);
+  // All channel and mix assertions must hold in the same sampled snapshot.
+  await expect(async () => {
+    const measured = await levels(page);
+    for (const id of ['speech', 'music']) { expect(measured.tracks[id].clipped).toBe(false); expect(measured.tracks[id].channels[0].peakDb).toBeCloseTo(20 * Math.log10(.65), 1); expect(measured.tracks[id].channels[1].peakDb).toBeCloseTo(20 * Math.log10(.65), 1); }
+    expect(measured.tracks.$mix.clipped).toBe(true);
+    expect(measured.tracks.$mix.channels[0].peakDb).toBeGreaterThan(2);
+    expect(measured.tracks.$mix.channels[1].peakDb).toBeGreaterThan(2);
+  }).toPass({ timeout: 15000 });
   await page.screenshot({ path: 'docs/screenshots/audio-levels-timeline-fr.png' });
   await page.getByRole('button', { name: 'Audio', exact: true }).click();
   const panel = page.getByRole('dialog', { name: 'Audio', exact: true });
@@ -88,7 +117,7 @@ test('buffered dubbing and replacement audio layers are measured on their destin
   await call(page, 'studio_playback', { action: 'pause' });
   const p = await page.evaluate(() => (window as any).__getMockProject());
   const patch = { kind: 'audioPatch', id: 'meter', operationId: 'meter-operation', operation: 'copy', sourcePath: p.media.path, sourceTrackId: 'speech', trackId: 'music', startMs: 0, endMs: 12000, mode: 'replace', path: 'stems/patch-meter.wav', gain: 1 };
-  await page.route('**/patch-meter.wav', route => route.fulfill({ contentType: 'audio/wav', body: constantWave(.2) }));
+  await page.route('**/patch-meter.wav', route => route.fulfill({ contentType: 'audio/wav', body: meterWave(.2) }));
   const added = await call(page, 'studio_project_patch', { context: await context(page), patches: [{ op: 'replace', path: '/formatVersion', value: 18 }, { op: 'add', path: '/generations/-', value: patch }] }); expect(added.error).toBeUndefined();
   await setTrack(page, 'dubbing', { solo: false, mute: true }); await setTrack(page, 'music', { solo: true, gain: 2 }); await play(page, 2000);
   await expect.poll(() => peak(page, 'music')).toBeGreaterThan(-9);

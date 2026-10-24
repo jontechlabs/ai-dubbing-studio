@@ -7,6 +7,7 @@ root = Path(__file__).resolve().parents[1]
 baseline = 'v0.28.0'
 expected_base = 'b8f3a6bea9decfa6da6248aeefeab658925c0a10'
 allowed = {
+    '.github/workflows/windows.yml', 'tests/e2e/audio-levels.pw.ts',
     'scripts/verify-ui-maintenance.py',
     'package.json', 'src-tauri/Cargo.toml', 'src-tauri/Cargo.lock', 'src-tauri/tauri.conf.json',
     'README.md', 'README.fr.md', 'docs/TIMELINE-PERFORMANCE.md', 'docs/TIMELINE-ZOOM.md',
@@ -24,6 +25,12 @@ assert base == expected_base, 'Unexpected baseline release'
 subprocess.run(['git', 'merge-base', '--is-ancestor', base, 'HEAD'], cwd=root, check=True)
 changed = set(git('diff', '--name-only', base, 'HEAD').splitlines())
 assert changed and changed <= allowed, f'Changes outside the UI maintenance scope: {changed - allowed}'
+workflow_before = subprocess.check_output(['git', 'show', f'{base}:.github/workflows/windows.yml'], cwd=root).replace(b'\r\n', b'\n')
+workflow_after = (root/'.github/workflows/windows.yml').read_bytes().replace(b'\r\n', b'\n')
+for line in [b"      PYTHONUNBUFFERED: '1'\n", b"      PYTHONFAULTHANDLER: '1'\n"]:
+    assert workflow_after.count(line) == 2
+    workflow_after = workflow_after.replace(line, b'')
+assert workflow_after == workflow_before, 'Only unbuffered Python output and crash diagnostics may change in CI'
 for name in ['package.json', 'src-tauri/Cargo.toml', 'src-tauri/Cargo.lock', 'src-tauri/tauri.conf.json']:
     original = subprocess.check_output(['git', 'show', f'{base}:{name}'], cwd=root).replace(b'\r\n', b'\n')
     current = (root / name).read_bytes().replace(b'\r\n', b'\n')
