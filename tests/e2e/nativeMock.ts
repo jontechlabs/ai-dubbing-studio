@@ -107,10 +107,14 @@ export async function nativeMock(page: Page, large = false, seededProject?: Proj
     host.__ttsReady=true;host.__pendingTts=null;
     host.__clearTranslation=(index:number)=>{const line=project.dialogues[index];for(const cue of project.targetCues)if(line.targetCueIds.includes(cue.id))cue.text='';line.ttsText='Pronunciation alone';project.revision++;emit('project-changed',structuredClone(project));localStorage.setItem('nativeMockProject',JSON.stringify(project));};
     const batchPlan=(selection:any)=>{
-      const result:any={requested:0,untranslated:0,unapproved:0,existing:0,ready:[],blocked:[]};
+      const result:any={requested:0,untranslated:0,unapproved:0,approved:0,existing:0,ready:[],blocked:[]};
+      if(selection.approvedOnly&&selection.unapprovedOnly)throw Error('INVALID_TTS_BATCH');
       for(const line of project.dialogues){if(selection.scope==='selected'&&!selection.lineIds.includes(line.id))continue;result.requested++;
         const translation=project.targetCues.filter((c:any)=>line.targetCueIds.includes(c.id)).map((c:any)=>c.text).join('\n').replace(/<[^>]*>/g,'').trim();if(!translation){result.untranslated++;continue;}
-        if(selection.approvedOnly){const a=project.translationApprovals?.[line.id],source=project.sourceCues.filter((c:any)=>line.sourceCueIds.includes(c.id)).map((c:any)=>c.text).join('\n'),target=project.targetCues.filter((c:any)=>line.targetCueIds.includes(c.id)).map((c:any)=>c.text).join('\n');if(!a||a.sourceLanguage!==project.languages.source||a.targetLanguage!==project.languages.target||a.sourceText!==source||a.targetText!==target){result.unapproved++;continue;}}
+        const a=project.translationApprovals?.[line.id],source=project.sourceCues.filter((c:any)=>line.sourceCueIds.includes(c.id)).map((c:any)=>c.text).join('\n'),target=project.targetCues.filter((c:any)=>line.targetCueIds.includes(c.id)).map((c:any)=>c.text).join('\n');
+        const approved=!!a&&a.sourceLanguage===project.languages.source&&a.targetLanguage===project.languages.target&&a.sourceText===source&&a.targetText===target;
+        if(selection.approvedOnly&&!approved){result.unapproved++;continue;}
+        if(selection.unapprovedOnly&&approved){result.approved++;continue;}
         const generation=project.generations.find((g:any)=>g.id===line.selectedGenerationIds.fr&&g.text===(line.ttsText??translation));if(generation&&!selection.force){result.existing++;continue;}
         const o=selection.options,reference=o.referenceMode==='file'?project.voiceReferences?.find((r:any)=>r.id===o.referenceId):project.characters.find((c:any)=>c.id===line.characterId)?.references[0];
         if(o.referenceMode!=='current'&&!reference){result.blocked.push({lineId:line.id,error:'TTS_REFERENCE_REQUIRED'});continue;}
@@ -229,7 +233,7 @@ export async function nativeMock(page: Page, large = false, seededProject?: Proj
       if(command==='face_detection_result'){const result=structuredClone(host.__faceResult);if(result&&host.__faceBasis!==project.revision)for(const row of result.items){row.crop=null;row.reason='INPAINT_STALE';}return result;}
       if(command==='start_inpaint_batch'){const s=args.selection,p=lipBatchPlan(s);host.__pendingLipBatch=structuredClone(s);host.__lipRows=p.ready.map((id:string)=>({id,status:'pending'}));host.__lipSkipped=p.requested-p.ready.length;job={id:'lip-batch-job',projectId:project.id,kind:'inpaintBatch',logs:[],error:null};lipBatchUpdate();return job.id;}
       if(command==='retry_job'&&job.kind==='inpaintBatch'){for(const row of host.__lipRows)if(row.status!=='succeeded')row.status='pending';lipBatchUpdate();return job.id;}
-      if(command==='generate_dubbing_batch') {const plan=batchPlan(args.selection);host.__pendingBatch=structuredClone(args.selection);host.__batchRows=plan.ready.map((id:string)=>({id,status:'pending'}));host.__batchSkipped=plan.existing+plan.untranslated+plan.unapproved+plan.blocked.length;job={id:'batch-job',projectId:project.id,kind:'ttsBatch',logs:[],error:null};batchJobUpdate();return job.id;}
+      if(command==='generate_dubbing_batch') {const plan=batchPlan(args.selection);host.__pendingBatch=structuredClone(args.selection);host.__batchRows=plan.ready.map((id:string)=>({id,status:'pending'}));host.__batchSkipped=plan.existing+plan.untranslated+plan.unapproved+plan.approved+plan.blocked.length;job={id:'batch-job',projectId:project.id,kind:'ttsBatch',logs:[],error:null};batchJobUpdate();return job.id;}
       if(command==='retry_job'&&job.kind==='ttsBatch'){for(const row of host.__batchRows)if(row.status!=='succeeded')row.status='pending';batchJobUpdate();return job.id;}
       if(command==='import_voice_reference') {if(host.__referenceImportError)throw Error('REFERENCE_FAILED');const character=project.characters.find((c:any)=>c.id===args.characterId);character.references.push({id:crypto.randomUUID(),label:args.label||'Excerpt',path:'characters/excerpt.wav',durationMs:args.range.endMs-args.range.startMs,transcript:'',sourceDialogueId:null});project.revision++;localStorage.setItem('nativeMockProject',JSON.stringify(project));return structuredClone(project);}
       if(command==='import_dubbing_reference'){

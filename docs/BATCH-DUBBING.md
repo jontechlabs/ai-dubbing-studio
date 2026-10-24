@@ -24,6 +24,20 @@ Ouvrez **Doublage par lot**, puis choisissez :
 
 Une réplique doit avoir un véritable texte de sous-titre cible. Le texte de prononciation seul ne la rend pas admissible. Le lot respecte les corrections de prononciation lorsqu’il génère le texte parlé.
 
+Depuis **v0.28.2**, le menu **Traductions à inclure dans le lot** permet de choisir :
+
+- **Toutes les répliques traduites** (comportement par défaut) ;
+- **Traduites, à valider uniquement** : les répliques vert clair, dont la traduction n’a pas encore été validée ;
+- **Traductions validées uniquement** : les répliques vertes.
+
+Pour doubler toutes les traductions non validées du projet, choisissez **Toutes les répliques traduites du projet**, puis **Traduites, à valider uniquement**. Le même filtre fonctionne sur les répliques cochées. Il concerne la validation du texte traduit, indépendamment de l’existence d’un essai vocal. Sans forçage, les essais sélectionnés à jour sont conservés ; **Forcer un nouvel essai** génère une nouvelle prise pour les répliques éligibles sans effacer les précédentes. Une réplique sans traduction reste exclue.
+
+![Lot limité aux traductions à valider](screenshots/batch-unapproved-fr.png)
+
+L’aperçu distingue les prises déjà disponibles, les textes absents, les traductions exclues par statut et les références invalides. Une traduction modifiée après validation revient à l’état « à valider ». Si une traduction est validée pendant un lot limité aux non-validées, le lot s’arrête avant de traiter cette réplique ; relancez un nouveau lot pour recalculer la liste, en conservant les réussites.
+
+Par MCP, utilisez `unapprovedOnly: true` dans `selection` de `studio_preview_dubbing_batch` et `studio_generate_dubbing_batch`. Ce champ est facultatif, avec `false` par défaut pour les anciens clients et lots sauvegardés. Il ne peut pas être combiné à `approvedOnly: true`.
+
 ## Configuration et forçage
 
 Les contrôles du lot sont les mêmes que ceux de la génération unitaire : moteur/variante installée, périphérique, référence, mode de clonage, humeur, accent compatible, vitesse et graine.
@@ -53,6 +67,6 @@ Les changements de projet, de langue, de texte, de référence ou de sélection 
 Les captures utilisent l’interface React réelle, des commandes natives simulées et de l’audio synthétique. Les tests natifs distincts utilisent FFmpeg pour vérifier les échantillons d’une portion située après la vingtième seconde, et un worker de protocole pour tester les lots, échecs, annulations et reprises. Ils ne mesurent pas les performances ni la qualité d’un modèle complet sur RTX.
 
 
-Depuis v0.13.0, cochez **Uniquement les traductions validées** pour limiter le lot entier ou la sélection cochée aux traductions explicitement approuvées (vert). Les répliques vert clair sont exclues. Le nombre de traductions non validées est affiché dans l’aperçu. Forcer un nouvel essai ne contourne pas cette exigence. La validation est vérifiée à nouveau avant chaque réplique et lors d’une reprise ; retirer une validation arrête le lot avant cette réplique, en conservant les essais réussis.
+Depuis v0.13.0, le lot peut se limiter aux traductions explicitement approuvées (vert). Depuis v0.28.2, choisissez **Traductions validées uniquement** dans le menu du lot. Les répliques vert clair sont exclues. Le nombre de traductions non validées exclues est affiché dans l’aperçu. Forcer un nouvel essai ne contourne pas cette exigence. La validation est vérifiée à nouveau avant chaque réplique et lors d’une reprise ; retirer une validation arrête le lot avant cette réplique, en conservant les essais réussis.
 
 Le filtre de traduction de la liste ne limite pas automatiquement le lot « Toutes les répliques traduites » : utilisez la portée « Sélection cochée » après **Tout cocher (filtre actuel)**, ou activez l’option des traductions validées dans la configuration du lot.

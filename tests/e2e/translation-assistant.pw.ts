@@ -23,7 +23,7 @@ test('approved-only batch intersects selection and force without dubbing pending
   await page.getByRole('button',{name:'Tout cocher (filtre actuel)',exact:true}).click();
   await page.getByRole('button',{name:/Doublage par lot/}).click();const panel=page.getByRole('dialog',{name:'Doublage par lot',exact:true});
   await panel.getByRole('combobox',{name:'Référence vocale',exact:true}).selectOption('current');
-  await panel.getByRole('checkbox',{name:'Uniquement les traductions validées',exact:true}).check();
+  await panel.getByRole('combobox',{name:'Traductions à inclure dans le lot',exact:true}).selectOption('approved');
   await panel.getByRole('checkbox',{name:/Forcer un nouvel essai/}).check();
   await expect(panel.getByText(/1 à générer .*3 non validées/)).toBeVisible();
   await panel.getByRole('button',{name:'Doubler 1 répliques',exact:true}).click();

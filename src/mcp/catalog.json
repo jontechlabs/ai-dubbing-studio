@@ -1586,7 +1586,7 @@
     {
       "name": "studio_preview_dubbing_batch",
       "command": "preview_dubbing_batch",
-      "description": "preview dubbing batch. Uses the current desktop session. Local file paths must be absolute; long operations return job IDs. Existing native validation applies.",
+      "description": "Preview a dubbing batch before starting. Optional approvedOnly or unapprovedOnly filters translation approval; they are mutually exclusive. Counts include approved and unapproved lines excluded by the chosen filter.",
       "inputSchema": {
         "type": "object",
         "properties": { "selection": { "$ref": "#/$defs/selection_DubbingBatchSelection_0" } },
@@ -1603,6 +1603,12 @@
                 ]
               },
               "approvedOnly": {
+                "anyOf": [
+                  { "type": "boolean", "const": false },
+                  { "type": "boolean", "const": true }
+                ]
+              },
+              "unapprovedOnly": {
                 "anyOf": [
                   { "type": "boolean", "const": false },
                   { "type": "boolean", "const": true }
@@ -1722,7 +1728,7 @@
     {
       "name": "studio_generate_dubbing_batch",
       "command": "generate_dubbing_batch",
-      "description": "Generate translated/selected/approved lines with one shared configuration. Returns a job ID.",
+      "description": "Generate translated lines in all/selected scope with one shared configuration. Optional approvedOnly or unapprovedOnly filters translation approval; they are mutually exclusive. Untranslated lines are always excluded; force creates new takes without removing existing ones. Returns a job ID.",
       "inputSchema": {
         "type": "object",
         "properties": {
@@ -1750,6 +1756,12 @@
                 ]
               },
               "approvedOnly": {
+                "anyOf": [
+                  { "type": "boolean", "const": false },
+                  { "type": "boolean", "const": true }
+                ]
+              },
+              "unapprovedOnly": {
                 "anyOf": [
                   { "type": "boolean", "const": false },
                   { "type": "boolean", "const": true }
@@ -4261,6 +4273,12 @@
               ]
             },
             "approvedOnly": {
+              "anyOf": [
+                { "type": "boolean", "const": false },
+                { "type": "boolean", "const": true }
+              ]
+            },
+            "unapprovedOnly": {
               "anyOf": [
                 { "type": "boolean", "const": false },
                 { "type": "boolean", "const": true }

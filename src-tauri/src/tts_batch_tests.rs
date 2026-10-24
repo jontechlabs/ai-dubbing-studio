@@ -48,6 +48,7 @@ fn selection() -> Selection {
     Selection {
         scope: "all".into(),
         approved_only: false,
+        unapproved_only: false,
         line_ids: vec![],
         force: false,
         options: options(),
@@ -112,6 +113,7 @@ fn request(p: &Project, root: &Path) -> Request {
     Request {
         root: root.into(),
         approved_only: false,
+        unapproved_only: false,
         project_id: p.id.clone(),
         language: "fr".into(),
         items,
@@ -205,6 +207,93 @@ async fn withdrawn_approval_stops_a_resumed_batch_before_loading_the_model() {
     assert!(!root.join("calls.jsonl").exists());
     assert_eq!(core.gate.available_permits(), 1);
 }
+#[test]
+fn unapproved_only_includes_stale_approvals_but_excludes_validated_and_untranslated_lines() {
+    let tmp = tempfile::tempdir().unwrap();
+    let root = tmp.path();
+    let mut p = fixture(root, &["Un", "Deux", "Trois", "<i> </i>"]);
+    approve(&mut p, 0);
+    approve(&mut p, 2);
+    p.target_cues[2].text = "Correction après validation".into();
+    p.dialogues[3].tts_text = Some("Une prononciation seule ne suffit pas".into());
+    let mut s = selection();
+    s.unapproved_only = true;
+    s.force = true;
+    let (preview, _) = plan(&p, root, &s).unwrap();
+    assert_eq!(
+        preview.ready,
+        vec![p.dialogues[1].id.clone(), p.dialogues[2].id.clone()]
+    );
+    assert_eq!(
+        (preview.approved, preview.unapproved, preview.untranslated),
+        (1, 0, 1)
+    );
+    assert_eq!(
+        preview.requested,
+        preview.ready.len() + preview.approved + preview.untranslated
+    );
+    s.scope = "selected".into();
+    s.line_ids = vec![
+        p.dialogues[0].id.clone(),
+        p.dialogues[1].id.clone(),
+        p.dialogues[1].id.clone(),
+    ];
+    assert_eq!(
+        plan(&p, root, &s).unwrap().0.ready,
+        vec![p.dialogues[1].id.clone()]
+    );
+    s.approved_only = true;
+    assert_eq!(
+        plan(&p, root, &s).err().as_deref(),
+        Some("INVALID_TTS_BATCH")
+    );
+    // Existing callers and saved batches omit the new flag and retain their original policy.
+    let mut legacy = serde_json::to_value(selection()).unwrap();
+    legacy.as_object_mut().unwrap().remove("unapprovedOnly");
+    let legacy: Selection = serde_json::from_value(legacy).unwrap();
+    assert!(!legacy.unapproved_only);
+    assert_eq!(plan(&p, root, &legacy).unwrap().0.ready.len(), 3);
+    let mut saved = serde_json::to_value(request(&p, root)).unwrap();
+    saved.as_object_mut().unwrap().remove("unapproved_only");
+    assert!(
+        !serde_json::from_value::<Request>(saved)
+            .unwrap()
+            .unapproved_only
+    );
+}
+#[tokio::test]
+async fn approval_added_after_enqueue_stops_a_resumed_unapproved_batch_before_loading_the_model() {
+    let tmp = tempfile::tempdir().unwrap();
+    let root = tmp.path().canonicalize().unwrap();
+    let mut p = fixture(&root, &["Un", "Deux"]);
+    let mut req = request(&p, &root);
+    req.unapproved_only = true;
+    approve(&mut p, 0);
+    let core = core(&root, p);
+    let app = tauri::test::mock_app();
+    let mut conflicting = req.clone();
+    conflicting.approved_only = true;
+    assert_eq!(
+        resume_with_launch(core.clone(), app.handle().clone(), conflicting, None)
+            .err()
+            .as_deref(),
+        Some("INVALID_TTS_BATCH")
+    );
+    assert!(core.jobs.lock().unwrap().is_empty());
+    let key = start_with_launch(
+        core.clone(),
+        app.handle().clone(),
+        req,
+        None,
+        Some(worker(&root)),
+    )
+    .unwrap();
+    let job = finished(&core, &key).await;
+    assert_eq!(job.error.as_deref(), Some("TTS_BATCH_TRANSLATION_APPROVED"));
+    assert!(!root.join("calls.jsonl").exists());
+    assert_eq!(core.gate.available_permits(), 1);
+    assert!(load(&core, &key).unwrap().unapproved_only);
+}
 #[tokio::test]
 async fn successful_lot_reuses_one_process_and_releases_it_before_terminal_status() {
     let tmp = tempfile::tempdir().unwrap();
@@ -235,6 +324,53 @@ async fn successful_lot_reuses_one_process_and_releases_it_before_terminal_statu
     assert!(pids.iter().all(|p| *p == pids[0]));
     assert_worker_exited(pids[0]);
 }
+#[tokio::test]
+async fn unapproved_batch_only_executes_eligible_lines_and_persists_the_filter() {
+    let tmp = tempfile::tempdir().unwrap();
+    let root = tmp.path().canonicalize().unwrap();
+    let mut p = fixture(&root, &["Validée", "À valider", ""]);
+    approve(&mut p, 0);
+    let approvals = p.translation_approvals.clone();
+    let mut selection = selection();
+    selection.unapproved_only = true;
+    let (preview, items) = plan(&p, &root, &selection).unwrap();
+    let req = Request {
+        unapproved_only: true,
+        items,
+        skipped: preview.approved + preview.untranslated,
+        ..request(&p, &root)
+    };
+    let expected = p.dialogues[1].id.clone();
+    let core = core(&root, p);
+    let app = tauri::test::mock_app();
+    let key = start_with_launch(
+        core.clone(),
+        app.handle().clone(),
+        req,
+        Some(preview),
+        Some(worker(&root)),
+    )
+    .unwrap();
+    let job = finished(&core, &key).await;
+    assert_eq!(job.status, "succeeded");
+    let progress = job.batch.unwrap();
+    assert_eq!(
+        (progress.total, progress.succeeded, progress.skipped),
+        (1, 1, 2)
+    );
+    let calls = std::fs::read_to_string(root.join("calls.jsonl")).unwrap();
+    assert_eq!(calls.lines().count(), 1);
+    let call: serde_json::Value = serde_json::from_str(calls.trim()).unwrap();
+    assert_eq!(call["lineId"], expected);
+    assert_worker_exited(call["workerPid"].as_u64().unwrap());
+    let saved = project::load(&root).unwrap();
+    assert_eq!(saved.generations.len(), 1);
+    assert_eq!(
+        serde_json::to_value(saved.translation_approvals).unwrap(),
+        serde_json::to_value(approvals).unwrap()
+    );
+    assert!(load(&core, &key).unwrap().unapproved_only);
+}
 
 #[test]
 fn selection_excludes_untranslated_even_with_tts_text_and_force_preserves_existing_file() {
@@ -253,6 +389,7 @@ fn selection_excludes_untranslated_even_with_tts_text_and_force_preserves_existi
         .insert("fr".into(), "old".into());
     let mut s = selection();
     s.scope = "selected".into();
+    s.unapproved_only = true;
     s.line_ids = vec![
         p.dialogues[0].id.clone(),
         p.dialogues[1].id.clone(),

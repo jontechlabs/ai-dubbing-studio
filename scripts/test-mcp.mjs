@@ -66,6 +66,14 @@ try {
     const lineId=rows.rows[0].id;
     const edited=await call('studio_edit_dialogue',{context:await context(),lineId,role:'target',text:'Une traduction validée par MCP.',approved:true});
     assert.equal((await call('studio_get_dialogues',{status:'approved'})).rows[0].translated,'Une traduction validée par MCP.');
+    const batchSelection={scope:'all',lineIds:[],force:true,unapprovedOnly:true,options:{variantId:'cosy3-official',device:'cpu',referenceMode:'current',referenceId:null,mode:'crossLingual',speed:1,seed:0}};
+    const pendingBatch=await call('studio_preview_dubbing_batch',{selection:batchSelection});
+    assert.equal(pendingBatch.approved,1);assert.equal(pendingBatch.unapproved,0);
+    assert.deepEqual(pendingBatch.ready,[rows.rows[1].id]);
+    const approvedBatch=await call('studio_preview_dubbing_batch',{selection:{...batchSelection,unapprovedOnly:false,approvedOnly:true}});
+    assert.equal(approvedBatch.unapproved,1);assert.deepEqual(approvedBatch.ready,[lineId]);
+    const conflictingBatch=await client.callTool({name:'studio_preview_dubbing_batch',arguments:{selection:{...batchSelection,approvedOnly:true}}});
+    assert(conflictingBatch.isError);proofs.batchTranslationFilter=true;
     const stale=await client.callTool({name:'studio_edit_dialogue',arguments:{context:rows.context,lineId,role:'target',text:'Must be rejected'}});assert(stale.isError);proofs.staleRevision=true;
     await call('studio_history',{context:edited.context,direction:'undo'});
     assert.equal((await call('studio_get_dialogues')).rows[0].translated,'Une première traduction.');proofs.undo=true;

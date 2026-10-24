@@ -87,3 +87,17 @@ test('AI controls selection, playback, zoom and background jobs without desktop 
  await call(page,'studio_cancel_job',{id});expect((await call(page,'studio_list_jobs'))[0].status).toBe('cancelled');
  const calls=await page.evaluate(()=>(window as any).__calls);expect(calls.some((c:any)=>c.command==='generate_line'&&!Object.hasOwn(c.args,'context'))).toBe(true);
 });
+
+test('MCP previews and starts an unapproved-only batch using the shared schema',async({page})=>{
+ await setup(page);
+ await page.locator('.dialogue-card').first().getByRole('button',{name:'Valider la traduction de la réplique 1',exact:true}).click();
+ await expect.poll(async()=>Object.keys((await data(page)).translationApprovals??{}).length).toBe(1);
+ const p=await data(page),context=(await call(page,'studio_get_state')).context;
+ const selection={scope:'all',lineIds:[],approvedOnly:false,unapprovedOnly:true,force:false,options:{variantId:'cosy3-official',device:'cpu',referenceMode:'current',referenceId:null,mode:'crossLingual',speed:1,seed:0}};
+ const preview=await call(page,'studio_preview_dubbing_batch',{selection});
+ expect(preview).toMatchObject({requested:4,approved:1,unapproved:0,untranslated:0});
+ expect(preview.ready).toEqual(p.dialogues.slice(1).map((l:any)=>l.id));
+ expect(await call(page,'studio_generate_dubbing_batch',{context,selection})).toBe('batch-job');
+ expect((await call(page,'studio_list_jobs'))[0].batch).toMatchObject({total:3,skipped:1});
+ expect(await page.evaluate(()=>(window as any).__pendingBatch)).toMatchObject({unapprovedOnly:true,approvedOnly:false});
+});

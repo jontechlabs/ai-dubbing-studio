@@ -19,7 +19,7 @@ dependencies = [
 
 [[package]]
 name = "ai-dubbing-studio"
-version = "0.28.1"
+version = "0.28.2"
 dependencies = [
  "chrono",
  "reqwest 0.12.28",

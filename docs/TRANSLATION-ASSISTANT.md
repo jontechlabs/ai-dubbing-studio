@@ -15,7 +15,7 @@ Le filtre se combine à la recherche textuelle et au filtre existant des répliq
 
 ## Doubler les traductions validées
 
-Ouvrez **Doublage par lot**, choisissez toutes les répliques ou la sélection cochée, puis activez **Uniquement les traductions validées**. Cette option se combine aux réglages habituels : modèle vocal, référence, GPU, humeur, accent, vitesse, graine et forçage d’un nouvel essai.
+Ouvrez **Doublage par lot**, choisissez toutes les répliques ou la sélection cochée, puis choisissez **Traductions validées uniquement** dans **Traductions à inclure dans le lot**. Depuis v0.28.2, le choix **Traduites, à valider uniquement** permet aussi de doubler les traductions non validées (vert clair). Ce filtre se combine aux réglages habituels : modèle vocal, référence, GPU, humeur, accent, vitesse, graine et forçage d’un nouvel essai. Les répliques sans traduction restent exclues. Voir le [guide du doublage par lot](BATCH-DUBBING.md).
 
 L’aperçu dénombre les traductions manquantes, non validées, essais déjà disponibles et références invalides. Même avec **Forcer**, une traduction non validée reste exclue. Retirer une validation pendant le lot ou avant sa reprise arrête le lot avant de générer cette réplique. Les essais réussis sont conservés ; validez à nouveau le texte puis reprenez, ou préparez un nouveau lot adapté.
 

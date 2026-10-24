@@ -275,6 +275,7 @@ export type ReferenceAudioInfo = { path: string; durationMs: number; url: string
 export type DubbingBatchSelection = {
   scope: 'all' | 'selected';
   approvedOnly?: boolean;
+  unapprovedOnly?: boolean;
   lineIds: string[];
   force: boolean;
   options: import('../domain/types').VoiceSettings;
@@ -283,6 +284,7 @@ export type DubbingBatchPreview = {
   requested: number;
   untranslated: number;
   unapproved: number;
+  approved: number;
   existing: number;
   ready: string[];
   blocked: { lineId: string; error: string }[];

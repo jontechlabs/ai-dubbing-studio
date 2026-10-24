@@ -25,7 +25,7 @@ export function BatchDubbingAction({
   const { t } = useTranslation();
   const [scope, setScope] = useState(selectedIds.length ? 'selected' : 'all'),
     [force, setForce] = useState(false),
-    [approvedOnly, setApprovedOnly] = useState(false),
+    [translationFilter, setTranslationFilter] = useState('all'),
     [working, setWorking] = useState(false);
   const [result, setResult] = useState<{
     key: string;
@@ -36,7 +36,8 @@ export function BatchDubbingAction({
     scope,
     lineIds: selectedIds,
     force,
-    approvedOnly,
+    approvedOnly: translationFilter === 'approved',
+    unapprovedOnly: translationFilter === 'translated',
     options: settings,
   });
   const key = selectionKey + ':' + project.revision;
@@ -67,14 +68,17 @@ export function BatchDubbingAction({
           <option value="selected">{t('batchSelected', { count: selectedIds.length })}</option>
         </select>
       </label>
-      <label className="checkbox-field">
-        <input
-          type="checkbox"
-          checked={approvedOnly}
+      <label className="field">
+        <span>{t('batchTranslationFilter')}</span>
+        <select
+          value={translationFilter}
           disabled={busy || working}
-          onChange={(e) => setApprovedOnly(e.target.checked)}
-        />
-        {t('batchApprovedOnly')}
+          onChange={(e) => setTranslationFilter(e.target.value)}
+        >
+          <option value="all">{t('batchTranslationAll')}</option>
+          <option value="translated">{t('batchTranslationUnapproved')}</option>
+          <option value="approved">{t('batchTranslationApproved')}</option>
+        </select>
       </label>
       <label className="checkbox-field">
         <input
@@ -94,6 +98,7 @@ export function BatchDubbingAction({
               existing: plan.existing,
               untranslated: plan.untranslated,
               unapproved: plan.unapproved,
+              approved: plan.approved,
               blocked: plan.blocked.length,
             })}
           </p>

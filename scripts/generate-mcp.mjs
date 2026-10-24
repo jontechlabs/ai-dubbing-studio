@@ -122,7 +122,9 @@ const notes = {
   generate_line:
     'Generate another immutable voice take. Returns a job ID; poll jobs. Does not overwrite previous takes.',
   generate_dubbing_batch:
-    'Generate translated/selected/approved lines with one shared configuration. Returns a job ID.',
+    'Generate translated lines in all/selected scope with one shared configuration. Optional approvedOnly or unapprovedOnly filters translation approval; they are mutually exclusive. Untranslated lines are always excluded; force creates new takes without removing existing ones. Returns a job ID.',
+  preview_dubbing_batch:
+    'Preview a dubbing batch before starting. Optional approvedOnly or unapprovedOnly filters translation approval; they are mutually exclusive. Counts include approved and unapproved lines excluded by the chosen filter.',
   start_inpaint_batch:
     'Render independent lip clips per dialogue; preserve the main movie. Returns a job ID.',
   export_mkv:

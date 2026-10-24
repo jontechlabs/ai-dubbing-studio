@@ -1,5 +1,7 @@
 # AI Dubbing Studio
 
+**v0.28.2 — Doubler les traductions non validées par lot.** Choisissez toutes les traductions, celles à valider uniquement ou celles validées uniquement. Ce filtre s’applique au projet entier ou aux répliques cochées, avec forçage facultatif d’un nouvel essai et conservation des précédents. Disponible aussi par MCP. [Guide et capture](docs/BATCH-DUBBING.md).
+
 **v0.28.1 — Timeline allégée sur les longues vidéos.** La vue est limitée à deux minutes, y compris avec les raccourcis, la molette, le curseur et MCP. Seuls les blocs de sous-titres et de doublage visibles sont affichés ; les crêtes audio sont indexées une fois pour éviter de reparcourir tout le fichier à chaque défilement. Les vidéos courtes restent affichées entièrement. [Détails et capture](docs/TIMELINE-PERFORMANCE.md).
 
 

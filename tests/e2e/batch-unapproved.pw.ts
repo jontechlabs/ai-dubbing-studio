@@ -1,0 +1,51 @@
+import { test, expect } from '@playwright/test';
+import { nativeMock } from './nativeMock';
+
+test('all unapproved translations can be regenerated without replacing approved or earlier takes', async ({ page }) => {
+  await nativeMock(page); await page.goto('/');
+  const cards = page.locator('.dialogue-card'); await expect(cards.first()).toBeVisible();
+  await page.evaluate(() => { (window as any).__seedDubbing(); (window as any).__clearTranslation(1); });
+  await cards.first().getByRole('button', { name: 'Valider la traduction de la réplique 1', exact: true }).click();
+  await expect.poll(() => page.evaluate(() => Object.keys(JSON.parse(localStorage.getItem('nativeMockProject')!).translationApprovals ?? {}).length)).toBe(1);
+  const before = await page.evaluate(() => JSON.parse(localStorage.getItem('nativeMockProject')!));
+  await page.getByRole('button', { name: /Doublage par lot/ }).click();
+  const panel = page.getByRole('dialog', { name: 'Doublage par lot', exact: true });
+  await panel.getByRole('combobox', { name: 'Référence vocale', exact: true }).selectOption('current');
+  const filter = panel.getByRole('combobox', { name: 'Traductions à inclure dans le lot', exact: true });
+  await expect(filter).toHaveValue('all'); await filter.selectOption('translated');
+  await expect(panel.getByText(/0 à générer · 2 déjà doublées · 1 sans traduction.*1 validées exclues/)).toBeVisible();
+  await expect(panel.getByRole('button', { name: 'Doubler 0 répliques' })).toBeDisabled();
+  await panel.getByRole('checkbox', { name: /Forcer un nouvel essai/ }).check();
+  await expect(panel.getByText(/2 à générer · 0 déjà doublées · 1 sans traduction.*1 validées exclues/)).toBeVisible();
+  await panel.getByRole('button', { name: 'Doubler 2 répliques', exact: true }).scrollIntoViewIfNeeded();
+  await page.screenshot({ path: 'docs/screenshots/batch-unapproved-fr.png' });
+  await panel.getByRole('button', { name: 'Doubler 2 répliques', exact: true }).click();
+  expect(await page.evaluate(() => (window as any).__pendingBatch)).toMatchObject({ scope: 'all', unapprovedOnly: true, approvedOnly: false, force: true });
+  expect(await page.evaluate(() => (window as any).__batchRows.map((r: any) => r.id))).toEqual(before.dialogues.slice(2).map((l: any) => l.id));
+  await page.evaluate(() => { (window as any).__advanceBatch(); (window as any).__advanceBatch(); });
+  const after = await page.evaluate(() => JSON.parse(localStorage.getItem('nativeMockProject')!));
+  expect(after.generations).toHaveLength(before.generations.length + 2);
+  for (const take of before.generations) expect(after.generations).toContainEqual(take);
+  expect(after.dialogues[0].selectedGenerationIds).toEqual(before.dialogues[0].selectedGenerationIds);
+  expect(after.translationApprovals).toEqual(before.translationApprovals);
+  await expect(page.getByText(/2 \/ 2 traitées · 2 réussies · 0 échouées · 2 exclues/)).toBeVisible();
+});
+
+test('unapproved filter intersects checked scope and cannot queue untranslated or unselected lines', async ({ page }) => {
+  await nativeMock(page); await page.goto('/');
+  const cards = page.locator('.dialogue-card'); await expect(cards.first()).toBeVisible();
+  await cards.first().getByRole('button', { name: 'Valider la traduction de la réplique 1', exact: true }).click();
+  await page.evaluate(() => (window as any).__clearTranslation(2));
+  for (const n of [1, 2, 3]) await page.getByRole('checkbox', { name: `Cocher la réplique ${n} pour le lot`, exact: true }).check();
+  const before = await page.evaluate(() => JSON.parse(localStorage.getItem('nativeMockProject')!));
+  await page.getByRole('button', { name: /Doublage par lot/ }).click();
+  const panel = page.getByRole('dialog', { name: 'Doublage par lot', exact: true });
+  await panel.getByRole('combobox', { name: 'Référence vocale', exact: true }).selectOption('current');
+  await panel.getByRole('combobox', { name: 'Traductions à inclure dans le lot', exact: true }).selectOption('translated');
+  await expect(panel.getByText(/1 à générer · 0 déjà doublées · 1 sans traduction.*1 validées exclues/)).toBeVisible();
+  const scope = panel.getByRole('combobox', { name: 'Répliques à doubler', exact: true });
+  await scope.selectOption('all'); await expect(panel.getByRole('button', { name: 'Doubler 2 répliques' })).toBeEnabled();
+  await scope.selectOption('selected'); await panel.getByRole('button', { name: 'Doubler 1 répliques' }).click();
+  expect(await page.evaluate(() => (window as any).__batchRows.map((r: any) => r.id))).toEqual([before.dialogues[1].id]);
+  expect(await page.evaluate(() => (window as any).__pendingBatch)).toMatchObject({ scope: 'selected', unapprovedOnly: true, approvedOnly: false, force: false });
+});
