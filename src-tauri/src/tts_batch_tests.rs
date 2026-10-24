@@ -361,10 +361,11 @@ async fn unapproved_batch_only_executes_eligible_lines_and_persists_the_filter()
     let calls = std::fs::read_to_string(root.join("calls.jsonl")).unwrap();
     assert_eq!(calls.lines().count(), 1);
     let call: serde_json::Value = serde_json::from_str(calls.trim()).unwrap();
-    assert_eq!(call["lineId"], expected);
+    assert_eq!(call["text"], "À valider");
     assert_worker_exited(call["workerPid"].as_u64().unwrap());
     let saved = project::load(&root).unwrap();
     assert_eq!(saved.generations.len(), 1);
+    assert_eq!(saved.generations[0]["dialogueId"], expected);
     assert_eq!(
         serde_json::to_value(saved.translation_approvals).unwrap(),
         serde_json::to_value(approvals).unwrap()
