@@ -1,11 +1,11 @@
 {
-  "version": "0.28.2",
-  "notes": "Doublage par lot : choisissez toutes les traductions, les traductions à valider uniquement ou les traductions validées uniquement. Compatible projet entier ou sélection cochée, configuration commune, forçage et MCP. Les répliques sans traduction sont exclues et tous les essais précédents sont conservés. Aperçu des exclusions et contrôle du statut avant chaque réplique.",
-  "pub_date": "2026-10-24T07:42:31Z",
+  "version": "0.28.3",
+  "notes": "Validez ou retirez en une seule fois la validation des traductions cochées, y compris les répliques masquées par les filtres. Actions compactes Valider/Retirer, traductions vides ignorées, sauvegarde et annulation/rétablissement globale. Textes, timings et essais conservés. Pilotage MCP avec studio_approve_translations (102 outils).",
+  "pub_date": "2026-10-25T07:19:11Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSdFFyMUJGTFp3NlBqOS9vemdIK3ZBaEdyYitjZU1MZmI3d1hkeEY5V0VFZWlyalE0TDRhblhpaDhJWm5HMVpWQ3VFVDBUNTFLUzRybTZzSnFRODJOWEdiT3NVa2lFcHc4PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkyODI1Njc1CWZpbGU6QUkgRHViYmluZyBTdHVkaW9fMC4yOC4yX3g2NC1zZXR1cC5leGUJdmVyc2lvbjowLjI4LjIKZ1Z1NU9lUzMzL1lJMHdqamtocVBDblBSN215djYrR0loem1vOFpiaUo2R2x3QmZXQzB1RlZxZ2FhRWJFWnhYNUdOQm9WbkgzcGZ1amxvdU9Uc0tOQXc9PQo=",
-      "url": "https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.28.2/AI-Dubbing-Studio-0.28.2-Setup.exe"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSdFFyMUJGTFp3NkhvS3hPZThLUGZaakpkTTNhcWh5cnhvbGNDRU5yTWZPTFVzQm1mNVRSWFBCMDJxSTMzTXB3K1RONHF0aGNMWGZvcUdGaUIvU0J2dDFaZFZTMGREMlFzPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkyOTEwMDc1CWZpbGU6QUkgRHViYmluZyBTdHVkaW9fMC4yOC4zX3g2NC1zZXR1cC5leGUJdmVyc2lvbjowLjI4LjMKTG43bS9wRzYwditxZ1YvRWJtT24xZ2FHT3BMUVp3UW9mNDIyOStWdmRpaGttVFdTUUI4Ty9jM3dVdEtnMC84dmYxSURuQktKUktwY2FrK2pLU3hJQ0E9PQo=",
+      "url": "https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.28.3/AI-Dubbing-Studio-0.28.3-Setup.exe"
     }
   }
 }

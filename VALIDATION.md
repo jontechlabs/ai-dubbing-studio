@@ -1,5 +1,18 @@
 # Validation
 
+## v0.28.3 — 25 October 2026
+
+[Fresh Windows checks and packages 40165777312](https://github.com/jontechlabs/ai-dubbing-studio/actions/runs/40165777312) passed at `d665bafff5d76d94956b479509499928475a2066`: 547 suite checks (158 TypeScript/JavaScript, 148 Rust, 162 Chrome, 79 Python), Clippy and formatting. The updater-signed installer and portable executable were built on that runner.
+
+The successful complete run is attempt 2 on an identical source commit. Attempt 1 passed the frontend, native Rust, Python, translation and face checks, then its hosted CPU terminated the Drama FP8 diagnostic with Windows illegal-instruction code `0xc000001d`, before packaging. Its logs are retained; no application code or test assertion was changed for the retry.
+
+Bulk translation review is a single project snapshot: approving or withdrawing the checked translations includes filtered-out checked lines, skips empty/formatting-only target text even when spoken text exists, deduplicates IDs, retains unselected approvals and preserves text, timings and voice takes. Domain tests verify multilingual/multiline snapshots, revoked approvals after source/language edits, invalid IDs without partial edits, no-op selections, round-trip project validation and separate voice validation. Browser integration verifies mixed and narrow-sidebar selections, disabled actions, one save/undo/redo, persisted reopening, preserved takes and MCP stale/unknown rejection. The packaged Windows application and official MCP SDK expose 102 tools and separately verify bulk review, stale/unknown rejection, undo/redo, reopening, unchanged voice data and the original WAV. UI screenshots use synthetic media and simulated native commands; native proofs are separate.
+
+This full Windows run also passed fresh complete-weight VoxCPM2/Chatterbox CPU inference, hot quality-reset batches, Standard French ASR content gates, offline voice conversion, real Japanese reference ASR, local translation/cancellation, face detection, Drama/LatentSync small neural-core diagnostics, CosyVoice finalization, MCP relay lifecycle, audio effects/meters and immutable-source exports. Native Rust, workers/model manifests, playback hooks, services and public fixtures are byte-identical to v0.28.2. No new NVIDIA performance, accent or synthesis-quality qualification is claimed.
+
+Updater signature and modified-installer rejection, archive integrity, package/worker hashes, public asset digests and SHA-256 were checked. Only this validation document was finalized in the portable ZIP after CI; every other entry remains byte-identical. Source ZIP and tag share the final release commit. No real user project or remote application was modified during testing.
+
+
 ## v0.28.2 — 24 October 2026
 
 [Fresh Windows checks and packages 40070870413](https://github.com/jontechlabs/ai-dubbing-studio/actions/runs/40070870413) passed at `9bf1ecad5857a8b3556d1927116263f5b12c59d7`: 540 suite checks (154 TypeScript/JavaScript, 148 Rust, 159 Chrome, 79 Python), Clippy and formatting. The updater-signed installer and portable executable were built on that runner.
