@@ -1,6 +1,6 @@
 # Piloter le studio avec une IA via MCP
 
-Le studio fournit **101 outils MCP** en v0.27.0 : 73 commandes natives et 28 commandes d’édition, d’état et de lecture. Le serveur utilise **stdio** et le même exécutable que l’application. Cette intégration pilote **l’application ouverte** ; aucun environnement Node.js ou Python supplémentaire n’est requis pour la connexion.
+Le studio fournit **102 outils MCP** en v0.28.3 : 73 commandes natives et 29 commandes d’édition, d’état et de lecture. Le serveur utilise **stdio** et le même exécutable que l’application. Cette intégration pilote **l’application ouverte** ; aucun environnement Node.js ou Python supplémentaire n’est requis pour la connexion.
 
 `studio_audio_levels` mesure les niveaux stéréo en dBFS et permet d’effacer les crêtes maximales/voyants, sans modifier le projet. Les valeurs sont aussi dans `studio_get_state.audioLevels`. [Mesure, mix final et limites](AUDIO-LEVELS.md).
 
@@ -37,6 +37,8 @@ Les [effets audio](AUDIO-EFFECTS.md) sont accessibles avec `studio_audio_effects
 Les schémas exposent tous les paramètres des commandes. Les champs persistants sans outil spécialisé restent modifiables avec `studio_project_patch`, notamment les réglages de modèles, personnages, références, dictionnaire de prononciation et variantes. Il s’agit d’un pilotage des fonctions et des données du studio, sans simulation de clics.
 
 Les outils suivent la session affichée : les changements sont sauvegardés, annulables et visibles dans l’interface. Commencez par `studio_get_state` ; les commandes qui modifient le projet demandent son `context` contenant `projectId` et `expectedRevision`. En cas de `STALE_REVISION`, relisez l’état et vérifiez les modifications avant de recommencer.
+
+Depuis v0.28.3, `studio_approve_translations` valide ou retire les validations d’un ensemble de répliques en une seule modification annulable. Fournissez `ids`, `approved` (booléen) et `context`. `studio_get_state.checkedIds` fournit la sélection cochée dans l’interface, y compris les répliques masquées par ses filtres. Les traductions vides sont ignorées ; tout identifiant inconnu rejette l’opération entière. Les textes, timings et essais sont conservés. [Guide illustré](BATCH-CACHE-AND-TRANSLATION-REVIEW.md#valider-ou-retirer-plusieurs-validations--v0283).
 
 Exemple de parcours pour une IA : lire l’état, créer ou ouvrir le projet, importer la vidéo et suivre sa tâche, importer les deux SRT, lire les répliques par pages avec `studio_get_dialogues`, proposer/valider leurs traductions, sélectionner les références et le modèle, lancer le lot de doublage puis vérifier les prises et exporter le MKV. Après chaque modification, utilisez le contexte renvoyé ou relisez l’état.
 

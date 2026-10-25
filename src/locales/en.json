@@ -1270,5 +1270,14 @@
   "fxDraftHint": "These settings prepare the chain. Close this window, then apply the effects to update the rendered audio.",
   "batchDubCompact": "Dubbing",
   "batchLipCompact": "Lip sync",
-  "voiceEditHelp": "Editing help"
+  "voiceEditHelp": "Editing help",
+  "translationSelection": "Checked translation approval",
+  "translationSelectionCount_one": "{{count}} checked",
+  "translationSelectionCount_other": "{{count}} checked",
+  "translationApproveSelection": "Approve checked translations",
+  "translationUnapproveSelection": "Withdraw approval of checked translations",
+  "translationApproveSelectionHint": "Approve {{count}} pending translation(s) among checked lines, including those hidden by filters. Empty translations are skipped.",
+  "translationUnapproveSelectionHint": "Withdraw {{count}} approval(s) among checked lines, including those hidden by filters.",
+  "translationApproveCompact": "Approve",
+  "translationUnapproveCompact": "Withdraw"
 }

@@ -43,6 +43,25 @@ test('AI edits are visible and undoable, and stale context never replaces pendin
  await expect(page.locator('.dialogue-card').first()).toContainText(before.targetCues[0].text);
 });
 
+test('MCP bulk review is atomic, preserves voice takes and rejects stale or unknown selections',async({page})=>{
+ const context=await setup(page,true),before=await data(page),ids=before.dialogues.slice(0,3).map((l:any)=>l.id);
+ await page.evaluate(()=>(window as any).__clearTranslation(0));
+ const reviewBefore=await data(page);
+ const current=(await call(page,'studio_get_state')).context;
+ const approved=await call(page,'studio_approve_translations',{context:current,ids:[...ids,ids[1]],approved:true});
+ expect(approved.applied).toBe(true);
+ let p=await data(page);expect(Object.keys(p.translationApprovals).sort()).toEqual(ids.slice(1).sort());
+ expect(p.generations).toEqual(before.generations);expect(p.dialogues).toEqual(reviewBefore.dialogues);
+ expect((await call(page,'studio_approve_translations',{context,ids,approved:false})).error).toContain('STALE_REVISION');
+ expect((await call(page,'studio_approve_translations',{context:approved.context,ids:[ids[1],'missing'],approved:false})).error).toContain('MCP_UNKNOWN_DIALOGUE');
+ expect((await data(page)).translationApprovals).toEqual(p.translationApprovals);
+ await call(page,'studio_history',{context:approved.context,direction:'undo'});
+ expect((await data(page)).translationApprovals??{}).toEqual({});
+ const again=await call(page,'studio_approve_translations',{context:(await call(page,'studio_get_state')).context,ids,approved:true});
+ const withdrawn=await call(page,'studio_approve_translations',{context:again.context,ids,approved:false});expect(withdrawn.applied).toBe(true);
+ p=await data(page);expect(p.translationApprovals).toEqual({});expect(p.generations).toEqual(before.generations);
+});
+
 test('AI track regions and project patches use normal validation without accepting partial failures',async({page})=>{
  let context=await setup(page);let result=await call(page,'studio_set_track',{context,id:'original',changes:{gain:.6,mute:false}});context=result.context;
  result=await call(page,'studio_audio_region',{context,id:'original',startMs:1000,endMs:1700,gain:0,mute:true});context=result.context;

@@ -1,7 +1,7 @@
 import type { Project } from '../domain/types';
 import { validateProject } from '../domain/project';
 import { editDialogue } from '../domain/subtitles';
-import { approveTranslation } from '../domain/translation';
+import { approveTranslation, approveTranslations } from '../domain/translation';
 import { retimeDialogue, splitDialogue, mergeDialogue } from '../domain/timing';
 import { moveDubbing, resizeDubbing } from '../domain/mix';
 import { editVoice, type VoiceOperation } from '../domain/voiceEdit';
@@ -106,6 +106,19 @@ export function editProject(
   };
   let next: Project;
   switch (tool) {
+    case 'studio_approve_translations': {
+      if (
+        !Array.isArray(args.ids) ||
+        !args.ids.length ||
+        args.ids.some((id) => typeof id !== 'string') ||
+        typeof args.approved !== 'boolean'
+      )
+        throw Error('MCP_INVALID_ARGUMENTS');
+      const existing = new Set(project.dialogues.map((line) => line.id));
+      if (args.ids.some((id) => !existing.has(id))) throw Error('MCP_UNKNOWN_DIALOGUE');
+      next = approveTranslations(project, args.ids as string[], args.approved);
+      break;
+    }
     case 'studio_project_patch':
       return patchProject(project, args.patches as Patch[]);
     case 'studio_edit_dialogue': {

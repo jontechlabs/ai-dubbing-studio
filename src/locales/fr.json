@@ -1270,5 +1270,14 @@
   "fxDraftHint": "Ces réglages préparent la chaîne. Fermez cette fenêtre, puis appliquez les effets pour modifier le rendu audio.",
   "batchDubCompact": "Doublage",
   "batchLipCompact": "Lèvres",
-  "voiceEditHelp": "Aide à l’édition"
+  "voiceEditHelp": "Aide à l’édition",
+  "translationSelection": "Validation des traductions cochées",
+  "translationSelectionCount_one": "{{count}} cochée",
+  "translationSelectionCount_other": "{{count}} cochées",
+  "translationApproveSelection": "Valider les traductions cochées",
+  "translationUnapproveSelection": "Retirer la validation des traductions cochées",
+  "translationApproveSelectionHint": "{{count}} traduction(s) à valider parmi les répliques cochées, même masquées par un filtre. Les traductions vides sont ignorées.",
+  "translationUnapproveSelectionHint": "Retirer {{count}} validation(s) parmi les répliques cochées, même masquées par un filtre.",
+  "translationApproveCompact": "Valider",
+  "translationUnapproveCompact": "Retirer"
 }

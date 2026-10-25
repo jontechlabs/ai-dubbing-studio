@@ -1,6 +1,36 @@
 import { expect, it } from 'vitest';
 import { demoProject } from '../domain/project';
 import { checkContext, editProject, patchProject } from './actions';
+import { translationState } from '../domain/translation';
+
+it('bulk approval validates all IDs before changing any translation and uses one project snapshot', () => {
+  const p = demoProject(),
+    ids = p.dialogues.slice(0, 2).map((line) => line.id),
+    before = structuredClone(p);
+  const approved = editProject(p, 'studio_approve_translations', { ids, approved: true });
+  expect(approved.dialogues.map((line) => translationState(approved, line))).toEqual([
+    'approved',
+    'approved',
+    'translated',
+    'translated',
+  ]);
+  expect(
+    editProject(approved, 'studio_approve_translations', { ids, approved: false })
+      .translationApprovals,
+  ).toEqual({});
+  expect(() =>
+    editProject(p, 'studio_approve_translations', { ids: [...ids, 'missing'], approved: true }),
+  ).toThrow('MCP_UNKNOWN_DIALOGUE');
+  for (const args of [
+    { ids: [], approved: true },
+    { ids, approved: 'false' },
+    { ids: [1], approved: true },
+  ])
+    expect(() => editProject(p, 'studio_approve_translations', args)).toThrow(
+      'MCP_INVALID_ARGUMENTS',
+    );
+  expect(p).toEqual(before);
+});
 
 it('rejects a stale revision and a different project before editing', () => {
   const p = demoProject();

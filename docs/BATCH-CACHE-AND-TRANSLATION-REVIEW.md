@@ -27,6 +27,20 @@ La liste des dialogues utilise une bordure et un badge, avec une légende :
 
 Cliquez sur **Traduite · à valider** dans une réplique pour la valider. Cliquez sur **Traduction validée** pour retirer cette validation. Le bouton n’est pas disponible sans traduction.
 
+### Valider ou retirer plusieurs validations — v0.28.3
+
+1. Cochez les répliques concernées, ou utilisez **Tout cocher (filtre actuel)**. **Maj + clic** permet de cocher une plage.
+2. Une ligne d’actions apparaît sous les boutons de lot, avec le nombre de répliques cochées. Cliquez sur **Valider** ou **Retirer** pour appliquer le même choix à toutes ces répliques.
+3. Les traductions vides sont ignorées. Les répliques cochées masquées par une recherche ou un filtre sont aussi concernées ; le nombre affiché compte toute la sélection. Le survol de chaque action indique le nombre de validations qui changeront. Une action sans changement possible est désactivée.
+
+L’ensemble est sauvegardé et annulable par **Ctrl+Z** en une seule opération ; **Ctrl+Y** le rétablit. Les textes, le calage et les essais vocaux existants sont conservés. **Retirer** remet les traductions validées cochées à l’état vert clair « à valider ». **Décocher** retire les cases de sélection sans changer les validations.
+
+![Validation des traductions cochées](screenshots/bulk-translation-review-fr.png)
+
+*Interface React réelle avec médias synthétiques et commandes natives simulées. La sauvegarde, l’historique et la réouverture sont aussi vérifiés séparément dans l’exécutable Windows par MCP.*
+
+Par MCP, l’outil `studio_approve_translations` accepte `ids`, `approved: true` pour valider ou `false` pour retirer la validation, et le `context` courant. Pour reprendre les cases de l’interface, utilisez `studio_get_state.checkedIds`. Les identifiants répétés sont traités une seule fois ; un identifiant inconnu ou un contexte périmé rejette l’opération entière.
+
 ![Trois états de traduction dans la liste des dialogues](screenshots/translation-review.png)
 
 La validation de traduction est **indépendante de la validation d’un essai vocal** : générer, sélectionner, supprimer ou valider une voix ne valide pas le texte traduit. Une traduction déjà validée conserve son état pendant la génération du doublage.

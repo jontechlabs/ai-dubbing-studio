@@ -72,6 +72,44 @@ export function approveTranslation(project: Project, id: string, approved: boole
   return next;
 }
 
+// Index subtitles once and commit the entire selection as a single project edit.
+// Empty translations are skipped; an unknown dialogue rejects the whole edit.
+export function approveTranslations(project: Project, ids: string[], approved: boolean): Project {
+  const lines = new Map(project.dialogues.map((line) => [line.id, line]));
+  const selected = new Set(ids);
+  if ([...selected].some((id) => !lines.has(id))) throw Error('NO_DIALOGUES');
+  const source = new Map(project.sourceCues.map((cue) => [cue.id, cue.text]));
+  const target = new Map(project.targetCues.map((cue) => [cue.id, cue.text]));
+  const changes = new Map<string, TranslationApproval | null>();
+  for (const id of selected) {
+    if (!approved) {
+      if (project.translationApprovals?.[id]) changes.set(id, null);
+      continue;
+    }
+    const line = lines.get(id)!;
+    const current = snapshot(
+      project,
+      line,
+      line.sourceCueIds.map((id) => source.get(id) ?? '').join('\n'),
+      line.targetCueIds.map((id) => target.get(id) ?? '').join('\n'),
+    );
+    if (
+      current.targetText.replace(/<[^>]*>/g, '').trim() &&
+      !matches(project.translationApprovals?.[id], current)
+    )
+      changes.set(id, current);
+  }
+  if (!changes.size) return project;
+  const next = structuredClone(project);
+  next.translationApprovals ??= {};
+  for (const [id, approval] of changes) {
+    if (approval) next.translationApprovals[id] = approval;
+    else delete next.translationApprovals[id];
+  }
+  if (approved) next.formatVersion = Math.max(10, next.formatVersion);
+  return next;
+}
+
 export type TranslationState = 'untranslated' | 'translated' | 'approved';
 export function translationStates(project: Project): Map<string, TranslationState> {
   const source = new Map(project.sourceCues.map((cue) => [cue.id, cue.text]));

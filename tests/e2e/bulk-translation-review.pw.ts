@@ -1,0 +1,73 @@
+import { test, expect } from '@playwright/test';
+import { nativeMock } from './nativeMock';
+
+test('bulk translation review includes hidden checked lines, skips blanks and is a single undoable saved edit', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 1400 });
+  await nativeMock(page);
+  await page.goto('/');
+  const cards = page.locator('.dialogue-card');
+  await expect(cards.first()).toBeVisible();
+  await page.evaluate(() => { (window as any).__seedDubbing(); (window as any).__clearTranslation(0); });
+  await cards.nth(1).getByRole('button', { name: 'Valider la traduction de la réplique 2', exact: true }).click();
+  await expect(page.locator('.save-indicator')).toHaveText('Sauvegardé');
+  for (let i = 0; i < 3; i++) await cards.nth(i).getByRole('checkbox').check();
+  await cards.nth(1).locator('.line-select').click();
+  await expect(page.locator('.job-notifications')).not.toBeVisible();
+  await page.locator('.dialogue-scroll').evaluate((e) => { e.scrollTop = 0; });
+  await page.screenshot({ path: 'docs/screenshots/bulk-translation-review-fr.png' });
+  const before = await page.evaluate(() => (window as any).__getMockProject());
+  const countSaves = () => page.evaluate(() => (window as any).__calls.filter((c: any) => c.command === 'replace_project').length);
+  const savedBefore = await countSaves();
+  const filter = page.getByRole('combobox', { name: 'Statut de traduction', exact: true });
+  await filter.selectOption('translated');
+  await expect(cards).toHaveCount(2);
+  const approve = page.getByRole('button', { name: 'Valider les traductions cochées', exact: true });
+  const withdraw = page.getByRole('button', { name: 'Retirer la validation des traductions cochées', exact: true });
+  await approve.click();
+  await expect(cards).toHaveCount(1);
+  await expect(approve).toBeDisabled();
+  await expect(withdraw).toBeEnabled();
+  await expect(page.locator('.save-indicator')).toHaveText('Sauvegardé');
+  expect(await countSaves()).toBe(savedBefore + 1);
+  let after = await page.evaluate(() => (window as any).__getMockProject());
+  expect(Object.keys(after.translationApprovals).sort()).toEqual(before.dialogues.slice(1, 3).map((l: any) => l.id).sort());
+  for (const field of ['dialogues', 'generations', 'sourceCues', 'targetCues', 'voiceEdits', 'tracks', 'media'])
+    expect(after[field]).toEqual(before[field]);
+  await page.getByRole('button', { name: 'Ctrl+Z', exact: true }).click();
+  await expect(cards).toHaveCount(2);
+  expect((await page.evaluate(() => (window as any).__getMockProject())).translationApprovals).toEqual(before.translationApprovals);
+  await page.getByRole('button', { name: 'Ctrl+Y', exact: true }).click();
+  await expect(cards).toHaveCount(1);
+  await filter.selectOption('all');
+  await expect(cards).toHaveCount(4);
+  await withdraw.click();
+  await expect(page.locator('.save-indicator')).toHaveText('Sauvegardé');
+  expect((await page.evaluate(() => (window as any).__getMockProject())).translationApprovals).toEqual({});
+  await page.getByRole('button', { name: 'Ctrl+Z', exact: true }).click();
+  await page.reload();
+  await expect(page.locator('.dialogue-card.translation-approved')).toHaveCount(2);
+  after = await page.evaluate(() => (window as any).__getMockProject());
+  expect(after.generations).toEqual(before.generations);
+});
+
+test('bulk review controls stay compact and do not validate blank or unchecked lines', async ({ page }) => {
+  await page.setViewportSize({ width: 1024, height: 800 });
+  await nativeMock(page); await page.goto('/');
+  const cards = page.locator('.dialogue-card'); await expect(cards.first()).toBeVisible();
+  const group = page.getByRole('group', { name: 'Validation des traductions cochées', exact: true });
+  await expect(group).toHaveCount(0);
+  await page.evaluate(() => (window as any).__clearTranslation(0));
+  await cards.first().getByRole('checkbox').check();
+  const approve = group.getByRole('button', { name: 'Valider les traductions cochées', exact: true });
+  const withdraw = group.getByRole('button', { name: 'Retirer la validation des traductions cochées', exact: true });
+  await expect(approve).toBeDisabled(); await expect(withdraw).toBeDisabled();
+  await cards.nth(1).getByRole('checkbox').check();
+  await approve.click(); await expect(cards.nth(1)).toHaveClass(/translation-approved/);
+  await expect(approve).toBeDisabled(); await expect(withdraw).toBeEnabled();
+  const boxes = await group.evaluate((g) => ({ group: g.getBoundingClientRect().toJSON(), buttons: [...g.querySelectorAll('button')].map((b) => b.getBoundingClientRect().toJSON()) }));
+  for (const b of boxes.buttons) { expect(b.left).toBeGreaterThanOrEqual(boxes.group.left); expect(b.right).toBeLessThanOrEqual(boxes.group.right + 1); }
+  await expect(cards.first()).toHaveClass(/translation-untranslated/);
+  await expect(cards.nth(2)).toHaveClass(/translation-translated/);
+  await page.getByRole('button', { name: 'Décocher', exact: true }).click();
+  await expect(group).toHaveCount(0);
+});

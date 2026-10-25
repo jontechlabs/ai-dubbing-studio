@@ -3,6 +3,8 @@ import { useVirtualizer } from '@tanstack/react-virtual';
 import {
   AlertTriangle,
   AudioLines,
+  BadgeCheck,
+  BadgeMinus,
   Captions,
   ChevronDown,
   FilePlus2,
@@ -22,6 +24,7 @@ import { assignCharacter } from '../domain/characters';
 import { selectedGeneration, staleGeneration } from '../domain/tts';
 import {
   approveTranslation,
+  approveTranslations,
   translationState,
   translationStates,
   type TranslationState,
@@ -67,6 +70,13 @@ function DialoguesPane({
   const [review, setReview] = useState(false);
   const [translationFilter, setTranslationFilter] = useState<'all' | TranslationState>('all');
   const states = useMemo(() => (project ? translationStates(project) : new Map()), [project]);
+  const selectedTranslations = useMemo(
+    () => ({
+      pending: checkedIds.filter((id) => states.get(id) === 'translated').length,
+      approved: checkedIds.filter((id) => states.get(id) === 'approved').length,
+    }),
+    [checkedIds, states],
+  );
   const scrollRef = useRef<HTMLDivElement>(null);
   const checkedAnchor = useRef<string | null>(null);
   const numbers = useMemo(
@@ -228,6 +238,37 @@ function DialoguesPane({
           <ScanFace size={13} />
           {t('batchLipCompact')}
         </button>
+        {checkedIds.length > 0 && (
+          <div
+            className="translation-selection-actions"
+            role="group"
+            aria-label={t('translationSelection')}
+          >
+            <span>{t('translationSelectionCount', { count: checkedIds.length })}</span>
+            <button
+              className="button subtle"
+              aria-label={t('translationApproveSelection')}
+              title={t('translationApproveSelectionHint', { count: selectedTranslations.pending })}
+              disabled={busy || !selectedTranslations.pending}
+              onClick={() => onEdit((p) => approveTranslations(p, checkedIds, true))}
+            >
+              <BadgeCheck size={14} />
+              {t('translationApproveCompact')}
+            </button>
+            <button
+              className="button subtle"
+              aria-label={t('translationUnapproveSelection')}
+              title={t('translationUnapproveSelectionHint', {
+                count: selectedTranslations.approved,
+              })}
+              disabled={busy || !selectedTranslations.approved}
+              onClick={() => onEdit((p) => approveTranslations(p, checkedIds, false))}
+            >
+              <BadgeMinus size={14} />
+              {t('translationUnapproveCompact')}
+            </button>
+          </div>
+        )}
       </div>
       <div className="dialogue-scroll" ref={scrollRef}>
         {!lines.length ? (

@@ -213,6 +213,30 @@ try {
     await call('studio_open_project',{path:projectRoot});
     const qualityProject=await call('studio_get_project');assert.equal(qualityProject.formatVersion,19);assert.deepEqual(qualityProject.dialogues[lineIndex].voiceSettings.quality,{inferenceSteps:20,cfgStrength:1.6});assert.deepEqual(qualityProject.generations,beforeQuality.generations);
     proofs.qualityCatalog=8;proofs.reopenFormat19=true;proofs.qualityOldTakesPreserved=true;
+    // One persisted bulk edit, including all existing generated/recorded takes.
+    const reviewIds=qualityProject.dialogues.map(line=>line.id),reviewContext=await context();
+    await call('studio_set_selection',{ids:reviewIds});
+    assert.deepEqual((await state()).checkedIds,reviewIds);
+    const reviewed=await call('studio_approve_translations',{context:reviewContext,ids:[...reviewIds,reviewIds[0]],approved:true});
+    assert.equal((await call('studio_get_dialogues',{status:'approved'})).total,reviewIds.length);
+    const reviewProject=await call('studio_get_project');
+    for(const field of ['dialogues','generations','sourceCues','targetCues','tracks','voiceEdits','media'])assert.deepEqual(reviewProject[field],qualityProject[field]);
+    const badReview=await client.callTool({name:'studio_approve_translations',arguments:{context:reviewed.context,ids:[reviewIds[0],'missing'],approved:false}});
+    assert(badReview.isError);assert.deepEqual((await call('studio_get_project')).translationApprovals,reviewProject.translationApprovals);
+    const staleReview=await client.callTool({name:'studio_approve_translations',arguments:{context:reviewContext,ids:reviewIds,approved:false}});assert(staleReview.isError);
+    await call('studio_history',{context:reviewed.context,direction:'undo'});
+    assert.equal((await call('studio_get_dialogues',{status:'approved'})).total,0);
+    await call('studio_history',{context:await context(),direction:'redo'});
+    assert.equal((await call('studio_get_dialogues',{status:'approved'})).total,reviewIds.length);
+    await call('studio_approve_translations',{context:await context(),ids:reviewIds,approved:false});
+    assert.equal((await call('studio_get_dialogues',{status:'approved'})).total,0);
+    await call('studio_history',{context:await context(),direction:'undo'});
+    await call('studio_open_project',{path:projectRoot});
+    const reopenedReview=await call('studio_get_project');
+    assert.deepEqual(reopenedReview.translationApprovals,reviewProject.translationApprovals);
+    assert.deepEqual(reopenedReview.generations,qualityProject.generations);
+    assert.deepEqual(await fs.readFile(path.join(projectRoot,basePath)),baseWave);
+    proofs.bulkTranslationReview={atomic:true,undoRedo:true,reopen:true,staleAndUnknownRejected:true,voiceTakesPreserved:true};
     await fs.writeFile(args.proof,JSON.stringify(proofs,null,2)+'\n','utf8');
     console.log('MCP_NATIVE_PROOF '+JSON.stringify(proofs));
 } catch(error){if(stderr)console.error(stderr.slice(-2000));throw error;}

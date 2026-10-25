@@ -17,6 +17,8 @@ Annuler la préparation ne crée pas de référence. Un échec de conversion con
 
 Dans la liste des dialogues, cochez les répliques. **Maj + clic** étend la sélection entre deux cases dans le filtre courant. **Tout cocher (filtre actuel)** et **Décocher** agissent sur les cases, indépendamment de la réplique active du lecteur. La sélection est conservée en naviguant dans le projet ; les cases ne sont pas partagées entre projets.
 
+Depuis **v0.28.3**, les actions **Valider** et **Retirer** sous ces boutons permettent aussi de changer la validation des traductions cochées en une seule fois, sans modifier leurs voix. Voir le [guide illustré de la validation](BATCH-CACHE-AND-TRANSLATION-REVIEW.md#valider-ou-retirer-plusieurs-validations--v0283).
+
 Ouvrez **Doublage par lot**, puis choisissez :
 
 - **Toutes les répliques traduites du projet**, indépendamment du filtre de recherche ;

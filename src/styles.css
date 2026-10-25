@@ -362,6 +362,18 @@ h3 {
   height: 29px;
   gap: 5px;
 }
+.translation-selection-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  font-size: 10px;
+  color: var(--muted);
+}
+.translation-selection-actions > span {
+  margin-right: auto;
+}
 .dialogue-check {
   pointer-events: auto;
   accent-color: var(--accent);

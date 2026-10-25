@@ -321,6 +321,14 @@ tool(
   true,
 );
 tool(
+  'studio_approve_translations',
+  'Approve or withdraw translation approval for all supplied dialogue IDs in one undoable saved edit. Empty translations are skipped; unknown IDs reject the entire edit. Does not change text, timing or voice takes. Read checkedIds from studio_get_state to act on the visible UI selection, including checked dialogues hidden by filters.',
+  { ids: { type: 'array', minItems: 1, items: string }, approved: bool },
+  ['ids', 'approved'],
+  true,
+);
+
+tool(
   'studio_retime_dialogue',
   'Set subtitle timing for source, target or both without moving other lines.',
   { lineId: string, startMs: integer, endMs: integer, role: choice('source', 'target', 'both') },
