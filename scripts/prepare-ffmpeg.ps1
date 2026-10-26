@@ -7,9 +7,24 @@ $cacheRoot = Join-Path $repoRoot '.cache/ffmpeg'
 New-Item -ItemType Directory -Force -Path $cacheRoot | Out-Null
 if (-not $ArchivePath) {
     $ArchivePath = Join-Path $cacheRoot "ffmpeg-$($manifest.version).zip"
-    if (-not (Test-Path -LiteralPath $ArchivePath)) {
-        Write-Host "Downloading FFmpeg $($manifest.version) from Gyan.dev..."
-        Invoke-WebRequest -Uri $manifest.archiveUrl -OutFile $ArchivePath
+    $verifiedCache = (Test-Path -LiteralPath $ArchivePath -PathType Leaf) -and ((Get-FileHash -LiteralPath $ArchivePath -Algorithm SHA256).Hash -eq $manifest.sha256)
+    if (-not $verifiedCache) {
+        foreach ($source in @($manifest.archiveUrl, $manifest.mirrorUrl) | Where-Object { $_ }) {
+            $downloadPath = Join-Path $cacheRoot "download-$([guid]::NewGuid().ToString('N')).tmp"
+            try {
+                Write-Host "Downloading pinned FFmpeg $($manifest.version) from $(([uri]$source).Host)..."
+                Invoke-WebRequest -Uri $source -OutFile $downloadPath -TimeoutSec 180 -MaximumRetryCount 2 -RetryIntervalSec 3
+                if ((Get-FileHash -LiteralPath $downloadPath -Algorithm SHA256).Hash -ne $manifest.sha256) { throw 'Downloaded archive checksum mismatch' }
+                Move-Item -LiteralPath $downloadPath -Destination $ArchivePath -Force
+                $verifiedCache = $true
+                break
+            } catch {
+                Write-Warning "FFmpeg source $(([uri]$source).Host) failed or did not match the pinned checksum; trying the next official source."
+            } finally {
+                if (Test-Path -LiteralPath $downloadPath -PathType Leaf) { Remove-Item -LiteralPath $downloadPath -Force }
+            }
+        }
+        if (-not $verifiedCache) { throw 'Pinned FFmpeg archive unavailable from all official sources. No binaries were installed.' }
     }
 }
 $actualHash = (Get-FileHash -LiteralPath $ArchivePath -Algorithm SHA256).Hash

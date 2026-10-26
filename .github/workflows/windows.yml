@@ -61,6 +61,8 @@ jobs:
         run: |
           npm install --global pnpm@11.25.0
           pnpm install --frozen-lockfile
+      - name: Pinned media download fallback checks
+        run: ./scripts/test-media-download.ps1
       - name: Prepare pinned media and prosody tools
         run: |
           ./scripts/prepare-ffmpeg.ps1

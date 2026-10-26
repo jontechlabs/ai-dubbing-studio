@@ -1,5 +1,7 @@
 # Build and package
 
+`prepare-ffmpeg.ps1` reuses a verified cached archive and falls back from Gyan.dev to the publisher’s [official GitHub mirror](https://github.com/GyanD/codexffmpeg/releases/tag/9.0.2) when needed. Both sources must match the unchanged SHA-256 in `resources/toolchain.json` before any binary is installed. A partial default cache is retried; an explicit `-ArchivePath` with a wrong checksum fails without downloading. `scripts/test-media-download.ps1` exercises fallback and checksum failure with test-owned fixtures.
+
 ## Windows prerequisites
 
 The development toolchain used Node.js 24.19.0, pnpm 11.25.0 and Rust stable. JavaScript/Rust dependency resolutions are committed in both lockfiles. Install [Tauri's platform prerequisites](https://v2.tauri.app/start/prerequisites/), including MSVC C++ build tools, Windows SDK and WebView2 on Windows.
