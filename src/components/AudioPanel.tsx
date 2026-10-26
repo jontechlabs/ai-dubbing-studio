@@ -198,6 +198,7 @@ export function AudioPanel({
       <p className="panel-description">{t('separationQuality')}</p>
       {project && (
         <LocalSeparationPanel
+          onAudition={() => videoRef.current?.pause()}
           project={project}
           selection={selection}
           jobs={jobs}

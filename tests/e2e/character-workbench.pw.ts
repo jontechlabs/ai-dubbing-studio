@@ -22,12 +22,23 @@ test('gallery proposes similar thumbnails, manual gender, sample playback and lo
   await expect(page.locator('.character-gallery .character-card')).toHaveCount(2); await expect(page.locator('.character-group-label')).toContainText('2');
   await page.getByRole('combobox', { name: 'Genre · saisie manuelle' }).selectOption('man');
   await expect(page.locator('.save-indicator')).toHaveText('Sauvegardé'); expect((await saved(page)).characterProfiles['character-0'].gender).toBe('man');
-  await page.locator('.character-samples button').filter({ hasText: 'Écouter' }).first().click(); await expect(page.locator('.character-samples audio')).toHaveAttribute('src', /preview/);
+  await page.locator('video').evaluate((video: HTMLVideoElement) => video.play()); await page.locator('.character-samples button').filter({ hasText: 'Écouter' }).first().click(); await expect(page.locator('.character-samples audio')).toHaveAttribute('src', /preview/); await expect(page.locator('video')).toHaveJSProperty('paused', true);
   await page.getByRole('checkbox', { name: 'Sélectionner Personnage 01 pour fusionner' }).check(); await page.getByRole('checkbox', { name: 'Sélectionner Personnage 02 pour fusionner' }).check();
   await page.locator('.character-gallery').scrollIntoViewIfNeeded(); await expect.poll(() => page.locator('.character-gallery img').evaluateAll((rows: HTMLImageElement[]) => rows.every((im) => im.complete && im.naturalWidth > 0))).toBe(true); await page.screenshot({ path: 'test-results/screenshots/character-workbench.png' });
   const before = await saved(page); await page.getByRole('button', { name: 'Fusionner les fiches', exact: true }).click(); await expect(page.locator('.character-gallery .character-card')).toHaveCount(1); await expect(page.locator('.save-indicator')).toHaveText('Sauvegardé');
   let after = await saved(page); expect(after.characters[0].references).toHaveLength(2); expect(after.dialogues.slice(0, 2).map((l: any) => l.characterId)).toEqual(['character-0', 'character-0']); expect(after.generations).toEqual(before.generations);
   await page.getByRole('button', { name: 'Fermer', exact: true }).click(); await page.keyboard.press('Control+z'); await expect.poll(async () => (await saved(page)).characters.length).toBe(2);
+});
+test('latest local separation previews remain first after more than eight jobs', async ({ page }) => {
+  await ready(page);
+  await page.evaluate(async () => {
+    for (let i = 0; i < 9; i++) {
+      await (window as any).__TAURI_INTERNALS__.invoke('separate_audio_region', { options: { sourceTrackId: 'music', startMs: i * 1000, endMs: (i + 1) * 1000, device: 'cpu' } });
+      (window as any).__completeLocalSeparation();
+    }
+  });
+  await page.getByRole('button', { name: 'Audio', exact: true }).click();
+  const results = page.locator('.local-separation-result'); await expect(results).toHaveCount(8); await expect(results.first()).toContainText('00:00:08.000');
 });
 test('merge trims and joins selected references as one new default while retaining originals', async ({ page }) => {
   await ready(page); await page.getByRole('button', { name: 'Personnages', exact: true }).click();

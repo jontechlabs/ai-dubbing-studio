@@ -208,6 +208,7 @@ export function Panels({
         {panel === 'jobs' && <JobsPanel jobs={jobs} onError={onError} />}
         {panel === 'characters' && project && (
           <CharactersPanel
+            onAudition={() => videoRef.current?.pause()}
             selection={audioSelection?.mediaId === project.media?.id ? audioSelection : null}
             snapshot={snapshot}
             applySnapshot={applySnapshot}

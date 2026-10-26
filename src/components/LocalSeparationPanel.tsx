@@ -15,6 +15,7 @@ export function LocalSeparationPanel({
   run,
   onError,
   showJobs,
+  onAudition,
 }: {
   project: Project;
   selection: AudioSelection | null;
@@ -25,6 +26,7 @@ export function LocalSeparationPanel({
   run: (operation: () => Promise<Project | null>) => Promise<void>;
   onError: (message: string) => void;
   showJobs: () => void;
+  onAudition: () => void;
 }) {
   const { t } = useTranslation();
   const tracks = audioTracks(project).filter((track) => track.kind !== 'dubbing');
@@ -39,7 +41,7 @@ export function LocalSeparationPanel({
       (j) => j.kind === 'separation' && j.status === 'succeeded' && j.projectId === project.id,
     )
     .map((j) => j.id)
-    .slice(-8)
+    .slice(0, 8)
     .join(',');
   useEffect(() => {
     let disposed = false;
@@ -179,72 +181,82 @@ export function LocalSeparationPanel({
             ))}
         </select>
       </label>
-      {proposals
-        .slice()
-        .reverse()
-        .map((p) => (
-          <article key={p.id} className="local-separation-result">
-            <strong>
-              {formatTime(p.options.startMs)} → {formatTime(p.options.endMs)}
-            </strong>
-            <p className="panel-description">
-              {t(
-                p.applied
-                  ? 'localSeparationApplied'
-                  : p.stale
-                    ? 'localSeparationStale'
-                    : 'localSeparationReview',
+      {proposals.map((p) => (
+        <article key={p.id} className="local-separation-result">
+          <strong>
+            {tracks.some((track) => track.id === p.options.sourceTrackId)
+              ? t(trackLabel(tracks.find((track) => track.id === p.options.sourceTrackId)!))
+              : p.options.sourceTrackId}
+            {' · '}
+            {formatTime(p.options.startMs)} → {formatTime(p.options.endMs)}
+          </strong>
+          <p className="panel-description">
+            {t(
+              p.applied
+                ? 'localSeparationApplied'
+                : p.stale
+                  ? 'localSeparationStale'
+                  : 'localSeparationReview',
+            )}
+          </p>
+          {p.roles.map((role) => (
+            <label className="field" key={role}>
+              <span>{t(`stem.${role}`)}</span>
+              {urls[`${p.id}:${role}`] && (
+                <audio
+                  aria-label={t('localSeparationAudition', { role: t(`stem.${role}`) })}
+                  controls
+                  onPlay={(event) => {
+                    onAudition();
+                    event.currentTarget
+                      .closest('.local-separation')
+                      ?.querySelectorAll('audio')
+                      .forEach((audio) => {
+                        if (audio !== event.currentTarget) audio.pause();
+                      });
+                  }}
+                  preload="none"
+                  src={urls[`${p.id}:${role}`]}
+                />
               )}
-            </p>
-            {p.roles.map((role) => (
-              <label className="field" key={role}>
-                <span>{t(`stem.${role}`)}</span>
-                {urls[`${p.id}:${role}`] && (
-                  <audio
-                    aria-label={t('localSeparationAudition', { role: t(`stem.${role}`) })}
-                    controls
-                    preload="none"
-                    src={urls[`${p.id}:${role}`]}
-                  />
-                )}
-              </label>
-            ))}
-            {!p.applied && (
-              <button
-                className="button accent"
-                disabled={busy || p.stale}
-                onClick={() => void run(() => bridge.applyLocalSeparation(p.id))}
-              >
-                {t('localSeparationApply')}
-              </button>
-            )}
-            {p.applied && (
-              <button
-                className="button"
-                disabled={busy}
-                onClick={() => {
-                  const track = tracks.find((track) => track.role === 'speech');
-                  if (!track) {
-                    onError('LOCAL_SEPARATION_STEMS_REQUIRED');
-                    return;
-                  }
-                  void run(async () => {
-                    await bridge.identifySpeakers(0.75, {
-                      startMs: p.options.startMs,
-                      endMs: p.options.endMs,
-                      trackId: track.id,
-                      ...(reference ? { referenceCharacterId: reference } : {}),
-                    });
-                    showJobs();
-                    return null;
+            </label>
+          ))}
+          {!p.applied && (
+            <button
+              className="button accent"
+              disabled={busy || p.stale}
+              onClick={() => void run(() => bridge.applyLocalSeparation(p.id))}
+            >
+              {t('localSeparationApply')}
+            </button>
+          )}
+          {p.applied && (
+            <button
+              className="button"
+              disabled={busy}
+              onClick={() => {
+                const track = tracks.find((track) => track.role === 'speech');
+                if (!track) {
+                  onError('LOCAL_SEPARATION_STEMS_REQUIRED');
+                  return;
+                }
+                void run(async () => {
+                  await bridge.identifySpeakers(0.75, {
+                    startMs: p.options.startMs,
+                    endMs: p.options.endMs,
+                    trackId: track.id,
+                    ...(reference ? { referenceCharacterId: reference } : {}),
                   });
-                }}
-              >
-                {t('localIdentifyAfter')}
-              </button>
-            )}
-          </article>
-        ))}
+                  showJobs();
+                  return null;
+                });
+              }}
+            >
+              {t('localIdentifyAfter')}
+            </button>
+          )}
+        </article>
+      ))}
     </section>
   );
 }

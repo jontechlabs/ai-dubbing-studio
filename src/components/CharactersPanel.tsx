@@ -35,11 +35,13 @@ export function CharactersPanel({
   snapshot,
   applySnapshot,
   onNavigate,
+  onAudition,
 }: {
   selection: AudioSelection | null;
   snapshot: () => Promise<Project>;
   applySnapshot: (before: Project, after: Project) => Promise<void>;
   onNavigate: (line: Dialogue) => void;
+  onAudition: () => void;
   project: Project;
   jobs: Job[];
   selectedId: string | null;
@@ -83,7 +85,17 @@ export function CharactersPanel({
         .catch((error) => onError(String(error)));
   }, [onError]);
   return (
-    <div className="panel-body characters-panel">
+    <div
+      className="panel-body characters-panel"
+      onPlayCapture={(event) => {
+        if (!(event.target instanceof HTMLAudioElement)) return;
+        onAudition();
+        const playing = event.target;
+        event.currentTarget.querySelectorAll('audio').forEach((audio) => {
+          if (audio !== playing) audio.pause();
+        });
+      }}
+    >
       <p className="panel-description">{t('charactersHint')}</p>
       <div className="settings-section">
         <h3>

@@ -33,7 +33,7 @@ Les vignettes proches sont regroupées visuellement et des propositions de rappr
 4. L’assemblage accepte 1 à 16 extraits de 100 ms minimum, pour un total de **1 à 20 secondes**. Une nouvelle référence WAV mono est créée ; les anciennes restent disponibles. Après recoupe, sa transcription est laissée vide pour éviter d’associer un texte inexact : utilisez la transcription automatique ou corrigez-la.
 5. Fusionnez. Les répliques sont réattribuées à la fiche conservée ; toutes les références sont gardées. Les WAV et les métadonnées historiques des essais restent inchangés. **Ctrl+Z** annule l’ensemble de la fusion, **Ctrl+Y** la rétablit.
 
-Dans **Extraits du personnage**, choisissez une piste et écoutez les passages où il est assigné, par pages de six. La préécoute est limitée à 20 secondes par passage. **Aller à la réplique** referme le panneau et recadre la lecture/timeline sur le passage.
+Dans **Extraits du personnage**, choisissez une piste et écoutez les passages où il est assigné, par pages de six. La préécoute est limitée à 20 secondes par passage et met la vidéo en pause pour éviter deux sons simultanés. **Aller à la réplique** referme le panneau et recadre la lecture/timeline sur le passage.
 
 ## Retrouver un personnage sur une zone
 
