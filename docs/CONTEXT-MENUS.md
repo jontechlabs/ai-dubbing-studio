@@ -18,6 +18,10 @@ Cette commande retire un réglage de mixage : elle conserve le fichier audio, la
 
 Si vous avez seulement dessiné une sélection sans appliquer de traitement, son menu propose **Effacer la sélection audio**. Cette action retire uniquement le cadre de sélection. Elle est également disponible sur une zone enregistrée si vous souhaitez simplement fermer ses contrôles.
 
+## Réinitialiser la durée d’un doublage
+
+Depuis **v0.29.0**, le clic droit sur un bloc de la piste **Doublage** propose **Réinitialiser la durée**. Le bloc retrouve sa durée automatique, avec compression dans l’espace disponible si nécessaire. Le décalage, les retouches internes, les sous-titres et tous les essais sont conservés. L’action est annulable avec **Ctrl+Z** et ne déplace pas la tête de lecture. Elle est grisée lorsque le bloc n’a pas de durée manuelle ou lorsque l’édition est verrouillée. [Détails et capture](DUBBING-PLACEMENT.md).
+
 ## Menu de l’application et des pistes
 
 - Dans l’espace de travail : **Annuler la dernière modification**, **Rétablir la modification**, **Sauvegarder**, **Paramètres**.

@@ -4,7 +4,7 @@ from pathlib import Path
 import tempfile
 import unittest
 from unittest.mock import patch
-from multilingual_worker import validate, voxcpm_arguments, chatterbox_arguments, verify_models
+from multilingual_worker import validate, voxcpm_arguments, chatterbox_arguments, verify_models, protect_pcm_peaks
 from drama_worker import target_prompt, target_chunks
 
 
@@ -100,6 +100,40 @@ class MultilingualTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'TTS_TEXT_MISMATCH'):
             target_chunks(request(promptText='あぁ！ 外すんだよ!!'))
         self.assertEqual(target_chunks(r, lambda text: [text]), ['[Speak the following text in French] Ah ! Je vire ça !'])
+
+
+class PcmProtectionTests(unittest.TestCase):
+    def test_clean_audio_is_not_boosted_or_changed(self):
+        import numpy as np
+        samples = (.25 * np.sin(np.arange(24000) / 24000 * 2 * np.pi * 220)).astype('float32')
+        audio, peak, gain = protect_pcm_peaks(samples)
+        self.assertIs(audio, samples)
+        np.testing.assert_array_equal(audio, samples)
+        self.assertEqual(gain, 1)
+        self.assertAlmostEqual(peak, .25, places=5)
+
+    def test_overshoot_is_attenuated_without_flattening_samples_or_changing_duration(self):
+        import numpy as np
+        import soundfile as sf
+        samples = (1.5 * np.sin(np.arange(48000) / 24000 * 2 * np.pi * 220)).astype('float32')
+        audio, peak, gain = protect_pcm_peaks(samples)
+        self.assertGreater(peak, 1)
+        self.assertLess(gain, 1)
+        np.testing.assert_allclose(audio, samples * gain, atol=1e-7)
+        self.assertLessEqual(float(np.max(np.abs(audio))), .981)
+        with tempfile.TemporaryDirectory(prefix='PCM-é-') as directory:
+            path = Path(directory) / 'doublage.wav'
+            sf.write(path, audio, 24000, subtype='PCM_16')
+            encoded, rate = sf.read(path, dtype='int16')
+            self.assertEqual(rate, 24000)
+            self.assertEqual(len(encoded), len(samples))
+            self.assertFalse(np.any((encoded == 32767) | (encoded == -32768)))
+
+    def test_empty_silent_or_nonfinite_output_is_rejected_before_encoding(self):
+        import numpy as np
+        for samples in [[], [0, 0], [np.nan], [np.inf], [-np.inf]]:
+            with self.subTest(samples=samples), self.assertRaisesRegex(ValueError, 'TTS_EMPTY_AUDIO'):
+                protect_pcm_peaks(samples)
 
 
 if __name__ == '__main__':

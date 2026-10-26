@@ -36,6 +36,12 @@ Pour VoxCPM2, le guide officiel recommande d’essayer un guidage de 1,5–1,6 e
 
 Une référence isolée, sans musique, bruit, saturation ou réverbération marquée, aide davantage qu’une augmentation systématique des curseurs. Préférez plusieurs secondes de parole naturelle et une vitesse proche de 1×. Si le WAV seul est propre mais la timeline sonne métallique, comparez la vitesse et l’ajustement de durée avant de changer les paramètres de synthèse. Aucun filtre de « restauration » n’est ajouté automatiquement. Les essais restent au format WAV PCM 24 kHz du studio ; ce réglage ne convertit pas tout le pipeline vers une nouvelle fréquence.
 
+## VoxCPM2 : protection de la sortie PCM (v0.29.0)
+
+Après la synthèse, le rééchantillonnage et le réglage de vitesse, le studio mesure la crête de la nouvelle voix VoxCPM2. Si elle dépasse la plage numérique du WAV, il atténue uniformément toute la forme d’onde pour placer sa crête à 0,98 avant l’encodage PCM 16 bits. Cela évite d’écraser les sommets des échantillons par écrêtage, une cause possible de grésillement. Une sortie déjà dans la plage n’est ni amplifiée ni modifiée par cette protection. Le journal indique `VoxCPM2 PCM protection`, la crête et le gain réellement appliqué.
+
+Cette protection conserve la durée, les rapports entre échantillons, les paramètres de synthèse et les anciens essais. Elle n’ajoute aucun débruiteur et ne répare pas un artefact métallique déjà produit par le modèle. Les autres moteurs conservent leur traitement de sortie. Si tous les profils donnent encore des défauts, comparez plusieurs graines avec une référence propre et exportez un WAV défectueux accompagné de la référence, du texte et des réglages pour identifier la cause. Un WAV propre peut aussi saturer plus tard si les volumes du mix sont trop élevés : contrôlez les [indicateurs de saturation](AUDIO-LEVELS.md).
+
 ## Lots, sauvegarde et MCP
 
 Les réglages choisis pour un lot s’appliquent à chaque nouvel essai. Le modèle reste chargé pendant le lot, et les paramètres de la requête sont réappliqués à chaque réplique. Revenir au profil Standard rétablit les valeurs standard, même dans une session déjà chargée. La libération en fin de lot ou lors de l’annulation reste assurée par l’arrêt du processus de génération.

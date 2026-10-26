@@ -37,6 +37,7 @@ import { subtitleDisplay, toggleSubtitles } from '../domain/subtitleDisplay';
 import {
   dubbingClips,
   dubbingOffset,
+  dubbingDuration,
   dubbingBounds,
   moveDubbing,
   resizeDubbing,
@@ -743,6 +744,20 @@ export const Timeline = memo(function Timeline({
                         title={`${clip.generation.text}\n${formatTime(clip.startMs)} → ${formatTime(clip.endMs)}\n${t('dubbingDragHint')}`}
                         aria-label={`${t('dubbingTrack')} ${associations.numbers.get(clip.line.id)}`}
                         disabled={busy}
+                        onContextMenu={(event) =>
+                          onContextMenu(
+                            event,
+                            `${t('dubbingTrack')} ${associations.numbers.get(clip.line.id)}`,
+                            [
+                              {
+                                label: t('contextResetDubbingDuration'),
+                                disabled:
+                                  busy || dubbingDuration(project, clip.line.id) === undefined,
+                                run: () => onEdit((p) => resizeDubbing(p, clip.line.id, null)),
+                              },
+                            ],
+                          )
+                        }
                         onPointerDown={(event) => {
                           if (audioTool || event.button !== 0) return;
                           event.preventDefault();

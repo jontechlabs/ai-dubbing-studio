@@ -90,6 +90,19 @@ def verify_models(request):
                 raise ValueError('MODEL_CHECKSUM_FAILED')
 
 
+def protect_pcm_peaks(audio):
+    """Avoid hard PCM clipping with attenuation only, preserving relative samples."""
+    import numpy as np
+    samples = np.asarray(audio, dtype=np.float32)
+    if samples.size == 0 or not np.isfinite(samples).all():
+        raise ValueError('TTS_EMPTY_AUDIO')
+    peak = float(np.max(np.abs(samples)))
+    if peak < .001:
+        raise ValueError('TTS_EMPTY_AUDIO')
+    gain = .98 / peak if peak > 1 else 1.0
+    return (samples * gain if gain < 1 else samples), peak, gain
+
+
 def load_model(request, device):
     directory = Path(request['modelDir'])
     if request['variantId'] == 'voxcpm2-bf16':
@@ -184,6 +197,10 @@ def generate(request, session=None):
         audio = librosa.effects.time_stretch(audio, rate=request['speed'])
     if not 0 < len(audio) <= 120 * 24000:
         raise ValueError('TTS_EMPTY_AUDIO')
+    if request['variantId'] == 'voxcpm2-bf16':
+        from math import log10
+        audio, peak, gain = protect_pcm_peaks(audio)
+        report(log=f'VoxCPM2 PCM protection: pre-PCM peak={peak:.6f}; gain={20 * log10(gain):+.2f} dB. Attenuation only when the generated waveform would clip; no denoising or voice change.')
     sf.write(request['outputPath'], np.clip(audio, -1, 1), 24000, subtype='PCM_16')
     metadata = dict(device=device, deviceName=name, peakVramMb=
                     round(torch.cuda.max_memory_allocated(device) / 1024**2) if device.startswith('cuda:') else 0)

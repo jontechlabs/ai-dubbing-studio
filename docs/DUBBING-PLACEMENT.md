@@ -16,6 +16,12 @@ Glissez le **bord droit** du bloc de doublage. Vers la droite, la voix ralentit 
 
 **Durée automatique** supprime la durée imposée : les prises courtes retrouvent leur rythme naturel, les prises trop longues sont comprimées dans leur créneau. Les durées manuelles sont comprises entre 1 ms et 120 s et sont limitées au départ de la voix suivante et à la fin de la vidéo. Un créneau nul ou une forte accélération restent signalés avant l’export. Écoutez les fortes variations : préserver la hauteur ne garantit pas une articulation naturelle ni un alignement phonème par phonème.
 
+Depuis **v0.29.0**, faites aussi **clic droit sur le bloc Doublage → Réinitialiser la durée**. Cette commande retire seulement la durée manuelle du bloc visé et rétablit son ajustement automatique. Elle conserve son décalage, les retouches internes, les autres répliques et tous les essais ; les fichiers WAV et les sous-titres restent intacts. **Ctrl+Z** rétablit la durée précédente. La commande est grisée si aucune durée manuelle n’est appliquée ou si une opération verrouille l’édition. Pour retirer aussi le déplacement, utilisez séparément **Réinitialiser le calage**.
+
+![Réinitialiser la durée depuis la timeline](screenshots/reset-dubbing-duration-fr.png)
+
+*Interface réelle avec média synthétique et commandes natives simulées.*
+
 Le décalage et la durée sont conservés par réplique et langue cible, même en choisissant une autre prise. Ils sont sauvegardés, annulables et rétablis au rechargement. Les projets avec ces réglages passent au **format 7** ; utilisez v0.7.3 ou ultérieure pour les rouvrir. Les anciens projets restent compatibles.
 
 Les timecodes et textes des deux SRT ne changent pas ; les WAV des essais restent intacts. La lecture synchronisée et l’export MKV utilisent le même audio ajusté, mis en cache dans le projet. L’écoute A/B et l’export WAV d’un essai conservent son audio original. La première préparation d’une nouvelle durée peut prendre un court instant.

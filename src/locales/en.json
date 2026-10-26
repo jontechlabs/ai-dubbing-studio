@@ -1382,5 +1382,6 @@
   "localSeparationAudition": "Audition {{role}}",
   "localSeparationApply": "Apply all three results",
   "localIdentifyAfter": "Identify voices in this section again",
-  "speakerNoMatches": "No sufficiently confident voice matches. Try another reference or threshold."
+  "speakerNoMatches": "No sufficiently confident voice matches. Try another reference or threshold.",
+  "contextResetDubbingDuration": "Reset duration"
 }

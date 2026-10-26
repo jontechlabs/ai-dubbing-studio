@@ -240,6 +240,55 @@ pub fn asset(core: &crate::Core, path: &str) -> Result<String, String> {
     Ok(resolved.to_string_lossy().into_owned())
 }
 
+// Short interactive previews have no queued job, unlike speaker analysis.
+// Bound their lifetime and close stdin; do not send them through the job-only runner.
+async fn direct_process(
+    executable: &std::path::Path,
+    args: &[String],
+    flag: &std::sync::atomic::AtomicBool,
+    limit: std::time::Duration,
+) -> Result<(), String> {
+    let output = tokio::select! {
+        _ = crate::jobs::cancelled(flag) => return Err("CANCELLED".into()),
+        result = tokio::time::timeout(limit, crate::media::command(executable)
+            .args(args).env("PYTHONUNBUFFERED", "1").env("PYTHONUTF8", "1")
+            .env("PYTHONIOENCODING", "utf-8:backslashreplace")
+            .stdin(std::process::Stdio::null()).output()) => result,
+    }
+    .map_err(|_| "PROCESS_FAILED: character preview timeout".to_string())?
+    .map_err(io_error)?;
+    for line in String::from_utf8_lossy(&output.stdout).lines() {
+        if let Some(error) = serde_json::from_str::<serde_json::Value>(line)
+            .ok()
+            .and_then(|value| value["error"].as_str().map(str::to_owned))
+        {
+            return Err(error);
+        }
+    }
+    if !output.status.success() {
+        let start = output.stderr.len().saturating_sub(4096);
+        return Err(format!(
+            "PROCESS_FAILED: {}: {}",
+            output.status,
+            String::from_utf8_lossy(&output.stderr[start..])
+        ));
+    }
+    Ok(())
+}
+async fn process<R: tauri::Runtime>(
+    core: &std::sync::Arc<crate::Core>,
+    app: &tauri::AppHandle<R>,
+    key: &str,
+    executable: &std::path::Path,
+    args: &[String],
+    flag: &std::sync::atomic::AtomicBool,
+) -> Result<(), String> {
+    if key.is_empty() {
+        direct_process(executable, args, flag, std::time::Duration::from_secs(60)).await
+    } else {
+        crate::separation::process(core, app, key, executable, args, flag).await
+    }
+}
 async fn frame<R: tauri::Runtime>(
     core: &std::sync::Arc<crate::Core>,
     app: &tauri::AppHandle<R>,
@@ -249,7 +298,7 @@ async fn frame<R: tauri::Runtime>(
     output: &std::path::Path,
     flag: &std::sync::atomic::AtomicBool,
 ) -> Result<(), String> {
-    crate::separation::process(
+    process(
         core,
         app,
         key,
@@ -290,7 +339,7 @@ async fn portrait_worker<R: tauri::Runtime>(
     let output = folder.join("portraits-result.json");
     let request = folder.join("portraits-request.json");
     project::atomic_write(&request,&serde_json::to_vec(&serde_json::json!({"models":crate::speakers::root(core),"auto":automatic,"profile":"auto","items":items,"output":output})).map_err(io_error)?)?;
-    crate::separation::process(
+    process(
         core,
         app,
         key,
@@ -577,7 +626,7 @@ pub async fn combine_reference<R: tauri::Runtime>(
         output.to_string_lossy().into_owned(),
     ]);
     let flag = std::sync::atomic::AtomicBool::new(false);
-    crate::separation::process(
+    process(
         &core,
         &app,
         "",
@@ -658,4 +707,97 @@ pub async fn preview_sample<R: tauri::Runtime>(
         return Err("STALE_REVISION".into());
     }
     Ok(output.to_string_lossy().into_owned())
+}
+
+#[cfg(test)]
+mod process_tests {
+    use super::direct_process;
+    use std::{path::PathBuf, sync::atomic::AtomicBool, time::Duration};
+
+    fn shell(script: &str) -> (PathBuf, Vec<String>) {
+        if cfg!(windows) {
+            (
+                "powershell.exe".into(),
+                vec![
+                    "-NoProfile".into(),
+                    "-NonInteractive".into(),
+                    "-Command".into(),
+                    script.into(),
+                ],
+            )
+        } else {
+            ("sh".into(), vec!["-c".into(), script.into()])
+        }
+    }
+    #[tokio::test]
+    async fn interactive_preview_closes_stdin_and_reports_process_and_worker_errors() {
+        let (exe, args) = shell(if cfg!(windows) {
+            "[Console]::In.ReadToEnd() | Out-Null; [Console]::Out.Write('{\"progress\":1}')"
+        } else {
+            "cat >/dev/null; printf '%s' '{\"progress\":1}'"
+        });
+        direct_process(
+            &exe,
+            &args,
+            &AtomicBool::new(false),
+            Duration::from_secs(30),
+        )
+        .await
+        .unwrap();
+        let (exe, args) = shell(if cfg!(windows) {
+            "[Console]::Error.Write('bad preview'); exit 1"
+        } else {
+            "printf 'bad preview' >&2; exit 1"
+        });
+        assert!(direct_process(
+            &exe,
+            &args,
+            &AtomicBool::new(false),
+            Duration::from_secs(30)
+        )
+        .await
+        .unwrap_err()
+        .contains("bad preview"));
+        let (exe, args) = shell(if cfg!(windows) {
+            "[Console]::Out.Write('{\"error\":\"CHARACTER_PORTRAIT_INVALID\"}'); exit 1"
+        } else {
+            "printf '%s' '{\"error\":\"CHARACTER_PORTRAIT_INVALID\"}'; exit 1"
+        });
+        assert_eq!(
+            direct_process(
+                &exe,
+                &args,
+                &AtomicBool::new(false),
+                Duration::from_secs(30)
+            )
+            .await
+            .unwrap_err(),
+            "CHARACTER_PORTRAIT_INVALID"
+        );
+    }
+    #[tokio::test]
+    async fn interactive_preview_deadline_and_cancellation_stop_stalled_processes() {
+        let (exe, args) = shell(if cfg!(windows) {
+            "Start-Sleep -Seconds 30"
+        } else {
+            "exec sleep 30"
+        });
+        let started = std::time::Instant::now();
+        assert!(direct_process(
+            &exe,
+            &args,
+            &AtomicBool::new(false),
+            Duration::from_millis(100)
+        )
+        .await
+        .unwrap_err()
+        .contains("timeout"));
+        assert!(started.elapsed() < Duration::from_secs(5));
+        assert_eq!(
+            direct_process(&exe, &args, &AtomicBool::new(true), Duration::from_secs(30))
+                .await
+                .unwrap_err(),
+            "CANCELLED"
+        );
+    }
 }
