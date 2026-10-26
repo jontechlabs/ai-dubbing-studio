@@ -89,7 +89,7 @@ export function ModelsPanel({
         </span>
         <p>{t('modelSpeakerHint')}</p>
         <small>
-          {speakers ? Math.ceil(speakers.sizeBytes / 1024 / 1024) : 71} MiB · CPU · sherpa-onnx
+          {speakers ? Math.ceil(speakers.sizeBytes / 1024 / 1024) : 110} MiB · CPU · sherpa-onnx
           1.13.8
         </small>
         <button

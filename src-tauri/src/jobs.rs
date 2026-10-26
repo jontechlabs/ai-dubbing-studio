@@ -124,6 +124,8 @@ pub struct PersistedJob {
     #[serde(default)]
     pub speaker_request: Option<crate::speakers::Request>,
     #[serde(default)]
+    pub local_separation: Option<crate::local_separation::Request>,
+    #[serde(default)]
     pub tts_install: Option<bool>,
     #[serde(default)]
     pub voice_install: Option<String>,
@@ -244,6 +246,7 @@ pub fn create<R: tauri::Runtime>(
                     runtime_cuda: None,
                     speaker_install: false,
                     speaker_request: None,
+                    local_separation: None,
                     tts_install: None,
                     voice_install: None,
                     tts_request: None,

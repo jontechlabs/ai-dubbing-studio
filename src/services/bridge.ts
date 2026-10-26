@@ -233,8 +233,63 @@ export function speakerStatus() {
 export function installSpeakerRuntime() {
   return invoke<string>('install_speaker_runtime');
 }
-export function identifySpeakers(threshold = 0.75) {
-  return invoke<string>('identify_speakers', { threshold });
+export function identifySpeakers(
+  threshold = 0.75,
+  scope?: import('../domain/characterReview').SpeakerScope,
+) {
+  return invoke<string>('identify_speakers', { threshold, scope });
+}
+export interface PortraitOptions {
+  characterId: string;
+  lineId: string;
+  atMs?: number;
+  crop?: { x: number; y: number; width: number; height: number };
+}
+export interface ReferenceSegment {
+  characterId: string;
+  referenceId: string;
+  startMs: number;
+  endMs: number;
+}
+export interface LocalSeparationOptions {
+  sourceTrackId: string;
+  startMs: number;
+  endMs: number;
+  device: string;
+}
+export interface LocalSeparationProposal {
+  id: string;
+  options: LocalSeparationOptions;
+  stale: boolean;
+  applied: boolean;
+  roles: string[];
+}
+export function separateAudioRegion(options: LocalSeparationOptions) {
+  return invoke<string>('separate_audio_region', { options });
+}
+export function localSeparationResult(id: string) {
+  return invoke<LocalSeparationProposal>('local_separation_result', { id });
+}
+export async function localSeparationUrl(id: string, role: string) {
+  return convertFileSrc(await invoke<string>('local_separation_path', { id, role }));
+}
+export function applyLocalSeparation(id: string) {
+  return invoke<Project>('apply_local_separation', { id });
+}
+export function captureCharacterPortrait(options: PortraitOptions) {
+  return invoke<Project>('capture_character_portrait', { options });
+}
+export function prepareCharacterReference(segments: ReferenceSegment[], label: string) {
+  return invoke<import('../domain/types').VoiceReference>('prepare_character_reference', {
+    segments,
+    label,
+  });
+}
+export async function characterAssetUrl(path: string) {
+  return convertFileSrc(await invoke<string>('character_asset_path', { path }));
+}
+export async function characterSampleUrl(lineId: string, trackId?: string) {
+  return convertFileSrc(await invoke<string>('preview_character_sample', { lineId, trackId }));
 }
 export async function importVoiceReference(
   characterId: string,

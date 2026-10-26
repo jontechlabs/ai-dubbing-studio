@@ -9,6 +9,7 @@ import { validateVoiceEdit } from './voiceEdit';
 import { validateProsody } from './prosody';
 import { validateTakeOrigins } from './voiceCapture';
 import { validateEffectsProject } from './audioEffects';
+import { validateCharacterProfiles } from './characterReview';
 import packageInfo from '../../package.json' with { type: 'json' };
 export const APP_VERSION = packageInfo.version;
 
@@ -109,7 +110,7 @@ export function validateProject(value: unknown): Project {
   if (
     !Number.isInteger(project.formatVersion) ||
     project.formatVersion < 1 ||
-    project.formatVersion > 19
+    project.formatVersion > 20
   )
     throw new Error('UNSUPPORTED_PROJECT_VERSION');
   if (project.voiceEdits !== undefined) {
@@ -391,6 +392,7 @@ export function validateProject(value: unknown): Project {
         throw Error('INVALID_GENERATION');
   }
   validateTakeOrigins(project);
+  validateCharacterProfiles(project);
   validateProsody(project);
   validateLipVideos(project);
   validateAudioPatches(project);

@@ -1,5 +1,7 @@
 # AI Dubbing Studio
 
+**v0.29.0 — Character review and local corrections.** Thumbnail gallery, temporary names, manual gender labels, measured vocal register, visual merge proposals, sample audition and lossless merging with trimmed/combined references. Identify voices on a chosen track/time range with an optional character reference; swap timeline sections directly, or preview and apply a bounded Bandit separation. Existing takes and source media are retained. **113 MCP tools.** [Guide and screenshots](docs/CHARACTER-IDENTIFICATION.md).
+
 **v0.28.3 — Approve or withdraw checked translations together.** Compact selection actions apply to every checked dialogue, including those hidden by filters. Empty translations are skipped, existing takes are retained, and the complete edit supports undo/redo, autosave and MCP (102 tools). [Guide and screenshot](docs/BATCH-CACHE-AND-TRANSLATION-REVIEW.md).
 
 **v0.28.2 — Batch dubbing for translations awaiting approval.** Choose all translated lines, unapproved translations only, or approved translations only. Combine with the whole project or checked lines and optional forced new takes; earlier takes are preserved. Also available through MCP. [Guide and screenshot](docs/BATCH-DUBBING.md).

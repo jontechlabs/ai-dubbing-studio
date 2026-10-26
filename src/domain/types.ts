@@ -126,6 +126,9 @@ export interface Character {
   defaultReferenceId: string | null;
 }
 export interface SpeakerAnalysis {
+  scope?: import('./characterReview').SpeakerScope;
+  audioSnapshot?: unknown;
+  originalAssignments?: Record<string, string | null>;
   id: string;
   sourcePath: string;
   lines: { id: string; startMs: number; endMs: number }[];
@@ -136,6 +139,9 @@ export interface SpeakerAnalysis {
     reason: string;
   }[];
   clusters: {
+    characterId?: string | null;
+    portrait?: import('./characterReview').CharacterPortrait;
+    vocalRegister?: import('./characterReview').VocalRegister;
     speaker: number;
     referencePath: string;
     durationMs: number;
@@ -143,6 +149,7 @@ export interface SpeakerAnalysis {
   }[];
 }
 export interface Project {
+  characterProfiles?: Record<string, import('./characterReview').CharacterProfile>;
   voiceEdits?: Record<string, import('./voiceEdit').VoiceEdit>;
   translationApprovals?: Record<string, import('./translation').TranslationApproval>;
   dubbingTiming?: {

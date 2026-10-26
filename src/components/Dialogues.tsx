@@ -21,6 +21,7 @@ import { dialogueText } from '../domain/subtitles';
 import { formatTime } from '../domain/time';
 import type { Dialogue, Project } from '../domain/types';
 import { assignCharacter } from '../domain/characters';
+import { CharacterAvatar } from './CharacterTools';
 import { selectedGeneration, staleGeneration } from '../domain/tts';
 import {
   approveTranslation,
@@ -422,7 +423,15 @@ function DialogueCard({
             color: project.characters.find((character) => character.id === line.characterId)?.color,
           }}
         >
-          <UserRound size={12} />
+          {line.characterId && project.characterProfiles?.[line.characterId]?.portrait ? (
+            <CharacterAvatar
+              project={project}
+              portrait={project.characterProfiles[line.characterId].portrait}
+              small
+            />
+          ) : (
+            <UserRound size={12} />
+          )}
         </span>
         <select
           aria-label={`${t('character')} ${index}`}

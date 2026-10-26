@@ -24,6 +24,8 @@ struct Manifest {
 }
 #[derive(Clone, Serialize, Deserialize)]
 pub struct Request {
+    #[serde(default)]
+    pub scope: crate::character_review::Scope,
     pub root: PathBuf,
     pub project_id: String,
     pub source_path: String,
@@ -36,7 +38,7 @@ pub struct Status {
     installing: bool,
     size_bytes: u64,
 }
-fn root(core: &Core) -> PathBuf {
+pub(crate) fn root(core: &Core) -> PathBuf {
     crate::model_storage::root(core).join("speaker-runtime")
 }
 fn manifest<R: tauri::Runtime>(app: &tauri::AppHandle<R>) -> Result<Manifest, String> {
@@ -45,12 +47,16 @@ fn manifest<R: tauri::Runtime>(app: &tauri::AppHandle<R>) -> Result<Manifest, St
     )
     .map_err(io_error)
 }
-fn installed(core: &Core) -> bool {
+pub(crate) fn installed(core: &Core) -> bool {
     let root = root(core);
     separation::python(&root).is_file()
         && root.join("ready.json").is_file()
         && root.join("speaker.onnx").is_file()
         && root.join("vad.onnx").is_file()
+        && std::fs::read(root.join("ready.json"))
+            .ok()
+            .and_then(|b| serde_json::from_slice::<serde_json::Value>(&b).ok())
+            .is_some_and(|v| v["portraitReady"] == true)
 }
 fn busy(core: &Core) -> bool {
     core.jobs.lock().is_ok_and(|jobs| {
@@ -146,33 +152,69 @@ pub fn install<R: tauri::Runtime>(
             }
             jobs::update(&core,&app,&key,|job|{job.stage="dependenciesCheck".into();job.progress=None;});
             let result=separation::probe(&separation::python(&root),&[separation::resources(&app).join("speaker_worker.py").to_string_lossy().into_owned(),"--info".into()],&flag,Duration::from_secs(30)).await?;
-            if result.is_none_or(|info|info["runtimeReady"]!=true || info["version"]!="1.13.8"){return Err("SPEAKER_RUNTIME_FAILED".into());}
-            project::atomic_write(&root.join("ready.json"),br#"{"version":"1.13.8"}"#)
+            if result.is_none_or(|info|info["runtimeReady"]!=true || info["version"]!="1.13.8" || info["portraitReady"]!=true){return Err("SPEAKER_RUNTIME_FAILED".into());}
+            project::atomic_write(&root.join("ready.json"),br#"{"version":"1.13.8","portraitReady":true}"#)
         }.await;
         separation::finish(&core, &app, &key, &result);
     });
     Ok(output)
 }
-pub(crate) fn audio_source(project: &Project, root: &Path) -> Result<(PathBuf, u32), String> {
-    if let Some(track) = project.tracks.iter().find(|track| {
-        track.role.as_deref() == Some("speech")
-            && track.source_path == project.media.as_ref().map(|media| media.path.clone())
-    }) {
-        return Ok((
-            project::asset(root, track.path.as_deref().ok_or("MEDIA_MISSING")?)?,
-            0,
-        ));
-    }
-    let media = project.media.as_ref().ok_or("MEDIA_MISSING")?;
-    Ok((
-        project::asset(root, &media.path)?,
-        media.audio_stream_index.ok_or("NO_AUDIO")?,
-    ))
-}
+
 pub fn enqueue<R: tauri::Runtime>(
     core: Arc<Core>,
     app: tauri::AppHandle<R>,
     threshold: f64,
+) -> Result<String, String> {
+    enqueue_scope(
+        core,
+        app,
+        threshold,
+        crate::character_review::Scope::default(),
+    )
+}
+
+pub fn validate_scope(
+    p: &Project,
+    scope: &crate::character_review::Scope,
+) -> Result<(u64, u64, String, Vec<SpeakerLine>), String> {
+    let duration = p.media.as_ref().ok_or("MEDIA_MISSING")?.info.duration_ms;
+    let (start, end) = match (scope.start_ms, scope.end_ms) {
+        (None, None) => (0, duration),
+        (Some(a), Some(b)) if a < b && b <= duration => (a, b),
+        _ => return Err("SPEAKER_RANGE_INVALID".into()),
+    };
+    let track = crate::audio_patch::source_track(p, scope.track_id.as_deref())?;
+    if let Some(id) = &scope.reference_character_id {
+        let owner = p
+            .characters
+            .iter()
+            .find(|c| &c.id == id)
+            .ok_or("INVALID_CHARACTER")?;
+        if owner.references.is_empty() {
+            return Err("INVALID_REFERENCE_AUDIO".into());
+        }
+    }
+    let lines = p
+        .dialogues
+        .iter()
+        .filter(|l| l.start_ms < end && l.end_ms > start)
+        .map(|l| SpeakerLine {
+            id: l.id.clone(),
+            start_ms: l.start_ms,
+            end_ms: l.end_ms,
+        })
+        .collect::<Vec<_>>();
+    if lines.is_empty() {
+        return Err("NO_DIALOGUES".into());
+    }
+    Ok((start, end, track.id, lines))
+}
+
+pub fn enqueue_scope<R: tauri::Runtime>(
+    core: Arc<Core>,
+    app: tauri::AppHandle<R>,
+    threshold: f64,
+    scope: crate::character_review::Scope,
 ) -> Result<String, String> {
     if !installed(&core) {
         return Err("SPEAKER_RUNTIME_REQUIRED".into());
@@ -183,31 +225,23 @@ pub fn enqueue<R: tauri::Runtime>(
     if !threshold.is_finite() || !(0.45..=0.8).contains(&threshold) {
         return Err("INVALID_PROJECT".into());
     }
-    let (request, lines, input, index) = {
+    let (request, snapshot, lines, start, end, track_id) = {
         let session = core.session.lock().map_err(io_error)?;
         let s = session.as_ref().ok_or("NO_PROJECT")?;
-        if s.project.dialogues.is_empty() {
-            return Err("NO_DIALOGUES".into());
-        }
-        let (input, index) = audio_source(&s.project, &s.root)?;
+        let (start, end, track_id, lines) = validate_scope(&s.project, &scope)?;
         (
             Request {
                 root: s.root.clone(),
                 project_id: s.project.id.clone(),
                 source_path: s.project.media.as_ref().unwrap().path.clone(),
                 threshold,
+                scope,
             },
-            s.project
-                .dialogues
-                .iter()
-                .map(|line| SpeakerLine {
-                    id: line.id.clone(),
-                    start_ms: line.start_ms,
-                    end_ms: line.end_ms,
-                })
-                .collect::<Vec<_>>(),
-            input,
-            index,
+            s.project.clone(),
+            lines,
+            start,
+            end,
+            track_id,
         )
     };
     let key = jobs::create(&core, &app, "speakers", request.project_id.clone(), None);
@@ -226,17 +260,49 @@ pub fn enqueue<R: tauri::Runtime>(
         let folder = request.root.join(&relative);
         let result=async {
             let _permit=tokio::select!{_=jobs::cancelled(&flag)=>return Err("CANCELLED".into()),permit=core.gate.clone().acquire_owned()=>permit.map_err(io_error)?,};
-            jobs::update(&core,&app,&key,|job|{job.status="running".into();job.stage="audioExtract".into();});
-            project::ensure_directory(&request.root,"characters")?;std::fs::create_dir(&folder).map_err(io_error)?;let audio=folder.join("input.wav");let input_lines=folder.join("lines.json");project::atomic_write(&input_lines,&serde_json::to_vec(&lines).map_err(io_error)?)?;
-            separation::process(&core,&app,&key,&media::binary(&app,"ffmpeg")?,&["-hide_banner".into(),"-loglevel".into(),"error".into(),"-nostdin".into(),"-copyts".into(),"-start_at_zero".into(),"-protocol_whitelist".into(),"file,pipe".into(),"-i".into(),input.to_string_lossy().into_owned(),"-map".into(),format!("0:{index}"),"-vn".into(),"-ac".into(),"1".into(),"-ar".into(),"16000".into(),"-af".into(),"aresample=16000:first_pts=0".into(),"-c:a".into(),"pcm_s16le".into(),"-n".into(),audio.to_string_lossy().into_owned()],&flag).await?;
-            jobs::update(&core,&app,&key,|job|{job.stage="speakerEmbeddings".into();job.progress=Some(0.0);});
-            separation::process(&core,&app,&key,&separation::python(&root(&core)),&[separation::resources(&app).join("speaker_worker.py").to_string_lossy().into_owned(),"--runtime".into(),root(&core).to_string_lossy().into_owned(),"--input".into(),audio.to_string_lossy().into_owned(),"--lines".into(),input_lines.to_string_lossy().into_owned(),"--output".into(),folder.to_string_lossy().into_owned(),"--threshold".into(),threshold.to_string()],&flag).await?;
+            jobs::update(&core,&app,&key,|j|{j.status="running".into();j.stage="audioExtract".into();});
+            project::ensure_directory(&request.root,"characters")?;
+            std::fs::create_dir(&folder).map_err(io_error)?;
+            let audio=folder.join("input.wav");
+            crate::audio_patch::snippet(&core,&app,&key,&snapshot,&request.root,crate::audio_patch::Snippet{track_id:&track_id,start_ms:start,end_ms:end,channels:1,rate:16000,fader:false},&audio,&flag).await?;
+            let input_lines=folder.join("lines.json");
+            project::atomic_write(&input_lines,&serde_json::to_vec(&lines).map_err(io_error)?)?;
+            let mut args=vec![separation::resources(&app).join("speaker_worker.py").to_string_lossy().into_owned(),"--runtime".into(),root(&core).to_string_lossy().into_owned(),"--input".into(),audio.to_string_lossy().into_owned(),"--lines".into(),input_lines.to_string_lossy().into_owned(),"--output".into(),folder.to_string_lossy().into_owned(),"--threshold".into(),threshold.to_string(),"--offset-ms".into(),start.to_string()];
+            if let Some(id)=&request.scope.reference_character_id {
+                let owner=snapshot.characters.iter().find(|c|&c.id==id).ok_or("INVALID_CHARACTER")?;
+                let mut paths=vec![];
+                for (i,r) in owner.references.iter().take(32).enumerate() {
+                    let input=project::asset(&request.root,&r.path)?;
+                    let output=folder.join(format!("enrollment-{i}.wav"));
+                    separation::process(&core,&app,&key,&media::binary(&app,"ffmpeg")?,&["-nostdin".into(),"-hide_banner".into(),"-v".into(),"error".into(),"-protocol_whitelist".into(),"file,pipe".into(),"-i".into(),input.to_string_lossy().into_owned(),"-t".into(),"20".into(),"-ac".into(),"1".into(),"-ar".into(),"16000".into(),"-c:a".into(),"pcm_s16le".into(),"-n".into(),output.to_string_lossy().into_owned()],&flag).await?;
+                    paths.push(output.to_string_lossy().into_owned());
+                }
+                let file=folder.join("enrollments.json");project::atomic_write(&file,&serde_json::to_vec(&paths).map_err(io_error)?)?;
+                args.extend(["--references".into(),file.to_string_lossy().into_owned(),"--reference-character".into(),id.clone()]);
+            }
+            jobs::update(&core,&app,&key,|j|{j.stage="speakerEmbeddings".into();j.progress=Some(0.0);});
+            separation::process(&core,&app,&key,&separation::python(&root(&core)),&args,&flag).await?;
             if flag.load(Ordering::Relaxed){return Err("CANCELLED".into());}
             let result:serde_json::Value=serde_json::from_slice(&std::fs::read(folder.join("result.json")).map_err(io_error)?).map_err(io_error)?;
-            let mut clusters=result["clusters"].clone();for cluster in clusters.as_array_mut().ok_or("SPEAKER_ANALYSIS_FAILED")? {let file=cluster["referenceFile"].as_str().ok_or("SPEAKER_ANALYSIS_FAILED")?;let path=format!("{relative}/{file}");project::asset(&request.root,&path)?;cluster["referencePath"]=path.into();}
-            let analysis:SpeakerAnalysis=serde_json::from_value(serde_json::json!({"id":key,"sourcePath":request.source_path,"lines":result["lines"],"clusters":clusters,"assignments":result["assignments"]})).map_err(io_error)?;
-            let mut session=core.session.lock().map_err(io_error)?;let s=session.as_mut().ok_or("NO_PROJECT")?;if s.root!=request.root || s.project.id!=request.project_id || s.project.media.as_ref().is_none_or(|media|media.path!=request.source_path){return Err("STALE_REVISION".into());}
-            let mut next=s.project.clone();next.format_version=next.format_version.max(3);next.speaker_analysis=Some(analysis);let saved=s.replace(next,s.project.revision)?;let _=app.emit("project-changed",saved);let _=std::fs::remove_file(audio);Ok(())
+            let mut clusters=result["clusters"].clone();
+            for c in clusters.as_array_mut().ok_or("SPEAKER_ANALYSIS_FAILED")? {
+                let file=c["referenceFile"].as_str().ok_or("SPEAKER_ANALYSIS_FAILED")?;
+                let speaker=c["speaker"].as_u64().ok_or("SPEAKER_ANALYSIS_FAILED")?;
+                if speaker>=32 || file!=format!("reference-{speaker}.wav"){return Err("SPEAKER_ANALYSIS_FAILED".into());}
+                let path=format!("{relative}/{file}");project::asset(&request.root,&path)?;c["referencePath"]=path.into();
+            }
+            let mut analysis:SpeakerAnalysis=serde_json::from_value(serde_json::json!({"id":key,"sourcePath":request.source_path,"lines":lines,"clusters":clusters,"assignments":result["assignments"],"scope":request.scope,"audioSnapshot":crate::character_review::audio_snapshot(&snapshot,request.scope.reference_character_id.as_deref()),"originalAssignments":snapshot.dialogues.iter().filter(|l|lines.iter().any(|row|row.id==l.id)).map(|l|(l.id.clone(),l.character_id.clone())).collect::<std::collections::HashMap<_,_>>()})).map_err(io_error)?;
+            let assigned=analysis.assignments.iter().map(|a|a.dialogue_id.as_str()).collect::<std::collections::HashSet<_>>();
+            if assigned.len()!=lines.len() || analysis.assignments.len()!=lines.len() || lines.iter().any(|l|!assigned.contains(l.id.as_str())){return Err("SPEAKER_ANALYSIS_FAILED".into());}
+            crate::character_review::propose_portraits(&core,&app,&key,&snapshot,&request.root,&folder,&relative,&mut analysis,&flag).await?;
+            if flag.load(Ordering::Relaxed){return Err("CANCELLED".into());}
+            let mut session=core.session.lock().map_err(io_error)?;
+            let s=session.as_mut().ok_or("NO_PROJECT")?;
+            if s.root!=request.root || s.project.id!=request.project_id || s.project.media.as_ref().is_none_or(|m|m.path!=request.source_path) || crate::character_review::audio_snapshot(&s.project,request.scope.reference_character_id.as_deref())!=crate::character_review::audio_snapshot(&snapshot,request.scope.reference_character_id.as_deref()) || lines.iter().any(|l|!s.project.dialogues.iter().any(|v|v.id==l.id && v.start_ms==l.start_ms && v.end_ms==l.end_ms && (!request.scope.replace_assigned || snapshot.dialogues.iter().find(|old|old.id==l.id).is_some_and(|old|old.character_id==v.character_id)))) {return Err("STALE_REVISION".into());}
+            let mut next=s.project.clone();next.format_version=next.format_version.max(20);next.speaker_analysis=Some(analysis);
+            let saved=s.replace(next,s.project.revision)?;let _=app.emit("project-changed",saved);
+            let _=std::fs::remove_file(audio);
+            Ok(())
         }.await;
         if result.is_err()
             && folder

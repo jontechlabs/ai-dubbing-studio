@@ -108,3 +108,8 @@ The upstream Perth audio watermark is retained; resemble-perth 1.0.1 is installe
 Chinese segmentation data: explosion/spacy-pkuseg spacy_ontonotes, release v0.0.26 (MIT distribution).
 https://github.com/explosion/spacy-pkuseg/releases/tag/v0.0.26
 Downloaded with pinned SHA-256 into the configured Chatterbox model folder; library license is installed with the wheel.
+
+Character thumbnails (v0.29): the isolated speaker runtime reuses the same pinned
+OpenCV/YuNet/anime detector assets and licenses listed above. Visual similarity
+uses image appearance descriptors for manual review. No face-identity or gender
+classifier is included. Acoustic register uses a bounded autocorrelation estimate.

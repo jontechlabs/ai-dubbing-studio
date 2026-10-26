@@ -1,6 +1,6 @@
 # Piloter le studio avec une IA via MCP
 
-Le studio fournit **102 outils MCP** en v0.28.3 : 73 commandes natives et 29 commandes d’édition, d’état et de lecture. Le serveur utilise **stdio** et le même exécutable que l’application. Cette intégration pilote **l’application ouverte** ; aucun environnement Node.js ou Python supplémentaire n’est requis pour la connexion.
+Le studio fournit **113 outils MCP** en v0.29.0 : 81 commandes natives et 32 commandes d’édition, d’état et de lecture. Le serveur utilise **stdio** et le même exécutable que l’application. Cette intégration pilote **l’application ouverte** ; aucun environnement Node.js ou Python supplémentaire n’est requis pour la connexion.
 
 `studio_audio_levels` mesure les niveaux stéréo en dBFS et permet d’effacer les crêtes maximales/voyants, sans modifier le projet. Les valeurs sont aussi dans `studio_get_state.audioLevels`. [Mesure, mix final et limites](AUDIO-LEVELS.md).
 
@@ -20,6 +20,16 @@ Pour Codex, ajoutez le bloc TOML généré dans `~/.codex/config.toml` ou dans l
 Les tâches exposent aussi leur [durée active](TASK-DURATION.md) dans `timing.elapsedMs` et l’instant de mesure `timing.observedAtMs`. Les anciennes tâches peuvent ne pas avoir de mesure.
 
 Les [effets audio](AUDIO-EFFECTS.md) sont accessibles avec `studio_audio_effects_catalog` et `studio_apply_audio_effects`. L’opération `effects` de `studio_edit_voice` remplace la chaîne sur une portion de prise ; `studio_set_track` accepte un gain global de 0 à 4 (0–400 %), indépendant des volumes locaux.
+
+## Personnages et séparation locale (v0.29)
+
+`studio_identify_speakers` accepte une portée facultative `scope` : `startMs`, `endMs`, `trackId`, `referenceCharacterId`, `replaceAssigned`. Les propositions sont enregistrées séparément ; `studio_apply_speaker_analysis` les applique après vérification. `studio_set_character_profile` renseigne les métadonnées manuelles. `studio_capture_character_portrait` capture une vignette proposée ou un cadrage explicite, sans modifier la vidéo. `studio_character_asset_path` ne donne accès qu’aux images/références de l’analyse actuellement autorisées.
+
+`studio_preview_character_sample` prépare au plus 20 secondes d’une réplique sur la piste choisie. `studio_prepare_character_reference` recoupe/assemble jusqu’à 16 extraits pour créer un nouveau WAV de 1 à 20 secondes sans modifier le projet. Passez ce résultat à `studio_merge_characters` avec les identifiants des fiches, la fiche conservée et la référence par défaut souhaitée. La fusion conserve les références et les essais, et s’annule en une opération.
+
+`studio_separate_audio_region` lance Bandit sur 0,1 à 60 secondes. Attendez la réussite du job, lisez `studio_local_separation_result`, puis les trois `studio_local_separation_path` pour examiner la préécoute. `studio_apply_local_separation` est une application explicite, refusée si les pistes ont changé ou si un résultat est incomplet. Elle conserve les sources et ajoute un seul groupe de couches annulable. La réidentification après séparation est une demande distincte sur la piste Voix et le même intervalle.
+
+Les mutations exigent le contexte courant ; demandez-le de nouveau après chaque édition. Aucun nom ni genre n’est déduit d’un visage ou d’une voix. Les propositions visuelles et acoustiques restent à vérifier. [Guide illustré et limites](CHARACTER-IDENTIFICATION.md).
 
 ## Commandes disponibles
 

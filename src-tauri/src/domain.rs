@@ -141,6 +141,12 @@ pub struct SpeakerAssignment {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SpeakerCluster {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub character_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub portrait: Option<crate::character_review::Portrait>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub vocal_register: Option<crate::character_review::VocalRegister>,
     pub speaker: u32,
     pub reference_path: String,
     pub duration_ms: u64,
@@ -149,6 +155,12 @@ pub struct SpeakerCluster {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SpeakerAnalysis {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub scope: Option<crate::character_review::Scope>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub audio_snapshot: Option<serde_json::Value>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub original_assignments: Option<HashMap<String, Option<String>>>,
     pub id: String,
     pub source_path: String,
     pub lines: Vec<SpeakerLine>,
@@ -158,6 +170,8 @@ pub struct SpeakerAnalysis {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Project {
+    #[serde(default, skip_serializing_if = "HashMap::is_empty")]
+    pub character_profiles: HashMap<String, crate::character_review::Profile>,
     #[serde(default, skip_serializing_if = "HashMap::is_empty")]
     pub voice_edits: HashMap<String, crate::voice_edit::Edit>,
     #[serde(default, skip_serializing_if = "HashMap::is_empty")]
@@ -238,6 +252,7 @@ impl Project {
 
     pub fn new(name: String, source: String, target: String) -> Self {
         Self {
+            character_profiles: HashMap::new(),
             voice_edits: HashMap::new(),
             translation_approvals: HashMap::new(),
             dubbing_timing: None,
@@ -271,7 +286,7 @@ impl Project {
         references.iter().find(|r| r.id == id)
     }
     pub fn validate(&self) -> Result<(), String> {
-        if !(1..=19).contains(&self.format_version) {
+        if !(1..=20).contains(&self.format_version) {
             return Err("UNSUPPORTED_PROJECT_VERSION".into());
         }
         if !self.translation_approvals.is_empty()
@@ -544,6 +559,7 @@ impl Project {
         crate::audio_fx_job::validate_project(self)?;
         crate::inpaint::validate(self)?;
         crate::audio_patch::validate(self)?;
+        crate::character_review::validate(self)?;
         Ok(())
     }
 }

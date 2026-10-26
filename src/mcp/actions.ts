@@ -2,6 +2,13 @@ import type { Project } from '../domain/types';
 import { validateProject } from '../domain/project';
 import { editDialogue } from '../domain/subtitles';
 import { approveTranslation, approveTranslations } from '../domain/translation';
+import {
+  editCharacterProfile,
+  mergeCharacters,
+  type CharacterProfile,
+  type CharacterMerge,
+} from '../domain/characterReview';
+import { applySpeakers } from '../domain/characters';
 import { retimeDialogue, splitDialogue, mergeDialogue } from '../domain/timing';
 import { moveDubbing, resizeDubbing } from '../domain/mix';
 import { editVoice, type VoiceOperation } from '../domain/voiceEdit';
@@ -106,6 +113,19 @@ export function editProject(
   };
   let next: Project;
   switch (tool) {
+    case 'studio_set_character_profile':
+      next = editCharacterProfile(project, id, args.changes as CharacterProfile);
+      break;
+    case 'studio_merge_characters':
+      next = mergeCharacters(project, args.options as CharacterMerge);
+      break;
+    case 'studio_apply_speaker_analysis':
+      next = applySpeakers(
+        project,
+        String(args.referenceLabel ?? 'Voice sample'),
+        String(args.temporaryPrefix ?? 'Character'),
+      );
+      break;
     case 'studio_approve_translations': {
       if (
         !Array.isArray(args.ids) ||

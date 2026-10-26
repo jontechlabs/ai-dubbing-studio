@@ -8,6 +8,7 @@ import { AudioQuickControls } from './AudioQuickControls';
 import { AudioRegionsEditor } from './AudioRegionsEditor';
 import { AudioEffectsPanel } from './AudioEffectsPanel';
 import { AudioMeter } from './AudioMeter';
+import { LocalSeparationPanel } from './LocalSeparationPanel';
 import { useAudioLevels } from '../hooks/useAudioLevels';
 import { audioTracks, editTrack, trackLabel, dubbingMix } from '../domain/audio';
 import { setAudioSource } from '../domain/audioPatch';
@@ -195,6 +196,19 @@ export function AudioPanel({
         </>
       )}
       <p className="panel-description">{t('separationQuality')}</p>
+      {project && (
+        <LocalSeparationPanel
+          project={project}
+          selection={selection}
+          jobs={jobs}
+          device={runtime?.deviceProbeWarning ? 'cpu' : selectedDevice}
+          ready={!!runtime?.installed}
+          busy={active || working}
+          run={run}
+          onError={onError}
+          showJobs={showJobs}
+        />
+      )}
       {!!tracks.length && (
         <>
           <h3>{t('audioMixer')}</h3>

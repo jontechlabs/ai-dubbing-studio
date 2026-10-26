@@ -438,6 +438,14 @@ export default function App() {
           />
           <div className="timeline-container" style={{ height: timelineHeight, flexShrink: 0 }}>
             <Timeline
+              onCharacters={() => setPanel('characters')}
+              onTransfer={(options) =>
+                void studio.run(async () => {
+                  await bridge.transferAudio(options);
+                  showJobs();
+                  return null;
+                })
+              }
               onContextMenu={openContext}
               navigation={timelineNavigation}
               audioSelection={audioSelection}
@@ -478,6 +486,7 @@ export default function App() {
         </footer>
         <JobNotifications onOpen={showJobs} />
         <Panels
+          onSelectDialogue={select}
           batchIds={batchIds}
           activeGenerationId={generationAudio.active}
           onPlayGeneration={playGeneration}

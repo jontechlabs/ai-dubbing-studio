@@ -19,7 +19,11 @@ export function TimelineAudioSelection({
   onEdit,
   onSelection,
   onAdvanced,
+  onTransfer,
+  onCharacters,
 }: {
+  onTransfer: (options: import('../domain/audioPatch').TransferOptions) => void;
+  onCharacters: () => void;
   project: Project;
   selection: AudioSelection;
   busy: boolean;
@@ -28,6 +32,7 @@ export function TimelineAudioSelection({
   onAdvanced: () => void;
 }) {
   const { t } = useTranslation();
+  const [target, setTarget] = useState('');
   const [draft, setDraft] = useState({
     start: String(selection.startMs),
     end: String(selection.endMs),
@@ -151,6 +156,58 @@ export function TimelineAudioSelection({
       <button className="text-button" onClick={onAdvanced}>
         {t('timelineSelectionAdvanced')}
       </button>
+      {track.kind !== 'dubbing' && (
+        <>
+          <select
+            aria-label={t('characterSwapDestination')}
+            value={
+              audioTracks(project).some(
+                (tr) => tr.id === target && tr.id !== track.id && tr.kind !== 'dubbing',
+              )
+                ? target
+                : ''
+            }
+            onChange={(e) => setTarget(e.target.value)}
+          >
+            <option value="">{t('characterSwapDestination')}</option>
+            {audioTracks(project)
+              .filter((tr) => tr.id !== track.id && tr.kind !== 'dubbing')
+              .map((tr) => (
+                <option key={tr.id} value={tr.id}>
+                  {t(trackLabel(tr))}
+                </option>
+              ))}
+          </select>
+          <button
+            className="button subtle"
+            disabled={
+              busy ||
+              !audioTracks(project).some(
+                (tr) => tr.id === target && tr.id !== track.id && tr.kind !== 'dubbing',
+              ) ||
+              selection.endMs - selection.startMs < 10 ||
+              selection.endMs - selection.startMs > 60000
+            }
+            onClick={() =>
+              onTransfer({
+                sourceTrackId: track.id,
+                targetTrackId: target,
+                startMs: selection.startMs,
+                endMs: selection.endMs,
+                operation: 'swap',
+              })
+            }
+          >
+            {t('characterSwapSelection')}
+          </button>
+          <button className="text-button" disabled={busy} onClick={onCharacters}>
+            {t('speakerIdentifyRange')}
+          </button>
+          <button className="text-button" onClick={onAdvanced}>
+            {t('localSeparationTitle')}
+          </button>
+        </>
+      )}
       {track.mute && <small>{t('timelineSelectionTrackMuted')}</small>}
       <IconButton label={t('timelineSelectionClear')} onClick={() => onSelection(null)}>
         <X size={14} />

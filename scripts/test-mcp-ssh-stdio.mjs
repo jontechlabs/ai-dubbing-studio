@@ -36,7 +36,7 @@ child.stdout.pipe(process.stdout);child.stderr.pipe(process.stderr);
   let diagnostics = ''; transport.stderr?.on('data', data => { diagnostics = (diagnostics + data.toString()).slice(-2000); });
   try {
     await client.connect(transport);
-    assert.equal((await client.listTools()).tools.length, 102);
+    assert.equal((await client.listTools()).tools.length, 113);
     await client.ping();
     for (let i = 0; i < 2; i++) {
       const value = await client.callTool({ name: 'studio_get_state', arguments: {} });

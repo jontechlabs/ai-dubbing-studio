@@ -95,7 +95,8 @@ pub fn validate(p: &Project) -> Result<(), String> {
             || !e.gain.is_finite()
             || !(0.0..=2.0).contains(&e.gain)
             || !["add", "replace", "silence"].contains(&e.mode.as_str())
-            || !["copy", "move", "swap", "effects"].contains(&e.operation.as_str())
+            || !["copy", "move", "swap", "effects", "separation"].contains(&e.operation.as_str())
+            || (e.operation == "separation" && p.format_version < 20)
             || (e.operation == "effects" && p.format_version < 18)
             || p.generations.iter().filter(|g| g["id"] == e.id).count() != 1
         {

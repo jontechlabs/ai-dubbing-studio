@@ -18,6 +18,27 @@ export function rebaseProject(base: Project, local: Project, incoming: Project):
     'voiceEdits',
   ] as const)
     if (changed(base[key], local[key])) Object.assign(next, { [key]: structuredClone(local[key]) });
+  for (const id of new Set([
+    ...Object.keys(base.characterProfiles ?? {}),
+    ...Object.keys(local.characterProfiles ?? {}),
+  ])) {
+    const before = base.characterProfiles?.[id],
+      edited = local.characterProfiles?.[id];
+    if (!changed(before, edited)) continue;
+    if (!edited) {
+      delete next.characterProfiles?.[id];
+      continue;
+    }
+    next.characterProfiles ??= {};
+    const merged = { ...next.characterProfiles[id] };
+    for (const key of ['gender', 'temporaryName', 'portrait', 'vocalRegister'] as const)
+      if (changed(before?.[key], edited[key]))
+        Object.assign(merged, { [key]: structuredClone(edited[key]) });
+    next.characterProfiles[id] = merged;
+  }
+  for (const id of Object.keys(next.characterProfiles ?? {}))
+    if (!local.characters.some((c) => c.id === id) && base.characters.some((c) => c.id === id))
+      delete next.characterProfiles?.[id];
   if (changed(base.dialogues, local.dialogues))
     next.dialogues = local.dialogues.map((line) => {
       const before = base.dialogues.find((d) => d.id === line.id),

@@ -1,7 +1,15 @@
 import { useEffect, useState } from 'react';
 import { Plus, Users, ScanLine, Download, Trash2, LoaderCircle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import type { Job, Project, VoiceReference } from '../domain/types';
+import type { AudioSelection, Dialogue, Job, Project, VoiceReference } from '../domain/types';
+import {
+  CharacterAvatar,
+  CharacterGallery,
+  CharacterMetadata,
+  CharacterSamples,
+} from './CharacterTools';
+import { audioTracks, trackLabel } from '../domain/audio';
+import { formatTime } from '../domain/time';
 import {
   addCharacter,
   editCharacter,
@@ -23,7 +31,15 @@ export function CharactersPanel({
   showJobs,
   onModels,
   onError,
+  selection,
+  snapshot,
+  applySnapshot,
+  onNavigate,
 }: {
+  selection: AudioSelection | null;
+  snapshot: () => Promise<Project>;
+  applySnapshot: (before: Project, after: Project) => Promise<void>;
+  onNavigate: (line: Dialogue) => void;
   project: Project;
   jobs: Job[];
   selectedId: string | null;
@@ -46,6 +62,19 @@ export function CharactersPanel({
     project.characters.find((item) => item.id === activeId) ?? project.characters[0];
   const active = jobs.some((job) => ['running', 'queued', 'paused'].includes(job.status));
   const analysis = project.speakerAnalysis;
+  const [scopeMode, setScopeMode] = useState(selection ? 'range' : 'all');
+  const [rangeStart, setRangeStart] = useState(selection?.startMs ?? 0),
+    [rangeEnd, setRangeEnd] = useState(selection?.endMs ?? project.media?.durationMs ?? 0);
+  const [sourceTrack, setSourceTrack] = useState(selection?.trackId ?? 'auto'),
+    [referenceCharacter, setReferenceCharacter] = useState(''),
+    [replaceAssigned, setReplaceAssigned] = useState(false);
+  const validRange =
+    scopeMode === 'all' ||
+    (Number.isSafeInteger(rangeStart) &&
+      Number.isSafeInteger(rangeEnd) &&
+      rangeStart >= 0 &&
+      rangeEnd > rangeStart &&
+      rangeEnd <= (project.media?.durationMs ?? 0));
   useEffect(() => {
     if (bridge.native)
       void bridge
@@ -69,6 +98,90 @@ export function CharactersPanel({
           </button>
         ) : (
           <>
+            <div className="speaker-scope-controls">
+              <label className="field">
+                <span>{t('speakerSourceTrack')}</span>
+                <select
+                  aria-label={t('speakerSourceTrack')}
+                  value={sourceTrack}
+                  onChange={(e) => setSourceTrack(e.target.value)}
+                >
+                  <option value="auto">{t('characterSampleAuto')}</option>
+                  {audioTracks(project)
+                    .filter((track) => track.kind !== 'dubbing')
+                    .map((track) => (
+                      <option value={track.id} key={track.id}>
+                        {t(trackLabel(track))}
+                      </option>
+                    ))}
+                </select>
+              </label>
+              <label className="field">
+                <span>{t('speakerScope')}</span>
+                <select
+                  aria-label={t('speakerScope')}
+                  value={scopeMode}
+                  onChange={(e) => setScopeMode(e.target.value)}
+                >
+                  <option value="all">{t('speakerScopeAll')}</option>
+                  <option value="range">{t('speakerScopeRange')}</option>
+                </select>
+              </label>
+              {scopeMode === 'range' && (
+                <div className="character-crop-inputs">
+                  <label>
+                    {t('speakerRangeStart')}
+                    <input
+                      aria-label={t('speakerRangeStart')}
+                      type="number"
+                      min="0"
+                      max={(project.media?.durationMs ?? 0) / 1000}
+                      step="0.001"
+                      value={rangeStart / 1000}
+                      onChange={(e) => setRangeStart(Math.round(Number(e.target.value) * 1000))}
+                    />
+                  </label>
+                  <label>
+                    {t('speakerRangeEnd')}
+                    <input
+                      aria-label={t('speakerRangeEnd')}
+                      type="number"
+                      min="0"
+                      max={(project.media?.durationMs ?? 0) / 1000}
+                      step="0.001"
+                      value={rangeEnd / 1000}
+                      onChange={(e) => setRangeEnd(Math.round(Number(e.target.value) * 1000))}
+                    />
+                  </label>
+                </div>
+              )}
+              <label className="field">
+                <span>{t('speakerReferenceGuide')}</span>
+                <select
+                  aria-label={t('speakerReferenceGuide')}
+                  value={referenceCharacter}
+                  onChange={(e) => setReferenceCharacter(e.target.value)}
+                >
+                  <option value="">{t('speakerWithoutGuide')}</option>
+                  {project.characters
+                    .filter((c) => c.references.length > 0)
+                    .map((c) => (
+                      <option value={c.id} key={c.id}>
+                        {c.name}
+                      </option>
+                    ))}
+                </select>
+                <small>{t('speakerGuideHint')}</small>
+              </label>
+              <label className="checkbox">
+                <input
+                  type="checkbox"
+                  checked={replaceAssigned}
+                  onChange={(e) => setReplaceAssigned(e.target.checked)}
+                />
+                {t('speakerReplaceAssigned')}
+              </label>
+            </div>
             <details>
               <summary>{t('speakerGroupingSettings')}</summary>
               <label className="field">
@@ -87,10 +200,17 @@ export function CharactersPanel({
             </details>
             <button
               className="button accent wide"
-              disabled={active || working || !project.media || !project.dialogues.length}
+              disabled={
+                active || working || !project.media || !project.dialogues.length || !validRange
+              }
               onClick={() =>
                 void run(async () => {
-                  await bridge.identifySpeakers(threshold);
+                  await bridge.identifySpeakers(threshold, {
+                    trackId: sourceTrack,
+                    ...(scopeMode === 'range' ? { startMs: rangeStart, endMs: rangeEnd } : {}),
+                    ...(referenceCharacter ? { referenceCharacterId: referenceCharacter } : {}),
+                    replaceAssigned,
+                  });
                   showJobs();
                   return null;
                 })
@@ -110,11 +230,40 @@ export function CharactersPanel({
               })}
             </p>
             <p className="panel-description">{t('speakerApplyHint')}</p>
+            {!analysis.clusters.length && <p className="warning">{t('speakerNoMatches')}</p>}
+            {analysis.scope?.startMs !== undefined && analysis.scope.endMs !== undefined && (
+              <p>
+                {formatTime(analysis.scope.startMs)} → {formatTime(analysis.scope.endMs)}
+              </p>
+            )}
+            <div className="speaker-proposal-list">
+              {analysis.clusters.map((cluster) => (
+                <div className="speaker-proposal" key={cluster.speaker}>
+                  <CharacterAvatar project={project} portrait={cluster.portrait} />
+                  <span>
+                    {cluster.characterId
+                      ? project.characters.find((c) => c.id === cluster.characterId)?.name
+                      : `${t('characterTemporaryPrefix')} ${String(cluster.speaker + 1).padStart(2, '0')}`}
+                    <small>
+                      {t('characterAssignedCount', {
+                        count: analysis.assignments.filter((a) => a.speaker === cluster.speaker)
+                          .length,
+                      })}
+                    </small>
+                  </span>
+                  <AnalysisReference project={project} path={cluster.referencePath} />
+                </div>
+              ))}
+            </div>
             {!analysisCurrent(project) && <p className="warning">{t('speakerStale')}</p>}
             <button
               className="button accent wide"
-              disabled={!analysisCurrent(project) || active}
-              onClick={() => onEdit((p) => applySpeakers(p, t('speakerReferenceLabel')))}
+              disabled={!analysis.clusters.length || !analysisCurrent(project) || active}
+              onClick={() =>
+                onEdit((p) =>
+                  applySpeakers(p, t('speakerReferenceLabel'), t('characterTemporaryPrefix')),
+                )
+              }
             >
               {t('speakerApply')}
             </button>
@@ -148,6 +297,16 @@ export function CharactersPanel({
           {t('characterAdd')}
         </button>
       </form>
+      <CharacterGallery
+        project={project}
+        activeId={character?.id ?? ''}
+        onActive={setActiveId}
+        busy={active || working}
+        onEdit={onEdit}
+        snapshot={snapshot}
+        applySnapshot={applySnapshot}
+        onError={onError}
+      />
       {!project.characters.length ? (
         <p className="panel-description">{t('charactersEmpty')}</p>
       ) : (
@@ -168,6 +327,15 @@ export function CharactersPanel({
           </label>
           {character && (
             <div className="character-details" key={character.id}>
+              <CharacterMetadata
+                project={project}
+                character={character}
+                selectedId={selectedId}
+                busy={active || working}
+                onEdit={onEdit}
+                run={run}
+                onError={onError}
+              />
               <div className="character-name-row">
                 <label className="field">
                   <span>{t('characterName')}</span>
@@ -201,6 +369,13 @@ export function CharactersPanel({
                     .length,
                 })}
               </p>
+              <CharacterSamples
+                project={project}
+                character={character}
+                busy={active || working}
+                onError={onError}
+                onNavigate={onNavigate}
+              />
               <button
                 className="button subtle wide"
                 disabled={!selectedId}
@@ -361,6 +536,30 @@ export function CharactersPanel({
         </>
       )}
     </div>
+  );
+}
+function AnalysisReference({ project, path }: { project: Project; path: string }) {
+  const { t } = useTranslation(),
+    [url, setUrl] = useState('');
+  useEffect(() => {
+    let disposed = false;
+    void bridge
+      .characterAssetUrl(path)
+      .then((value) => {
+        if (!disposed) setUrl(value);
+      })
+      .catch(() => {});
+    return () => {
+      disposed = true;
+    };
+  }, [project.id, path]);
+  return (
+    <audio
+      controls
+      preload="none"
+      src={url || undefined}
+      aria-label={t('speakerCandidateReference')}
+    />
   );
 }
 function Reference({

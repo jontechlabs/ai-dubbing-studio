@@ -1370,11 +1370,12 @@
     {
       "name": "studio_identify_speakers",
       "command": "identify_speakers",
-      "description": "identify speakers. Uses the current desktop session. Local file paths must be absolute; long operations return job IDs. Existing native validation applies.",
+      "description": "Analyze anonymous voice groups on the selected audio track, including its edited content. Optional scope restricts the time range, matches a character reference, and explicitly allows replacing existing assignments. Returns a job; review speakerAnalysis before applying. Pitch describes vocal register, never gender.",
       "inputSchema": {
         "type": "object",
         "properties": {
           "threshold": { "type": "number" },
+          "scope": { "anyOf": [{ "$ref": "#/$defs/scope_SpeakerScope_0" }, { "type": "null" }] },
           "context": {
             "type": "object",
             "properties": {
@@ -1386,6 +1387,234 @@
           }
         },
         "required": ["threshold", "context"],
+        "additionalProperties": false,
+        "$defs": {
+          "scope_SpeakerScope_0": {
+            "type": "object",
+            "properties": {
+              "startMs": { "anyOf": [{ "type": "number" }] },
+              "endMs": { "anyOf": [{ "type": "number" }] },
+              "trackId": { "anyOf": [{ "type": "string" }] },
+              "referenceCharacterId": { "anyOf": [{ "type": "string" }] },
+              "replaceAssigned": {
+                "anyOf": [
+                  { "type": "boolean", "const": false },
+                  { "type": "boolean", "const": true }
+                ]
+              }
+            },
+            "required": [],
+            "additionalProperties": false
+          }
+        }
+      },
+      "annotations": { "readOnlyHint": false, "destructiveHint": true, "openWorldHint": false }
+    },
+    {
+      "name": "studio_character_asset_path",
+      "command": "character_asset_path",
+      "description": "character asset path. Uses the current desktop session. Local file paths must be absolute; long operations return job IDs. Existing native validation applies.",
+      "inputSchema": {
+        "type": "object",
+        "properties": { "path": { "type": "string" } },
+        "required": ["path"],
+        "additionalProperties": false
+      },
+      "annotations": { "readOnlyHint": true, "destructiveHint": false, "openWorldHint": false }
+    },
+    {
+      "name": "studio_capture_character_portrait",
+      "command": "capture_character_portrait",
+      "description": "Capture a proposed character thumbnail from a dialogue/video time, or explicitly crop it. Original video stays unchanged. Automatic face crops are unconfirmed visual suggestions; no identity or gender inference.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "options": { "$ref": "#/$defs/options_PortraitOptions_0" },
+          "context": {
+            "type": "object",
+            "properties": {
+              "projectId": { "type": "string" },
+              "expectedRevision": { "type": "integer", "minimum": 0 }
+            },
+            "required": ["projectId", "expectedRevision"],
+            "additionalProperties": false
+          }
+        },
+        "required": ["options", "context"],
+        "additionalProperties": false,
+        "$defs": {
+          "options_PortraitOptions_0": {
+            "type": "object",
+            "properties": {
+              "characterId": { "type": "string" },
+              "lineId": { "type": "string" },
+              "atMs": { "anyOf": [{ "type": "number" }] },
+              "crop": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "x": { "type": "number" },
+                      "y": { "type": "number" },
+                      "width": { "type": "number" },
+                      "height": { "type": "number" }
+                    },
+                    "required": ["x", "y", "width", "height"],
+                    "additionalProperties": false
+                  }
+                ]
+              }
+            },
+            "required": ["characterId", "lineId"],
+            "additionalProperties": false
+          }
+        }
+      },
+      "annotations": { "readOnlyHint": false, "destructiveHint": true, "openWorldHint": false }
+    },
+    {
+      "name": "studio_prepare_character_reference",
+      "command": "prepare_character_reference",
+      "description": "Prepare a new 1–20 second mono WAV by trimming/concatenating 1–16 existing reference segments. Does not change the project; use the returned VoiceReference with studio_merge_characters. Original reference files are retained. Partial segments require transcript review.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "segments": {
+            "type": "array",
+            "items": { "$ref": "#/$defs/segments_ReferenceSegment_0" }
+          },
+          "label": { "type": "string" },
+          "context": {
+            "type": "object",
+            "properties": {
+              "projectId": { "type": "string" },
+              "expectedRevision": { "type": "integer", "minimum": 0 }
+            },
+            "required": ["projectId", "expectedRevision"],
+            "additionalProperties": false
+          }
+        },
+        "required": ["segments", "label", "context"],
+        "additionalProperties": false,
+        "$defs": {
+          "segments_ReferenceSegment_0": {
+            "type": "object",
+            "properties": {
+              "characterId": { "type": "string" },
+              "referenceId": { "type": "string" },
+              "startMs": { "type": "number" },
+              "endMs": { "type": "number" }
+            },
+            "required": ["characterId", "referenceId", "startMs", "endMs"],
+            "additionalProperties": false
+          }
+        }
+      },
+      "annotations": { "readOnlyHint": false, "destructiveHint": true, "openWorldHint": false }
+    },
+    {
+      "name": "studio_preview_character_sample",
+      "command": "preview_character_sample",
+      "description": "Render a bounded (maximum 20 seconds) dialogue excerpt from the chosen track including its edits, before track mute/solo/global fader. Returns a local WAV path; never changes source audio or the project.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "lineId": { "type": "string" },
+          "trackId": { "anyOf": [{ "type": "string" }, { "type": "null" }] },
+          "context": {
+            "type": "object",
+            "properties": {
+              "projectId": { "type": "string" },
+              "expectedRevision": { "type": "integer", "minimum": 0 }
+            },
+            "required": ["projectId", "expectedRevision"],
+            "additionalProperties": false
+          }
+        },
+        "required": ["lineId", "context"],
+        "additionalProperties": false
+      },
+      "annotations": { "readOnlyHint": true, "destructiveHint": false, "openWorldHint": false }
+    },
+    {
+      "name": "studio_separate_audio_region",
+      "command": "separate_audio_region",
+      "description": "Re-run local Bandit separation on 0.1–60 seconds of an edited source track. Returns a preview job; original tracks are not changed. Requires the existing speech/music/effects stem tracks. Poll jobs, read studio_local_separation_result and audition its three WAVs before explicit application.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "options": { "$ref": "#/$defs/options_LocalSeparationOptions_0" },
+          "context": {
+            "type": "object",
+            "properties": {
+              "projectId": { "type": "string" },
+              "expectedRevision": { "type": "integer", "minimum": 0 }
+            },
+            "required": ["projectId", "expectedRevision"],
+            "additionalProperties": false
+          }
+        },
+        "required": ["options", "context"],
+        "additionalProperties": false,
+        "$defs": {
+          "options_LocalSeparationOptions_0": {
+            "type": "object",
+            "properties": {
+              "sourceTrackId": { "type": "string" },
+              "startMs": { "type": "number" },
+              "endMs": { "type": "number" },
+              "device": { "type": "string" }
+            },
+            "required": ["sourceTrackId", "startMs", "endMs", "device"],
+            "additionalProperties": false
+          }
+        }
+      },
+      "annotations": { "readOnlyHint": false, "destructiveHint": true, "openWorldHint": false }
+    },
+    {
+      "name": "studio_local_separation_result",
+      "command": "local_separation_result",
+      "description": "local separation result. Uses the current desktop session. Local file paths must be absolute; long operations return job IDs. Existing native validation applies.",
+      "inputSchema": {
+        "type": "object",
+        "properties": { "id": { "type": "string" } },
+        "required": ["id"],
+        "additionalProperties": false
+      },
+      "annotations": { "readOnlyHint": true, "destructiveHint": false, "openWorldHint": false }
+    },
+    {
+      "name": "studio_local_separation_path",
+      "command": "local_separation_path",
+      "description": "local separation path. Uses the current desktop session. Local file paths must be absolute; long operations return job IDs. Existing native validation applies.",
+      "inputSchema": {
+        "type": "object",
+        "properties": { "id": { "type": "string" }, "role": { "type": "string" } },
+        "required": ["id", "role"],
+        "additionalProperties": false
+      },
+      "annotations": { "readOnlyHint": true, "destructiveHint": false, "openWorldHint": false }
+    },
+    {
+      "name": "studio_apply_local_separation",
+      "command": "apply_local_separation",
+      "description": "Apply a successful non-stale local separation preview as one undoable set of audio layers. Replaces all three stem regions when the source is Original; for a stem source, replaces that stem region and adds the other recovered components to their tracks. Source files, other times and historical takes are retained.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "context": {
+            "type": "object",
+            "properties": {
+              "projectId": { "type": "string" },
+              "expectedRevision": { "type": "integer", "minimum": 0 }
+            },
+            "required": ["projectId", "expectedRevision"],
+            "additionalProperties": false
+          }
+        },
+        "required": ["id", "context"],
         "additionalProperties": false
       },
       "annotations": { "readOnlyHint": false, "destructiveHint": true, "openWorldHint": false }
@@ -2623,6 +2852,174 @@
       "annotations": { "readOnlyHint": false, "destructiveHint": true, "openWorldHint": false }
     },
     {
+      "name": "studio_set_character_profile",
+      "description": "Edit manual gender/temporary-name metadata or a confirmed thumbnail. Gender is explicitly user-provided, never inferred from face or voice.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "changes": {
+            "$ref": "#/$defs/CharacterProfile_0",
+            "$defs": {
+              "CharacterProfile_0": {
+                "type": "object",
+                "properties": {
+                  "gender": {
+                    "anyOf": [
+                      { "type": "string", "const": "unspecified" },
+                      { "type": "string", "const": "man" },
+                      { "type": "string", "const": "woman" },
+                      { "type": "string", "const": "other" }
+                    ]
+                  },
+                  "temporaryName": {
+                    "anyOf": [
+                      { "type": "boolean", "const": false },
+                      { "type": "boolean", "const": true }
+                    ]
+                  },
+                  "portrait": { "anyOf": [{ "$ref": "#/$defs/CharacterPortrait_1" }] },
+                  "vocalRegister": { "anyOf": [{ "$ref": "#/$defs/VocalRegister_2" }] }
+                },
+                "required": [],
+                "additionalProperties": false
+              },
+              "CharacterPortrait_1": {
+                "type": "object",
+                "properties": {
+                  "path": { "type": "string" },
+                  "sourcePath": { "type": "string" },
+                  "atMs": { "type": "number" },
+                  "lineId": { "type": "string" },
+                  "crop": {
+                    "type": "object",
+                    "properties": {
+                      "x": { "type": "number" },
+                      "y": { "type": "number" },
+                      "width": { "type": "number" },
+                      "height": { "type": "number" }
+                    },
+                    "required": ["x", "y", "width", "height"],
+                    "additionalProperties": false
+                  },
+                  "differenceHash": { "type": "string" },
+                  "colors": { "type": "array", "items": { "type": "number" } },
+                  "confirmed": { "type": "boolean" }
+                },
+                "required": [
+                  "path",
+                  "sourcePath",
+                  "atMs",
+                  "lineId",
+                  "crop",
+                  "differenceHash",
+                  "colors",
+                  "confirmed"
+                ],
+                "additionalProperties": false
+              },
+              "VocalRegister_2": {
+                "type": "object",
+                "properties": {
+                  "medianHz": { "type": "number" },
+                  "confidence": { "type": "number" },
+                  "analyzedMs": { "type": "number" }
+                },
+                "required": ["medianHz", "confidence", "analyzedMs"],
+                "additionalProperties": false
+              }
+            }
+          },
+          "context": {
+            "type": "object",
+            "properties": {
+              "projectId": { "type": "string" },
+              "expectedRevision": { "type": "integer", "minimum": 0 }
+            },
+            "required": ["projectId", "expectedRevision"],
+            "additionalProperties": false
+          }
+        },
+        "required": ["id", "changes", "context"],
+        "additionalProperties": false
+      },
+      "annotations": { "readOnlyHint": false, "destructiveHint": true, "openWorldHint": false }
+    },
+    {
+      "name": "studio_merge_characters",
+      "description": "Merge selected character profiles into keepId as one undoable edit. Retains all reference files and historical voice takes; reassigns dialogues. Optionally use a prepared composite reference or select a different default reference and portrait.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "options": {
+            "$ref": "#/$defs/CharacterMerge_0",
+            "$defs": {
+              "CharacterMerge_0": {
+                "type": "object",
+                "properties": {
+                  "ids": { "type": "array", "items": { "type": "string" } },
+                  "keepId": { "type": "string" },
+                  "defaultReferenceId": { "anyOf": [{ "type": "string" }] },
+                  "portraitFromId": { "anyOf": [{ "type": "string" }] },
+                  "preparedReference": { "anyOf": [{ "$ref": "#/$defs/VoiceReference_1" }] }
+                },
+                "required": ["ids", "keepId"],
+                "additionalProperties": false
+              },
+              "VoiceReference_1": {
+                "type": "object",
+                "properties": {
+                  "id": { "type": "string" },
+                  "label": { "type": "string" },
+                  "path": { "type": "string" },
+                  "durationMs": { "type": "number" },
+                  "transcript": { "type": "string" },
+                  "sourceDialogueId": { "anyOf": [{ "type": "null" }, { "type": "string" }] }
+                },
+                "required": ["id", "label", "path", "durationMs", "transcript"],
+                "additionalProperties": false
+              }
+            }
+          },
+          "context": {
+            "type": "object",
+            "properties": {
+              "projectId": { "type": "string" },
+              "expectedRevision": { "type": "integer", "minimum": 0 }
+            },
+            "required": ["projectId", "expectedRevision"],
+            "additionalProperties": false
+          }
+        },
+        "required": ["options", "context"],
+        "additionalProperties": false
+      },
+      "annotations": { "readOnlyHint": false, "destructiveHint": true, "openWorldHint": false }
+    },
+    {
+      "name": "studio_apply_speaker_analysis",
+      "description": "Apply the current reviewed voice grouping proposals. Respects its recorded section, audio snapshot and replaceAssigned setting; preserves existing assignments by default. Creates temporary names for unknown groups and reuses the guided reference character.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "referenceLabel": { "type": "string" },
+          "temporaryPrefix": { "type": "string" },
+          "context": {
+            "type": "object",
+            "properties": {
+              "projectId": { "type": "string" },
+              "expectedRevision": { "type": "integer", "minimum": 0 }
+            },
+            "required": ["projectId", "expectedRevision"],
+            "additionalProperties": false
+          }
+        },
+        "required": ["context"],
+        "additionalProperties": false
+      },
+      "annotations": { "readOnlyHint": false, "destructiveHint": true, "openWorldHint": false }
+    },
+    {
       "name": "studio_retime_dialogue",
       "description": "Set subtitle timing for source, target or both without moving other lines.",
       "inputSchema": {
@@ -3174,13 +3571,23 @@
         "Project_0": {
           "type": "object",
           "properties": {
+            "characterProfiles": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "properties": {},
+                  "required": [],
+                  "additionalProperties": { "$ref": "#/$defs/CharacterProfile_1" }
+                }
+              ]
+            },
             "voiceEdits": {
               "anyOf": [
                 {
                   "type": "object",
                   "properties": {},
                   "required": [],
-                  "additionalProperties": { "$ref": "#/$defs/VoiceEdit_1" }
+                  "additionalProperties": { "$ref": "#/$defs/VoiceEdit_4" }
                 }
               ]
             },
@@ -3190,7 +3597,7 @@
                   "type": "object",
                   "properties": {},
                   "required": [],
-                  "additionalProperties": { "$ref": "#/$defs/TranslationApproval_5" }
+                  "additionalProperties": { "$ref": "#/$defs/TranslationApproval_8" }
                 }
               ]
             },
@@ -3245,17 +3652,17 @@
               "required": ["source", "target"],
               "additionalProperties": false
             },
-            "media": { "anyOf": [{ "type": "null" }, { "$ref": "#/$defs/MediaAsset_6" }] },
-            "sourceCues": { "type": "array", "items": { "$ref": "#/$defs/Cue_8" } },
-            "targetCues": { "type": "array", "items": { "$ref": "#/$defs/Cue_8" } },
-            "dialogues": { "type": "array", "items": { "$ref": "#/$defs/Dialogue_9" } },
-            "tracks": { "type": "array", "items": { "$ref": "#/$defs/Track_12" } },
-            "characters": { "type": "array", "items": { "$ref": "#/$defs/Character_14" } },
+            "media": { "anyOf": [{ "type": "null" }, { "$ref": "#/$defs/MediaAsset_9" }] },
+            "sourceCues": { "type": "array", "items": { "$ref": "#/$defs/Cue_11" } },
+            "targetCues": { "type": "array", "items": { "$ref": "#/$defs/Cue_11" } },
+            "dialogues": { "type": "array", "items": { "$ref": "#/$defs/Dialogue_12" } },
+            "tracks": { "type": "array", "items": { "$ref": "#/$defs/Track_15" } },
+            "characters": { "type": "array", "items": { "$ref": "#/$defs/Character_17" } },
             "voiceReferences": {
-              "anyOf": [{ "type": "array", "items": { "$ref": "#/$defs/VoiceReference_15" } }]
+              "anyOf": [{ "type": "array", "items": { "$ref": "#/$defs/VoiceReference_18" } }]
             },
             "speakerAnalysis": {
-              "anyOf": [{ "type": "null" }, { "$ref": "#/$defs/SpeakerAnalysis_16" }]
+              "anyOf": [{ "type": "null" }, { "$ref": "#/$defs/SpeakerAnalysis_19" }]
             },
             "modelPreferences": {
               "anyOf": [
@@ -3284,7 +3691,7 @@
               "type": "array",
               "items": {
                 "anyOf": [
-                  { "$ref": "#/$defs/Generation_17" },
+                  { "$ref": "#/$defs/Generation_21" },
                   {
                     "type": "object",
                     "properties": {
@@ -3324,32 +3731,99 @@
           ],
           "additionalProperties": false
         },
-        "VoiceEdit_1": {
+        "CharacterProfile_1": {
           "type": "object",
           "properties": {
-            "pieces": { "type": "array", "items": { "$ref": "#/$defs/VoicePiece_2" } }
+            "gender": {
+              "anyOf": [
+                { "type": "string", "const": "unspecified" },
+                { "type": "string", "const": "man" },
+                { "type": "string", "const": "woman" },
+                { "type": "string", "const": "other" }
+              ]
+            },
+            "temporaryName": {
+              "anyOf": [
+                { "type": "boolean", "const": false },
+                { "type": "boolean", "const": true }
+              ]
+            },
+            "portrait": { "anyOf": [{ "$ref": "#/$defs/CharacterPortrait_2" }] },
+            "vocalRegister": { "anyOf": [{ "$ref": "#/$defs/VocalRegister_3" }] }
+          },
+          "required": [],
+          "additionalProperties": false
+        },
+        "CharacterPortrait_2": {
+          "type": "object",
+          "properties": {
+            "path": { "type": "string" },
+            "sourcePath": { "type": "string" },
+            "atMs": { "type": "number" },
+            "lineId": { "type": "string" },
+            "crop": {
+              "type": "object",
+              "properties": {
+                "x": { "type": "number" },
+                "y": { "type": "number" },
+                "width": { "type": "number" },
+                "height": { "type": "number" }
+              },
+              "required": ["x", "y", "width", "height"],
+              "additionalProperties": false
+            },
+            "differenceHash": { "type": "string" },
+            "colors": { "type": "array", "items": { "type": "number" } },
+            "confirmed": { "type": "boolean" }
+          },
+          "required": [
+            "path",
+            "sourcePath",
+            "atMs",
+            "lineId",
+            "crop",
+            "differenceHash",
+            "colors",
+            "confirmed"
+          ],
+          "additionalProperties": false
+        },
+        "VocalRegister_3": {
+          "type": "object",
+          "properties": {
+            "medianHz": { "type": "number" },
+            "confidence": { "type": "number" },
+            "analyzedMs": { "type": "number" }
+          },
+          "required": ["medianHz", "confidence", "analyzedMs"],
+          "additionalProperties": false
+        },
+        "VoiceEdit_4": {
+          "type": "object",
+          "properties": {
+            "pieces": { "type": "array", "items": { "$ref": "#/$defs/VoicePiece_5" } }
           },
           "required": ["pieces"],
           "additionalProperties": false
         },
-        "VoicePiece_2": {
+        "VoicePiece_5": {
           "type": "object",
           "properties": {
             "effects": {
-              "anyOf": [{ "type": "array", "items": { "$ref": "#/$defs/AudioEffect_3" } }]
+              "anyOf": [{ "type": "array", "items": { "$ref": "#/$defs/AudioEffect_6" } }]
             },
             "sourceStartMs": { "anyOf": [{ "type": "null" }, { "type": "number" }] },
             "sourceEndMs": { "anyOf": [{ "type": "null" }, { "type": "number" }] },
             "durationMs": { "type": "number" },
             "gain": { "type": "number" },
             "envelope": {
-              "anyOf": [{ "type": "array", "items": { "$ref": "#/$defs/VoicePoint_4" } }]
+              "anyOf": [{ "type": "array", "items": { "$ref": "#/$defs/VoicePoint_7" } }]
             }
           },
           "required": ["sourceStartMs", "sourceEndMs", "durationMs", "gain"],
           "additionalProperties": false
         },
-        "AudioEffect_3": {
+        "AudioEffect_6": {
           "type": "object",
           "properties": {
             "kind": {
@@ -3387,13 +3861,13 @@
           "required": ["kind", "enabled", "parameters"],
           "additionalProperties": false
         },
-        "VoicePoint_4": {
+        "VoicePoint_7": {
           "type": "object",
           "properties": { "atMs": { "type": "number" }, "level": { "type": "number" } },
           "required": ["atMs", "level"],
           "additionalProperties": false
         },
-        "TranslationApproval_5": {
+        "TranslationApproval_8": {
           "type": "object",
           "properties": {
             "sourceLanguage": { "type": "string" },
@@ -3404,7 +3878,7 @@
           "required": ["sourceLanguage", "targetLanguage", "sourceText", "targetText"],
           "additionalProperties": false
         },
-        "MediaAsset_6": {
+        "MediaAsset_9": {
           "type": "object",
           "properties": {
             "id": { "type": "string" },
@@ -3413,7 +3887,7 @@
             "audioStreamIndex": { "anyOf": [{ "type": "null" }, { "type": "number" }] },
             "originalName": { "type": "string" },
             "durationMs": { "type": "number" },
-            "streams": { "type": "array", "items": { "$ref": "#/$defs/MediaStream_7" } }
+            "streams": { "type": "array", "items": { "$ref": "#/$defs/MediaStream_10" } }
           },
           "required": [
             "id",
@@ -3426,7 +3900,7 @@
           ],
           "additionalProperties": false
         },
-        "MediaStream_7": {
+        "MediaStream_10": {
           "type": "object",
           "properties": {
             "index": { "type": "number" },
@@ -3452,7 +3926,7 @@
           ],
           "additionalProperties": false
         },
-        "Cue_8": {
+        "Cue_11": {
           "type": "object",
           "properties": {
             "id": { "type": "string" },
@@ -3463,7 +3937,7 @@
           "required": ["id", "startMs", "endMs", "text"],
           "additionalProperties": false
         },
-        "Dialogue_9": {
+        "Dialogue_12": {
           "type": "object",
           "properties": {
             "id": { "type": "string" },
@@ -3489,7 +3963,7 @@
               "required": [],
               "additionalProperties": { "type": "string" }
             },
-            "voiceSettings": { "anyOf": [{ "$ref": "#/$defs/VoiceSettings_10" }] }
+            "voiceSettings": { "anyOf": [{ "$ref": "#/$defs/VoiceSettings_13" }] }
           },
           "required": [
             "id",
@@ -3505,10 +3979,10 @@
           ],
           "additionalProperties": false
         },
-        "VoiceSettings_10": {
+        "VoiceSettings_13": {
           "type": "object",
           "properties": {
-            "quality": { "anyOf": [{ "$ref": "#/$defs/VoiceQuality_11" }] },
+            "quality": { "anyOf": [{ "$ref": "#/$defs/VoiceQuality_14" }] },
             "mood": {
               "anyOf": [
                 { "type": "string", "const": "happy" },
@@ -3589,7 +4063,7 @@
           "required": ["device", "referenceMode", "referenceId", "mode", "speed", "seed"],
           "additionalProperties": false
         },
-        "VoiceQuality_11": {
+        "VoiceQuality_14": {
           "type": "object",
           "properties": {
             "inferenceSteps": { "anyOf": [{ "type": "number" }] },
@@ -3605,7 +4079,7 @@
           "required": [],
           "additionalProperties": false
         },
-        "Track_12": {
+        "Track_15": {
           "type": "object",
           "properties": {
             "name": { "anyOf": [{ "type": "string" }] },
@@ -3635,7 +4109,7 @@
             "solo": { "type": "boolean" },
             "gain": { "type": "number" },
             "regions": {
-              "anyOf": [{ "type": "array", "items": { "$ref": "#/$defs/AudioRegion_13" } }]
+              "anyOf": [{ "type": "array", "items": { "$ref": "#/$defs/AudioRegion_16" } }]
             },
             "regionsEnabled": {
               "anyOf": [
@@ -3647,7 +4121,7 @@
           "required": ["id", "kind", "language", "mute", "solo", "gain"],
           "additionalProperties": false
         },
-        "AudioRegion_13": {
+        "AudioRegion_16": {
           "type": "object",
           "properties": {
             "id": { "type": "string" },
@@ -3659,19 +4133,19 @@
           "required": ["id", "startMs", "endMs", "gain", "mute"],
           "additionalProperties": false
         },
-        "Character_14": {
+        "Character_17": {
           "type": "object",
           "properties": {
             "id": { "type": "string" },
             "name": { "type": "string" },
             "color": { "type": "string" },
-            "references": { "type": "array", "items": { "$ref": "#/$defs/VoiceReference_15" } },
+            "references": { "type": "array", "items": { "$ref": "#/$defs/VoiceReference_18" } },
             "defaultReferenceId": { "anyOf": [{ "type": "null" }, { "type": "string" }] }
           },
           "required": ["id", "name", "color", "references", "defaultReferenceId"],
           "additionalProperties": false
         },
-        "VoiceReference_15": {
+        "VoiceReference_18": {
           "type": "object",
           "properties": {
             "id": { "type": "string" },
@@ -3684,9 +4158,21 @@
           "required": ["id", "label", "path", "durationMs", "transcript"],
           "additionalProperties": false
         },
-        "SpeakerAnalysis_16": {
+        "SpeakerAnalysis_19": {
           "type": "object",
           "properties": {
+            "scope": { "anyOf": [{ "$ref": "#/$defs/SpeakerScope_20" }] },
+            "audioSnapshot": {},
+            "originalAssignments": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "properties": {},
+                  "required": [],
+                  "additionalProperties": { "anyOf": [{ "type": "null" }, { "type": "string" }] }
+                }
+              ]
+            },
             "id": { "type": "string" },
             "sourcePath": { "type": "string" },
             "lines": {
@@ -3721,6 +4207,9 @@
               "items": {
                 "type": "object",
                 "properties": {
+                  "characterId": { "anyOf": [{ "type": "null" }, { "type": "string" }] },
+                  "portrait": { "anyOf": [{ "$ref": "#/$defs/CharacterPortrait_2" }] },
+                  "vocalRegister": { "anyOf": [{ "$ref": "#/$defs/VocalRegister_3" }] },
                   "speaker": { "type": "number" },
                   "referencePath": { "type": "string" },
                   "durationMs": { "type": "number" },
@@ -3734,11 +4223,28 @@
           "required": ["id", "sourcePath", "lines", "assignments", "clusters"],
           "additionalProperties": false
         },
-        "Generation_17": {
+        "SpeakerScope_20": {
           "type": "object",
           "properties": {
-            "takeOrigin": { "anyOf": [{ "$ref": "#/$defs/TakeOrigin_18" }] },
-            "prosodyTransfer": { "anyOf": [{ "$ref": "#/$defs/ProsodyTransfer_19" }] },
+            "startMs": { "anyOf": [{ "type": "number" }] },
+            "endMs": { "anyOf": [{ "type": "number" }] },
+            "trackId": { "anyOf": [{ "type": "string" }] },
+            "referenceCharacterId": { "anyOf": [{ "type": "string" }] },
+            "replaceAssigned": {
+              "anyOf": [
+                { "type": "boolean", "const": false },
+                { "type": "boolean", "const": true }
+              ]
+            }
+          },
+          "required": [],
+          "additionalProperties": false
+        },
+        "Generation_21": {
+          "type": "object",
+          "properties": {
+            "takeOrigin": { "anyOf": [{ "$ref": "#/$defs/TakeOrigin_22" }] },
+            "prosodyTransfer": { "anyOf": [{ "$ref": "#/$defs/ProsodyTransfer_23" }] },
             "kind": { "type": "string", "const": "tts" },
             "id": { "type": "string" },
             "dialogueId": { "type": "string" },
@@ -3754,7 +4260,7 @@
             "characterId": { "anyOf": [{ "type": "null" }, { "type": "string" }] },
             "durationMs": { "type": "number" },
             "sampleRate": { "type": "number" },
-            "options": { "$ref": "#/$defs/VoiceSettings_10" },
+            "options": { "$ref": "#/$defs/VoiceSettings_13" },
             "referenceTranscript": { "type": "string" },
             "referenceId": { "anyOf": [{ "type": "null" }, { "type": "string" }] },
             "device": { "type": "string" },
@@ -3796,7 +4302,7 @@
           ],
           "additionalProperties": false
         },
-        "TakeOrigin_18": {
+        "TakeOrigin_22": {
           "type": "object",
           "properties": {
             "type": {
@@ -3812,14 +4318,14 @@
           "required": ["type"],
           "additionalProperties": false
         },
-        "ProsodyTransfer_19": {
+        "ProsodyTransfer_23": {
           "type": "object",
           "properties": {
             "algorithm": { "type": "string", "const": "praat-psola-v1" },
             "sourceGenerationId": { "type": "string" },
             "sourceDurationMs": { "type": "number" },
             "guideDurationMs": { "type": "number" },
-            "options": { "$ref": "#/$defs/ProsodyOptions_20" }
+            "options": { "$ref": "#/$defs/ProsodyOptions_24" }
           },
           "required": [
             "algorithm",
@@ -3830,7 +4336,7 @@
           ],
           "additionalProperties": false
         },
-        "ProsodyOptions_20": {
+        "ProsodyOptions_24": {
           "type": "object",
           "properties": {
             "generationId": { "type": "string" },
@@ -4435,6 +4941,90 @@
             }
           },
           "required": ["sourceTrackId", "targetTrackId", "startMs", "endMs", "operation"],
+          "additionalProperties": false
+        }
+      }
+    },
+    "SpeakerScope": {
+      "$ref": "#/$defs/SpeakerScope_0",
+      "$defs": {
+        "SpeakerScope_0": {
+          "type": "object",
+          "properties": {
+            "startMs": { "anyOf": [{ "type": "number" }] },
+            "endMs": { "anyOf": [{ "type": "number" }] },
+            "trackId": { "anyOf": [{ "type": "string" }] },
+            "referenceCharacterId": { "anyOf": [{ "type": "string" }] },
+            "replaceAssigned": {
+              "anyOf": [
+                { "type": "boolean", "const": false },
+                { "type": "boolean", "const": true }
+              ]
+            }
+          },
+          "required": [],
+          "additionalProperties": false
+        }
+      }
+    },
+    "PortraitOptions": {
+      "$ref": "#/$defs/PortraitOptions_0",
+      "$defs": {
+        "PortraitOptions_0": {
+          "type": "object",
+          "properties": {
+            "characterId": { "type": "string" },
+            "lineId": { "type": "string" },
+            "atMs": { "anyOf": [{ "type": "number" }] },
+            "crop": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "x": { "type": "number" },
+                    "y": { "type": "number" },
+                    "width": { "type": "number" },
+                    "height": { "type": "number" }
+                  },
+                  "required": ["x", "y", "width", "height"],
+                  "additionalProperties": false
+                }
+              ]
+            }
+          },
+          "required": ["characterId", "lineId"],
+          "additionalProperties": false
+        }
+      }
+    },
+    "ReferenceSegment": {
+      "$ref": "#/$defs/ReferenceSegment_0",
+      "$defs": {
+        "ReferenceSegment_0": {
+          "type": "object",
+          "properties": {
+            "characterId": { "type": "string" },
+            "referenceId": { "type": "string" },
+            "startMs": { "type": "number" },
+            "endMs": { "type": "number" }
+          },
+          "required": ["characterId", "referenceId", "startMs", "endMs"],
+          "additionalProperties": false
+        }
+      }
+    },
+    "LocalSeparationOptions": {
+      "$ref": "#/$defs/LocalSeparationOptions_0",
+      "$defs": {
+        "LocalSeparationOptions_0": {
+          "type": "object",
+          "properties": {
+            "sourceTrackId": { "type": "string" },
+            "startMs": { "type": "number" },
+            "endMs": { "type": "number" },
+            "device": { "type": "string" }
+          },
+          "required": ["sourceTrackId", "startMs", "endMs", "device"],
           "additionalProperties": false
         }
       }

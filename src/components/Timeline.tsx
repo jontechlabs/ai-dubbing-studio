@@ -60,7 +60,11 @@ export const Timeline = memo(function Timeline({
   audioSelection,
   onAudioAdvanced,
   onContextMenu,
+  onTransfer,
+  onCharacters,
 }: {
+  onTransfer: (options: import('../domain/audioPatch').TransferOptions) => void;
+  onCharacters: () => void;
   project: Project | null;
   navigation?: TimelineNavigation | null;
   selected: Dialogue | undefined;
@@ -418,6 +422,8 @@ export const Timeline = memo(function Timeline({
       </div>
       {project && audioSelection && (
         <TimelineAudioSelection
+          onTransfer={onTransfer}
+          onCharacters={onCharacters}
           key={`${project.id}:${audioSelection.mediaId}:${audioSelection.trackId}`}
           project={project}
           selection={audioSelection}
@@ -599,7 +605,36 @@ export const Timeline = memo(function Timeline({
                         ]
                       : []),
                     ...(selection
-                      ? [{ label: t('timelineSelectionClear'), run: () => onAudioSelection(null) }]
+                      ? [
+                          ...audioTracks(project)
+                            .filter(
+                              (target) =>
+                                target.id !== track.id &&
+                                target.kind !== 'dubbing' &&
+                                track.kind !== 'dubbing',
+                            )
+                            .map((target) => ({
+                              label: t('characterSwapWith', { name: t(trackLabel(target)) }),
+                              disabled:
+                                busy ||
+                                selection.endMs - selection.startMs < 10 ||
+                                selection.endMs - selection.startMs > 60000,
+                              run: () =>
+                                onTransfer({
+                                  sourceTrackId: track.id,
+                                  targetTrackId: target.id,
+                                  startMs: selection.startMs,
+                                  endMs: selection.endMs,
+                                  operation: 'swap',
+                                }),
+                            })),
+                          {
+                            label: t('speakerIdentifyRange'),
+                            disabled: track.kind === 'dubbing',
+                            run: onCharacters,
+                          },
+                          { label: t('timelineSelectionClear'), run: () => onAudioSelection(null) },
+                        ]
                       : []),
                     {
                       label: t(track.mute ? 'enableTrack' : 'muteTrack', {

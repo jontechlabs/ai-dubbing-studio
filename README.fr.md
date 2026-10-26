@@ -1,5 +1,7 @@
 # AI Dubbing Studio
 
+**v0.29.0 — Personnages et corrections locales.** Galerie de vignettes, noms temporaires, genre saisi manuellement, registre vocal mesuré, propositions de rapprochement, extraits écoutables et fusion avec choix ou assemblage de références. Identification sur une piste et une zone, guidage facultatif par référence, échange direct de portions et séparation Bandit locale avec préécoute avant application. Médias et essais existants conservés. **113 outils MCP.** [Guide et captures](docs/CHARACTER-IDENTIFICATION.md).
+
 **v0.28.3 — Valider ou retirer les validations des traductions cochées.** Deux actions compactes concernent toutes les répliques cochées, même masquées par les filtres. Les traductions vides sont ignorées et les essais existants conservés. Annulation/rétablissement global, sauvegarde automatique et MCP (102 outils). [Guide et capture](docs/BATCH-CACHE-AND-TRANSLATION-REVIEW.md).
 
 **v0.28.2 — Doubler les traductions non validées par lot.** Choisissez toutes les traductions, celles à valider uniquement ou celles validées uniquement. Ce filtre s’applique au projet entier ou aux répliques cochées, avec forçage facultatif d’un nouvel essai et conservation des précédents. Disponible aussi par MCP. [Guide et capture](docs/BATCH-DUBBING.md).

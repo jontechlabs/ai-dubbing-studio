@@ -43,7 +43,7 @@ pub(crate) fn resources<R: tauri::Runtime>(app: &tauri::AppHandle<R>) -> PathBuf
         Path::new(env!("CARGO_MANIFEST_DIR")).join("../workers")
     }
 }
-fn runtime(core: &Core) -> PathBuf {
+pub(crate) fn runtime(core: &Core) -> PathBuf {
     crate::model_storage::root(core).join("bandit-runtime")
 }
 pub(crate) fn python(root: &Path) -> PathBuf {
@@ -53,7 +53,7 @@ pub(crate) fn python(root: &Path) -> PathBuf {
         "python/bin/python3"
     })
 }
-fn installed(core: &Core) -> bool {
+pub(crate) fn installed(core: &Core) -> bool {
     let root = runtime(core);
     python(&root).is_file()
         && root.join("ready.json").is_file()

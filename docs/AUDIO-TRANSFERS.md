@@ -7,6 +7,8 @@ Dans **Audio**, les deux sélecteurs sont indépendants :
 
 Une référence déjà enregistrée dans un personnage conserve son WAV. Changer le sélecteur n’en réextrait pas le contenu : créez une nouvelle référence si nécessaire. Une piste devenue indisponible doit être choisie à nouveau. La référence inclut les transferts et les zones de la piste, avant son volume général, mute et solo ; un son coupé par une zone ou un déplacement ne revient pas dans l’extrait.
 
+Depuis la v0.29, la sélection de la timeline propose directement une destination et **Interchanger**. Le menu contextuel propose aussi les autres pistes au même intervalle. **Identifier les voix de la sélection** ouvre l’analyse bornée. Pour refaire Bandit sur cette seule zone avec une préécoute avant application, voir [Personnages et corrections locales](CHARACTER-IDENTIFICATION.md).
+
 ## Copier, déplacer, interchanger
 
 1. Ouvrez **Audio** ou sélectionnez une zone audio sur la timeline. Dans **Piste à modifier**, choisissez celle contenant le son mal séparé.

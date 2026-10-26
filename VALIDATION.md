@@ -1,5 +1,9 @@
 # Validation
 
+## v0.29.0 — validation in progress
+
+The character workbench adds domain, native, browser and Python checks for bounded/reference-guided identification, manual metadata, thumbnails, reference assembly, merge preservation and local separation preview/application. Final Windows runner and packaged MCP evidence will be recorded after the complete build. Local CPU diagnostics exercised CAMPPlus/Silero reference matching on synthetic repeated voices with a nonzero interval offset, and actual YuNet/anime portrait crops with pinned model hashes. This is not an identity-accuracy or RTX benchmark.
+
 ## v0.28.3 — 25 October 2026
 
 [Fresh Windows checks and packages 40165777312](https://github.com/jontechlabs/ai-dubbing-studio/actions/runs/40165777312) passed at `d665bafff5d76d94956b479509499928475a2066`: 547 suite checks (158 TypeScript/JavaScript, 148 Rust, 162 Chrome, 79 Python), Clippy and formatting. The updater-signed installer and portable executable were built on that runner.

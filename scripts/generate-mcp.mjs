@@ -82,6 +82,10 @@ const mapping = {
   'inpaint_batch::Selection': 'InpaintBatchSelection',
   'tts_batch::Selection': 'DubbingBatchSelection',
   'audio_patch::Options': 'TransferOptions',
+  'character_review::Scope': 'SpeakerScope',
+  'character_review::PortraitOptions': 'PortraitOptions',
+  'character_review::ReferenceSegment': 'ReferenceSegment',
+  'local_separation::Options': 'LocalSeparationOptions',
   'audio_fx_job::Options': 'AudioEffectsOptions',
   'mix::Options': 'MkvOptions',
 };
@@ -92,6 +96,8 @@ const object = (properties) => ({
   additionalProperties: false,
 });
 function rustSchema(type) {
+  if (type.startsWith('Vec<') && type.endsWith('>'))
+    return { type: 'array', items: rustSchema(type.slice(4, -1)) };
   if (type === 'String') return { type: 'string' };
   if (type === 'bool') return { type: 'boolean' };
   if (['u64', 'u32'].includes(type)) return { type: 'integer', minimum: 0 };
@@ -107,8 +113,22 @@ function rustSchema(type) {
 const readOnly =
   /^(environment|graphics_info|.*_status|.*_result|latest_.*|audio_effects_catalog|.*_path|.*_paths|list_jobs|model_storage_info|model_storage_size|voice_install_space|preview_.*|reference_audio_info|get_waveform)$/;
 const notes = {
-  apply_audio_effects: 'Render local audio effects onto a non-destructive track copy or a replace layer (selection up to 120 seconds). Read studio_audio_effects_catalog for allowed kinds and numeric parameters. Whole-track copies can replace the source in the mix; originals remain unchanged. Poll jobs.',
-  audio_effects_catalog: 'List the 20 local audio effects, parameter bounds/defaults and 12 presets. Voice edit operations also support kind effects.',
+  separate_audio_region:
+    'Re-run local Bandit separation on 0.1–60 seconds of an edited source track. Returns a preview job; original tracks are not changed. Requires the existing speech/music/effects stem tracks. Poll jobs, read studio_local_separation_result and audition its three WAVs before explicit application.',
+  apply_local_separation:
+    'Apply a successful non-stale local separation preview as one undoable set of audio layers. Replaces all three stem regions when the source is Original; for a stem source, replaces that stem region and adds the other recovered components to their tracks. Source files, other times and historical takes are retained.',
+  identify_speakers:
+    'Analyze anonymous voice groups on the selected audio track, including its edited content. Optional scope restricts the time range, matches a character reference, and explicitly allows replacing existing assignments. Returns a job; review speakerAnalysis before applying. Pitch describes vocal register, never gender.',
+  capture_character_portrait:
+    'Capture a proposed character thumbnail from a dialogue/video time, or explicitly crop it. Original video stays unchanged. Automatic face crops are unconfirmed visual suggestions; no identity or gender inference.',
+  prepare_character_reference:
+    'Prepare a new 1–20 second mono WAV by trimming/concatenating 1–16 existing reference segments. Does not change the project; use the returned VoiceReference with studio_merge_characters. Original reference files are retained. Partial segments require transcript review.',
+  preview_character_sample:
+    'Render a bounded (maximum 20 seconds) dialogue excerpt from the chosen track including its edits, before track mute/solo/global fader. Returns a local WAV path; never changes source audio or the project.',
+  apply_audio_effects:
+    'Render local audio effects onto a non-destructive track copy or a replace layer (selection up to 120 seconds). Read studio_audio_effects_catalog for allowed kinds and numeric parameters. Whole-track copies can replace the source in the mix; originals remain unchanged. Poll jobs.',
+  audio_effects_catalog:
+    'List the 20 local audio effects, parameter bounds/defaults and 12 presets. Voice edit operations also support kind effects.',
   suggest_translation:
     'Propose a local translation without applying it. Optional direction (up to 2000 characters) guides character, register, tone and desired spoken length; subtitle timings are supplied automatically. Poll jobs, review the proposal, then explicitly apply it.',
   convert_voice_timbre:
@@ -142,7 +162,7 @@ const context = object({
   expectedRevision: { type: 'integer', minimum: 0 },
 });
 const projectCommands = new Set(
-  'apply_audio_effects convert_voice_timbre transfer_voice_prosody generate_line generate_dubbing_batch start_inpaint_batch inpaint_lips detect_inpaint_faces transfer_audio analyze_lips suggest_translation identify_speakers transcribe_voice_reference import_voice_reference import_dubbing_reference import_media prepare_proxy import_subtitles import_embedded_subtitles history separate_audio export_mkv export_generation export_audio_track export_subtitles'.split(
+  'capture_character_portrait prepare_character_reference preview_character_sample separate_audio_region apply_local_separation apply_audio_effects convert_voice_timbre transfer_voice_prosody generate_line generate_dubbing_batch start_inpaint_batch inpaint_lips detect_inpaint_faces transfer_audio analyze_lips suggest_translation identify_speakers transcribe_voice_reference import_voice_reference import_dubbing_reference import_media prepare_proxy import_subtitles import_embedded_subtitles history separate_audio export_mkv export_generation export_audio_track export_subtitles'.split(
     ' ',
   ),
 );
@@ -254,11 +274,18 @@ tool(
   false,
   true,
 );
-tool('studio_voice_quality_catalog', 'Read supported generation quality controls, bounds, defaults and model-specific presets. Apply quality in VoiceSettings for single or batch generation. Existing takes are preserved.', {}, [], false, true);
+tool(
+  'studio_voice_quality_catalog',
+  'Read supported generation quality controls, bounds, defaults and model-specific presets. Apply quality in VoiceSettings for single or batch generation. Existing takes are preserved.',
+  {},
+  [],
+  false,
+  true,
+);
 tool(
   'studio_audio_levels',
   'Read live stereo sample-peak/RMS dBFS levels after track gain, regions and effects, before player listening volume. $mix is the summed final mix before export clipping. Reset clears latched clipping and maxima for one track ID or all tracks when id is omitted. This never changes project audio or gain.',
-  {action: choice('status', 'reset'), id: string},
+  { action: choice('status', 'reset'), id: string },
   ['action'],
 );
 tool(
@@ -325,6 +352,28 @@ tool(
   'Approve or withdraw translation approval for all supplied dialogue IDs in one undoable saved edit. Empty translations are skipped; unknown IDs reject the entire edit. Does not change text, timing or voice takes. Read checkedIds from studio_get_state to act on the visible UI selection, including checked dialogues hidden by filters.',
   { ids: { type: 'array', minItems: 1, items: string }, approved: bool },
   ['ids', 'approved'],
+  true,
+);
+
+tool(
+  'studio_set_character_profile',
+  'Edit manual gender/temporary-name metadata or a confirmed thumbnail. Gender is explicitly user-provided, never inferred from face or voice.',
+  { id: string, changes: makeSchema('CharacterProfile') },
+  ['id', 'changes'],
+  true,
+);
+tool(
+  'studio_merge_characters',
+  'Merge selected character profiles into keepId as one undoable edit. Retains all reference files and historical voice takes; reassigns dialogues. Optionally use a prepared composite reference or select a different default reference and portrait.',
+  { options: makeSchema('CharacterMerge') },
+  ['options'],
+  true,
+);
+tool(
+  'studio_apply_speaker_analysis',
+  'Apply the current reviewed voice grouping proposals. Respects its recorded section, audio snapshot and replaceAssigned setting; preserves existing assignments by default. Creates temporary names for unknown groups and reuses the guided reference character.',
+  { referenceLabel: string, temporaryPrefix: string },
+  [],
   true,
 );
 

@@ -60,7 +60,9 @@ export function Panels({
   onPlayGeneration,
   onOriginal,
   activeGenerationId,
+  onSelectDialogue,
 }: {
+  onSelectDialogue: (line: Dialogue) => void;
   panel: Panel;
   project: Project | null;
   jobs: Job[];
@@ -114,7 +116,7 @@ export function Panels({
       }}
     >
       <aside
-        className={`context-panel ${panel === 'alignment' || panel === 'lips' || panel === 'inpaint' || panel === 'inpaintBatch' ? 'wide-panel' : ''}`}
+        className={`context-panel ${panel === 'alignment' || panel === 'lips' || panel === 'inpaint' || panel === 'inpaintBatch' || panel === 'characters' ? 'wide-panel' : ''}`}
         role="dialog"
         aria-modal="true"
         aria-label={t(title)}
@@ -206,6 +208,13 @@ export function Panels({
         {panel === 'jobs' && <JobsPanel jobs={jobs} onError={onError} />}
         {panel === 'characters' && project && (
           <CharactersPanel
+            selection={audioSelection?.mediaId === project.media?.id ? audioSelection : null}
+            snapshot={snapshot}
+            applySnapshot={applySnapshot}
+            onNavigate={(line) => {
+              onSelectDialogue(line);
+              close();
+            }}
             project={project}
             jobs={jobs}
             selectedId={selectedId}

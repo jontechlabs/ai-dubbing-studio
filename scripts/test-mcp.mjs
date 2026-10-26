@@ -237,6 +237,24 @@ try {
     assert.deepEqual(reopenedReview.generations,qualityProject.generations);
     assert.deepEqual(await fs.readFile(path.join(projectRoot,basePath)),baseWave);
     proofs.bulkTranslationReview={atomic:true,undoRedo:true,reopen:true,staleAndUnknownRejected:true,voiceTakesPreserved:true};
+    // Exercise actual packaged FFmpeg and saved merge/profile operations on test-owned files.
+    await fs.mkdir(path.join(projectRoot,'characters'),{recursive:true});
+    for(const id of ['review-a','review-b'])await fs.writeFile(path.join(projectRoot,`characters/${id}.wav`),baseWave);
+    const characterRows=['review-a','review-b'].map(id=>({id,name:id,color:'#82bda0',references:[{id:`ref-${id}`,label:id,path:`characters/${id}.wav`,durationMs:2000,transcript:'Une référence française.'}],defaultReferenceId:`ref-${id}`}));
+    await call('studio_project_patch',{context:await context(),patches:[{op:'replace',path:'/formatVersion',value:20},...characterRows.map(value=>({op:'add',path:'/characters/-',value}))]});
+    await call('studio_set_character_profile',{context:await context(),id:'review-a',changes:{gender:'man',temporaryName:true,vocalRegister:{medianHz:180,confidence:.9,analyzedMs:1500}}});
+    const beforeMerge=await call('studio_get_project');
+    const combined=await call('studio_prepare_character_reference',{context:await context(),segments:[{characterId:'review-a',referenceId:'ref-review-a',startMs:500,endMs:1500},{characterId:'review-b',referenceId:'ref-review-b',startMs:0,endMs:2000}],label:'Combined reference'});
+    assert(Math.abs(combined.durationMs-3000)<=4);assert.equal(combined.transcript,'');assert.deepEqual((await call('studio_get_project')).characters,beforeMerge.characters);
+    const referenceBytes=await fs.readFile(path.join(projectRoot,combined.path));assert.equal(referenceBytes.toString('ascii',0,4),'RIFF');
+    await call('studio_merge_characters',{context:await context(),options:{ids:['review-a','review-b'],keepId:'review-a',preparedReference:combined}});
+    const mergedCharacters=await call('studio_get_project'),keeper=mergedCharacters.characters.find(c=>c.id==='review-a');
+    assert.equal(keeper.references.length,3);assert.equal(keeper.defaultReferenceId,combined.id);assert(!mergedCharacters.characters.some(c=>c.id==='review-b'));
+    assert.deepEqual(mergedCharacters.generations,beforeMerge.generations);assert.equal(mergedCharacters.characterProfiles['review-a'].gender,'man');
+    await call('studio_history',{context:await context(),direction:'undo'});assert.deepEqual((await call('studio_get_project')).characters,beforeMerge.characters);
+    await call('studio_history',{context:await context(),direction:'redo'});await call('studio_open_project',{path:projectRoot});
+    assert.deepEqual((await call('studio_get_project')).characters,mergedCharacters.characters);assert.deepEqual(await fs.readFile(path.join(projectRoot,basePath)),baseWave);
+    proofs.characterWorkbench={manualProfile:true,trimAndConcatenate:true,previewBeforeMutation:true,mergePreservesReferencesAndTakes:true,atomicUndoRedo:true,reopenFormat20:true};
     await fs.writeFile(args.proof,JSON.stringify(proofs,null,2)+'\n','utf8');
     console.log('MCP_NATIVE_PROOF '+JSON.stringify(proofs));
 } catch(error){if(stderr)console.error(stderr.slice(-2000));throw error;}

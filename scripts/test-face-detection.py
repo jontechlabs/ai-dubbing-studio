@@ -28,6 +28,14 @@ with tempfile.TemporaryDirectory(prefix='faces-é-') as folder:
         request.write_text(json.dumps(dict(profile=profile,models=str(root),inputDirectory=str(image_dir),output=str(output))),encoding='utf-8-sig')
         subprocess.run([sys.executable,'-B',str(repo/'workers/face_detection_worker.py'),'--request',str(request)],check=True,capture_output=True)
         assert json.loads(output.read_text())['crop'] is not None
+        portrait_output=image_dir/'portrait.png';metadata=image_dir/'portraits.json';portrait_request=image_dir/'portrait-request.json'
+        portrait_request.write_text(json.dumps(dict(profile=profile,models=str(root),auto=True,items=[dict(input=str(path),output=str(portrait_output),metadata=dict(path='characters/portrait.png',sourcePath='media/video.mkv',lineId='dialogue',atMs=1000))],output=str(metadata))),encoding='utf-8-sig')
+        subprocess.run([sys.executable,'-B',str(repo/'workers/character_worker.py'),'--request',str(portrait_request)],check=True,capture_output=True)
+        portrait=json.loads(metadata.read_text())[0]
+        assert portrait['confirmed'] is False and len(portrait['colors'])==48 and len(portrait['differenceHash'])==16
+        assert cv2.imdecode(np.fromfile(portrait_output,dtype='uint8'),cv2.IMREAD_COLOR).shape==(256,256,3)
+        assert portrait['crop']['width']<1 and portrait['crop']['height']<1
+        print(f'PASS: actual {profile} proposed 256px character crop, image descriptors and Unicode worker paths',flush=True)
         both=np.concatenate([image,image],axis=1)
         assert len(detector.detect(both))>=2
         assert propose([detector.detect(both)]*5)['reason']=='FACE_MULTIPLE'

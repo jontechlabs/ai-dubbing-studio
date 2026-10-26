@@ -3,6 +3,7 @@ mod audio_effects;
 mod audio_files;
 mod audio_fx_job;
 mod audio_patch;
+mod character_review;
 mod domain;
 mod downloads;
 mod embedded;
@@ -14,6 +15,7 @@ mod inpaint_batch;
 mod integration_tests;
 mod jobs;
 mod lips;
+mod local_separation;
 mod mcp;
 mod media;
 mod mix;
@@ -594,8 +596,89 @@ fn identify_speakers(
     app: tauri::AppHandle,
     core: State<'_, Shared>,
     threshold: f64,
+    scope: Option<character_review::Scope>,
 ) -> Result<String, String> {
-    speakers::enqueue(core.inner().clone(), app, threshold)
+    if let Some(scope) = scope {
+        speakers::enqueue_scope(core.inner().clone(), app, threshold, scope)
+    } else {
+        speakers::enqueue(core.inner().clone(), app, threshold)
+    }
+}
+#[tauri::command]
+fn character_asset_path(
+    app: tauri::AppHandle,
+    core: State<'_, Shared>,
+    path: String,
+) -> Result<String, String> {
+    let path = character_review::asset(&core, &path)?;
+    app.asset_protocol_scope()
+        .allow_file(&path)
+        .map_err(io_error)?;
+    Ok(path)
+}
+#[tauri::command]
+async fn capture_character_portrait(
+    app: tauri::AppHandle,
+    core: State<'_, Shared>,
+    options: character_review::PortraitOptions,
+) -> Result<Project, String> {
+    character_review::capture_portrait(core.inner().clone(), app, options).await
+}
+#[tauri::command]
+async fn prepare_character_reference(
+    app: tauri::AppHandle,
+    core: State<'_, Shared>,
+    segments: Vec<character_review::ReferenceSegment>,
+    label: String,
+) -> Result<domain::VoiceReference, String> {
+    character_review::combine_reference(core.inner().clone(), app, segments, label).await
+}
+#[tauri::command]
+async fn preview_character_sample(
+    app: tauri::AppHandle,
+    core: State<'_, Shared>,
+    line_id: String,
+    track_id: Option<String>,
+) -> Result<String, String> {
+    let path =
+        character_review::preview_sample(core.inner().clone(), app.clone(), line_id, track_id)
+            .await?;
+    app.asset_protocol_scope()
+        .allow_file(&path)
+        .map_err(io_error)?;
+    Ok(path)
+}
+#[tauri::command]
+fn separate_audio_region(
+    app: tauri::AppHandle,
+    core: State<'_, Shared>,
+    options: local_separation::Options,
+) -> Result<String, String> {
+    local_separation::enqueue(core.inner().clone(), app, options)
+}
+#[tauri::command]
+fn local_separation_result(
+    core: State<'_, Shared>,
+    id: String,
+) -> Result<local_separation::Proposal, String> {
+    local_separation::result(&core, &id)
+}
+#[tauri::command]
+fn local_separation_path(
+    app: tauri::AppHandle,
+    core: State<'_, Shared>,
+    id: String,
+    role: String,
+) -> Result<String, String> {
+    local_separation::path(&core, &app, &id, &role)
+}
+#[tauri::command]
+async fn apply_local_separation(
+    app: tauri::AppHandle,
+    core: State<'_, Shared>,
+    id: String,
+) -> Result<Project, String> {
+    local_separation::apply(core.inner().clone(), app, id).await
 }
 #[tauri::command]
 async fn import_voice_reference(
@@ -1361,7 +1444,27 @@ fn retry_job(app: tauri::AppHandle, core: State<'_, Shared>, id: String) -> Resu
             return Err("STALE_REVISION".into());
         }
         drop(session);
-        return speakers::enqueue(core.inner().clone(), app, request.threshold);
+        return speakers::enqueue_scope(
+            core.inner().clone(),
+            app,
+            request.threshold,
+            request.scope,
+        );
+    }
+    if let Some(request) = record.local_separation {
+        let guard = core.session.lock().map_err(io_error)?;
+        let s = guard.as_ref().ok_or("NO_PROJECT")?;
+        if s.root != request.root
+            || s.project.id != request.project_id
+            || s.project
+                .media
+                .as_ref()
+                .is_none_or(|m| m.path != request.source_path)
+        {
+            return Err("STALE_REVISION".into());
+        }
+        drop(guard);
+        return local_separation::enqueue(core.inner().clone(), app, request.options);
     }
     if let Some(cuda) = record.runtime_cuda {
         return separation::install(core.inner().clone(), app, cuda);
@@ -1577,6 +1680,14 @@ pub fn run() {
             speaker_status,
             install_speaker_runtime,
             identify_speakers,
+            character_asset_path,
+            capture_character_portrait,
+            prepare_character_reference,
+            preview_character_sample,
+            separate_audio_region,
+            local_separation_result,
+            local_separation_path,
+            apply_local_separation,
             import_voice_reference,
             import_dubbing_reference,
             reference_audio_info,

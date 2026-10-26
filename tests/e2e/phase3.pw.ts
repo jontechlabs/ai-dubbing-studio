@@ -96,7 +96,7 @@ test('AI speaker proposals preserve manual corrections and expose editable voice
   await page.getByRole('button',{name:'Fermer',exact:true}).click();await page.getByRole('button',{name:'Personnages',exact:true}).click();
   await expect(page.getByText('2 groupes de voix proposés')).toBeVisible();await page.getByRole('button',{name:'Créer les personnages et assigner les répliques'}).click();
   await expect(page.getByRole('combobox',{name:'Personnage',exact:true}).locator('option')).toHaveCount(3);
-  await page.getByRole('combobox',{name:'Personnage',exact:true}).selectOption({label:'Speaker 1'});
+  await page.getByRole('combobox',{name:'Personnage',exact:true}).selectOption({label:'Personnage 02'});
   await page.getByRole('textbox',{name:'Renommer le personnage'}).fill('Shin');
   await expect(page.getByText('Référence par défaut',{exact:true})).toBeVisible();
   await page.screenshot({path:'test-results/screenshots/studio-characters.png'});
