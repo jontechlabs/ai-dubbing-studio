@@ -2858,78 +2858,7 @@
         "type": "object",
         "properties": {
           "id": { "type": "string" },
-          "changes": {
-            "$ref": "#/$defs/CharacterProfile_0",
-            "$defs": {
-              "CharacterProfile_0": {
-                "type": "object",
-                "properties": {
-                  "gender": {
-                    "anyOf": [
-                      { "type": "string", "const": "unspecified" },
-                      { "type": "string", "const": "man" },
-                      { "type": "string", "const": "woman" },
-                      { "type": "string", "const": "other" }
-                    ]
-                  },
-                  "temporaryName": {
-                    "anyOf": [
-                      { "type": "boolean", "const": false },
-                      { "type": "boolean", "const": true }
-                    ]
-                  },
-                  "portrait": { "anyOf": [{ "$ref": "#/$defs/CharacterPortrait_1" }] },
-                  "vocalRegister": { "anyOf": [{ "$ref": "#/$defs/VocalRegister_2" }] }
-                },
-                "required": [],
-                "additionalProperties": false
-              },
-              "CharacterPortrait_1": {
-                "type": "object",
-                "properties": {
-                  "path": { "type": "string" },
-                  "sourcePath": { "type": "string" },
-                  "atMs": { "type": "number" },
-                  "lineId": { "type": "string" },
-                  "crop": {
-                    "type": "object",
-                    "properties": {
-                      "x": { "type": "number" },
-                      "y": { "type": "number" },
-                      "width": { "type": "number" },
-                      "height": { "type": "number" }
-                    },
-                    "required": ["x", "y", "width", "height"],
-                    "additionalProperties": false
-                  },
-                  "differenceHash": { "type": "string" },
-                  "colors": { "type": "array", "items": { "type": "number" } },
-                  "confirmed": { "type": "boolean" }
-                },
-                "required": [
-                  "path",
-                  "sourcePath",
-                  "atMs",
-                  "lineId",
-                  "crop",
-                  "differenceHash",
-                  "colors",
-                  "confirmed"
-                ],
-                "additionalProperties": false
-              },
-              "VocalRegister_2": {
-                "type": "object",
-                "properties": {
-                  "medianHz": { "type": "number" },
-                  "confidence": { "type": "number" },
-                  "analyzedMs": { "type": "number" }
-                },
-                "required": ["medianHz", "confidence", "analyzedMs"],
-                "additionalProperties": false
-              }
-            }
-          },
+          "changes": { "$ref": "#/$defs/CharacterProfile_0" },
           "context": {
             "type": "object",
             "properties": {
@@ -2941,7 +2870,76 @@
           }
         },
         "required": ["id", "changes", "context"],
-        "additionalProperties": false
+        "additionalProperties": false,
+        "$defs": {
+          "CharacterProfile_0": {
+            "type": "object",
+            "properties": {
+              "gender": {
+                "anyOf": [
+                  { "type": "string", "const": "unspecified" },
+                  { "type": "string", "const": "man" },
+                  { "type": "string", "const": "woman" },
+                  { "type": "string", "const": "other" }
+                ]
+              },
+              "temporaryName": {
+                "anyOf": [
+                  { "type": "boolean", "const": false },
+                  { "type": "boolean", "const": true }
+                ]
+              },
+              "portrait": { "anyOf": [{ "$ref": "#/$defs/CharacterPortrait_1" }] },
+              "vocalRegister": { "anyOf": [{ "$ref": "#/$defs/VocalRegister_2" }] }
+            },
+            "required": [],
+            "additionalProperties": false
+          },
+          "CharacterPortrait_1": {
+            "type": "object",
+            "properties": {
+              "path": { "type": "string" },
+              "sourcePath": { "type": "string" },
+              "atMs": { "type": "number" },
+              "lineId": { "type": "string" },
+              "crop": {
+                "type": "object",
+                "properties": {
+                  "x": { "type": "number" },
+                  "y": { "type": "number" },
+                  "width": { "type": "number" },
+                  "height": { "type": "number" }
+                },
+                "required": ["x", "y", "width", "height"],
+                "additionalProperties": false
+              },
+              "differenceHash": { "type": "string" },
+              "colors": { "type": "array", "items": { "type": "number" } },
+              "confirmed": { "type": "boolean" }
+            },
+            "required": [
+              "path",
+              "sourcePath",
+              "atMs",
+              "lineId",
+              "crop",
+              "differenceHash",
+              "colors",
+              "confirmed"
+            ],
+            "additionalProperties": false
+          },
+          "VocalRegister_2": {
+            "type": "object",
+            "properties": {
+              "medianHz": { "type": "number" },
+              "confidence": { "type": "number" },
+              "analyzedMs": { "type": "number" }
+            },
+            "required": ["medianHz", "confidence", "analyzedMs"],
+            "additionalProperties": false
+          }
+        }
       },
       "annotations": { "readOnlyHint": false, "destructiveHint": true, "openWorldHint": false }
     },
@@ -2951,36 +2949,7 @@
       "inputSchema": {
         "type": "object",
         "properties": {
-          "options": {
-            "$ref": "#/$defs/CharacterMerge_0",
-            "$defs": {
-              "CharacterMerge_0": {
-                "type": "object",
-                "properties": {
-                  "ids": { "type": "array", "items": { "type": "string" } },
-                  "keepId": { "type": "string" },
-                  "defaultReferenceId": { "anyOf": [{ "type": "string" }] },
-                  "portraitFromId": { "anyOf": [{ "type": "string" }] },
-                  "preparedReference": { "anyOf": [{ "$ref": "#/$defs/VoiceReference_1" }] }
-                },
-                "required": ["ids", "keepId"],
-                "additionalProperties": false
-              },
-              "VoiceReference_1": {
-                "type": "object",
-                "properties": {
-                  "id": { "type": "string" },
-                  "label": { "type": "string" },
-                  "path": { "type": "string" },
-                  "durationMs": { "type": "number" },
-                  "transcript": { "type": "string" },
-                  "sourceDialogueId": { "anyOf": [{ "type": "null" }, { "type": "string" }] }
-                },
-                "required": ["id", "label", "path", "durationMs", "transcript"],
-                "additionalProperties": false
-              }
-            }
-          },
+          "options": { "$ref": "#/$defs/CharacterMerge_0" },
           "context": {
             "type": "object",
             "properties": {
@@ -2992,7 +2961,34 @@
           }
         },
         "required": ["options", "context"],
-        "additionalProperties": false
+        "additionalProperties": false,
+        "$defs": {
+          "CharacterMerge_0": {
+            "type": "object",
+            "properties": {
+              "ids": { "type": "array", "items": { "type": "string" } },
+              "keepId": { "type": "string" },
+              "defaultReferenceId": { "anyOf": [{ "type": "string" }] },
+              "portraitFromId": { "anyOf": [{ "type": "string" }] },
+              "preparedReference": { "anyOf": [{ "$ref": "#/$defs/VoiceReference_1" }] }
+            },
+            "required": ["ids", "keepId"],
+            "additionalProperties": false
+          },
+          "VoiceReference_1": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "string" },
+              "label": { "type": "string" },
+              "path": { "type": "string" },
+              "durationMs": { "type": "number" },
+              "transcript": { "type": "string" },
+              "sourceDialogueId": { "anyOf": [{ "type": "null" }, { "type": "string" }] }
+            },
+            "required": ["id", "label", "path", "durationMs", "transcript"],
+            "additionalProperties": false
+          }
+        }
       },
       "annotations": { "readOnlyHint": false, "destructiveHint": true, "openWorldHint": false }
     },

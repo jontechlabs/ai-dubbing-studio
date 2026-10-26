@@ -259,10 +259,30 @@ function tool(name, description, properties, required, editing = false, readonly
     properties.context = context;
     required = [...required, 'context'];
   }
+  // makeSchema() uses root-relative references. Lift definitions from a
+  // structured builtin argument to the enclosing MCP input schema.
+  const definitions = {};
+  properties = Object.fromEntries(
+    Object.entries(properties).map(([key, value]) => {
+      const { $defs, ...schema } = value;
+      for (const [id, definition] of Object.entries($defs ?? {})) {
+        if (definitions[id] && JSON.stringify(definitions[id]) !== JSON.stringify(definition))
+          throw Error(`Conflicting schema definition in ${name}: ${id}`);
+        definitions[id] = definition;
+      }
+      return [key, schema];
+    }),
+  );
   builtins.push({
     name,
     description,
-    inputSchema: { type: 'object', properties, required, additionalProperties: false },
+    inputSchema: {
+      type: 'object',
+      properties,
+      required,
+      additionalProperties: false,
+      ...(Object.keys(definitions).length ? { $defs: definitions } : {}),
+    },
     annotations: { readOnlyHint: readonly, destructiveHint: !readonly, openWorldHint: false },
   });
 }
@@ -571,16 +591,25 @@ tool(
   { action: choice('status', 'check', 'download', 'install', 'automatic'), enabled: bool },
   ['action'],
 );
-// Standalone inputSchema references must resolve inside that tool, not inside
-// an arbitrary nested property. VoiceOperation is the one shared builtin type.
-for (const entry of builtins)
-  if (entry.name === 'studio_edit_voice') {
-    const operation = entry.inputSchema.properties.operation;
-    if (operation.$defs) {
-      entry.inputSchema.$defs = operation.$defs;
-      delete operation.$defs;
+// Every public schema must be independently resolvable by MCP clients.
+function verifyReferences(root) {
+  const visit = (node) => {
+    if (!node || typeof node !== 'object') return;
+    if (node.$ref) {
+      const parts = node.$ref.startsWith('#/') ? node.$ref.slice(2).split('/') : [];
+      const target = parts.reduce(
+        (value, key) => value?.[key.replaceAll('~1', '/').replaceAll('~0', '~')],
+        root,
+      );
+      if (!parts.length || target === undefined)
+        throw Error(`Unresolved MCP schema reference: ${node.$ref}`);
     }
-  }
+    Object.values(node).forEach(visit);
+  };
+  visit(root);
+}
+for (const entry of [...commands, ...builtins]) verifyReferences(entry.inputSchema);
+Object.values(schemas).forEach(verifyReferences);
 const path = 'src/mcp/catalog.json';
 const result = await prettier.format(
   JSON.stringify({ protocolVersion: '2025-11-25', commands, builtins, schemas }),

@@ -65,6 +65,25 @@ fn nested_schema_references_context_and_error_results_are_validated() {
         &protocol::tool("studio_edit_voice").unwrap()["inputSchema"],
         &bad
     ));
+    for (name, arguments, field) in [
+        (
+            "studio_set_character_profile",
+            json!({"context":{"projectId":"p","expectedRevision":0},"id":"character","changes":{"gender":"man","vocalRegister":{"medianHz":180,"confidence":0.9,"analyzedMs":1500}}}),
+            "changes",
+        ),
+        (
+            "studio_merge_characters",
+            json!({"context":{"projectId":"p","expectedRevision":0},"options":{"ids":["a","b"],"keepId":"a","preparedReference":{"id":"ref","label":"Reference","path":"characters/ref.wav","durationMs":2000,"transcript":"Bonjour"}}}),
+            "options",
+        ),
+    ] {
+        let schema = &protocol::tool(name).unwrap()["inputSchema"];
+        assert!(schema["$defs"].is_object());
+        assert!(protocol::validate(schema, &arguments), "{name}");
+        let mut invalid = arguments;
+        invalid[field] = json!("invalid");
+        assert!(!protocol::validate(schema, &invalid), "{name}");
+    }
 }
 #[test]
 fn resources_and_invalid_jsonrpc_do_not_execute_tools() {

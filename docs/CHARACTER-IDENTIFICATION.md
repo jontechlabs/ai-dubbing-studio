@@ -9,7 +9,7 @@ Les personnages ont une galerie dans **Personnages** : vignette, nom, nombre de 
 ## Identifier et vérifier
 
 1. Dans **Modèles**, installez ou réparez **3D-Speaker + Silero VAD**. Cette version ajoute OpenCV, YuNet et le détecteur de visages d’anime au même environnement CPU isolé. Une ancienne installation demande une réparation ; les téléchargements déjà vérifiés sont réutilisés.
-2. Ouvrez **Personnages**, choisissez une piste et le projet entier ou un intervalle en secondes. La piste **Voix** est choisie par défaut si disponible, sinon **Audio original**. Les corrections de contenu et les volumes locaux de la piste sont inclus ; son volume général, mute et solo ne modifient pas l’analyse.
+2. Ouvrez **Personnages**, choisissez une piste et le projet entier ou un intervalle en secondes. Le choix automatique suit la piste de référence configurée dans Audio ; sans choix explicite, il utilise **Voix** si disponible, sinon **Audio original**. Les corrections de contenu et les volumes locaux de la piste sont inclus ; son volume général, mute et solo ne modifient pas l’analyse.
 3. Lancez **Identifier les locuteurs par IA**. CAMPPlus et Silero analysent la parole des répliques existantes. Ils proposent des groupes de voix, des références et des noms temporaires « Personnage 01 », « Personnage 02 », etc. Les répliques trop courtes, sans parole ou ambiguës peuvent rester non assignées.
 4. Écoutez les références proposées avant d’appliquer. Par défaut, les assignations déjà faites sont conservées. Pour corriger des assignations dans la zone analysée, cochez explicitement **Autoriser la réattribution…** avant de relancer.
 
