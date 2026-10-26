@@ -792,9 +792,10 @@ async fn model_storage_command_refuses_busy_and_reuses_moved_speaker_installatio
     let interpreter = crate::separation::python(&root);
     std::fs::create_dir_all(interpreter.parent().unwrap()).unwrap();
     std::fs::write(&interpreter, b"interpreter fixture").unwrap();
-    for file in ["ready.json", "speaker.onnx", "vad.onnx"] {
+    for file in ["speaker.onnx", "vad.onnx", "yunet.onnx", "anime.xml"] {
         std::fs::write(root.join(file), b"fixture").unwrap();
     }
+    std::fs::write(root.join("ready.json"), br#"{"version":"1.13.8"}"#).unwrap();
     std::fs::write(data.join("projects-untouched.txt"), b"projects").unwrap();
     let core = Arc::new(Core {
         session: Mutex::new(None),
@@ -805,6 +806,14 @@ async fn model_storage_command_refuses_busy_and_reuses_moved_speaker_installatio
     });
     let app = tauri::test::mock_app();
     let dest = temporary.path().join("new model folder");
+    // A legacy speaker environment needs the portrait upgrade before reuse.
+    assert!(!crate::speakers::installed(&core));
+    std::fs::write(
+        root.join("ready.json"),
+        br#"{"version":"1.13.8","portraitReady":true}"#,
+    )
+    .unwrap();
+    assert!(crate::speakers::installed(&core));
     let permit = core.gate.clone().acquire_owned().await.unwrap();
     assert_eq!(
         crate::model_storage::change(core.clone(), app.handle().clone(), dest.clone()).unwrap_err(),
