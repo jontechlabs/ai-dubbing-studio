@@ -1,0 +1,79 @@
+name: Rebuild identical app and complete neural validation
+on:
+  workflow_dispatch:
+    inputs:
+      base_run:
+        description: Authenticated complete-check run that timed out after successful Vox probes
+        type: string
+        default: '40526247349'
+  push:
+    branches: [codex/voice-library]
+    paths: [.github/workflows/rebuild-neural.yml]
+permissions:
+  contents: read
+  actions: read
+jobs:
+  rebuild-and-complete:
+    runs-on: windows-latest
+    timeout-minutes: 120
+    env:
+      GH_TOKEN: ${{ github.token }}
+      BASE_RUN_ID: ${{ inputs.base_run || '40526247349' }}
+      STUDIO_VALIDATED_VOX_PROOF: .cache/validated-vox.json
+      PYTHONDONTWRITEBYTECODE: '1'
+      PYTHONUTF8: '1'
+      PYTHONIOENCODING: utf-8
+      PYTHONUNBUFFERED: '1'
+      PYTHONFAULTHANDLER: '1'
+      LIBCLANG_PATH: 'C:\Program Files\LLVM\bin'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
+        with:
+          node-version: '24'
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12.10'
+      - name: Authenticate base suites, Vox proofs and identical application source
+        run: python scripts/verify-neural-rebuild.py
+      - name: Prepare build and pinned tools
+        run: |
+          npm install --global pnpm@11.25.0
+          pnpm install --frozen-lockfile
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          ./scripts/prepare-ffmpeg.ps1
+          ./scripts/prepare-prosody.ps1
+          rustup update stable --no-self-update
+      - name: Rebuild Windows installer from identical application source
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ''
+        run: pnpm desktop:build
+      - name: Verify fresh Japanese reference transcription
+        run: ./scripts/test-reference-transcription.ps1
+      - name: Package rebuilt portable and checksums
+        run: ./scripts/package-windows.ps1
+      - name: Control rebuilt packaged desktop through official MCP SDK
+        run: ./scripts/test-mcp.ps1
+      - name: Fresh Chatterbox and conversion with authenticated Vox proofs
+        run: ./scripts/test-multilingual.ps1
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: windows-x64-development-build
+          path: artifacts/*
+          if-no-files-found: error
+      - name: Retain failure diagnostics
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: failure-diagnostics
+          path: |
+            artifacts/*
+            .cache/multilingual-validation/*.json
+            .cache/multilingual-validation/*.log
+            .cache/reference-transcription/**/*.log
+            .cache/mcp-native/**/*.log
+          include-hidden-files: true
+          if-no-files-found: ignore

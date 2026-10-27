@@ -73,7 +73,17 @@ whisper = ROOT / '.cache/reference-transcription/Référence 日本語/ggml-smal
 assert exe.is_file() and whisper.is_file(), 'Build and ASR validation must run first'
 embedded_python, packaged_workers = prepare(ROOT, WORK)
 proof.update(embeddedPython=True, packagedWorkers=True)
+if validated_path:=os.environ.get('STUDIO_VALIDATED_VOX_PROOF'):
+    validated=json.loads((ROOT/validated_path).read_text(encoding='utf8'))
+    assert validated['baseHead']=='884f24423d0929749f554d3baf235322e708f2f8' and validated['authenticatedBaseRun']==40526247349
+    assert validated['device']=='CPU' and validated['packagedWorkers'] and len(validated['engines'])==1
+    assert validated['engines'][0]['id']=='voxcpm2-bf16' and validated['engines'][0]['standardTextWordOverlap']>=4
+    assert {p['mode'] for p in validated['voiceLibraryGuides']['probes']}=={'french-fidelity','acoustic-guide','hybrid-guide'}
+    assert all(p['language']=='fr' and p['textWordOverlap']>=4 for p in validated['voiceLibraryGuides']['probes'])
+    proof.update(engines=validated['engines'],voiceLibraryGuides=validated['voiceLibraryGuides'],authenticatedVoxBaseRun=validated['authenticatedBaseRun'])
+    print('Using authenticated Vox and guide proofs; production workers are byte-identical.',flush=True)
 for id in worker.IDS:
+    if id=='voxcpm2-bf16' and proof.get('authenticatedVoxBaseRun'):continue
     spec = next(v for v in manifest['variants'] if v['id'] == id)
     model = WORK / id
     for file in spec['files']:

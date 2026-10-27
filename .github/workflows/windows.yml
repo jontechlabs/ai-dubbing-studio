@@ -36,7 +36,7 @@ jobs:
   windows:
     if: ${{ !inputs.complete_neural }}
     runs-on: windows-latest
-    timeout-minutes: 90
+    timeout-minutes: 150
     env:
       PYTHONDONTWRITEBYTECODE: '1'
       PYTHONUTF8: '1'
@@ -148,6 +148,12 @@ jobs:
         run: ./scripts/package-windows.ps1
       - name: Packaged desktop controlled through the official MCP SDK
         run: ./scripts/test-mcp.ps1
+      - name: Retain verified packages before full-weight inference
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: windows-base-packages
+          path: artifacts/*
+          if-no-files-found: error
       - name: Actual VoxCPM2 and Chatterbox V3 French generation from Japanese reference
         if: ${{ !inputs.mcp_maintenance && !inputs.ui_maintenance }}
         # Full official weights, two requests per hot worker, auto-language ASR.
