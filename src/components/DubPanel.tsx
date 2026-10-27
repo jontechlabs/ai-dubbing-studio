@@ -473,11 +473,6 @@ export function DubPanel({
           onChange={(e) =>
             edit({
               referenceMode: e.target.value as typeof settings.referenceMode,
-              ...(e.target.value === 'library' &&
-              variant.id === 'voxcpm2-bf16' &&
-              !settings.intonationGuide
-                ? { mode: 'zeroShot' as const, accent: 'auto' as const, mood: 'default' as const }
-                : {}),
               referenceId:
                 e.target.value === 'file' ? (project.voiceReferences?.[0]?.id ?? null) : null,
             })
@@ -676,33 +671,61 @@ export function DubPanel({
       <label className="field">
         <span>{t('ttsCloneMode')}</span>
         <select
-          value={mode}
-          disabled={busy || instructedMood || chatterbox || !!settings.intonationGuide}
+          value={
+            variant.id === 'voxcpm2-bf16' && settings.intonationGuide?.mode === 'hybrid'
+              ? 'hybrid'
+              : mode
+          }
+          disabled={
+            busy ||
+            instructedMood ||
+            chatterbox ||
+            (variant.id !== 'voxcpm2-bf16' && !!settings.intonationGuide)
+          }
           onChange={(e) =>
+            e.target.value !== 'hybrid' &&
             edit(
               e.target.value === 'zeroShot' && variant.id === 'voxcpm2-bf16'
                 ? { mode: 'zeroShot', accent: 'auto', mood: 'default', intonationGuide: undefined }
-                : { mode: e.target.value as typeof settings.mode },
+                : {
+                    mode: e.target.value as typeof settings.mode,
+                    ...(variant.id === 'voxcpm2-bf16' && settings.intonationGuide?.mode === 'hybrid'
+                      ? { intonationGuide: undefined }
+                      : {}),
+                  },
             )
           }
         >
           <option value="crossLingual" disabled={variant.providerId.startsWith('fish')}>
-            {t('ttsCrossLingual')}
+            {t(variant.id === 'voxcpm2-bf16' ? 'library.voxStandardOption' : 'ttsCrossLingual')}
           </option>
-          <option value="zeroShot">{t('ttsZeroShot')}</option>
+          <option value="zeroShot">
+            {t(variant.id === 'voxcpm2-bf16' ? 'library.voxHiFiOption' : 'ttsZeroShot')}
+          </option>
+          {variant.id === 'voxcpm2-bf16' && settings.intonationGuide?.mode === 'hybrid' && (
+            <option value="hybrid" disabled>
+              {t('library.voxHybridOption')}
+            </option>
+          )}
         </select>
       </label>
       <p className="panel-description">
         {t(
-          chatterbox
-            ? 'chatterboxCloneHint'
-            : instructedMood
-              ? 'ttsCosyMoodHint'
-              : variant.providerId.startsWith('fish')
-                ? 'ttsFishHint'
-                : mode === 'crossLingual'
-                  ? 'ttsCrossHint'
-                  : 'ttsZeroHint',
+          variant.id === 'voxcpm2-bf16'
+            ? settings.intonationGuide?.mode === 'hybrid'
+              ? 'library.voxHybridHint'
+              : mode === 'zeroShot'
+                ? 'library.voxHiFiHint'
+                : 'library.voxStandardHint'
+            : chatterbox
+              ? 'chatterboxCloneHint'
+              : instructedMood
+                ? 'ttsCosyMoodHint'
+                : variant.providerId.startsWith('fish')
+                  ? 'ttsFishHint'
+                  : mode === 'crossLingual'
+                    ? 'ttsCrossHint'
+                    : 'ttsZeroHint',
         )}
       </p>
       <label className="field">

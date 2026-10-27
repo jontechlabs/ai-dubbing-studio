@@ -1,0 +1,89 @@
+name: Verify and package explicit Vox cloning choice
+on:
+  workflow_dispatch:
+  push:
+    branches: [codex/voice-library]
+    paths: [.github/workflows/voice-ui-final.yml]
+permissions:
+  contents: read
+  actions: read
+jobs:
+  voice-ui-final:
+    runs-on: windows-latest
+    timeout-minutes: 90
+    env:
+      GH_TOKEN: ${{ github.token }}
+      LIBCLANG_PATH: 'C:\Program Files\LLVM\bin'
+      PYTHONDONTWRITEBYTECODE: '1'
+      PYTHONUTF8: '1'
+      PYTHONIOENCODING: utf-8
+      PYTHONUNBUFFERED: '1'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
+        with:
+          node-version: '24'
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12.10'
+      - name: Verify exact native, worker, dependency and project source identity
+        run: python scripts/verify-voice-ui-final.py
+      - name: Prepare tools and dependencies
+        run: |
+          npm install --global pnpm@11.25.0
+          pnpm install --frozen-lockfile
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          ./scripts/prepare-ffmpeg.ps1
+          ./scripts/prepare-prosody.ps1
+          rustup update stable --no-self-update
+      - name: Fresh frontend unit, browser, lint and schema checks
+        run: |
+          pnpm mcp:check
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          pnpm build
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          pnpm test
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          pnpm lint
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          pnpm format:check
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          pnpm exec prettier --check tests/e2e/voice-library.pw.ts
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          pnpm exec playwright install chromium
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          pnpm test:e2e
+      - name: Build installer with explicit Standard and Ultimate controls
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ''
+        run: pnpm desktop:build
+      - name: Fresh Japanese ASR using final executable
+        run: ./scripts/test-reference-transcription.ps1
+      - name: Package final UI build
+        run: ./scripts/package-windows.ps1
+      - name: Control final packaged desktop with official MCP SDK
+        run: ./scripts/test-mcp.ps1
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: windows-ui-base-packages
+          path: artifacts/*
+          if-no-files-found: error
+      - name: Authenticate completed neural proofs for unchanged engines
+        run: python scripts/verify-voice-ui-final.py --import-evidence
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: windows-x64-development-build
+          path: artifacts/*
+          if-no-files-found: error
+      - name: Retain failure diagnostics
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: failure-diagnostics
+          path: |
+            artifacts/*
+            test-results/
+          if-no-files-found: ignore

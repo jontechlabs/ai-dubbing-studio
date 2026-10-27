@@ -1464,9 +1464,15 @@
     "guideStyleHint": "Analyse locale des pauses, variations de hauteur et d’énergie, convertie en consignes de jeu. Aucune resynthèse Praat ni copie d’audio japonais. L’émotion et le rythme syllabique exact ne sont pas garantis.",
     "guideInputMissing": "Le guide exige au moins une seconde. Le mode à deux audios demande aussi le texte original de la réplique.",
     "frenchFidelity": "Privilégier le français de cette référence",
-    "frenchFidelityHint": "À utiliser avec une référence réellement parlée en français et sa transcription exacte. Le moteur reçoit les deux, avec le texte cible sans préfixe anglais. Les consignes séparées d’accent, d’humeur et le guide sont retirés.",
+    "frenchFidelityHint": "Ce bouton active Ultimate / Hi-Fi avec une référence réellement parlée en français et sa transcription exacte. Il retire les consignes séparées d’accent, d’humeur et le guide. Il ne force pas un accent : vous pouvez revenir à Standard dans Mode de clonage.",
     "voxContinuationHint": "VoxCPM2 · fidélité à la référence : le timbre, la langue et le jeu viennent de l’audio et de sa transcription. Les consignes d’accent/humeur ne sont pas appliquées dans ce mode. Choisissez une référence française validée avec l’interprétation souhaitée.",
-    "shortContext": "Le texte et la référence sont très courts. L’accent peut devenir instable. Essayez une référence française propre de 5 à 20 secondes et vérifiez le nouvel essai."
+    "shortContext": "Le texte et la référence sont très courts. L’accent peut devenir instable. Essayez une référence française propre de 5 à 20 secondes et vérifiez le nouvel essai.",
+    "voxStandardOption": "Standard · Ultimate / Hi-Fi désactivé",
+    "voxHiFiOption": "Ultimate Cloning / Hi-Fi activé · transcription exacte",
+    "voxHybridOption": "Ultimate / Hi-Fi · guide indépendant (expérimental)",
+    "voxStandardHint": "Clonage standard : privilégiez ce mode pour le japonais → français si l’accent de la langue cible est prioritaire. La référence guide le timbre ; les consignes d’accent et d’humeur restent disponibles, sans garantie de résultat.",
+    "voxHiFiHint": "Ultimate / Hi-Fi continue l’audio de référence avec sa transcription exacte. Il peut reproduire son accent et ses habitudes de prononciation. Avec une source japonaise, commencez par Standard pour privilégier le français. Les consignes séparées d’accent/humeur sont ignorées par ce mode.",
+    "voxHybridHint": "Le guide à deux audios utilise aussi la continuation Ultimate / Hi-Fi. Il peut transférer l’accent japonais du guide. Choisir Standard désactive ce guide hybride."
   },
   "speakerSuggest": {
     "title": "Personnage proposé par la voix",

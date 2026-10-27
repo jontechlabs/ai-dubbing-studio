@@ -1464,9 +1464,15 @@
     "guideStyleHint": "Local pause, pitch-variation and energy analysis becomes delivery directions. No Praat resynthesis or Japanese audio mixing. Exact emotion and syllabic timing are not guaranteed.",
     "guideInputMissing": "The guide requires at least one second. Two-input mode also requires the original transcript.",
     "frenchFidelity": "Prioritize this French reference",
-    "frenchFidelityHint": "Use with actual French reference speech and its exact transcript. Both condition the engine; target text has no English prefix. Separate accent, mood and dialogue-guide directions are removed.",
+    "frenchFidelityHint": "This button enables Ultimate / Hi-Fi with actual French speech and its exact transcript. It removes separate accent, mood and guide instructions. It does not force an accent: switch back to Standard under Cloning mode.",
     "voxContinuationHint": "VoxCPM2 reference fidelity: audio and transcript provide timbre, language and acting. Separate accent/mood directions are not applied in this mode. Choose an approved French reference with the intended performance.",
-    "shortContext": "Both text and reference are very short, which can destabilize the accent. Try a clean 5–20 second French reference and audition the new take."
+    "shortContext": "Both text and reference are very short, which can destabilize the accent. Try a clean 5–20 second French reference and audition the new take.",
+    "voxStandardOption": "Standard · Ultimate / Hi-Fi off",
+    "voxHiFiOption": "Ultimate Cloning / Hi-Fi on · exact transcript",
+    "voxHybridOption": "Ultimate / Hi-Fi · independent guide (experimental)",
+    "voxStandardHint": "Standard cloning: start here for Japanese → French when the target accent matters most. The reference guides timbre; accent and mood instructions remain available, without a guaranteed outcome.",
+    "voxHiFiHint": "Ultimate / Hi-Fi continues the reference audio using its exact transcript. It can copy the source accent and pronunciation habits. With Japanese reference speech, start with Standard to favor French. Separate accent/mood instructions do not apply in this mode.",
+    "voxHybridHint": "The two-audio guide also uses Ultimate / Hi-Fi continuation and may transfer the Japanese guide accent. Choosing Standard removes this hybrid guide."
   },
   "speakerSuggest": {
     "title": "Character suggested by voice",

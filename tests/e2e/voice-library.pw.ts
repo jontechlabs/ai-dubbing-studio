@@ -230,6 +230,80 @@ test('automatic voice candidates never assign until accepted and keep manual cor
   await expect(page.locator('.save-indicator')).toHaveText('Sauvegardé');
   expect((await saved(page)).dialogues[0].characterId).toBe('c1');
 });
+
+test('Vox Ultimate Hi-Fi is optional, persists and Standard clears a hybrid continuation without changing takes', async ({
+  page,
+}) => {
+  const p = fixture();
+  await nativeMock(page, false, p);
+  await page.goto('/');
+  const panel = await dub(page),
+    clone = panel.getByRole('combobox', { name: 'Mode de clonage' });
+  await expect(clone).toHaveValue('crossLingual');
+  await expect(clone.locator('option:checked')).toHaveText('Standard · Ultimate / Hi-Fi désactivé');
+  await clone.selectOption('zeroShot');
+  await expect(
+    panel.getByRole('combobox', { name: 'Accent souhaité (consigne)', exact: true }),
+  ).toBeDisabled();
+  await expect(panel.getByText(/Il peut reproduire son accent/)).toBeVisible();
+  await panel
+    .getByRole('combobox', { name: 'Guide de jeu de la réplique d’origine' })
+    .selectOption('hybrid');
+  await expect(clone).toHaveValue('hybrid');
+  await expect(clone).toBeEnabled();
+  await clone.selectOption('crossLingual');
+  await expect(
+    panel.getByRole('combobox', { name: 'Guide de jeu de la réplique d’origine' }),
+  ).toHaveValue('off');
+  await expect(
+    panel.getByRole('combobox', { name: 'Accent souhaité (consigne)', exact: true }),
+  ).toBeEnabled();
+  await panel
+    .getByRole('combobox', { name: 'Accent souhaité (consigne)', exact: true })
+    .selectOption('fr-FR');
+  // Selecting the approved bank must not silently re-enable Ultimate.
+  await panel
+    .getByRole('combobox', { name: 'Référence vocale', exact: true })
+    .selectOption('library');
+  await expect(clone).toHaveValue('crossLingual');
+  await clone.selectOption('zeroShot');
+  await clone.scrollIntoViewIfNeeded();
+  await page.screenshot({ path: 'test-results/screenshots/voxcpm-ultimate-toggle.png' });
+  await page.getByRole('button', { name: 'Fermer', exact: true }).click();
+  await expect(page.locator('.save-indicator')).toHaveText('Sauvegardé');
+  await page.reload();
+  const retained = await saved(page);
+  expect(retained.dialogues[0].voiceSettings.mode).toBe('zeroShot');
+  expect(retained.generations).toEqual(p.generations);
+  expect(retained.characterProfiles).toEqual(p.characterProfiles);
+});
+
+test('Vox batch dispatches the explicitly chosen Standard or Ultimate mode without rewriting existing takes', async ({
+  page,
+}) => {
+  const p = fixture();
+  await nativeMock(page, false, p);
+  await page.goto('/');
+  await page.getByRole('button', { name: /Doublage par lot/ }).click();
+  const panel = page.getByRole('dialog', { name: 'Doublage par lot', exact: true });
+  await panel
+    .getByRole('combobox', { name: 'Référence vocale', exact: true })
+    .selectOption('current');
+  const clone = panel.getByRole('combobox', { name: 'Mode de clonage' });
+  await clone.selectOption('zeroShot');
+  await expect(clone).toHaveValue('zeroShot');
+  await clone.selectOption('crossLingual');
+  await panel
+    .getByRole('combobox', { name: 'Accent souhaité (consigne)', exact: true })
+    .selectOption('fr-FR');
+  await panel.getByRole('checkbox', { name: /Forcer un nouvel essai/ }).check();
+  await panel.getByRole('button', { name: 'Doubler 4 répliques', exact: true }).click();
+  const pending = await page.evaluate(() => (window as any).__pendingBatch);
+  expect(pending.options.mode).toBe('crossLingual');
+  expect(pending.options.accent).toBe('fr-FR');
+  expect(pending.options.intonationGuide).toBeUndefined();
+  expect((await saved(page)).generations).toEqual(p.generations);
+});
 test('too little speech asks for manual selection and ambiguous candidates remain review-only', async ({
   page,
 }) => {

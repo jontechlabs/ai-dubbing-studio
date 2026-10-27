@@ -24,7 +24,15 @@ Modifier la transcription retire la validation et l'éventuel défaut. Les phras
 
 Dans **Doublage → Référence vocale**, choisissez **Bibliothèque validée du personnage**. Seules les phrases validées sont proposées. Pour une réplique, vous pouvez choisir une phrase précise ou le défaut. En lot, chaque personnage utilise son propre défaut validé ; une réplique sans référence utilisable est signalée avant génération.
 
-VoxCPM2 sélectionne alors, sans guide distinct, la continuation fidèle : l'audio français et sa transcription exacte conditionnent le modèle. Les commandes séparées d'accent/humeur sont désactivées dans ce mode. Choisissez donc une phrase française qui contient déjà l'interprétation souhaitée.
+Le choix d'une référence de bibliothèque conserve votre mode de clonage. Dans **Mode de clonage**, choisissez **Standard · Ultimate / Hi-Fi désactivé**, ou **Ultimate Cloning / Hi-Fi activé**. En Hi-Fi, l'audio français et sa transcription exacte conditionnent le modèle ; les commandes séparées d'accent/humeur sont désactivées. Choisissez alors une phrase française contenant déjà l'interprétation souhaitée.
+
+Pour une référence japonaise et un texte français, commencez par **Standard** si l'accent français est prioritaire. Ultimate peut reprendre l'accent et les habitudes de prononciation de la référence, même si la cible est française. C'est le compromis confirmé par [un contributeur de VoxCPM](https://github.com/OpenBMB/VoxCPM/issues/321). Le standard conserve les consignes d'accent et d'humeur, sans garantir un accent parfait. Le choix est sauvegardé par réplique et disponible dans la configuration du lot ; les essais existants ne sont pas modifiés.
+
+Le guide à deux audios utilise lui aussi la continuation Ultimate : **Mode de clonage** l'indique explicitement. Revenir à Standard retire ce guide hybride. Le guide acoustique peut rester actif avec le standard. Les phrases de la bibliothèque sont créées avec le clonage standard.
+
+![Choix explicite Standard ou Ultimate / Hi-Fi](screenshots/voxcpm-ultimate-fr.png)
+
+*Écran React avec données de démonstration ; le test vérifie le choix, la persistance et les paramètres envoyés, sans qualification de l'accent produit.*
 
 Les autres moteurs peuvent utiliser les références validées via leurs modes de clonage habituels ; le **guide distinct** est actuellement réservé à VoxCPM2.
 
@@ -43,7 +51,7 @@ Chaque dialogue du lot utilise son propre extrait d'au moins une seconde, 20 sec
 
 ## Référence française et accent anglais avec VoxCPM2
 
-Si un fichier de référence parlé uniquement en français donne un accent anglais, choisissez **Privilégier le français de cette référence** et vérifiez sa transcription. Le studio envoie le même audio comme référence de timbre et de continuation, sa transcription exacte et le texte cible sans préfixe anglais. Il retire les commandes séparées d'accent/humeur et le guide distinct. Les options archivées des anciens essais restent lisibles et ne sont pas modifiées.
+Si un fichier de référence parlé uniquement en français donne un accent anglais, vous pouvez essayer **Privilégier le français de cette référence** après vérification de sa transcription. Ce bouton active **Ultimate / Hi-Fi** : le studio envoie le même audio comme référence de timbre et de continuation, sa transcription exacte et le texte cible sans préfixe anglais. Il retire les commandes séparées d'accent/humeur et le guide distinct. Il ne force pas l'accent français ; revenez à **Standard** dans Mode de clonage pour désactiver Hi-Fi. Les options archivées des anciens essais restent lisibles et ne sont pas modifiées.
 
 Une référence de deux secondes et une cible d'un seul mot offrent peu de contexte phonétique. Préférez 5 à 20 secondes de français propre, sans silence excessif. La correction du routage n'est pas un verrou phonétique : des erreurs de diction restent possibles et demandent un nouvel essai ou une autre référence.
 
