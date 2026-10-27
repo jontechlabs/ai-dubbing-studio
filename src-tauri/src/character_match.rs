@@ -431,13 +431,13 @@ mod tests {
             fingerprint: fingerprint(&p, root, &options).unwrap(),
             options,
         };
-        let core = Core {
+        let core = Arc::new(Core {
             session: Mutex::new(Some(project::Session::new(root.into(), p.clone()))),
             jobs: Mutex::new(HashMap::new()),
             gate: Arc::new(tokio::sync::Semaphore::new(1)),
             data_dir: root.into(),
             model_dir: Mutex::new(root.into()),
-        };
+        });
         let app = tauri::test::mock_app();
         let key = jobs::create(&core, app.handle(), "characterMatch", p.id.clone(), None);
         {

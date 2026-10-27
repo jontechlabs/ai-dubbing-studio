@@ -194,7 +194,9 @@
     "localSeparation": "Séparation locale Bandit",
     "localSeparationPreview": "Préécoute prête à examiner",
     "voiceLibraryGenerate": "Génération des phrases de référence",
-    "characterMatch": "Comparaison des références de personnages"
+    "characterMatch": "Comparaison des références de personnages",
+    "ttsQwenRecovery": "Reprise compatible Qwen3 · même GPU",
+    "ttsValidateOutput": "Vérification du WAV généré"
   },
   "shortcuts": "Espace : lecture · J/K/L : transport · O : original · Ctrl+S : sauvegarde · Ctrl+Z/Y : annuler/rétablir",
   "errors": {
@@ -384,7 +386,9 @@
     "TTS_GUIDE_TOO_SHORT": "La réplique guide doit durer au moins une seconde.",
     "TTS_GUIDE_TRANSCRIPT_REQUIRED": "Le mode à deux audios exige la transcription exacte de la réplique originale.",
     "SPEAKER_REFERENCES_REQUIRED": "Ajoutez une référence vocale d’origine à un personnage avant de demander une proposition.",
-    "VOICE_LIBRARY_REFERENCE_CHANGED": "Le fichier de référence de la bibliothèque a changé. Préparez une nouvelle source."
+    "VOICE_LIBRARY_REFERENCE_CHANGED": "Le fichier de référence de la bibliothèque a changé. Préparez une nouvelle source.",
+    "TTS_OUTPUT_TOO_LONG": "Le moteur a produit plus de 120 secondes. L’essai est refusé, sans modifier les précédents. Essayez une référence plus propre ou le mode sans transcription.",
+    "TTS_GENERATION_LIMIT": "Qwen3 a atteint la limite de durée sans terminer normalement, même après reprise. Aucun audio tronqué n’est ajouté. Essayez une autre référence ou une autre graine."
   },
   "preparingVideo": "Préparation de la vidéo…",
   "loadingVideo": "Chargement de la vidéo…",
@@ -1484,5 +1488,6 @@
     "accept": "Accepter",
     "hint": "Analyse CPU des références d’origine. Aucune assignation n’est changée sans validation ; les essais restent conservés.",
     "settings": "Réglages de la proposition"
-  }
+  },
+  "ttsQwenRecovered": "Qwen3 : reprise sans transcription de référence · {{device}} · graine {{seed}}. Paramètres demandés conservés ; ce mode effectif est enregistré pour cet essai."
 }

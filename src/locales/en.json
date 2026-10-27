@@ -194,7 +194,9 @@
     "localSeparation": "Local Bandit separation",
     "localSeparationPreview": "Preview ready for review",
     "voiceLibraryGenerate": "Generating reference phrases",
-    "characterMatch": "Comparing character references"
+    "characterMatch": "Comparing character references",
+    "ttsQwenRecovery": "Qwen3 compatible retry · same GPU",
+    "ttsValidateOutput": "Validating generated WAV"
   },
   "shortcuts": "Space: play · J/K/L: transport · O: original · Ctrl+S: save · Ctrl+Z/Y: undo/redo",
   "errors": {
@@ -384,7 +386,9 @@
     "TTS_GUIDE_TOO_SHORT": "The guide dialogue must last at least one second.",
     "TTS_GUIDE_TRANSCRIPT_REQUIRED": "Two-input mode requires the exact original dialogue transcript.",
     "SPEAKER_REFERENCES_REQUIRED": "Add an original character voice reference before requesting a suggestion.",
-    "VOICE_LIBRARY_REFERENCE_CHANGED": "The library reference file changed. Prepare a new source."
+    "VOICE_LIBRARY_REFERENCE_CHANGED": "The library reference file changed. Prepare a new source.",
+    "TTS_OUTPUT_TOO_LONG": "The engine produced over 120 seconds. The take was rejected; older takes are unchanged. Try a cleaner reference or transcript-free mode.",
+    "TTS_GENERATION_LIMIT": "Qwen3 reached its duration budget without ending normally, including its retry. No truncated take was added. Try another reference or seed."
   },
   "preparingVideo": "Preparing video…",
   "loadingVideo": "Loading video…",
@@ -1484,5 +1488,6 @@
     "accept": "Accept",
     "hint": "CPU analysis of original voice references. No assignment changes without approval; takes are retained.",
     "settings": "Suggestion settings"
-  }
+  },
+  "ttsQwenRecovered": "Qwen3: recovered with transcript-free reference conditioning · {{device}} · seed {{seed}}. Requested settings are retained; this take records the effective recovery."
 }

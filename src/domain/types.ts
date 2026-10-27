@@ -78,6 +78,14 @@ export interface Generation {
   deviceName: string;
   peakVramMb: number;
   compatibilityMode?: boolean;
+  qwenRecovery?: {
+    attempt: number;
+    requestedMode: string;
+    effectiveMode: string;
+    requestedSeed: number;
+    effectiveSeed: number;
+    device: string;
+  } | null;
   expertMemoryMode?: 'mapped' | null;
   inputHash: string;
 }

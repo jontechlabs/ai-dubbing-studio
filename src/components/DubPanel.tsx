@@ -988,6 +988,14 @@ export function DubPanel({
                   <small>{t('ttsPeakVram', { mb: generation.peakVramMb })}</small>
                 )}
                 {generation.compatibilityMode && <small>{t('ttsCompatibleTake')}</small>}
+                {generation.qwenRecovery && (
+                  <small className="warning">
+                    {t('ttsQwenRecovered', {
+                      device: generation.qwenRecovery.device,
+                      seed: generation.qwenRecovery.effectiveSeed,
+                    })}
+                  </small>
+                )}
                 {generation.takeOrigin && (
                   <small className="model-state">
                     {t(

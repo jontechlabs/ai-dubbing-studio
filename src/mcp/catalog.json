@@ -5095,6 +5095,31 @@
                 { "type": "boolean", "const": true }
               ]
             },
+            "qwenRecovery": {
+              "anyOf": [
+                { "type": "null" },
+                {
+                  "type": "object",
+                  "properties": {
+                    "attempt": { "type": "number" },
+                    "requestedMode": { "type": "string" },
+                    "effectiveMode": { "type": "string" },
+                    "requestedSeed": { "type": "number" },
+                    "effectiveSeed": { "type": "number" },
+                    "device": { "type": "string" }
+                  },
+                  "required": [
+                    "attempt",
+                    "requestedMode",
+                    "effectiveMode",
+                    "requestedSeed",
+                    "effectiveSeed",
+                    "device"
+                  ],
+                  "additionalProperties": false
+                }
+              ]
+            },
             "expertMemoryMode": {
               "anyOf": [{ "type": "null" }, { "type": "string", "const": "mapped" }]
             },

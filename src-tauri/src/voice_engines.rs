@@ -410,6 +410,52 @@ pub(crate) async fn generate_gguf_with_session<R: tauri::Runtime>(
     flag: &AtomicBool,
     mut hot: Option<&mut crate::tts_session::Session>,
 ) -> Result<(), String> {
+    let mut effective = input.clone();
+    for attempt in 0..2 {
+        let result =
+            generate_gguf_attempt(core, app, key, &effective, flag, hot.as_deref_mut()).await;
+        if attempt == 0
+            && crate::qwen_safety::is_qwen(input)
+            && !flag.load(Ordering::Relaxed)
+            && result
+                .as_ref()
+                .is_err_and(|e| crate::qwen_safety::retryable(e))
+        {
+            let metadata = std::fs::read(input["resultPath"].as_str().ok_or("INVALID_PATH")?)
+                .ok()
+                .and_then(|bytes| serde_json::from_slice::<serde_json::Value>(&bytes).ok());
+            let device = metadata
+                .as_ref()
+                .and_then(|m| m["device"].as_str())
+                .or_else(|| input["device"].as_str().filter(|d| *d != "auto"));
+            let Some(device) = device else {
+                return result;
+            };
+            effective = crate::qwen_safety::retry_input(input, device);
+            if let Some(session) = hot.as_deref_mut() {
+                session.close_logged(core, app, key).await;
+            }
+            if let Some(path) = input["outputPath"].as_str() {
+                let _ = std::fs::remove_file(path);
+            }
+            jobs::update(core, app, key, |j| {
+                j.stage = "ttsQwenRecovery".into();
+                j.logs.push(format!("Qwen3 output rejected: {}. One bounded retry on the SAME device {device}, x-vector reference conditioning, seed {}. Original takes and requested settings retained; effective recovery is recorded.",result.as_ref().unwrap_err(),effective["seed"]));
+            });
+            continue;
+        }
+        return result;
+    }
+    Err("TTS_ENGINE_FAILED".into())
+}
+async fn generate_gguf_attempt<R: tauri::Runtime>(
+    core: &Arc<Core>,
+    app: &tauri::AppHandle<R>,
+    key: &str,
+    input: &serde_json::Value,
+    flag: &AtomicBool,
+    mut hot: Option<&mut crate::tts_session::Session>,
+) -> Result<(), String> {
     let id = input["variantId"].as_str().ok_or("INVALID_TTS_REQUEST")?;
     let selected = variant(app, id)?;
     let model = root(core).join(id).join("model.gguf");
@@ -488,7 +534,7 @@ pub(crate) async fn generate_gguf_with_session<R: tauri::Runtime>(
             "--seed".into(),
             input["seed"].to_string(),
             "--max-tokens".into(),
-            "2048".into(),
+            crate::qwen_safety::max_tokens(input).to_string(),
             "--log".into(),
         ];
         for (name, value) in crate::voice_quality::gguf_options(input)? {
@@ -508,8 +554,12 @@ pub(crate) async fn generate_gguf_with_session<R: tauri::Runtime>(
                 input["referenceTranscript"].as_str().unwrap_or("").into(),
             ]);
         }
+        let result_path=PathBuf::from(input["resultPath"].as_str().ok_or("INVALID_PATH")?);
+        let metadata=serde_json::json!({"device":device_id,"deviceName":device["name"],"peakVramMb":0,"qwenRecovery":input["qwenRecovery"]});
+        project::atomic_write(&result_path,&serde_json::to_vec(&metadata).map_err(io_error)?)?;
         jobs::update(core, app, key, |j| {
             j.stage = "ttsGenerate".into();
+            if crate::qwen_safety::is_qwen(input){j.logs.push(format!("Qwen3 generation budget: {} codec frames; 120 s output maximum. Reference mode: {}.",crate::qwen_safety::max_tokens(input),input["mode"]));}
             j.progress = None;
             j.logs
                 .push(format!("{} / {}", selected.name, device["name"]));
@@ -573,13 +623,10 @@ pub(crate) async fn generate_gguf_with_session<R: tauri::Runtime>(
             flag,
         )
         .await?;
-        project::atomic_write(
-            &PathBuf::from(input["resultPath"].as_str().ok_or("INVALID_PATH")?),
-            &serde_json::to_vec(
-                &serde_json::json!({"device":device_id,"deviceName":device["name"],"peakVramMb":0}),
-            )
-            .map_err(io_error)?,
-        )
+        let duration=crate::audio_files::pcm_frames(std::path::Path::new(output),1,24000,"TTS_EMPTY_AUDIO")?*1000/24000;
+        jobs::update(core,app,key,|j|{j.stage="ttsValidateOutput".into();j.logs.push(format!("GGUF WAV validation: mono PCM16, 24000 Hz, duration {duration} ms."));});
+        crate::qwen_safety::validate_duration(input,duration)
+
     }
     .await;
     let _ = std::fs::remove_file(raw);

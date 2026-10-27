@@ -23,6 +23,7 @@ mod mix;
 mod model_storage;
 mod project;
 mod prosody;
+mod qwen_safety;
 mod separation;
 mod smoke;
 mod speakers;
