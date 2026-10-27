@@ -834,6 +834,8 @@ pub(crate) async fn execute_with_session<R: tauri::Runtime>(
         let _ = std::fs::remove_file(&destination);
         return Err(if flag.load(Ordering::Relaxed) {
             "CANCELLED"
+        } else if duration == 0 {
+            "TTS_EMPTY_AUDIO"
         } else {
             "TTS_OUTPUT_TOO_LONG"
         }

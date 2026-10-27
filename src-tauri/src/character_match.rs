@@ -418,7 +418,8 @@ mod tests {
     #[test]
     fn results_are_review_only_acceptance_is_undoable_and_changed_references_are_stale() {
         let tmp = tempfile::tempdir().unwrap();
-        let root = tmp.path();
+        let canonical = tmp.path().canonicalize().unwrap();
+        let root = canonical.as_path();
         let p = fixture(root);
         project::save(root, &p).unwrap();
         let options = Options {

@@ -62,3 +62,11 @@ La bibliothèque et les guides utilisent le format de projet **21**. Ouvrez une 
 Sept commandes MCP complètent les outils existants : préparation de source, génération de phrases, validation et lecture de leurs chemins, proposition de personnage, lecture du résultat et acceptation explicite. Les mutations exigent le contexte courant. Voir [MCP](MCP.md).
 
 Sources de l'API : [VoxCPM officiel](https://github.com/OpenBMB/VoxCPM), [guide d'utilisation](https://voxcpm.readthedocs.io/en/latest/usage_guide.html), [exemples de clonage](https://voxcpm.readthedocs.io/en/latest/cookbook.html). L'intégration utilise la version 2.0.3 épinglée et conserve ses licences existantes.
+
+## Reprise Qwen3-TTS GGUF
+
+Qwen3 dispose d’un budget de frames adapté au texte et à la durée de la réplique, avec 120 secondes au maximum après changement de vitesse. Une sortie qui atteint la limite sans se terminer normalement est refusée, plutôt que conservée comme doublage tronqué. Le journal distingue WAV invalide, sortie trop longue et limite de génération.
+
+Une sortie invalide entraîne au plus une reprise sur le **même périphérique**. Le mode de reprise utilise l’empreinte vocale seule, sans transcription japonaise ; si ce mode était déjà choisi, une graine suivante est utilisée. Le modèle est déchargé avant reprise. Les paramètres demandés sont conservés ; le mode et la graine réellement utilisés lors d’une reprise apparaissent sur l’essai et dans ses métadonnées. L’annulation interrompt les deux tentatives.
+
+Un essai comparatif sur le PC RTX de l’utilisateur a produit « Une explosion ?! Lu ! » en environ 16 secondes (audio de 2,155 s) sans transcription, contre deux échecs précédents d’environ huit minutes. Les 1 633 essais antérieurs ont été vérifiés inchangés. Cela valide ce parcours précis, sans établir une garantie pour tous les textes, références ou pilotes. Les WAV des échecs précédents n’étaient plus disponibles : leur durée exacte n’a pas pu être mesurée rétroactivement.

@@ -248,3 +248,65 @@ test('too little speech asks for manual selection and ambiguous candidates remai
   await expect(panel.getByText(/Correspondance incertaine/)).toBeVisible();
   expect((await saved(page)).dialogues[0].characterId).toBe('c0');
 });
+
+test('Qwen recovery displays its effective conditioning without rewriting requested settings or earlier takes', async ({
+  page,
+}) => {
+  const p = fixture(),
+    line = p.dialogues[0];
+  line.voiceSettings = {
+    ...defaultVoiceSettings,
+    variantId: 'qwen3-17b-gguf-q8',
+    mode: 'zeroShot',
+    referenceMode: 'current',
+    device: 'vulkan:1',
+  };
+  p.generations = [
+    {
+      id: 'recovered',
+      kind: 'tts',
+      dialogueId: line.id,
+      providerId: 'qwen3-tts',
+      modelId: 'qwen3-17b-gguf-q8',
+      path: 'generations/recovered.wav',
+      createdAt: p.createdAt,
+      sourcePath: p.media!.path,
+      startMs: line.startMs,
+      endMs: line.endMs,
+      text: p.targetCues[0].text,
+      language: 'fr',
+      characterId: line.characterId,
+      durationMs: 2155,
+      sampleRate: 24000,
+      options: line.voiceSettings,
+      referenceTranscript: '日本語',
+      device: 'vulkan:1',
+      deviceName: 'RTX 5060 Ti (simulation)',
+      peakVramMb: 0,
+      inputHash: 'fixture',
+      qwenRecovery: {
+        attempt: 1,
+        requestedMode: 'zeroShot',
+        effectiveMode: 'crossLingual',
+        requestedSeed: 0,
+        effectiveSeed: 0,
+        device: 'vulkan:1',
+      },
+    },
+  ];
+  line.selectedGenerationIds.fr = 'recovered';
+  await nativeMock(page, false, p);
+  await page.goto('/');
+  await page
+    .locator('.dialogue-card')
+    .first()
+    .getByRole('button', { name: 'Régénérer', exact: true })
+    .click();
+  const panel = page.getByRole('dialog', { name: 'Doublage' });
+  await expect(panel.getByText(/Qwen3 : reprise sans transcription/)).toBeVisible();
+  await page.getByRole('button', { name: 'Fermer', exact: true }).click();
+  await page.reload();
+  const savedProject = await saved(page);
+  expect(savedProject.generations).toEqual(p.generations);
+  expect(savedProject.dialogues[0].voiceSettings.mode).toBe('zeroShot');
+});
