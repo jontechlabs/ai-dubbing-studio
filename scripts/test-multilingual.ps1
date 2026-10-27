@@ -25,8 +25,8 @@ if ($LASTEXITCODE) { throw 'CPU Torch profile installation failed' }
 if (-not $VoiceConversionOnly) {
     & $pythonPath -B (Join-Path $PSScriptRoot 'test-multilingual.py')
     if ($LASTEXITCODE) { throw 'Actual multilingual inference failed' }
-} elseif (-not (Test-Path -LiteralPath (Join-Path $profileRoot 'chatterbox-multilingual-v3-standalone.wav'))) {
-    throw 'Authenticated Standard source audio must be restored before VC-only validation'
+} elseif (-not (Test-Path -LiteralPath (Join-Path $repoRoot 'tests/fixtures/voice-conversion-source-fr.wav'))) {
+    throw 'Fixed clean French diagnostic source must exist before VC-only validation'
 }
 
 & $pythonPath -B (Join-Path $PSScriptRoot 'test-voice-conversion.py')
