@@ -1489,9 +1489,79 @@
       "annotations": { "readOnlyHint": false, "destructiveHint": true, "openWorldHint": false }
     },
     {
+      "name": "studio_suggest_dialogue_character",
+      "command": "suggest_dialogue_character",
+      "description": "Compare the selected dialogue with ORIGINAL character references using local CAMPPlus/Silero CPU. Returns a job ID; read studio_character_suggestion_result when done. Never assigns automatically. Scores are similarities, not probabilities.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "options": { "$ref": "#/$defs/options_CharacterMatchOptions_0" },
+          "context": {
+            "type": "object",
+            "properties": {
+              "projectId": { "type": "string" },
+              "expectedRevision": { "type": "integer", "minimum": 0 }
+            },
+            "required": ["projectId", "expectedRevision"],
+            "additionalProperties": false
+          }
+        },
+        "required": ["options", "context"],
+        "additionalProperties": false,
+        "$defs": {
+          "options_CharacterMatchOptions_0": {
+            "type": "object",
+            "properties": {
+              "lineId": { "type": "string" },
+              "trackId": { "anyOf": [{ "type": "null" }, { "type": "string" }] }
+            },
+            "required": ["lineId", "trackId"],
+            "additionalProperties": false
+          }
+        }
+      },
+      "annotations": { "readOnlyHint": false, "destructiveHint": true, "openWorldHint": false }
+    },
+    {
+      "name": "studio_character_suggestion_result",
+      "command": "character_suggestion_result",
+      "description": "Read up to three review-only character candidates, uncertainty and staleness. A suggestion is not an assignment.",
+      "inputSchema": {
+        "type": "object",
+        "properties": { "id": { "type": "string" } },
+        "required": ["id"],
+        "additionalProperties": false
+      },
+      "annotations": { "readOnlyHint": true, "destructiveHint": false, "openWorldHint": false }
+    },
+    {
+      "name": "studio_accept_character_suggestion",
+      "command": "accept_character_suggestion",
+      "description": "Assign one proposed character only after human acceptance. Revalidates audio, references and dialogue snapshot; rejects stale results. Undoable; all takes preserved.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "characterId": { "type": "string" },
+          "context": {
+            "type": "object",
+            "properties": {
+              "projectId": { "type": "string" },
+              "expectedRevision": { "type": "integer", "minimum": 0 }
+            },
+            "required": ["projectId", "expectedRevision"],
+            "additionalProperties": false
+          }
+        },
+        "required": ["id", "characterId", "context"],
+        "additionalProperties": false
+      },
+      "annotations": { "readOnlyHint": false, "destructiveHint": true, "openWorldHint": false }
+    },
+    {
       "name": "studio_prepare_voice_library_source",
       "command": "prepare_voice_library_source",
-      "description": "prepare voice library source. Uses the current desktop session. Local file paths must be absolute; long operations return job IDs. Existing native validation applies.",
+      "description": "Assemble 1–16 owned original character references or assigned dialogue excerpts, total 5–20 seconds, into a NEW immutable source WAV. Explicitly choose this character and excerpts; existing audio/takes are retained. Returns project.",
       "inputSchema": {
         "type": "object",
         "properties": {
@@ -1541,7 +1611,7 @@
     {
       "name": "studio_generate_voice_library",
       "command": "generate_voice_library",
-      "description": "generate voice library. Uses the current desktop session. Local file paths must be absolute; long operations return job IDs. Existing native validation applies.",
+      "description": "Generate 1–12 French reference phrases with installed VoxCPM2 from a prepared character source. Returns job ID, reuses model during this batch and releases it at end/cancellation. Samples are PENDING: audition and require explicit human approval before review/default use. Never replaces dialogue takes.",
       "inputSchema": {
         "type": "object",
         "properties": {
@@ -1753,7 +1823,7 @@
     {
       "name": "studio_review_voice_library_sample",
       "command": "review_voice_library_sample",
-      "description": "review voice library sample. Uses the current desktop session. Local file paths must be absolute; long operations return job IDs. Existing native validation applies.",
+      "description": "Approve, withdraw, reject, correct actual transcript or choose an approved default for a character French phrase. Approval/default must follow explicit human selection; generation does not certify quality. Correcting the transcript revokes approval. Existing files/takes remain. Returns project.",
       "inputSchema": {
         "type": "object",
         "properties": {
@@ -1797,7 +1867,7 @@
     {
       "name": "studio_voice_library_audio_path",
       "command": "voice_library_audio_path",
-      "description": "voice library audio path. Uses the current desktop session. Local file paths must be absolute; long operations return job IDs. Existing native validation applies.",
+      "description": "Read the local WAV path of a source or sample belonging to a character, for audition. Does not approve it.",
       "inputSchema": {
         "type": "object",
         "properties": { "characterId": { "type": "string" }, "referenceId": { "type": "string" } },
@@ -5116,6 +5186,20 @@
             "rhythm",
             "energy"
           ],
+          "additionalProperties": false
+        }
+      }
+    },
+    "CharacterMatchOptions": {
+      "$ref": "#/$defs/CharacterMatchOptions_0",
+      "$defs": {
+        "CharacterMatchOptions_0": {
+          "type": "object",
+          "properties": {
+            "lineId": { "type": "string" },
+            "trackId": { "anyOf": [{ "type": "null" }, { "type": "string" }] }
+          },
+          "required": ["lineId", "trackId"],
           "additionalProperties": false
         }
       }

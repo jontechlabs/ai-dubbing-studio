@@ -44,6 +44,7 @@ export async function nativeMock(page: Page, large = false, seededProject?: Proj
       project.revision++;localStorage.setItem('nativeMockProject',JSON.stringify(project));emit('project-changed',structuredClone(project));
       job={...job,status:'succeeded',stage:'done',progress:1,timing:{elapsedMs:1250,observedAtMs:Date.now()}};emit('job-changed',job);
     };
+    if(localStorage.getItem('studio.characterSuggestions')===null)localStorage.setItem('studio.characterSuggestions','off');
     host.__calls=[];host.__downloadError=false;host.__installed=false;
     host.__getMockProject=()=>structuredClone(project);
     let mcpEnabled=localStorage.getItem('mockMcpEnabled')==='true';const mcpRequests=new Map<string,any>(),mcpAudit:any[]=[];
@@ -150,6 +151,13 @@ export async function nativeMock(page: Page, large = false, seededProject?: Proj
     host.__setFirstSlot=(endMs:number)=>{project.dialogues[0].endMs=endMs;project.revision++;emit('project-changed',structuredClone(project));};
     host.__seedDubbing=()=>{job={id:'tts-seed',projectId:project.id,kind:'tts',status:'running',stage:'ttsGenerate',progress:null,logs:[],error:null};for(const line of project.dialogues){host.__pendingTts={lineId:line.id,options:{variantId:'cosy3-official',device:'cpu',referenceMode:'current',referenceId:null,mode:'crossLingual',speed:1,seed:7}};host.__completeTts(2000);}};
     host.__completeModelMove=()=>{host.__modelFolder=host.__pendingModelFolder;job={...job,status:'succeeded',stage:'done',progress:1};emit('job-changed',job);};
+
+    host.__completeCharacterMatch=(reason='matched')=>{host.__characterProposal={lineId:host.__pendingCharacterMatch.lineId,candidates:reason==='tooShortOrNoSpeech'?[]:project.characters.slice(0,2).map((c:any,i:number)=>({characterId:c.id,score:reason==='matched'?.95-i*.3:.9-i*.01})),reason,reliable:reason==='matched'};job={...job,status:'succeeded',stage:'done',progress:1};emit('job-changed',job);};
+    host.__completeLibrary=()=>{
+      if(job.status==='cancelled')return;undoStack.push(structuredClone(project));const o=host.__pendingLibrary,lib=project.characterProfiles[o.characterId].voiceLibrary;
+      for(const phrase of o.phrases){const id=crypto.randomUUID();lib.samples.push({id,sourceId:o.sourceId,reference:{id,label:phrase.label,path:`characters/voice-library/sample-${id}.wav`,durationMs:6000,transcript:phrase.text},text:phrase.text,mood:phrase.mood,status:'pending',options:{...o.options,mood:phrase.mood},sha256:'b'.repeat(64),createdAt:new Date().toISOString(),deviceName:'CPU (simulation)'});}
+      project.revision++;localStorage.setItem('nativeMockProject',JSON.stringify(project));emit('project-changed',structuredClone(project));job={...job,status:'succeeded',stage:'done',progress:1};emit('job-changed',job);
+    };
     host.__speakerStatus={installed:true,installing:false,sizeBytes:72500000};
     host.__completeSpeakerAnalysis=()=>{const scope=host.__pendingSpeakerScope,lines=project.dialogues.filter((l:any)=>scope?.startMs===undefined||(l.startMs<scope.endMs&&l.endMs>scope.startMs)),guided=scope?.referenceCharacterId;project.formatVersion=Math.max(20,project.formatVersion);project.speakerAnalysis={id:'speakers',sourcePath:project.media.path,scope:scope??{},audioSnapshot:{tracks:structuredClone(project.tracks),patches:project.generations.filter((g:any)=>['audioPatch','audioEffects'].includes(g.kind)),references:guided?project.characters.filter((c:any)=>c.id===guided).map((c:any)=>({id:c.id,references:structuredClone(c.references)})):[]},originalAssignments:Object.fromEntries(lines.map((l:any)=>[l.id,l.characterId])),lines:lines.map(({id,startMs,endMs}:any)=>({id,startMs,endMs})),assignments:lines.map((line:any,index:number)=>({dialogueId:line.id,speaker:guided?0:index%2,similarity:0.95,reason:'identified'})),clusters:(guided?[0]:[0,1].slice(0,lines.length)).map((speaker)=>({speaker,...(guided?{characterId:guided}:{}),referencePath:`characters/reference-${speaker}.wav`,durationMs:4000,referenceDialogueId:lines[speaker].id,vocalRegister:{medianHz:180+speaker*80,confidence:.86,analyzedMs:2500}}))};project.revision++;emit('project-changed',structuredClone(project));job={...job,status:'succeeded',stage:'done',progress:1};emit('job-changed',job);};
     const localResults=new Map<string,any>();
@@ -225,6 +233,20 @@ export async function nativeMock(page: Page, large = false, seededProject?: Proj
       if(command==='graphics_info')return {preference:'auto',executable:'C:/Studio/ai-dubbing-studio.exe',adapters:[{Name:'Intel iGPU'},{Name:'NVIDIA GPU'}]};
       if(command==='set_graphics_preference'||command==='open_graphics_settings')return null;
       if(command==='separation_status')return structuredClone(host.__runtimeStatus);
+
+      if(command==='voice_library_audio_path')return `characters/voice-library/${args.referenceId}.wav`;
+      if(command==='prepare_voice_library_source'){
+        undoStack.push(structuredClone(project));const o=args.options,id=crypto.randomUUID();project.formatVersion=21;project.characterProfiles??={};project.characterProfiles[o.characterId]??={};
+        const lib=project.characterProfiles[o.characterId].voiceLibrary??={sources:[],samples:[],defaultSampleId:null};
+        lib.sources.push({id,reference:{id,label:o.label,path:`characters/voice-library/source-${id}.wav`,durationMs:o.segments.reduce((n:number,s:any)=>n+s.endMs-s.startMs,0),transcript:''},segments:o.segments,sha256:'a'.repeat(64),createdAt:new Date().toISOString()});
+        project.revision++;localStorage.setItem('nativeMockProject',JSON.stringify(project));emit('project-changed',structuredClone(project));return structuredClone(project);
+      }
+      if(command==='generate_voice_library'){host.__pendingLibrary=structuredClone(args.options);job={id:'library-job',projectId:project.id,kind:'voiceLibrary',status:'running',stage:'voiceLibraryGenerate',progress:null,logs:[],error:null};emit('job-changed',job);return job.id;}
+      if(command==='suggest_dialogue_character'){host.__pendingCharacterMatch=structuredClone(args.options);host.__characterBasis=project.revision;job={id:'match-'+crypto.randomUUID(),projectId:project.id,kind:'characterMatch',status:'running',stage:'characterMatch',progress:null,logs:[],error:null};emit('job-changed',job);return job.id;}
+      if(command==='character_suggestion_result')return {...structuredClone(host.__characterProposal),id:args.id,stale:host.__characterBasis!==project.revision};
+      if(command==='accept_character_suggestion'){
+        if(host.__characterBasis!==project.revision)throw Error('STALE_REVISION');undoStack.push(structuredClone(project));project.dialogues.find((l:any)=>l.id===host.__pendingCharacterMatch.lineId).characterId=args.characterId;project.revision++;localStorage.setItem('nativeMockProject',JSON.stringify(project));emit('project-changed',structuredClone(project));return structuredClone(project);
+      }
       if(command==='speaker_status')return structuredClone(host.__speakerStatus);
       if(command==='character_asset_path')return args.path;
       if(command==='preview_character_sample')return `characters/preview-${args.lineId}.wav`;

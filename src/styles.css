@@ -3583,3 +3583,119 @@ pre {
   padding-top: 14px;
   border-top: 1px solid var(--line);
 }
+.voice-library {
+  margin-block: 16px;
+}
+.voice-library > summary,
+.library-phrase > summary {
+  cursor: pointer;
+  padding-block: 8px;
+  font-weight: 600;
+}
+.voice-library h4 {
+  margin-block: 18px 8px;
+}
+.voice-library audio {
+  width: 100%;
+  height: 34px;
+  margin-block: 8px;
+}
+.library-source-pick {
+  display: flex;
+  gap: 8px;
+  margin-block: 8px;
+}
+.library-source-pick select {
+  flex: 1;
+  min-width: 0;
+}
+.library-segment {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 8px;
+  padding-block: 8px;
+  border-bottom: 1px solid var(--border);
+}
+.library-segment > span {
+  flex-basis: 100%;
+  font-size: 11px;
+}
+.library-segment label {
+  display: grid;
+  gap: 4px;
+  font-size: 10px;
+}
+.library-segment input {
+  width: 112px;
+}
+.library-segment select {
+  min-width: 0;
+  max-width: 170px;
+}
+.library-phrase {
+  padding: 4px 8px;
+  border-bottom: 1px solid var(--border);
+}
+.library-phrase summary label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.library-phrase input[type='checkbox'] {
+  width: auto;
+}
+.library-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-block: 8px;
+}
+.library-sample {
+  padding: 12px;
+  margin-block: 10px;
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--muted);
+  border-radius: 8px;
+}
+.library-sample[data-status='approved'] {
+  border-left-color: #62c88d;
+}
+.library-sample[data-status='rejected'] {
+  opacity: 0.7;
+}
+.library-sample > small {
+  display: block;
+  margin-top: 5px;
+}
+
+.speaker-candidate {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding: 8px 0;
+  border-top: 1px solid var(--border);
+  min-width: 0;
+}
+.speaker-candidate > span {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.speaker-candidate small {
+  display: block;
+  color: var(--text-muted);
+  font-size: 10px;
+}
+.speaker-candidate button {
+  flex-shrink: 0;
+  font-size: 11px;
+  padding: 6px;
+}
+.character-suggestion > h4 {
+  margin: 0 0 8px;
+}
+.character-suggestion > small {
+  display: block;
+}

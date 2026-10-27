@@ -255,6 +255,19 @@ try {
     await call('studio_history',{context:await context(),direction:'redo'});await call('studio_open_project',{path:projectRoot});
     assert.deepEqual((await call('studio_get_project')).characters,mergedCharacters.characters);assert.deepEqual(await fs.readFile(path.join(projectRoot,basePath)),baseWave);
     proofs.characterWorkbench={manualProfile:true,trimAndConcatenate:true,previewBeforeMutation:true,mergePreservesReferencesAndTakes:true,atomicUndoRedo:true,reopenFormat20:true};
+
+    const sourceProject=await call('studio_prepare_voice_library_source',{context:await context(),options:{characterId:'review-a',label:'Library source',segments:[{referenceId:'ref-review-a',dialogueId:null,startMs:0,endMs:2000},{referenceId:combined.id,dialogueId:null,startMs:0,endMs:3000}]}});
+    const source=sourceProject.characterProfiles['review-a'].voiceLibrary.sources.at(-1);assert.equal(sourceProject.formatVersion,21);assert(Math.abs(source.reference.durationMs-5000)<=4);assert.deepEqual(sourceProject.generations,mergedCharacters.generations);
+    assert.equal(createHash('sha256').update(await fs.readFile(path.join(projectRoot,source.reference.path))).digest('hex'),source.sha256);
+    const sampleId=randomUUID(),samplePath=`characters/voice-library/sample-${sampleId}.wav`;await fs.copyFile(path.join(projectRoot,source.reference.path),path.join(projectRoot,samplePath));
+    const sample={id:sampleId,sourceId:source.id,reference:{id:sampleId,label:'French review fixture',path:samplePath,durationMs:source.reference.durationMs,transcript:'Une phrase à vérifier.'},text:'Une phrase à vérifier.',mood:'default',status:'pending',options:{variantId:'voxcpm2-bf16',device:'cpu',referenceMode:'character',referenceId:null,mode:'crossLingual',speed:1,seed:0,mood:'default'},sha256:source.sha256,createdAt:new Date().toISOString(),deviceName:'Synthetic protocol fixture'};
+    await call('studio_project_patch',{context:await context(),patches:[{op:'add',path:'/characterProfiles/review-a/voiceLibrary/samples/-',value:sample}]});
+    assert((await call('studio_voice_library_audio_path',{characterId:'review-a',referenceId:sampleId})).endsWith('.wav'));
+    const approved=await call('studio_review_voice_library_sample',{context:await context(),options:{characterId:'review-a',sampleId,status:'approved',transcript:null,useDefault:true}});assert.equal(approved.characterProfiles['review-a'].voiceLibrary.defaultSampleId,sampleId);
+    const corrected=await call('studio_review_voice_library_sample',{context:await context(),options:{characterId:'review-a',sampleId,status:null,transcript:'Texte corrigé.',useDefault:false}});assert.equal(corrected.characterProfiles['review-a'].voiceLibrary.defaultSampleId,null);assert.equal(corrected.characterProfiles['review-a'].voiceLibrary.samples[0].status,'pending');
+    await call('studio_history',{context:await context(),direction:'undo'});await call('studio_open_project',{path:projectRoot});const bankReopened=await call('studio_get_project');assert.equal(bankReopened.characterProfiles['review-a'].voiceLibrary.defaultSampleId,sampleId);assert.deepEqual(bankReopened.generations,mergedCharacters.generations);
+    assert.deepEqual(await fs.readFile(path.join(projectRoot,samplePath)),await fs.readFile(path.join(projectRoot,source.reference.path)));
+    proofs.voiceLibrary={assembledOriginals:true,actualWavHash:true,explicitReview:true,transcriptRevokesDefault:true,undoAndReopenFormat21:true,takesAndWavsPreserved:true};
     await fs.writeFile(args.proof,JSON.stringify(proofs,null,2)+'\n','utf8');
     console.log('MCP_NATIVE_PROOF '+JSON.stringify(proofs));
 } catch(error){if(stderr)console.error(stderr.slice(-2000));throw error;}

@@ -512,6 +512,37 @@ fn tts_snapshot_and_reference_validation() {
     );
 }
 
+#[test]
+fn french_voxcpm_continuation_canonicalizes_new_requests_without_rewriting_archived_options() {
+    let mut p = fixture();
+    p.characters[0].references[0].transcript = "Cette cicatrice me lance.".into();
+    let mut o = options();
+    o.variant_id = Some("voxcpm2-bf16".into());
+    o.mode = "zeroShot".into();
+    o.accent = Some("fr-FR".into());
+    o.mood = Some("anxious".into());
+    o.validate().unwrap();
+    let request =
+        prepare_request(&p, Path::new("."), p.dialogues[0].id.clone(), o.clone()).unwrap();
+    assert_eq!(request.options.accent.as_deref(), Some("auto"));
+    assert_eq!(request.options.mood.as_deref(), Some("default"));
+    assert_eq!(o.accent.as_deref(), Some("fr-FR"));
+    assert_eq!(o.mood.as_deref(), Some("anxious"));
+    o.intonation_guide = Some(IntonationGuide {
+        mode: "style".into(),
+        track_id: None,
+    });
+    assert!(o.validate().is_err());
+    o.mode = "crossLingual".into();
+    o.validate().unwrap();
+    assert_eq!(o.required_format(), 21);
+    o.intonation_guide = Some(IntonationGuide {
+        mode: "hybrid".into(),
+        track_id: None,
+    });
+    assert!(o.validate().is_err());
+}
+
 #[tokio::test]
 async fn reference_range_copies_the_requested_audio_after_twenty_seconds_and_rejects_invalid_spans()
 {

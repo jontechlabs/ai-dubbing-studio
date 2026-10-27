@@ -65,7 +65,7 @@ def voxcpm_arguments(request, reference, guide=None, guide_analysis=None):
     text = request['text']
     if guide_analysis and (request.get('intonationGuide') or {}).get('mode') == 'style':
         directions.append(guide_analysis['direction'])
-    if directions:
+    if directions and request['mode'] != 'zeroShot':
         text = '(' + ', '.join(directions) + ')' + text
     from voice_quality import quality_options
     quality = quality_options(request)
@@ -79,7 +79,7 @@ def voxcpm_arguments(request, reference, guide=None, guide_analysis=None):
         options.update(reference_wav_path=str(reference), prompt_wav_path=str(guide),
                        prompt_text=re.sub(r'<[^>]*>', '', request['guideTranscript']).strip())
     elif request['mode'] == 'zeroShot':
-        options.update(prompt_wav_path=str(reference), prompt_text=request['referenceTranscript'])
+        options.update(reference_wav_path=str(reference), prompt_wav_path=str(reference), prompt_text=request['referenceTranscript'])
     else:
         options['reference_wav_path'] = str(reference)
     return options

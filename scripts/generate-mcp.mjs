@@ -73,6 +73,7 @@ function makeSchema(name) {
   return { ...root, ...(Object.keys(definitions).length ? { $defs: definitions } : {}) };
 }
 const mapping = {
+  'character_match::Options': 'CharacterMatchOptions',
   'voice_library::SourceOptions': 'VoiceLibrarySourceOptions',
   'voice_library::Generation': 'VoiceLibraryGeneration',
   'voice_library::Review': 'VoiceLibraryReview',
@@ -116,6 +117,20 @@ function rustSchema(type) {
 const readOnly =
   /^(environment|graphics_info|.*_status|.*_result|latest_.*|audio_effects_catalog|.*_path|.*_paths|list_jobs|model_storage_info|model_storage_size|voice_install_space|preview_.*|reference_audio_info|get_waveform)$/;
 const notes = {
+  prepare_voice_library_source:
+    'Assemble 1–16 owned original character references or assigned dialogue excerpts, total 5–20 seconds, into a NEW immutable source WAV. Explicitly choose this character and excerpts; existing audio/takes are retained. Returns project.',
+  generate_voice_library:
+    'Generate 1–12 French reference phrases with installed VoxCPM2 from a prepared character source. Returns job ID, reuses model during this batch and releases it at end/cancellation. Samples are PENDING: audition and require explicit human approval before review/default use. Never replaces dialogue takes.',
+  review_voice_library_sample:
+    'Approve, withdraw, reject, correct actual transcript or choose an approved default for a character French phrase. Approval/default must follow explicit human selection; generation does not certify quality. Correcting the transcript revokes approval. Existing files/takes remain. Returns project.',
+  voice_library_audio_path:
+    'Read the local WAV path of a source or sample belonging to a character, for audition. Does not approve it.',
+  suggest_dialogue_character:
+    'Compare the selected dialogue with ORIGINAL character references using local CAMPPlus/Silero CPU. Returns a job ID; read studio_character_suggestion_result when done. Never assigns automatically. Scores are similarities, not probabilities.',
+  character_suggestion_result:
+    'Read up to three review-only character candidates, uncertainty and staleness. A suggestion is not an assignment.',
+  accept_character_suggestion:
+    'Assign one proposed character only after human acceptance. Revalidates audio, references and dialogue snapshot; rejects stale results. Undoable; all takes preserved.',
   separate_audio_region:
     'Re-run local Bandit separation on 0.1–60 seconds of an edited source track. Returns a preview job; original tracks are not changed. Requires the existing speech/music/effects stem tracks. Poll jobs, read studio_local_separation_result and audition its three WAVs before explicit application.',
   apply_local_separation:
@@ -165,7 +180,7 @@ const context = object({
   expectedRevision: { type: 'integer', minimum: 0 },
 });
 const projectCommands = new Set(
-  'prepare_voice_library_source generate_voice_library review_voice_library_sample capture_character_portrait prepare_character_reference preview_character_sample separate_audio_region apply_local_separation apply_audio_effects convert_voice_timbre transfer_voice_prosody generate_line generate_dubbing_batch start_inpaint_batch inpaint_lips detect_inpaint_faces transfer_audio analyze_lips suggest_translation identify_speakers transcribe_voice_reference import_voice_reference import_dubbing_reference import_media prepare_proxy import_subtitles import_embedded_subtitles history separate_audio export_mkv export_generation export_audio_track export_subtitles'.split(
+  'suggest_dialogue_character accept_character_suggestion prepare_voice_library_source generate_voice_library review_voice_library_sample capture_character_portrait prepare_character_reference preview_character_sample separate_audio_region apply_local_separation apply_audio_effects convert_voice_timbre transfer_voice_prosody generate_line generate_dubbing_batch start_inpaint_batch inpaint_lips detect_inpaint_faces transfer_audio analyze_lips suggest_translation identify_speakers transcribe_voice_reference import_voice_reference import_dubbing_reference import_media prepare_proxy import_subtitles import_embedded_subtitles history separate_audio export_mkv export_generation export_audio_track export_subtitles'.split(
     ' ',
   ),
 );

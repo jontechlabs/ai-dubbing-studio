@@ -1,6 +1,6 @@
 # Piloter le studio avec une IA via MCP
 
-Le studio fournit **113 outils MCP** en v0.29.0 : 81 commandes natives et 32 commandes d’édition, d’état et de lecture. Le serveur utilise **stdio** et le même exécutable que l’application. Cette intégration pilote **l’application ouverte** ; aucun environnement Node.js ou Python supplémentaire n’est requis pour la connexion.
+Le studio fournit **120 outils MCP** en v0.30.0 : 88 commandes natives et 32 commandes d’édition, d’état et de lecture. Le serveur utilise **stdio** et le même exécutable que l’application. Cette intégration pilote **l’application ouverte** ; aucun environnement Node.js ou Python supplémentaire n’est requis pour la connexion.
 
 `studio_audio_levels` mesure les niveaux stéréo en dBFS et permet d’effacer les crêtes maximales/voyants, sans modifier le projet. Les valeurs sont aussi dans `studio_get_state.audioLevels`. [Mesure, mix final et limites](AUDIO-LEVELS.md).
 
@@ -30,6 +30,14 @@ Les [effets audio](AUDIO-EFFECTS.md) sont accessibles avec `studio_audio_effects
 `studio_separate_audio_region` lance Bandit sur 0,1 à 60 secondes. Attendez la réussite du job, lisez `studio_local_separation_result`, puis les trois `studio_local_separation_path` pour examiner la préécoute. `studio_apply_local_separation` est une application explicite, refusée si les pistes ont changé ou si un résultat est incomplet. Elle conserve les sources et ajoute un seul groupe de couches annulable. La réidentification après séparation est une demande distincte sur la piste Voix et le même intervalle.
 
 Les mutations exigent le contexte courant ; demandez-le de nouveau après chaque édition. Aucun nom ni genre n’est déduit d’un visage ou d’une voix. Les propositions visuelles et acoustiques restent à vérifier. [Guide illustré et limites](CHARACTER-IDENTIFICATION.md).
+
+## Bibliothèque et proposition de personnage (v0.30)
+
+`studio_prepare_voice_library_source` assemble 5 à 20 secondes d’extraits appartenant à un même personnage dans un nouveau WAV ; `studio_generate_voice_library` ajoute des phrases françaises **à valider** et retourne un job. `studio_voice_library_audio_path` fournit la préécoute. Après décision humaine, `studio_review_voice_library_sample` valide, écarte, corrige la transcription ou choisit un défaut validé. Une correction de transcription retire la validation. Aucun essai de dialogue n’est remplacé.
+
+`studio_suggest_dialogue_character` retourne un job de comparaison CPU avec les références d’origine. Lisez `studio_character_suggestion_result` : candidats, incertitude, périmé ou non. **Aucune assignation automatique** ; après acceptation par l’utilisateur, `studio_accept_character_suggestion` réévalue le contexte puis assigne le personnage. Un résultat périmé est refusé.
+
+Les options de doublage acceptent `referenceMode: "library"` et un `intonationGuide` VoxCPM2 facultatif (`mode: "style"` ou `"hybrid"`, `trackId: "auto"` ou piste choisie). Hybrid exige le texte original exact et n’accepte pas de consignes séparées d’accent/humeur. La continuation française `mode: "zeroShot"` retire ces commandes sur les nouvelles demandes ; les anciens essais restent inchangés. [Parcours, limites et format 21](CHARACTER-VOICE-LIBRARY.md).
 
 ## Commandes disponibles
 

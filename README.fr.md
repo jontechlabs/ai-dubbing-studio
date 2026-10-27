@@ -1,5 +1,7 @@
 # AI Dubbing Studio
 
+**v0.30.0 — Bibliothèque vocale et guides indépendants.** Assemblez plusieurs extraits d’un personnage, générez des phrases françaises à écouter et valider, puis utilisez-les comme références sans perdre les anciens essais. Guide acoustique de la réplique d’origine ou mode à deux audios expérimental avec VoxCPM2. Nouveau mode de fidélité à une référence française, sans préfixe anglais sur le texte cible. Propositions de personnage par comparaison des voix, à accepter manuellement. **120 outils MCP, format de projet 21.** [Guide et captures](docs/CHARACTER-VOICE-LIBRARY.md).
+
 **v0.29.0 — Personnages et corrections locales.** Galerie de vignettes, noms temporaires, genre saisi manuellement, registre vocal mesuré, propositions de rapprochement, extraits écoutables et fusion avec choix ou assemblage de références. Identification sur une piste et une zone, guidage facultatif par référence, échange direct de portions et séparation Bandit locale avec préécoute avant application. Médias et essais existants conservés. **113 outils MCP.** [Guide et captures](docs/CHARACTER-IDENTIFICATION.md).
 
 Le clic droit sur un bloc de doublage permet aussi de [réinitialiser sa durée](docs/DUBBING-PLACEMENT.md), sans perdre son décalage ni les essais. Une [protection de sortie VoxCPM2](docs/VOICE-QUALITY.md) atténue uniquement les nouvelles formes d’onde dépassant la plage PCM pour éviter l’écrêtage ; les artefacts intrinsèques du modèle peuvent persister.

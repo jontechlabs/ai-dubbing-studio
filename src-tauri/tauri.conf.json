@@ -91,7 +91,9 @@
       "../workers/multilingual_worker.py": "workers/multilingual_worker.py",
       "../workers/multilingual-runtime.json": "workers/multilingual-runtime.json",
       "../workers/vendor/chatterbox/": "workers/vendor/chatterbox/",
-      "../workers/voice_conversion_worker.py": "workers/voice_conversion_worker.py"
+      "../workers/voice_conversion_worker.py": "workers/voice_conversion_worker.py",
+      "../workers/intonation_guide.py": "workers/intonation_guide.py",
+      "../workers/character_match_worker.py": "workers/character_match_worker.py"
     },
     "icon": ["icons/icon.ico", "icons/icon.png"],
     "windows": {

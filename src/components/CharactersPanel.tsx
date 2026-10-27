@@ -19,6 +19,7 @@ import {
   analysisCurrent,
 } from '../domain/characters';
 import * as bridge from '../services/bridge';
+import { VoiceLibraryPanel } from './VoiceLibraryPanel';
 import { ReferenceTranscription } from './ReferenceTranscription';
 import { ReferenceFileImport } from './ReferenceFileImport';
 
@@ -381,6 +382,17 @@ export function CharactersPanel({
                     .length,
                 })}
               </p>
+              <VoiceLibraryPanel
+                project={project}
+                character={character}
+                busy={active || working}
+                onEdit={onEdit}
+                run={run}
+                snapshot={snapshot}
+                onStarted={showJobs}
+                onModels={onModels}
+                onError={onError}
+              />
               <CharacterSamples
                 project={project}
                 character={character}

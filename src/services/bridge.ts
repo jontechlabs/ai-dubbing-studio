@@ -8,6 +8,43 @@ import { browserStore, downloadText, pickBrowserFile } from './browserStore';
 import { audioPeaks, type Waveform } from '../domain/waveform';
 
 export const native = isTauri();
+export interface CharacterMatchOptions {
+  lineId: string;
+  trackId: string | null;
+}
+export interface CharacterSuggestion {
+  id: string;
+  lineId: string;
+  candidates: { characterId: string; score: number }[];
+  reason: string;
+  reliable: boolean;
+  stale: boolean;
+}
+export function suggestDialogueCharacter(options: CharacterMatchOptions) {
+  return invoke<string>('suggest_dialogue_character', { options });
+}
+export function characterSuggestionResult(id: string) {
+  return invoke<CharacterSuggestion>('character_suggestion_result', { id });
+}
+export function acceptCharacterSuggestion(id: string, characterId: string) {
+  return invoke<Project>('accept_character_suggestion', { id, characterId });
+}
+export function prepareVoiceLibrarySource(
+  options: import('../domain/voiceLibrary').VoiceLibrarySourceOptions,
+) {
+  return invoke<Project>('prepare_voice_library_source', { options });
+}
+export function generateVoiceLibrary(
+  options: import('../domain/voiceLibrary').VoiceLibraryGeneration,
+) {
+  return invoke<string>('generate_voice_library', { options });
+}
+export async function voiceLibraryAudioUrl(characterId: string, referenceId: string) {
+  return convertFileSrc(
+    await invoke<string>('voice_library_audio_path', { characterId, referenceId }),
+  );
+}
+
 export function applyAudioEffects(options: import('../domain/audioEffects').AudioEffectsOptions) {
   return invoke<string>('apply_audio_effects', { options });
 }

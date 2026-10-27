@@ -131,9 +131,13 @@ pub(crate) fn usable(p: &Project, root: &Path, line: &Dialogue) -> bool {
         } else {
             line.character_id.as_deref()
         };
-        let reference = g["referenceId"]
-            .as_str()
-            .and_then(|id| p.voice_reference(owner, id));
+        let reference = g["referenceId"].as_str().and_then(|id| {
+            if options.reference_mode == "library" {
+                crate::voice_library::reference(p, owner?, Some(id))
+            } else {
+                p.voice_reference(owner, id)
+            }
+        });
         if reference.is_none_or(|r| g["referenceTranscript"] != r.transcript) {
             return false;
         }

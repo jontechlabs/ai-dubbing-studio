@@ -1,0 +1,1 @@
+Two distinct synthetic speech fixtures generated for studio development, normalized to mono PCM16 at 16 kHz. No user project or actor audio. These exercise the real embedding/VAD/cache path and do not establish recognition accuracy on real characters. See manifest.json for content hashes.

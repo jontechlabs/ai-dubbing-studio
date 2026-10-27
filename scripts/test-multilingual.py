@@ -150,6 +150,39 @@ for id in worker.IDS:
     transcript, standard_overlap = transcribe(standalone['outputPath'], 'standard')
     assert standard_overlap >= 4, transcript  # Same content requirement as before quality controls.
     custom_transcript, custom_overlap = transcribe(requests[0]['outputPath'], 'custom')
+    if id=='voxcpm2-bf16':
+        ja_transcript=json.loads((ROOT/'.cache/reference-transcription/Référence 日本語/ja.json').read_text(encoding='utf-8-sig'))['text']
+        source_hash=hashlib.sha256(Path(standalone['outputPath']).read_bytes()).hexdigest()
+        guide_hash=hashlib.sha256(reference.read_bytes()).hexdigest()
+        probes=[]
+        for label in ['french-fidelity','acoustic-guide','hybrid-guide']:
+            probe=dict(standalone,referenceAudio=standalone['outputPath'],referenceTranscript=transcript,
+                preparedReferenceAudio=str(WORK/f'{label}-reference.wav'),preparedGuideAudio=str(WORK/f'{label}-guide.wav'),
+                outputPath=str(WORK/f'{label}.wav'),resultPath=str(WORK/f'{label}.json'),mood='default',accent='auto',
+                intonationGuide=None,mode='zeroShot')
+            if label!='french-fidelity':
+                probe.update(mode='crossLingual',intonationGuide=dict(mode='style' if label=='acoustic-guide' else 'hybrid'),
+                    guideAudio=str(reference),guideTranscript=ja_transcript)
+                if label=='acoustic-guide':probe['accent']='fr-FR'
+            request_path=WORK/f'{label}.request.json';request_path.write_text(json.dumps(probe),encoding='utf-8-sig');probes.append((label,probe,request_path))
+        protocol=''.join(json.dumps(dict(requestId=label,path=str(request_path)))+'\n' for label,probe,request_path in probes)
+        generated=subprocess.run([str(embedded_python),'-I','-B',str(packaged_workers/'batch_worker.py'),'--engine','multilingual_worker'],input=protocol,text=True,encoding='utf-8',capture_output=True,timeout=1800,creationflags=getattr(subprocess,'CREATE_NO_WINDOW',0),env=dict(os.environ,CUDA_VISIBLE_DEVICES='-1'))
+        (WORK/'voice-library-guides.stdout.log').write_text(generated.stdout,encoding='utf8');(WORK/'voice-library-guides.stderr.log').write_text(generated.stderr,encoding='utf8')
+        assert generated.returncode==0,generated.stderr[-5000:]+generated.stdout[-3000:]
+        events=[json.loads(line) for line in generated.stdout.splitlines() if line.startswith('{')]
+        assert [e for e in events if 'requestDone' in e]==[dict(requestDone=label) for label,_,_ in probes],events[-8:]
+        assert sum(e.get('stage')=='ttsLoad' for e in events)==1 and sum(e.get('stage')=='ttsReuse' for e in events)==2
+        diagnostics=[]
+        for label,probe,_ in probes:
+            audio,rate=sf.read(probe['outputPath']);assert rate==24000 and 0<len(audio)<=120*rate and np.isfinite(audio).all() and np.max(np.abs(audio))>.001
+            # Keep French language/content gates for fidelity and acoustic guidance.
+            # Hybrid is explicitly experimental: any language leakage fails this smoke test too.
+            spoken,overlap=transcribe(probe['outputPath'],label);assert overlap>=4,(label,spoken)
+            metadata=json.loads(Path(probe['resultPath']).read_text());assert metadata['device']=='cpu'
+            diagnostics.append(dict(mode=label,language='fr',textWordOverlap=overlap,transcript=spoken,durationMs=round(len(audio)/rate*1000),guideAnalysis=metadata.get('guideAnalysis')))
+        assert hashlib.sha256(Path(standalone['outputPath']).read_bytes()).hexdigest()==source_hash and hashlib.sha256(reference.read_bytes()).hexdigest()==guide_hash
+        proof['voiceLibraryGuides']=dict(voiceReferenceLanguage='fr',guideLanguage='ja',twoIndependentFiles=True,inputAudioUnchanged=True,modelLoads=1,reuses=2,probes=diagnostics)
+        print('VOICE_LIBRARY_GUIDE_PROOF',json.dumps(proof['voiceLibraryGuides'],ensure_ascii=False),flush=True)
     proof['engines'].append(dict(id=id, revision=spec['revision'], seconds=round(time.monotonic()-started, 2),
                                 qualityOverrides=requests[0]['quality'], hotQualityReset=True, standardQuality=True, standardTextWordOverlap=standard_overlap, customLanguage='fr', customFrenchTranscript=custom_transcript, customTextWordOverlap=custom_overlap, frenchTranscript=transcript, batchRequests=2, modelLoads=1, reuses=1, standaloneRequests=1))
     print('ACTUAL_MULTILINGUAL_PROOF', json.dumps(proof['engines'][-1], ensure_ascii=False), flush=True)

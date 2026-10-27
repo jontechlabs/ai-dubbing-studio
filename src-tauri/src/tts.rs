@@ -43,6 +43,7 @@ pub struct Options {
 #[serde(rename_all = "camelCase")]
 pub struct IntonationGuide {
     pub mode: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub track_id: Option<String>,
 }
 impl Options {
@@ -394,6 +395,12 @@ pub(crate) fn prepare_request(
     line_id: String,
     mut options: Options,
 ) -> Result<Request, String> {
+    // Continuation inherits language and acting from its transcript/audio.
+    // VoxCPM's control-instruction path is the separate reference-only mode.
+    if options.variant() == "voxcpm2-bf16" && options.mode == "zeroShot" {
+        options.accent = Some("auto".into());
+        options.mood = Some("default".into());
+    }
     if options.variant().starts_with("chatterbox")
         || options.variant() == "cosy3-official"
             && (options.mood.as_deref().is_some_and(|m| m != "default")
@@ -756,7 +763,7 @@ pub(crate) async fn execute_with_session<R: tauri::Runtime>(
             .ok_or("VOICE_LIBRARY_REFERENCE_REQUIRED")?;
         if crate::voice_library::digest(&reference_audio)? != sample.sha256 {
             let _ = std::fs::remove_file(&guide_temp);
-            return Err("MODEL_CHECKSUM_FAILED".into());
+            return Err("VOICE_LIBRARY_REFERENCE_CHANGED".into());
         }
     }
     let input = directory.join(format!("{generation_id}.request.json"));

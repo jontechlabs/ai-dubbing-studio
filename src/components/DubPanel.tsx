@@ -23,6 +23,9 @@ import { BatchDubbingAction } from './BatchDubbingAction';
 import { DubbingTimingControls } from './DubbingTimingControls';
 import { VoiceCapture } from './VoiceCapture';
 import { VoiceQualityControls } from './VoiceQualityControls';
+import { libraryOf, libraryReference } from '../domain/voiceLibrary';
+import { IntonationGuideControls } from './IntonationGuideControls';
+import { CharacterSuggestion } from './CharacterSuggestion';
 import { qualityPreset, resolvedQuality } from '../domain/voiceQuality';
 import { ProsodyTransfer } from './ProsodyTransfer';
 import { moodGroup, moodGroups, voiceMoods } from '../domain/voiceMoods';
@@ -127,7 +130,9 @@ function ReferenceAudio({
   owner,
   referenceId,
   onError,
+  library = false,
 }: {
+  library?: boolean;
   owner: string | null;
   referenceId: string;
   onError: (error: string) => void;
@@ -136,8 +141,11 @@ function ReferenceAudio({
   const [source, setSource] = useState('');
   useEffect(() => {
     let disposed = false;
-    void bridge
-      .voiceReferenceUrl(owner, referenceId)
+    void (
+      library
+        ? bridge.voiceLibraryAudioUrl(owner!, referenceId)
+        : bridge.voiceReferenceUrl(owner, referenceId)
+    )
       .then((url) => {
         if (!disposed) setSource(url);
       })
@@ -147,7 +155,7 @@ function ReferenceAudio({
     return () => {
       disposed = true;
     };
-  }, [owner, referenceId, onError]);
+  }, [owner, referenceId, onError, library]);
   return (
     <audio
       key={referenceId}
@@ -208,6 +216,7 @@ export function DubPanel({
       ...value,
       referenceMode:
         value.referenceMode === 'custom' ? ('character' as const) : value.referenceMode,
+      referenceId: value.referenceMode === 'library' ? null : value.referenceId,
     };
   });
   const [referencePending, setReferencePending] = useState(false);
@@ -257,12 +266,17 @@ export function DubPanel({
   }, [completion, onError, variantId]);
   if (!line) return <div className="panel-body">{t('selectLine')}</div>;
   const preferred = voiceVariant(project.modelPreferences?.voiceVariantId);
-  const settings = batch
+  const rawSettings = batch
     ? batchSettings
     : {
         ...(line.voiceSettings ?? defaultVoiceSettings),
         variantId: line.voiceSettings?.variantId ?? preferred?.id ?? 'cosy3-official',
       };
+  const voxContinuation =
+    rawSettings.variantId === 'voxcpm2-bf16' && rawSettings.mode === 'zeroShot';
+  const settings = voxContinuation
+    ? { ...rawSettings, accent: 'auto' as const, mood: 'default' as const }
+    : rawSettings;
   const variant = voiceVariant(settings.variantId)!;
   const chatterbox = variant.providerId === 'chatterbox';
   const multilingual = chatterbox || variant.providerId === 'voxcpm2';
@@ -292,15 +306,19 @@ export function DubPanel({
           );
   const character = project.characters.find((c) => c.id === line.characterId);
   const fileReference = settings.referenceMode === 'file';
-  const reference = fileReference
-    ? project.voiceReferences?.find((r) => r.id === settings.referenceId)
-    : character?.references.find(
-        (r) =>
-          r.id ===
-          (settings.referenceMode === 'custom'
-            ? settings.referenceId
-            : character.defaultReferenceId),
-      );
+  const libraryMode = settings.referenceMode === 'library';
+  const library = libraryOf(project, line.characterId);
+  const reference = libraryMode
+    ? libraryReference(project, line.characterId, settings.referenceId)
+    : fileReference
+      ? project.voiceReferences?.find((r) => r.id === settings.referenceId)
+      : character?.references.find(
+          (r) =>
+            r.id ===
+            (settings.referenceMode === 'custom'
+              ? settings.referenceId
+              : character.defaultReferenceId),
+        );
   const generations = voiceGenerations(project).filter(
     (g) => g.dialogueId === line.id && g.language === project.languages.target,
   );
@@ -313,17 +331,35 @@ export function DubPanel({
     (settings.referenceMode === 'current'
       ? !project.sourceCues.some((c) => line.sourceCueIds.includes(c.id) && c.text.trim())
       : !reference?.transcript.trim());
+  const guideIssue =
+    !!settings.intonationGuide &&
+    (line.endMs - line.startMs < 1000 ||
+      (settings.intonationGuide.mode === 'hybrid' &&
+        !project.sourceCues.some((c) => line.sourceCueIds.includes(c.id) && c.text.trim())));
   const shortReference =
     settings.referenceMode === 'current'
       ? line.endMs - line.startMs < 1000
       : !!reference && reference.durationMs < 1000;
   const edit = (change: Partial<typeof settings>) => {
+    if (change.referenceMode === 'current') change.intonationGuide = undefined;
     if (batch) setBatchSettings({ ...settings, mode, ...change });
     else onEdit((p) => editVoiceSettings(p, line.id, { ...settings, mode, ...change }));
   };
   return (
     <div className="panel-body dub-panel">
       <h3>{variant.name}</h3>
+      {!batch && (
+        <CharacterSuggestion
+          key={'character:' + project.id + line.id}
+          project={project}
+          line={line}
+          jobs={jobs}
+          onEdit={onEdit}
+          run={run}
+          snapshot={snapshot}
+          onModels={onModels}
+        />
+      )}
       {!batch && (
         <VoiceCapture
           key={project.id + line.id}
@@ -366,6 +402,7 @@ export function DubPanel({
             const next = voiceVariant(e.target.value)!;
             edit({
               variantId: next.id,
+              intonationGuide: undefined,
               quality: undefined,
               device: 'auto',
               mood: ['qwen3-tts', 'chatterbox'].includes(next.providerId) ? 'default' : mood,
@@ -436,6 +473,11 @@ export function DubPanel({
           onChange={(e) =>
             edit({
               referenceMode: e.target.value as typeof settings.referenceMode,
+              ...(e.target.value === 'library' &&
+              variant.id === 'voxcpm2-bf16' &&
+              !settings.intonationGuide
+                ? { mode: 'zeroShot' as const, accent: 'auto' as const, mood: 'default' as const }
+                : {}),
               referenceId:
                 e.target.value === 'file' ? (project.voiceReferences?.[0]?.id ?? null) : null,
             })
@@ -445,6 +487,7 @@ export function DubPanel({
           <option value="current">{t('ttsReferenceCurrent')}</option>
           {!batch && <option value="custom">{t('ttsReferenceCustom')}</option>}
           <option value="file">{t('ttsReferenceFile')}</option>
+          <option value="library">{t('library.referenceMode')}</option>
         </select>
       </label>
       {settings.referenceMode === 'current' && (
@@ -466,7 +509,7 @@ export function DubPanel({
           </select>
         </label>
       )}
-      {(settings.referenceMode === 'custom' || fileReference) && (
+      {(settings.referenceMode === 'custom' || fileReference || (libraryMode && !batch)) && (
         <label className="field">
           <span>{t('ttsReferenceChoice')}</span>
           <select
@@ -474,8 +517,15 @@ export function DubPanel({
             disabled={busy}
             onChange={(e) => edit({ referenceId: e.target.value || null })}
           >
-            <option value="">{t('ttsChooseReference')}</option>
-            {(fileReference ? project.voiceReferences : character?.references)?.map((r) => (
+            <option value="">
+              {t(libraryMode ? 'library.characterDefault' : 'ttsChooseReference')}
+            </option>
+            {(libraryMode
+              ? library?.samples.filter((s) => s.status === 'approved').map((s) => s.reference)
+              : fileReference
+                ? project.voiceReferences
+                : character?.references
+            )?.map((r) => (
               <option key={r.id} value={r.id}>
                 {r.label} · {(r.durationMs / 1000).toFixed(1)} s
               </option>
@@ -525,32 +575,36 @@ export function DubPanel({
       <button className="text-button" onClick={onCharacters}>
         {t('ttsManageReferences')}
       </button>
+      {libraryMode && <p className="panel-description">{t('library.onlyApproved')}</p>}
       {settings.referenceMode !== 'current' && reference && (
         <>
           <ReferenceAudio
             key={reference.id}
+            library={libraryMode}
             owner={fileReference ? null : character!.id}
             referenceId={reference.id}
             onError={onError}
           />
-          <ReferenceTranscription
-            busy={busy || shortReference}
-            onError={onError}
-            start={async (language) => {
-              await snapshot();
-              await bridge.transcribeVoiceReference(
-                fileReference ? null : character!.id,
-                reference.id,
-                language,
-              );
-              onStarted();
-            }}
-          />
+          {!libraryMode && (
+            <ReferenceTranscription
+              busy={busy || shortReference}
+              onError={onError}
+              start={async (language) => {
+                await snapshot();
+                await bridge.transcribeVoiceReference(
+                  fileReference ? null : character!.id,
+                  reference.id,
+                  language,
+                );
+                onStarted();
+              }}
+            />
+          )}
           <label className="field">
             <span>{t('referenceTranscript')}</span>
             <textarea
               value={reference.transcript}
-              disabled={busy}
+              disabled={busy || libraryMode}
               rows={3}
               onChange={(event) => {
                 const text = event.target.value;
@@ -584,12 +638,53 @@ export function DubPanel({
       {settings.referenceMode === 'current' && transcriptMissing && (
         <p className="panel-description">{t('asrCurrentHint')}</p>
       )}
+      {variant.id === 'voxcpm2-bf16' &&
+        project.languages.target === 'fr' &&
+        reference &&
+        settings.referenceMode !== 'current' && (
+          <div className="settings-section">
+            <button
+              className="button subtle wide"
+              disabled={
+                busy ||
+                !reference.transcript.trim() ||
+                (voxContinuation && !settings.intonationGuide)
+              }
+              onClick={() =>
+                edit({
+                  mode: 'zeroShot',
+                  accent: 'auto',
+                  mood: 'default',
+                  intonationGuide: undefined,
+                })
+              }
+            >
+              {t('library.frenchFidelity')}
+            </button>
+            <p className="panel-description">{t('library.frenchFidelityHint')}</p>
+          </div>
+        )}
+      {voxContinuation && <p className="panel-description">{t('library.voxContinuationHint')}</p>}
+      {variant.id === 'voxcpm2-bf16' &&
+        inputText.trim().length < 12 &&
+        (settings.referenceMode === 'current'
+          ? line.endMs - line.startMs
+          : (reference?.durationMs ?? 20000)) < 5000 && (
+          <p className="warning">{t('library.shortContext')}</p>
+        )}
+      <IntonationGuideControls project={project} settings={settings} busy={busy} onChange={edit} />
       <label className="field">
         <span>{t('ttsCloneMode')}</span>
         <select
           value={mode}
-          disabled={busy || instructedMood || chatterbox}
-          onChange={(e) => edit({ mode: e.target.value as typeof settings.mode })}
+          disabled={busy || instructedMood || chatterbox || !!settings.intonationGuide}
+          onChange={(e) =>
+            edit(
+              e.target.value === 'zeroShot' && variant.id === 'voxcpm2-bf16'
+                ? { mode: 'zeroShot', accent: 'auto', mood: 'default', intonationGuide: undefined }
+                : { mode: e.target.value as typeof settings.mode },
+            )
+          }
         >
           <option value="crossLingual" disabled={variant.providerId.startsWith('fish')}>
             {t('ttsCrossLingual')}
@@ -614,7 +709,13 @@ export function DubPanel({
         <span>{t('ttsMood')}</span>
         <select
           value={variant.providerId === 'qwen3-tts' || chatterbox ? 'default' : mood}
-          disabled={busy || variant.providerId === 'qwen3-tts' || chatterbox}
+          disabled={
+            busy ||
+            variant.providerId === 'qwen3-tts' ||
+            chatterbox ||
+            voxContinuation ||
+            settings.intonationGuide?.mode === 'hybrid'
+          }
           onChange={(event) => edit({ mood: event.target.value as typeof settings.mood })}
         >
           <option value="default">{t('moods.default')}</option>
@@ -647,7 +748,12 @@ export function DubPanel({
         <span>{t('ttsAccent')}</span>
         <select
           value={accent}
-          disabled={busy || !accentSupported(variant.id, project.languages.target)}
+          disabled={
+            busy ||
+            !accentSupported(variant.id, project.languages.target) ||
+            voxContinuation ||
+            settings.intonationGuide?.mode === 'hybrid'
+          }
           onChange={(event) => edit({ accent: event.target.value as typeof settings.accent })}
         >
           <option value="auto">{t('accents.auto')}</option>
@@ -718,16 +824,24 @@ export function DubPanel({
             <textarea value={inputText} readOnly rows={3} />
           </label>
           <p className="panel-description">{t('ttsEditPronunciationHint')}</p>
-          {(referenceMissing || transcriptMissing || shortReference || !inputText) && (
+          {(referenceMissing ||
+            transcriptMissing ||
+            shortReference ||
+            guideIssue ||
+            !inputText) && (
             <p className="warning" role="status">
               {t(
                 referenceMissing
-                  ? 'errors.TTS_REFERENCE_REQUIRED'
+                  ? libraryMode
+                    ? 'errors.VOICE_LIBRARY_REFERENCE_REQUIRED'
+                    : 'errors.TTS_REFERENCE_REQUIRED'
                   : transcriptMissing
                     ? 'errors.TTS_TRANSCRIPT_REQUIRED'
                     : shortReference
                       ? 'ttsReferenceTooShort'
-                      : 'errors.TTS_TEXT_REQUIRED',
+                      : guideIssue
+                        ? 'library.guideInputMissing'
+                        : 'errors.TTS_TEXT_REQUIRED',
               )}
             </p>
           )}
@@ -739,6 +853,7 @@ export function DubPanel({
               referencePending ||
               !ready ||
               referenceMissing ||
+              guideIssue ||
               transcriptMissing ||
               shortReference ||
               !inputText ||

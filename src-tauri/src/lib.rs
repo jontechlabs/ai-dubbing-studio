@@ -3,6 +3,7 @@ mod audio_effects;
 mod audio_files;
 mod audio_fx_job;
 mod audio_patch;
+mod character_match;
 mod character_review;
 mod domain;
 mod downloads;
@@ -183,7 +184,7 @@ use std::{
         Arc, Mutex,
     },
 };
-use tauri::{Manager, State};
+use tauri::{Emitter, Manager, State};
 
 pub struct Core {
     session: Mutex<Option<Session>>,
@@ -626,6 +627,30 @@ async fn capture_character_portrait(
     character_review::capture_portrait(core.inner().clone(), app, options).await
 }
 #[tauri::command]
+fn suggest_dialogue_character(
+    app: tauri::AppHandle,
+    core: State<'_, Shared>,
+    options: character_match::Options,
+) -> Result<String, String> {
+    character_match::enqueue(core.inner().clone(), app, options)
+}
+#[tauri::command]
+fn character_suggestion_result(
+    core: State<'_, Shared>,
+    id: String,
+) -> Result<character_match::Proposal, String> {
+    character_match::result(&core, id)
+}
+#[tauri::command]
+fn accept_character_suggestion(
+    app: tauri::AppHandle,
+    core: State<'_, Shared>,
+    id: String,
+    character_id: String,
+) -> Result<Project, String> {
+    character_match::accept(&core, &app, id, character_id)
+}
+#[tauri::command]
 async fn prepare_voice_library_source(
     app: tauri::AppHandle,
     core: State<'_, Shared>,
@@ -656,6 +681,7 @@ fn review_voice_library_sample(
 }
 #[tauri::command]
 fn voice_library_audio_path(
+    app: tauri::AppHandle,
     core: State<'_, Shared>,
     character_id: String,
     reference_id: String,
@@ -671,9 +697,11 @@ fn voice_library_audio_path(
         .chain(lib.samples.iter().map(|s| &s.reference))
         .find(|r| r.id == reference_id)
         .ok_or("VOICE_LIBRARY_REFERENCE_REQUIRED")?;
-    Ok(project::asset(&s.root, &r.path)?
-        .to_string_lossy()
-        .into_owned())
+    let path = project::asset(&s.root, &r.path)?;
+    app.asset_protocol_scope()
+        .allow_file(&path)
+        .map_err(io_error)?;
+    Ok(path.to_string_lossy().into_owned())
 }
 #[tauri::command]
 async fn prepare_character_reference(
@@ -1470,6 +1498,9 @@ fn retry_job(app: tauri::AppHandle, core: State<'_, Shared>, id: String) -> Resu
     if let Some(id) = record.voice_install {
         return voice_engines::install(core.inner().clone(), app, id);
     }
+    if let Some(request) = record.character_match {
+        return character_match::resume(core.inner().clone(), app, request);
+    }
     if let Some(request) = record.voice_library {
         return voice_library::resume(core.inner().clone(), app, request);
     }
@@ -1738,6 +1769,9 @@ pub fn run() {
             capture_character_portrait,
             prepare_character_reference,
             prepare_voice_library_source,
+            suggest_dialogue_character,
+            character_suggestion_result,
+            accept_character_suggestion,
             generate_voice_library,
             review_voice_library_sample,
             voice_library_audio_path,

@@ -28,7 +28,7 @@ class MultilingualTests(unittest.TestCase):
         args = voxcpm_arguments(r, Path('reference.wav'))
         self.assertEqual(args['prompt_text'], r['referenceTranscript'])
         self.assertEqual(args['text'], r['text'])
-        self.assertNotIn('reference_wav_path', args)
+        self.assertEqual(args['reference_wav_path'], 'reference.wav')
 
     def test_voxcpm_styled_continuation_still_requires_an_exact_transcript(self):
         for extra in ({}, {'mood': 'dying'}, {'accent': 'fr-FR'}):

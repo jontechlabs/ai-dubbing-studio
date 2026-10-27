@@ -19,6 +19,7 @@ use tauri::Emitter;
 pub struct Segment {
     pub reference_id: Option<String>,
     pub dialogue_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub track_id: Option<String>,
     pub start_ms: u64,
     pub end_ms: u64,
@@ -122,6 +123,9 @@ pub fn reference<'a>(
 pub fn digest(path: &Path) -> Result<String, String> {
     use std::io::Read;
     let mut file = std::fs::File::open(path).map_err(io_error)?;
+    if file.metadata().map_err(io_error)?.len() > 2 * 1024 * 1024 {
+        return Err("INVALID_REFERENCE_AUDIO".into());
+    }
     let mut hasher = Sha256::new();
     let mut buffer = [0_u8; 65536];
     loop {
@@ -144,6 +148,7 @@ fn valid_reference(
         || !ids.insert(r.id.clone())
         || !r.path.starts_with("characters/voice-library/")
         || !r.path.ends_with(".wav")
+        || r.path.len() <= 29
         || r.path[25..r.path.len() - 4]
             .chars()
             .any(|c| !c.is_ascii_alphanumeric() && c != '-')
@@ -377,6 +382,7 @@ pub async fn prepare<R: tauri::Runtime>(
         "-n".into(),
         output.to_string_lossy().into_owned(),
     ]);
+    let mut rendered = false;
     let result = async {
         crate::character_review::direct_process(
             &ffmpeg,
@@ -405,6 +411,7 @@ pub async fn prepare<R: tauri::Runtime>(
             sha256: digest(&output)?,
             created_at: now(),
         };
+        rendered = true;
         let mut guard = core.session.lock().map_err(io_error)?;
         let s = guard.as_mut().ok_or("NO_PROJECT")?;
         if s.root != root || s.project.id != p.id || s.project.revision != p.revision {
@@ -413,11 +420,11 @@ pub async fn prepare<R: tauri::Runtime>(
         let mut next = s.project.clone();
         library_mut(&mut next, &owner.id)?.sources.push(source);
         let updated = s.replace(next, p.revision)?;
-        app.emit("project-changed", &updated).map_err(io_error)?;
+        let _ = app.emit("project-changed", &updated);
         Ok(updated)
     }
     .await;
-    if result.is_err() {
+    if result.is_err() && !rendered {
         let _ = std::fs::remove_file(output);
     }
     result
@@ -581,21 +588,28 @@ pub(crate) async fn run<R: tauri::Runtime>(
             {
                 progress.completed += 1;
                 progress.skipped += 1;
+                jobs::update(core, app, key, |j| {
+                    j.batch = Some(progress.clone());
+                    j.progress = Some(progress.completed as f64 / progress.total as f64);
+                });
                 continue;
             }
             let path = project::asset(&r.root, &anchor.reference.path)?;
             if digest(&path)? != anchor.sha256 {
-                return Err("MODEL_CHECKSUM_FAILED".into());
+                return Err("VOICE_LIBRARY_REFERENCE_CHANGED".into());
             }
             let result =
                 generate_one(core, app, key, r, phrase, anchor, flag, launch, &mut hot).await;
             if let Err(error) = result {
+                // Timeout drops the reader future; explicitly await the child too.
+                hot.close_logged(core, app, key).await;
                 if flag.load(Ordering::Relaxed) || error == "STALE_REVISION" {
                     return Err(error);
                 }
                 jobs::update(core, app, key, |j| {
                     j.logs.push(format!("{}: {error}", phrase.label))
                 });
+                hot.close_logged(core, app, key).await;
                 progress.failed += 1;
                 failure = Some(error);
             } else {
@@ -631,14 +645,12 @@ async fn generate_one<R: tauri::Runtime>(
 ) -> Result<(), String> {
     project::ensure_directory(&r.root, "characters")?;
     let folder = project::ensure_directory(&r.root, "characters/voice-library")?;
-    let relative = format!("characters/voice-library/sample-{}.wav", phrase.id);
+    let relative = format!("characters/voice-library/sample-{}-{}.wav", phrase.id, id());
     let output = r.root.join(&relative);
-    let request_path = folder.join(format!("request-{}.json", phrase.id));
-    let result_path = folder.join(format!("result-{}.json", phrase.id));
-    let prepared = folder.join(format!("prepared-{}.wav", phrase.id));
-    // This UUID belongs to this persisted job; a completed sample is skipped above.
-    let _ = std::fs::remove_file(&output);
-    let _ = std::fs::remove_file(&result_path);
+    let request_path = folder.join(format!("request-{key}-{}.json", phrase.id));
+    let result_path = folder.join(format!("result-{key}-{}.json", phrase.id));
+    let prepared = folder.join(format!("prepared-{key}-{}.wav", phrase.id));
+    // Each retry renders a new immutable file; completed sample IDs are skipped above.
     let mut options = r.generation.options.clone();
     options.mood = Some(phrase.mood.clone());
     let input = serde_json::json!({"variantId":"voxcpm2-bf16","quality":options.quality,"text":phrase.text,"promptText":phrase.text,"language":"fr","referenceAudio":project::asset(&r.root,&anchor.reference.path)?,"preparedReferenceAudio":prepared,"referenceTranscript":anchor.reference.transcript,"mode":"crossLingual","mood":options.mood,"accent":options.accent,"speed":options.speed,"seed":options.seed,"device":options.device,"modelDir":launch.model,"outputPath":output,"resultPath":result_path});
@@ -646,6 +658,7 @@ async fn generate_one<R: tauri::Runtime>(
         &request_path,
         &serde_json::to_vec(&input).map_err(io_error)?,
     )?;
+    let mut rendered = false;
     let result = async {
         tokio::time::timeout(
             std::time::Duration::from_secs(900),
@@ -683,6 +696,10 @@ async fn generate_one<R: tauri::Runtime>(
             created_at: now(),
             device_name: metadata["deviceName"].as_str().unwrap_or("Unknown").into(),
         };
+        rendered = true;
+        if digest(&project::asset(&r.root, &anchor.reference.path)?)? != anchor.sha256 {
+            return Err("VOICE_LIBRARY_REFERENCE_CHANGED".into());
+        }
         let mut guard = core.session.lock().map_err(io_error)?;
         let s = guard.as_mut().ok_or("NO_PROJECT")?;
         if s.root != r.root
@@ -698,15 +715,19 @@ async fn generate_one<R: tauri::Runtime>(
         }
         lib.samples.push(sample);
         let updated = s.replace_grouped(next, s.project.revision, Some(key))?;
-        app.emit("project-changed", updated).map_err(io_error)?;
+        let _ = app.emit("project-changed", updated);
         Ok(())
     }
     .await;
     for path in [&request_path, &result_path, &prepared] {
         let _ = std::fs::remove_file(path);
     }
-    if result.is_err() {
+    if result.is_err() && !rendered {
         let _ = std::fs::remove_file(output);
     }
     result
 }
+
+#[cfg(test)]
+#[path = "voice_library_tests.rs"]
+mod tests;

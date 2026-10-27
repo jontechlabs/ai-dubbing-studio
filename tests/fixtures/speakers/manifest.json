@@ -1,0 +1,10 @@
+[
+  {
+    "path": "a.wav",
+    "sha256": "24572b8d64089839f5e5df46a2ec49fb4ed958da228f1d583118250bac797794"
+  },
+  {
+    "path": "b.wav",
+    "sha256": "8849f3af62d660aca985def88bffb2bc3e9b1cf38fd186baa545e4d6fd40b655"
+  }
+]
