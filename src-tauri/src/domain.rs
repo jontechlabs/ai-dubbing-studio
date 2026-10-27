@@ -286,7 +286,7 @@ impl Project {
         references.iter().find(|r| r.id == id)
     }
     pub fn validate(&self) -> Result<(), String> {
-        if !(1..=20).contains(&self.format_version) {
+        if !(1..=21).contains(&self.format_version) {
             return Err("UNSUPPORTED_PROJECT_VERSION".into());
         }
         if !self.translation_approvals.is_empty()
@@ -560,6 +560,7 @@ impl Project {
         crate::inpaint::validate(self)?;
         crate::audio_patch::validate(self)?;
         crate::character_review::validate(self)?;
+        crate::voice_library::validate(self)?;
         Ok(())
     }
 }

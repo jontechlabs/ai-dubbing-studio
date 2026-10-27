@@ -6,6 +6,7 @@ use std::{collections::HashMap, sync::Mutex};
 fn options() -> Options {
     Options {
         quality: None,
+        intonation_guide: None,
         mood: None,
         accent: None,
         variant_id: None,

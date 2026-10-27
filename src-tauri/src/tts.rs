@@ -23,6 +23,8 @@ pub struct Options {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub quality: Option<serde_json::Value>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub intonation_guide: Option<IntonationGuide>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub mood: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub accent: Option<String>,
@@ -37,11 +39,32 @@ pub struct Options {
     pub speed: f64,
     pub seed: u32,
 }
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct IntonationGuide {
+    pub mode: String,
+    pub track_id: Option<String>,
+}
 impl Options {
     pub fn variant(&self) -> &str {
         self.variant_id.as_deref().unwrap_or("cosy3-official")
     }
     pub fn validate(&self) -> Result<(), String> {
+        if let Some(g) = &self.intonation_guide {
+            if self.variant() != "voxcpm2-bf16"
+                || self.reference_mode == "current"
+                || self.mode != "crossLingual"
+                || !["style", "hybrid"].contains(&g.mode.as_str())
+                || g.track_id
+                    .as_ref()
+                    .is_some_and(|t| t.is_empty() || t.len() > 128)
+                || g.mode == "hybrid"
+                    && (self.accent.as_deref().is_some_and(|a| a != "auto")
+                        || self.mood.as_deref().is_some_and(|m| m != "default"))
+            {
+                return Err("TTS_GUIDE_UNSUPPORTED".into());
+            }
+        }
         crate::voice_quality::validate(self.variant(), self.quality.as_ref())?;
         crate::voice_accent::validate(self, None)?;
         let mood = self.mood.as_deref().unwrap_or("default");
@@ -68,7 +91,8 @@ impl Options {
         {
             return Err("DEVICE_UNAVAILABLE".into());
         }
-        if !["character", "current", "custom", "file"].contains(&self.reference_mode.as_str())
+        if !["character", "current", "custom", "file", "library"]
+            .contains(&self.reference_mode.as_str())
             || !["zeroShot", "crossLingual"].contains(&self.mode.as_str())
             || !self.speed.is_finite()
             || !(0.5..=2.0).contains(&self.speed)
@@ -85,6 +109,9 @@ impl Options {
         Ok(())
     }
     pub fn required_format(&self) -> u32 {
+        if self.reference_mode == "library" || self.intonation_guide.is_some() {
+            return 21;
+        }
         if self.quality.is_some() {
             return 19;
         }
@@ -338,7 +365,7 @@ pub fn fingerprint(p: &Project, line_id: &str) -> Result<String, String> {
         .iter()
         .find(|line| line.id == line_id)
         .ok_or("NO_DIALOGUES")?;
-    let value = serde_json::json!({"text":text(p,line),"start":line.start_ms,"end":line.end_ms,"character":line.character_id,"characterData":p.characters.iter().find(|character|Some(&character.id)==line.character_id.as_ref()),"voiceSettings":line.voice_settings,"fileReference":line.voice_settings.as_ref().filter(|o|o.reference_mode=="file").and_then(|o|o.reference_id.as_deref()).and_then(|id|p.voice_reference(None,id)),"referenceTrack":p.model_preferences.as_ref().map(|v|&v["referenceTrackId"]),"audioPatches":crate::audio_patch::all(p)?,"source":p.media.as_ref().map(|m|&m.path),"language":p.languages.target,"pronunciation":p.pronunciation});
+    let value = serde_json::json!({"text":text(p,line),"start":line.start_ms,"end":line.end_ms,"character":line.character_id,"characterData":p.characters.iter().find(|character|Some(&character.id)==line.character_id.as_ref()),"voiceSettings":line.voice_settings,"sourceCues":p.source_cues.iter().filter(|c|line.source_cue_ids.contains(&c.id)).collect::<Vec<_>>(),"fileReference":line.voice_settings.as_ref().filter(|o|o.reference_mode=="file").and_then(|o|o.reference_id.as_deref()).and_then(|id|p.voice_reference(None,id)),"referenceTrack":p.model_preferences.as_ref().map(|v|&v["referenceTrackId"]),"audioPatches":crate::audio_patch::all(p)?,"source":p.media.as_ref().map(|m|&m.path),"language":p.languages.target,"pronunciation":p.pronunciation});
     Ok(format!(
         "{:x}",
         Sha256::digest(serde_json::to_vec(&value).map_err(io_error)?)
@@ -453,6 +480,20 @@ fn validate_input(p: &Project, line_id: &str, options: &Options) -> Result<(), S
         .iter()
         .find(|line| line.id == line_id)
         .ok_or("NO_DIALOGUES")?;
+    if let Some(guide) = &options.intonation_guide {
+        if p.media.is_none() || line.end_ms.saturating_sub(line.start_ms) < 1000 {
+            return Err("TTS_GUIDE_TOO_SHORT".into());
+        }
+        crate::audio_patch::source_track(p, guide.track_id.as_deref())?;
+        if guide.mode == "hybrid"
+            && !p
+                .source_cues
+                .iter()
+                .any(|c| line.source_cue_ids.contains(&c.id) && !c.text.trim().is_empty())
+        {
+            return Err("TTS_GUIDE_TRANSCRIPT_REQUIRED".into());
+        }
+    }
     let t = text(p, line);
     if t.is_empty() || t.chars().count() > 1000 {
         return Err("TTS_TEXT_REQUIRED".into());
@@ -496,6 +537,16 @@ fn reference<'a>(
     line: &crate::domain::Dialogue,
     options: &Options,
 ) -> Result<&'a crate::domain::VoiceReference, String> {
+    if options.reference_mode == "library" {
+        return crate::voice_library::reference(
+            p,
+            line.character_id
+                .as_deref()
+                .ok_or("TTS_REFERENCE_REQUIRED")?,
+            options.reference_id.as_deref(),
+        )
+        .ok_or("VOICE_LIBRARY_REFERENCE_REQUIRED".into());
+    }
     if options.reference_mode == "file" {
         return p
             .voice_references
@@ -648,6 +699,66 @@ pub(crate) async fn execute_with_session<R: tauri::Runtime>(
         let _ = std::fs::remove_file(&ref_temp);
         return Err("TTS_TRANSCRIPT_REQUIRED".into());
     }
+    let guide_temp = directory.join(format!("{generation_id}-guide.wav"));
+    let guide_prepared = directory.join(format!("{generation_id}-guide-normalized.wav"));
+    let guide_transcript = p
+        .source_cues
+        .iter()
+        .filter(|c| line.source_cue_ids.contains(&c.id))
+        .map(|c| c.text.as_str())
+        .collect::<Vec<_>>()
+        .join("\n");
+    if let Some(guide) = &request.options.intonation_guide {
+        let track = crate::audio_patch::source_track(&p, guide.track_id.as_deref())?;
+        if let Err(error) = crate::audio_patch::snippet(
+            core,
+            app,
+            key,
+            &p,
+            &request.root,
+            crate::audio_patch::Snippet {
+                track_id: &track.id,
+                start_ms: line.start_ms,
+                end_ms: line.end_ms.min(line.start_ms + 20000),
+                channels: 1,
+                rate: 24000,
+                fader: false,
+            },
+            &guide_temp,
+            flag,
+        )
+        .await
+        {
+            let _ = std::fs::remove_file(&ref_temp);
+            let _ = std::fs::remove_file(&guide_temp);
+            return Err(error);
+        }
+    }
+    if request.options.reference_mode == "library" {
+        let owner = line
+            .character_id
+            .as_deref()
+            .ok_or("TTS_REFERENCE_REQUIRED")?;
+        let lib =
+            crate::voice_library::library(&p, owner).ok_or("VOICE_LIBRARY_REFERENCE_REQUIRED")?;
+        let sample = lib
+            .samples
+            .iter()
+            .find(|s| {
+                Some(&s.id)
+                    == request
+                        .options
+                        .reference_id
+                        .as_ref()
+                        .or(lib.default_sample_id.as_ref())
+                    && s.status == "approved"
+            })
+            .ok_or("VOICE_LIBRARY_REFERENCE_REQUIRED")?;
+        if crate::voice_library::digest(&reference_audio)? != sample.sha256 {
+            let _ = std::fs::remove_file(&guide_temp);
+            return Err("MODEL_CHECKSUM_FAILED".into());
+        }
+    }
     let input = directory.join(format!("{generation_id}.request.json"));
     let result_path = directory.join(format!("{generation_id}.result.json"));
     let raw_text = text(&p, line);
@@ -658,7 +769,7 @@ pub(crate) async fn execute_with_session<R: tauri::Runtime>(
     } else {
         raw_text.clone()
     };
-    let input_value = serde_json::json!({"preparedReferenceAudio":ref_prepared,"variantId":request.options.variant(),"quality":request.options.quality,"text":raw_text,"promptText":prompt_text,"mood":request.options.mood,"accent":request.options.accent,"language":p.languages.target,"referenceAudio":reference_audio,"referenceTranscript":transcript,"modelDir":launch.model,"outputPath":destination,"resultPath":result_path,"device":request.options.device,"speed":request.options.speed,"mode":request.options.mode,"seed":request.options.seed});
+    let input_value = serde_json::json!({"intonationGuide":request.options.intonation_guide,"guideAudio":guide_temp,"preparedGuideAudio":guide_prepared,"guideTranscript":guide_transcript,"preparedReferenceAudio":ref_prepared,"variantId":request.options.variant(),"quality":request.options.quality,"text":raw_text,"promptText":prompt_text,"mood":request.options.mood,"accent":request.options.accent,"language":p.languages.target,"referenceAudio":reference_audio,"referenceTranscript":transcript,"modelDir":launch.model,"outputPath":destination,"resultPath":result_path,"device":request.options.device,"speed":request.options.speed,"mode":request.options.mode,"seed":request.options.seed});
     project::atomic_write(&input, &serde_json::to_vec(&input_value).map_err(io_error)?)?;
     let result = tokio::time::timeout(Duration::from_secs(if request.options.variant()=="drama3-comfy-fp8"{3600}else{900}), async {
         if request.options.variant().contains("gguf") {
@@ -695,6 +806,8 @@ pub(crate) async fn execute_with_session<R: tauri::Runtime>(
     let _ = std::fs::remove_file(&input);
     let _ = std::fs::remove_file(&ref_temp);
     let _ = std::fs::remove_file(&ref_prepared);
+    let _ = std::fs::remove_file(&guide_temp);
+    let _ = std::fs::remove_file(&guide_prepared);
     if let Err(error) = result {
         if let Some(session) = hot {
             session.close_logged(core, app, key).await;
@@ -719,7 +832,7 @@ pub(crate) async fn execute_with_session<R: tauri::Runtime>(
         }
         .into());
     }
-    let generation = serde_json::json!({"id":generation_id,"kind":"tts","dialogueId":line.id,"providerId":if request.options.variant()=="cosy3-official"{"cosyvoice3"}else if request.options.variant()=="voxcpm2-bf16"{"voxcpm2"}else if request.options.variant()=="chatterbox-multilingual-v3"{"chatterbox"}else if request.options.variant()=="drama3-comfy-fp8"{"fish-drama3"}else if request.options.variant().starts_with("fish"){"fish-s2"}else{"qwen3-tts"},"modelId":request.options.variant(),"path":format!("generations/{generation_id}.wav"),"createdAt":now(),"sourcePath":p.media.as_ref().map(|m|&m.path),"startMs":line.start_ms,"endMs":line.end_ms,"text":text(&p,line),"language":p.languages.target,"characterId":line.character_id,"durationMs":duration,"sampleRate":24000,"options":request.options,"referenceTranscript":transcript,"referenceId":if request.options.reference_mode=="current"{None}else{reference(&p,line,&request.options).ok().map(|r|&r.id)},"device":metadata["device"],"deviceName":metadata["deviceName"],"peakVramMb":metadata["peakVramMb"],"expertsInRam":metadata["expertsInRam"],"expertCacheGiB":metadata["expertCacheGiB"],"expertMemoryMode":metadata["expertMemoryMode"],"compatibilityMode":metadata["compatibilityMode"].as_bool().unwrap_or(false),"batchItemId":request.batch_item_id,"inputHash":request.fingerprint});
+    let generation = serde_json::json!({"id":generation_id,"kind":"tts","dialogueId":line.id,"providerId":if request.options.variant()=="cosy3-official"{"cosyvoice3"}else if request.options.variant()=="voxcpm2-bf16"{"voxcpm2"}else if request.options.variant()=="chatterbox-multilingual-v3"{"chatterbox"}else if request.options.variant()=="drama3-comfy-fp8"{"fish-drama3"}else if request.options.variant().starts_with("fish"){"fish-s2"}else{"qwen3-tts"},"modelId":request.options.variant(),"path":format!("generations/{generation_id}.wav"),"createdAt":now(),"sourcePath":p.media.as_ref().map(|m|&m.path),"startMs":line.start_ms,"endMs":line.end_ms,"text":text(&p,line),"language":p.languages.target,"characterId":line.character_id,"durationMs":duration,"sampleRate":24000,"options":request.options,"referenceTranscript":transcript,"guideAnalysis":metadata["guideAnalysis"],"guideTranscript":if request.options.intonation_guide.is_some(){Some(&guide_transcript)}else{None},"referenceId":if request.options.reference_mode=="current"{None}else{reference(&p,line,&request.options).ok().map(|r|&r.id)},"device":metadata["device"],"deviceName":metadata["deviceName"],"peakVramMb":metadata["peakVramMb"],"expertsInRam":metadata["expertsInRam"],"expertCacheGiB":metadata["expertCacheGiB"],"expertMemoryMode":metadata["expertMemoryMode"],"compatibilityMode":metadata["compatibilityMode"].as_bool().unwrap_or(false),"batchItemId":request.batch_item_id,"inputHash":request.fingerprint});
     let mut session = core.session.lock().map_err(io_error)?;
     let s = session.as_mut().ok_or("NO_PROJECT")?;
     if s.root != request.root || s.project.id != request.project_id {

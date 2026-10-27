@@ -16,6 +16,7 @@ export interface VocalRegister {
   analyzedMs: number;
 }
 export interface CharacterProfile {
+  voiceLibrary?: import('./voiceLibrary').VoiceLibrary;
   gender?: 'unspecified' | 'man' | 'woman' | 'other';
   temporaryName?: boolean;
   portrait?: CharacterPortrait;
@@ -254,7 +255,21 @@ export function mergeCharacters(project: Project, options: CharacterMerge): Proj
   next.characters = next.characters.filter((c) => !ids.has(c.id) || c.id === keeper.id);
   for (const line of next.dialogues)
     if (line.characterId && ids.has(line.characterId)) line.characterId = keeper.id;
-  for (const id of ids) if (id !== keeper.id) delete next.characterProfiles?.[id];
+  for (const id of ids)
+    if (id !== keeper.id) {
+      const library = next.characterProfiles?.[id]?.voiceLibrary;
+      if (library) {
+        next.characterProfiles ??= {};
+        const profile = (next.characterProfiles[keeper.id] ??= {});
+        if (!profile.voiceLibrary) profile.voiceLibrary = structuredClone(library);
+        else {
+          profile.voiceLibrary.sources.push(...structuredClone(library.sources));
+          profile.voiceLibrary.samples.push(...structuredClone(library.samples));
+          profile.voiceLibrary.defaultSampleId ??= library.defaultSampleId;
+        }
+      }
+      delete next.characterProfiles?.[id];
+    }
   next.speakerAnalysis = null;
   if (next.characterProfiles && Object.keys(next.characterProfiles).length)
     next.formatVersion = Math.max(20, next.formatVersion);

@@ -45,7 +45,8 @@ export interface VoiceSettings {
   accent?: 'auto' | 'fr-FR' | 'fr-CA' | 'fr-BE' | 'fr-CH';
   variantId?: string | null;
   device: string;
-  referenceMode: 'character' | 'current' | 'custom' | 'file';
+  referenceMode: 'character' | 'current' | 'custom' | 'file' | 'library';
+  intonationGuide?: import('./voiceLibrary').IntonationGuide;
   referenceTrackId?: string;
   referenceId: string | null;
   mode: 'zeroShot' | 'crossLingual';

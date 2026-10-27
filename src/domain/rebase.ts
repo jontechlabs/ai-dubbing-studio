@@ -1,4 +1,5 @@
 import type { Project } from './types';
+import { rebaseVoiceLibrary } from './voiceLibrary';
 import { audioTracks } from './audio';
 import { cleanTranslationApprovals } from './translation';
 const changed = (a: unknown, b: unknown) => JSON.stringify(a) !== JSON.stringify(b);
@@ -34,6 +35,12 @@ export function rebaseProject(base: Project, local: Project, incoming: Project):
     for (const key of ['gender', 'temporaryName', 'portrait', 'vocalRegister'] as const)
       if (changed(before?.[key], edited[key]))
         Object.assign(merged, { [key]: structuredClone(edited[key]) });
+    if (changed(before?.voiceLibrary, edited.voiceLibrary))
+      merged.voiceLibrary = rebaseVoiceLibrary(
+        before?.voiceLibrary,
+        edited.voiceLibrary,
+        merged.voiceLibrary,
+      );
     next.characterProfiles[id] = merged;
   }
   for (const id of Object.keys(next.characterProfiles ?? {}))

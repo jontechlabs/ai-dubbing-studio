@@ -132,6 +132,8 @@ pub struct PersistedJob {
     #[serde(default)]
     pub tts_request: Option<crate::tts::Request>,
     #[serde(default)]
+    pub voice_library: Option<crate::voice_library::Request>,
+    #[serde(default)]
     pub mix_request: Option<crate::mix::Request>,
     #[serde(default)]
     pub transcription: Option<crate::transcription::Request>,
@@ -250,6 +252,7 @@ pub fn create<R: tauri::Runtime>(
                     tts_install: None,
                     voice_install: None,
                     tts_request: None,
+                    voice_library: None,
                     mix_request: None,
                     transcription: None,
                 },

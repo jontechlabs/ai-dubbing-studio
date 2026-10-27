@@ -1000,9 +1000,11 @@
                   { "type": "string", "const": "character" },
                   { "type": "string", "const": "current" },
                   { "type": "string", "const": "custom" },
-                  { "type": "string", "const": "file" }
+                  { "type": "string", "const": "file" },
+                  { "type": "string", "const": "library" }
                 ]
               },
+              "intonationGuide": { "anyOf": [{ "$ref": "#/$defs/options_IntonationGuide_2" }] },
               "referenceTrackId": { "anyOf": [{ "type": "string" }] },
               "referenceId": { "anyOf": [{ "type": "null" }, { "type": "string" }] },
               "mode": {
@@ -1031,6 +1033,20 @@
               "exaggeration": { "anyOf": [{ "type": "number" }] }
             },
             "required": [],
+            "additionalProperties": false
+          },
+          "options_IntonationGuide_2": {
+            "type": "object",
+            "properties": {
+              "mode": {
+                "anyOf": [
+                  { "type": "string", "const": "style" },
+                  { "type": "string", "const": "hybrid" }
+                ]
+              },
+              "trackId": { "anyOf": [{ "type": "string" }] }
+            },
+            "required": ["mode"],
             "additionalProperties": false
           }
         }
@@ -1473,6 +1489,324 @@
       "annotations": { "readOnlyHint": false, "destructiveHint": true, "openWorldHint": false }
     },
     {
+      "name": "studio_prepare_voice_library_source",
+      "command": "prepare_voice_library_source",
+      "description": "prepare voice library source. Uses the current desktop session. Local file paths must be absolute; long operations return job IDs. Existing native validation applies.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "options": { "$ref": "#/$defs/options_VoiceLibrarySourceOptions_0" },
+          "context": {
+            "type": "object",
+            "properties": {
+              "projectId": { "type": "string" },
+              "expectedRevision": { "type": "integer", "minimum": 0 }
+            },
+            "required": ["projectId", "expectedRevision"],
+            "additionalProperties": false
+          }
+        },
+        "required": ["options", "context"],
+        "additionalProperties": false,
+        "$defs": {
+          "options_VoiceLibrarySourceOptions_0": {
+            "type": "object",
+            "properties": {
+              "characterId": { "type": "string" },
+              "label": { "type": "string" },
+              "segments": {
+                "type": "array",
+                "items": { "$ref": "#/$defs/options_VoiceLibrarySegment_1" }
+              }
+            },
+            "required": ["characterId", "label", "segments"],
+            "additionalProperties": false
+          },
+          "options_VoiceLibrarySegment_1": {
+            "type": "object",
+            "properties": {
+              "referenceId": { "anyOf": [{ "type": "null" }, { "type": "string" }] },
+              "dialogueId": { "anyOf": [{ "type": "null" }, { "type": "string" }] },
+              "trackId": { "anyOf": [{ "type": "string" }] },
+              "startMs": { "type": "number" },
+              "endMs": { "type": "number" }
+            },
+            "required": ["referenceId", "dialogueId", "startMs", "endMs"],
+            "additionalProperties": false
+          }
+        }
+      },
+      "annotations": { "readOnlyHint": false, "destructiveHint": true, "openWorldHint": false }
+    },
+    {
+      "name": "studio_generate_voice_library",
+      "command": "generate_voice_library",
+      "description": "generate voice library. Uses the current desktop session. Local file paths must be absolute; long operations return job IDs. Existing native validation applies.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "options": { "$ref": "#/$defs/options_VoiceLibraryGeneration_0" },
+          "context": {
+            "type": "object",
+            "properties": {
+              "projectId": { "type": "string" },
+              "expectedRevision": { "type": "integer", "minimum": 0 }
+            },
+            "required": ["projectId", "expectedRevision"],
+            "additionalProperties": false
+          }
+        },
+        "required": ["options", "context"],
+        "additionalProperties": false,
+        "$defs": {
+          "options_VoiceLibraryGeneration_0": {
+            "type": "object",
+            "properties": {
+              "characterId": { "type": "string" },
+              "sourceId": { "type": "string" },
+              "phrases": {
+                "type": "array",
+                "items": { "$ref": "#/$defs/options_VoiceLibraryPhrase_1" }
+              },
+              "options": { "$ref": "#/$defs/options_VoiceSettings_2" }
+            },
+            "required": ["characterId", "sourceId", "phrases", "options"],
+            "additionalProperties": false
+          },
+          "options_VoiceLibraryPhrase_1": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "string" },
+              "label": { "type": "string" },
+              "text": { "type": "string" },
+              "mood": {
+                "anyOf": [
+                  { "type": "string", "const": "happy" },
+                  { "type": "string", "const": "excited" },
+                  { "type": "string", "const": "angry" },
+                  { "type": "string", "const": "sad" },
+                  { "type": "string", "const": "calm" },
+                  { "type": "string", "const": "surprised" },
+                  { "type": "string", "const": "whisper" },
+                  { "type": "string", "const": "shouting" },
+                  { "type": "string", "const": "default" },
+                  { "type": "string", "const": "enthusiastic" },
+                  { "type": "string", "const": "amused" },
+                  { "type": "string", "const": "laughing" },
+                  { "type": "string", "const": "proud" },
+                  { "type": "string", "const": "tender" },
+                  { "type": "string", "const": "relieved" },
+                  { "type": "string", "const": "stressed" },
+                  { "type": "string", "const": "anxious" },
+                  { "type": "string", "const": "panicked" },
+                  { "type": "string", "const": "afraid" },
+                  { "type": "string", "const": "irritated" },
+                  { "type": "string", "const": "furious" },
+                  { "type": "string", "const": "threatening" },
+                  { "type": "string", "const": "determined" },
+                  { "type": "string", "const": "impatient" },
+                  { "type": "string", "const": "crying" },
+                  { "type": "string", "const": "desperate" },
+                  { "type": "string", "const": "disappointed" },
+                  { "type": "string", "const": "regretful" },
+                  { "type": "string", "const": "nostalgic" },
+                  { "type": "string", "const": "dying" },
+                  { "type": "string", "const": "exhausted" },
+                  { "type": "string", "const": "breathless" },
+                  { "type": "string", "const": "in-pain" },
+                  { "type": "string", "const": "sleepy" },
+                  { "type": "string", "const": "weak" },
+                  { "type": "string", "const": "sarcastic" },
+                  { "type": "string", "const": "ironic" },
+                  { "type": "string", "const": "confused" },
+                  { "type": "string", "const": "doubtful" },
+                  { "type": "string", "const": "curious" },
+                  { "type": "string", "const": "serious" },
+                  { "type": "string", "const": "narration" },
+                  { "type": "string", "const": "disgusted" }
+                ]
+              }
+            },
+            "required": ["id", "label", "text", "mood"],
+            "additionalProperties": false
+          },
+          "options_VoiceSettings_2": {
+            "type": "object",
+            "properties": {
+              "quality": { "anyOf": [{ "$ref": "#/$defs/options_VoiceQuality_3" }] },
+              "mood": {
+                "anyOf": [
+                  { "type": "string", "const": "happy" },
+                  { "type": "string", "const": "excited" },
+                  { "type": "string", "const": "angry" },
+                  { "type": "string", "const": "sad" },
+                  { "type": "string", "const": "calm" },
+                  { "type": "string", "const": "surprised" },
+                  { "type": "string", "const": "whisper" },
+                  { "type": "string", "const": "shouting" },
+                  { "type": "string", "const": "default" },
+                  { "type": "string", "const": "enthusiastic" },
+                  { "type": "string", "const": "amused" },
+                  { "type": "string", "const": "laughing" },
+                  { "type": "string", "const": "proud" },
+                  { "type": "string", "const": "tender" },
+                  { "type": "string", "const": "relieved" },
+                  { "type": "string", "const": "stressed" },
+                  { "type": "string", "const": "anxious" },
+                  { "type": "string", "const": "panicked" },
+                  { "type": "string", "const": "afraid" },
+                  { "type": "string", "const": "irritated" },
+                  { "type": "string", "const": "furious" },
+                  { "type": "string", "const": "threatening" },
+                  { "type": "string", "const": "determined" },
+                  { "type": "string", "const": "impatient" },
+                  { "type": "string", "const": "crying" },
+                  { "type": "string", "const": "desperate" },
+                  { "type": "string", "const": "disappointed" },
+                  { "type": "string", "const": "regretful" },
+                  { "type": "string", "const": "nostalgic" },
+                  { "type": "string", "const": "dying" },
+                  { "type": "string", "const": "exhausted" },
+                  { "type": "string", "const": "breathless" },
+                  { "type": "string", "const": "in-pain" },
+                  { "type": "string", "const": "sleepy" },
+                  { "type": "string", "const": "weak" },
+                  { "type": "string", "const": "sarcastic" },
+                  { "type": "string", "const": "ironic" },
+                  { "type": "string", "const": "confused" },
+                  { "type": "string", "const": "doubtful" },
+                  { "type": "string", "const": "curious" },
+                  { "type": "string", "const": "serious" },
+                  { "type": "string", "const": "narration" },
+                  { "type": "string", "const": "disgusted" }
+                ]
+              },
+              "accent": {
+                "anyOf": [
+                  { "type": "string", "const": "auto" },
+                  { "type": "string", "const": "fr-FR" },
+                  { "type": "string", "const": "fr-CA" },
+                  { "type": "string", "const": "fr-BE" },
+                  { "type": "string", "const": "fr-CH" }
+                ]
+              },
+              "variantId": { "anyOf": [{ "type": "null" }, { "type": "string" }] },
+              "device": { "type": "string" },
+              "referenceMode": {
+                "anyOf": [
+                  { "type": "string", "const": "character" },
+                  { "type": "string", "const": "current" },
+                  { "type": "string", "const": "custom" },
+                  { "type": "string", "const": "file" },
+                  { "type": "string", "const": "library" }
+                ]
+              },
+              "intonationGuide": { "anyOf": [{ "$ref": "#/$defs/options_IntonationGuide_4" }] },
+              "referenceTrackId": { "anyOf": [{ "type": "string" }] },
+              "referenceId": { "anyOf": [{ "type": "null" }, { "type": "string" }] },
+              "mode": {
+                "anyOf": [
+                  { "type": "string", "const": "zeroShot" },
+                  { "type": "string", "const": "crossLingual" }
+                ]
+              },
+              "speed": { "type": "number" },
+              "seed": { "type": "number" }
+            },
+            "required": ["device", "referenceMode", "referenceId", "mode", "speed", "seed"],
+            "additionalProperties": false
+          },
+          "options_VoiceQuality_3": {
+            "type": "object",
+            "properties": {
+              "inferenceSteps": { "anyOf": [{ "type": "number" }] },
+              "cfgStrength": { "anyOf": [{ "type": "number" }] },
+              "temperature": { "anyOf": [{ "type": "number" }] },
+              "topP": { "anyOf": [{ "type": "number" }] },
+              "topK": { "anyOf": [{ "type": "number" }] },
+              "repetitionPenalty": { "anyOf": [{ "type": "number" }] },
+              "minP": { "anyOf": [{ "type": "number" }] },
+              "cfgWeight": { "anyOf": [{ "type": "number" }] },
+              "exaggeration": { "anyOf": [{ "type": "number" }] }
+            },
+            "required": [],
+            "additionalProperties": false
+          },
+          "options_IntonationGuide_4": {
+            "type": "object",
+            "properties": {
+              "mode": {
+                "anyOf": [
+                  { "type": "string", "const": "style" },
+                  { "type": "string", "const": "hybrid" }
+                ]
+              },
+              "trackId": { "anyOf": [{ "type": "string" }] }
+            },
+            "required": ["mode"],
+            "additionalProperties": false
+          }
+        }
+      },
+      "annotations": { "readOnlyHint": false, "destructiveHint": true, "openWorldHint": false }
+    },
+    {
+      "name": "studio_review_voice_library_sample",
+      "command": "review_voice_library_sample",
+      "description": "review voice library sample. Uses the current desktop session. Local file paths must be absolute; long operations return job IDs. Existing native validation applies.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "options": { "$ref": "#/$defs/options_VoiceLibraryReview_0" },
+          "context": {
+            "type": "object",
+            "properties": {
+              "projectId": { "type": "string" },
+              "expectedRevision": { "type": "integer", "minimum": 0 }
+            },
+            "required": ["projectId", "expectedRevision"],
+            "additionalProperties": false
+          }
+        },
+        "required": ["options", "context"],
+        "additionalProperties": false,
+        "$defs": {
+          "options_VoiceLibraryReview_0": {
+            "type": "object",
+            "properties": {
+              "characterId": { "type": "string" },
+              "sampleId": { "type": "string" },
+              "status": {
+                "anyOf": [
+                  { "type": "null" },
+                  { "type": "string", "const": "approved" },
+                  { "type": "string", "const": "pending" },
+                  { "type": "string", "const": "rejected" }
+                ]
+              },
+              "transcript": { "anyOf": [{ "type": "null" }, { "type": "string" }] },
+              "useDefault": { "type": "boolean" }
+            },
+            "required": ["characterId", "sampleId", "status", "transcript", "useDefault"],
+            "additionalProperties": false
+          }
+        }
+      },
+      "annotations": { "readOnlyHint": false, "destructiveHint": true, "openWorldHint": false }
+    },
+    {
+      "name": "studio_voice_library_audio_path",
+      "command": "voice_library_audio_path",
+      "description": "voice library audio path. Uses the current desktop session. Local file paths must be absolute; long operations return job IDs. Existing native validation applies.",
+      "inputSchema": {
+        "type": "object",
+        "properties": { "characterId": { "type": "string" }, "referenceId": { "type": "string" } },
+        "required": ["characterId", "referenceId"],
+        "additionalProperties": false
+      },
+      "annotations": { "readOnlyHint": true, "destructiveHint": false, "openWorldHint": false }
+    },
+    {
       "name": "studio_prepare_character_reference",
       "command": "prepare_character_reference",
       "description": "Prepare a new 1–20 second mono WAV by trimming/concatenating 1–16 existing reference segments. Does not change the project; use the returned VoiceReference with studio_merge_characters. Original reference files are retained. Partial segments require transcript review.",
@@ -1763,9 +2097,11 @@
                   { "type": "string", "const": "character" },
                   { "type": "string", "const": "current" },
                   { "type": "string", "const": "custom" },
-                  { "type": "string", "const": "file" }
+                  { "type": "string", "const": "file" },
+                  { "type": "string", "const": "library" }
                 ]
               },
+              "intonationGuide": { "anyOf": [{ "$ref": "#/$defs/options_IntonationGuide_2" }] },
               "referenceTrackId": { "anyOf": [{ "type": "string" }] },
               "referenceId": { "anyOf": [{ "type": "null" }, { "type": "string" }] },
               "mode": {
@@ -1794,6 +2130,20 @@
               "exaggeration": { "anyOf": [{ "type": "number" }] }
             },
             "required": [],
+            "additionalProperties": false
+          },
+          "options_IntonationGuide_2": {
+            "type": "object",
+            "properties": {
+              "mode": {
+                "anyOf": [
+                  { "type": "string", "const": "style" },
+                  { "type": "string", "const": "hybrid" }
+                ]
+              },
+              "trackId": { "anyOf": [{ "type": "string" }] }
+            },
+            "required": ["mode"],
             "additionalProperties": false
           }
         }
@@ -1917,9 +2267,11 @@
                   { "type": "string", "const": "character" },
                   { "type": "string", "const": "current" },
                   { "type": "string", "const": "custom" },
-                  { "type": "string", "const": "file" }
+                  { "type": "string", "const": "file" },
+                  { "type": "string", "const": "library" }
                 ]
               },
+              "intonationGuide": { "anyOf": [{ "$ref": "#/$defs/selection_IntonationGuide_3" }] },
               "referenceTrackId": { "anyOf": [{ "type": "string" }] },
               "referenceId": { "anyOf": [{ "type": "null" }, { "type": "string" }] },
               "mode": {
@@ -1948,6 +2300,20 @@
               "exaggeration": { "anyOf": [{ "type": "number" }] }
             },
             "required": [],
+            "additionalProperties": false
+          },
+          "selection_IntonationGuide_3": {
+            "type": "object",
+            "properties": {
+              "mode": {
+                "anyOf": [
+                  { "type": "string", "const": "style" },
+                  { "type": "string", "const": "hybrid" }
+                ]
+              },
+              "trackId": { "anyOf": [{ "type": "string" }] }
+            },
+            "required": ["mode"],
             "additionalProperties": false
           }
         }
@@ -2070,9 +2436,11 @@
                   { "type": "string", "const": "character" },
                   { "type": "string", "const": "current" },
                   { "type": "string", "const": "custom" },
-                  { "type": "string", "const": "file" }
+                  { "type": "string", "const": "file" },
+                  { "type": "string", "const": "library" }
                 ]
               },
+              "intonationGuide": { "anyOf": [{ "$ref": "#/$defs/selection_IntonationGuide_3" }] },
               "referenceTrackId": { "anyOf": [{ "type": "string" }] },
               "referenceId": { "anyOf": [{ "type": "null" }, { "type": "string" }] },
               "mode": {
@@ -2101,6 +2469,20 @@
               "exaggeration": { "anyOf": [{ "type": "number" }] }
             },
             "required": [],
+            "additionalProperties": false
+          },
+          "selection_IntonationGuide_3": {
+            "type": "object",
+            "properties": {
+              "mode": {
+                "anyOf": [
+                  { "type": "string", "const": "style" },
+                  { "type": "string", "const": "hybrid" }
+                ]
+              },
+              "trackId": { "anyOf": [{ "type": "string" }] }
+            },
+            "required": ["mode"],
             "additionalProperties": false
           }
         }
@@ -2875,6 +3257,7 @@
           "CharacterProfile_0": {
             "type": "object",
             "properties": {
+              "voiceLibrary": { "anyOf": [{ "$ref": "#/$defs/VoiceLibrary_1" }] },
               "gender": {
                 "anyOf": [
                   { "type": "string", "const": "unspecified" },
@@ -2889,13 +3272,256 @@
                   { "type": "boolean", "const": true }
                 ]
               },
-              "portrait": { "anyOf": [{ "$ref": "#/$defs/CharacterPortrait_1" }] },
-              "vocalRegister": { "anyOf": [{ "$ref": "#/$defs/VocalRegister_2" }] }
+              "portrait": { "anyOf": [{ "$ref": "#/$defs/CharacterPortrait_9" }] },
+              "vocalRegister": { "anyOf": [{ "$ref": "#/$defs/VocalRegister_10" }] }
             },
             "required": [],
             "additionalProperties": false
           },
-          "CharacterPortrait_1": {
+          "VoiceLibrary_1": {
+            "type": "object",
+            "properties": {
+              "sources": { "type": "array", "items": { "$ref": "#/$defs/VoiceLibrarySource_2" } },
+              "samples": { "type": "array", "items": { "$ref": "#/$defs/VoiceLibrarySample_5" } },
+              "defaultSampleId": { "anyOf": [{ "type": "null" }, { "type": "string" }] }
+            },
+            "required": ["sources", "samples", "defaultSampleId"],
+            "additionalProperties": false
+          },
+          "VoiceLibrarySource_2": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "string" },
+              "reference": { "$ref": "#/$defs/VoiceReference_3" },
+              "segments": { "type": "array", "items": { "$ref": "#/$defs/VoiceLibrarySegment_4" } },
+              "sha256": { "type": "string" },
+              "createdAt": { "type": "string" }
+            },
+            "required": ["id", "reference", "segments", "sha256", "createdAt"],
+            "additionalProperties": false
+          },
+          "VoiceReference_3": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "string" },
+              "label": { "type": "string" },
+              "path": { "type": "string" },
+              "durationMs": { "type": "number" },
+              "transcript": { "type": "string" },
+              "sourceDialogueId": { "anyOf": [{ "type": "null" }, { "type": "string" }] }
+            },
+            "required": ["id", "label", "path", "durationMs", "transcript"],
+            "additionalProperties": false
+          },
+          "VoiceLibrarySegment_4": {
+            "type": "object",
+            "properties": {
+              "referenceId": { "anyOf": [{ "type": "null" }, { "type": "string" }] },
+              "dialogueId": { "anyOf": [{ "type": "null" }, { "type": "string" }] },
+              "trackId": { "anyOf": [{ "type": "string" }] },
+              "startMs": { "type": "number" },
+              "endMs": { "type": "number" }
+            },
+            "required": ["referenceId", "dialogueId", "startMs", "endMs"],
+            "additionalProperties": false
+          },
+          "VoiceLibrarySample_5": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "string" },
+              "sourceId": { "type": "string" },
+              "reference": { "$ref": "#/$defs/VoiceReference_3" },
+              "text": { "type": "string" },
+              "mood": {
+                "anyOf": [
+                  { "type": "string", "const": "happy" },
+                  { "type": "string", "const": "excited" },
+                  { "type": "string", "const": "angry" },
+                  { "type": "string", "const": "sad" },
+                  { "type": "string", "const": "calm" },
+                  { "type": "string", "const": "surprised" },
+                  { "type": "string", "const": "whisper" },
+                  { "type": "string", "const": "shouting" },
+                  { "type": "string", "const": "default" },
+                  { "type": "string", "const": "enthusiastic" },
+                  { "type": "string", "const": "amused" },
+                  { "type": "string", "const": "laughing" },
+                  { "type": "string", "const": "proud" },
+                  { "type": "string", "const": "tender" },
+                  { "type": "string", "const": "relieved" },
+                  { "type": "string", "const": "stressed" },
+                  { "type": "string", "const": "anxious" },
+                  { "type": "string", "const": "panicked" },
+                  { "type": "string", "const": "afraid" },
+                  { "type": "string", "const": "irritated" },
+                  { "type": "string", "const": "furious" },
+                  { "type": "string", "const": "threatening" },
+                  { "type": "string", "const": "determined" },
+                  { "type": "string", "const": "impatient" },
+                  { "type": "string", "const": "crying" },
+                  { "type": "string", "const": "desperate" },
+                  { "type": "string", "const": "disappointed" },
+                  { "type": "string", "const": "regretful" },
+                  { "type": "string", "const": "nostalgic" },
+                  { "type": "string", "const": "dying" },
+                  { "type": "string", "const": "exhausted" },
+                  { "type": "string", "const": "breathless" },
+                  { "type": "string", "const": "in-pain" },
+                  { "type": "string", "const": "sleepy" },
+                  { "type": "string", "const": "weak" },
+                  { "type": "string", "const": "sarcastic" },
+                  { "type": "string", "const": "ironic" },
+                  { "type": "string", "const": "confused" },
+                  { "type": "string", "const": "doubtful" },
+                  { "type": "string", "const": "curious" },
+                  { "type": "string", "const": "serious" },
+                  { "type": "string", "const": "narration" },
+                  { "type": "string", "const": "disgusted" }
+                ]
+              },
+              "status": {
+                "anyOf": [
+                  { "type": "string", "const": "approved" },
+                  { "type": "string", "const": "pending" },
+                  { "type": "string", "const": "rejected" }
+                ]
+              },
+              "options": { "$ref": "#/$defs/VoiceSettings_6" },
+              "sha256": { "type": "string" },
+              "createdAt": { "type": "string" },
+              "deviceName": { "type": "string" }
+            },
+            "required": [
+              "id",
+              "sourceId",
+              "reference",
+              "text",
+              "mood",
+              "status",
+              "options",
+              "sha256",
+              "createdAt",
+              "deviceName"
+            ],
+            "additionalProperties": false
+          },
+          "VoiceSettings_6": {
+            "type": "object",
+            "properties": {
+              "quality": { "anyOf": [{ "$ref": "#/$defs/VoiceQuality_7" }] },
+              "mood": {
+                "anyOf": [
+                  { "type": "string", "const": "happy" },
+                  { "type": "string", "const": "excited" },
+                  { "type": "string", "const": "angry" },
+                  { "type": "string", "const": "sad" },
+                  { "type": "string", "const": "calm" },
+                  { "type": "string", "const": "surprised" },
+                  { "type": "string", "const": "whisper" },
+                  { "type": "string", "const": "shouting" },
+                  { "type": "string", "const": "default" },
+                  { "type": "string", "const": "enthusiastic" },
+                  { "type": "string", "const": "amused" },
+                  { "type": "string", "const": "laughing" },
+                  { "type": "string", "const": "proud" },
+                  { "type": "string", "const": "tender" },
+                  { "type": "string", "const": "relieved" },
+                  { "type": "string", "const": "stressed" },
+                  { "type": "string", "const": "anxious" },
+                  { "type": "string", "const": "panicked" },
+                  { "type": "string", "const": "afraid" },
+                  { "type": "string", "const": "irritated" },
+                  { "type": "string", "const": "furious" },
+                  { "type": "string", "const": "threatening" },
+                  { "type": "string", "const": "determined" },
+                  { "type": "string", "const": "impatient" },
+                  { "type": "string", "const": "crying" },
+                  { "type": "string", "const": "desperate" },
+                  { "type": "string", "const": "disappointed" },
+                  { "type": "string", "const": "regretful" },
+                  { "type": "string", "const": "nostalgic" },
+                  { "type": "string", "const": "dying" },
+                  { "type": "string", "const": "exhausted" },
+                  { "type": "string", "const": "breathless" },
+                  { "type": "string", "const": "in-pain" },
+                  { "type": "string", "const": "sleepy" },
+                  { "type": "string", "const": "weak" },
+                  { "type": "string", "const": "sarcastic" },
+                  { "type": "string", "const": "ironic" },
+                  { "type": "string", "const": "confused" },
+                  { "type": "string", "const": "doubtful" },
+                  { "type": "string", "const": "curious" },
+                  { "type": "string", "const": "serious" },
+                  { "type": "string", "const": "narration" },
+                  { "type": "string", "const": "disgusted" }
+                ]
+              },
+              "accent": {
+                "anyOf": [
+                  { "type": "string", "const": "auto" },
+                  { "type": "string", "const": "fr-FR" },
+                  { "type": "string", "const": "fr-CA" },
+                  { "type": "string", "const": "fr-BE" },
+                  { "type": "string", "const": "fr-CH" }
+                ]
+              },
+              "variantId": { "anyOf": [{ "type": "null" }, { "type": "string" }] },
+              "device": { "type": "string" },
+              "referenceMode": {
+                "anyOf": [
+                  { "type": "string", "const": "character" },
+                  { "type": "string", "const": "current" },
+                  { "type": "string", "const": "custom" },
+                  { "type": "string", "const": "file" },
+                  { "type": "string", "const": "library" }
+                ]
+              },
+              "intonationGuide": { "anyOf": [{ "$ref": "#/$defs/IntonationGuide_8" }] },
+              "referenceTrackId": { "anyOf": [{ "type": "string" }] },
+              "referenceId": { "anyOf": [{ "type": "null" }, { "type": "string" }] },
+              "mode": {
+                "anyOf": [
+                  { "type": "string", "const": "zeroShot" },
+                  { "type": "string", "const": "crossLingual" }
+                ]
+              },
+              "speed": { "type": "number" },
+              "seed": { "type": "number" }
+            },
+            "required": ["device", "referenceMode", "referenceId", "mode", "speed", "seed"],
+            "additionalProperties": false
+          },
+          "VoiceQuality_7": {
+            "type": "object",
+            "properties": {
+              "inferenceSteps": { "anyOf": [{ "type": "number" }] },
+              "cfgStrength": { "anyOf": [{ "type": "number" }] },
+              "temperature": { "anyOf": [{ "type": "number" }] },
+              "topP": { "anyOf": [{ "type": "number" }] },
+              "topK": { "anyOf": [{ "type": "number" }] },
+              "repetitionPenalty": { "anyOf": [{ "type": "number" }] },
+              "minP": { "anyOf": [{ "type": "number" }] },
+              "cfgWeight": { "anyOf": [{ "type": "number" }] },
+              "exaggeration": { "anyOf": [{ "type": "number" }] }
+            },
+            "required": [],
+            "additionalProperties": false
+          },
+          "IntonationGuide_8": {
+            "type": "object",
+            "properties": {
+              "mode": {
+                "anyOf": [
+                  { "type": "string", "const": "style" },
+                  { "type": "string", "const": "hybrid" }
+                ]
+              },
+              "trackId": { "anyOf": [{ "type": "string" }] }
+            },
+            "required": ["mode"],
+            "additionalProperties": false
+          },
+          "CharacterPortrait_9": {
             "type": "object",
             "properties": {
               "path": { "type": "string" },
@@ -2929,7 +3555,7 @@
             ],
             "additionalProperties": false
           },
-          "VocalRegister_2": {
+          "VocalRegister_10": {
             "type": "object",
             "properties": {
               "medianHz": { "type": "number" },
@@ -3583,7 +4209,7 @@
                   "type": "object",
                   "properties": {},
                   "required": [],
-                  "additionalProperties": { "$ref": "#/$defs/VoiceEdit_4" }
+                  "additionalProperties": { "$ref": "#/$defs/VoiceEdit_12" }
                 }
               ]
             },
@@ -3593,7 +4219,7 @@
                   "type": "object",
                   "properties": {},
                   "required": [],
-                  "additionalProperties": { "$ref": "#/$defs/TranslationApproval_8" }
+                  "additionalProperties": { "$ref": "#/$defs/TranslationApproval_16" }
                 }
               ]
             },
@@ -3648,17 +4274,17 @@
               "required": ["source", "target"],
               "additionalProperties": false
             },
-            "media": { "anyOf": [{ "type": "null" }, { "$ref": "#/$defs/MediaAsset_9" }] },
-            "sourceCues": { "type": "array", "items": { "$ref": "#/$defs/Cue_11" } },
-            "targetCues": { "type": "array", "items": { "$ref": "#/$defs/Cue_11" } },
-            "dialogues": { "type": "array", "items": { "$ref": "#/$defs/Dialogue_12" } },
-            "tracks": { "type": "array", "items": { "$ref": "#/$defs/Track_15" } },
-            "characters": { "type": "array", "items": { "$ref": "#/$defs/Character_17" } },
+            "media": { "anyOf": [{ "type": "null" }, { "$ref": "#/$defs/MediaAsset_17" }] },
+            "sourceCues": { "type": "array", "items": { "$ref": "#/$defs/Cue_19" } },
+            "targetCues": { "type": "array", "items": { "$ref": "#/$defs/Cue_19" } },
+            "dialogues": { "type": "array", "items": { "$ref": "#/$defs/Dialogue_20" } },
+            "tracks": { "type": "array", "items": { "$ref": "#/$defs/Track_21" } },
+            "characters": { "type": "array", "items": { "$ref": "#/$defs/Character_23" } },
             "voiceReferences": {
-              "anyOf": [{ "type": "array", "items": { "$ref": "#/$defs/VoiceReference_18" } }]
+              "anyOf": [{ "type": "array", "items": { "$ref": "#/$defs/VoiceReference_4" } }]
             },
             "speakerAnalysis": {
-              "anyOf": [{ "type": "null" }, { "$ref": "#/$defs/SpeakerAnalysis_19" }]
+              "anyOf": [{ "type": "null" }, { "$ref": "#/$defs/SpeakerAnalysis_24" }]
             },
             "modelPreferences": {
               "anyOf": [
@@ -3687,7 +4313,7 @@
               "type": "array",
               "items": {
                 "anyOf": [
-                  { "$ref": "#/$defs/Generation_21" },
+                  { "$ref": "#/$defs/Generation_26" },
                   {
                     "type": "object",
                     "properties": {
@@ -3730,6 +4356,7 @@
         "CharacterProfile_1": {
           "type": "object",
           "properties": {
+            "voiceLibrary": { "anyOf": [{ "$ref": "#/$defs/VoiceLibrary_2" }] },
             "gender": {
               "anyOf": [
                 { "type": "string", "const": "unspecified" },
@@ -3744,241 +4371,143 @@
                 { "type": "boolean", "const": true }
               ]
             },
-            "portrait": { "anyOf": [{ "$ref": "#/$defs/CharacterPortrait_2" }] },
-            "vocalRegister": { "anyOf": [{ "$ref": "#/$defs/VocalRegister_3" }] }
+            "portrait": { "anyOf": [{ "$ref": "#/$defs/CharacterPortrait_10" }] },
+            "vocalRegister": { "anyOf": [{ "$ref": "#/$defs/VocalRegister_11" }] }
           },
           "required": [],
           "additionalProperties": false
         },
-        "CharacterPortrait_2": {
+        "VoiceLibrary_2": {
           "type": "object",
           "properties": {
+            "sources": { "type": "array", "items": { "$ref": "#/$defs/VoiceLibrarySource_3" } },
+            "samples": { "type": "array", "items": { "$ref": "#/$defs/VoiceLibrarySample_6" } },
+            "defaultSampleId": { "anyOf": [{ "type": "null" }, { "type": "string" }] }
+          },
+          "required": ["sources", "samples", "defaultSampleId"],
+          "additionalProperties": false
+        },
+        "VoiceLibrarySource_3": {
+          "type": "object",
+          "properties": {
+            "id": { "type": "string" },
+            "reference": { "$ref": "#/$defs/VoiceReference_4" },
+            "segments": { "type": "array", "items": { "$ref": "#/$defs/VoiceLibrarySegment_5" } },
+            "sha256": { "type": "string" },
+            "createdAt": { "type": "string" }
+          },
+          "required": ["id", "reference", "segments", "sha256", "createdAt"],
+          "additionalProperties": false
+        },
+        "VoiceReference_4": {
+          "type": "object",
+          "properties": {
+            "id": { "type": "string" },
+            "label": { "type": "string" },
             "path": { "type": "string" },
-            "sourcePath": { "type": "string" },
-            "atMs": { "type": "number" },
-            "lineId": { "type": "string" },
-            "crop": {
-              "type": "object",
-              "properties": {
-                "x": { "type": "number" },
-                "y": { "type": "number" },
-                "width": { "type": "number" },
-                "height": { "type": "number" }
-              },
-              "required": ["x", "y", "width", "height"],
-              "additionalProperties": false
-            },
-            "differenceHash": { "type": "string" },
-            "colors": { "type": "array", "items": { "type": "number" } },
-            "confirmed": { "type": "boolean" }
-          },
-          "required": [
-            "path",
-            "sourcePath",
-            "atMs",
-            "lineId",
-            "crop",
-            "differenceHash",
-            "colors",
-            "confirmed"
-          ],
-          "additionalProperties": false
-        },
-        "VocalRegister_3": {
-          "type": "object",
-          "properties": {
-            "medianHz": { "type": "number" },
-            "confidence": { "type": "number" },
-            "analyzedMs": { "type": "number" }
-          },
-          "required": ["medianHz", "confidence", "analyzedMs"],
-          "additionalProperties": false
-        },
-        "VoiceEdit_4": {
-          "type": "object",
-          "properties": {
-            "pieces": { "type": "array", "items": { "$ref": "#/$defs/VoicePiece_5" } }
-          },
-          "required": ["pieces"],
-          "additionalProperties": false
-        },
-        "VoicePiece_5": {
-          "type": "object",
-          "properties": {
-            "effects": {
-              "anyOf": [{ "type": "array", "items": { "$ref": "#/$defs/AudioEffect_6" } }]
-            },
-            "sourceStartMs": { "anyOf": [{ "type": "null" }, { "type": "number" }] },
-            "sourceEndMs": { "anyOf": [{ "type": "null" }, { "type": "number" }] },
             "durationMs": { "type": "number" },
-            "gain": { "type": "number" },
-            "envelope": {
-              "anyOf": [{ "type": "array", "items": { "$ref": "#/$defs/VoicePoint_7" } }]
-            }
+            "transcript": { "type": "string" },
+            "sourceDialogueId": { "anyOf": [{ "type": "null" }, { "type": "string" }] }
           },
-          "required": ["sourceStartMs", "sourceEndMs", "durationMs", "gain"],
+          "required": ["id", "label", "path", "durationMs", "transcript"],
           "additionalProperties": false
         },
-        "AudioEffect_6": {
+        "VoiceLibrarySegment_5": {
           "type": "object",
           "properties": {
-            "kind": {
+            "referenceId": { "anyOf": [{ "type": "null" }, { "type": "string" }] },
+            "dialogueId": { "anyOf": [{ "type": "null" }, { "type": "string" }] },
+            "trackId": { "anyOf": [{ "type": "string" }] },
+            "startMs": { "type": "number" },
+            "endMs": { "type": "number" }
+          },
+          "required": ["referenceId", "dialogueId", "startMs", "endMs"],
+          "additionalProperties": false
+        },
+        "VoiceLibrarySample_6": {
+          "type": "object",
+          "properties": {
+            "id": { "type": "string" },
+            "sourceId": { "type": "string" },
+            "reference": { "$ref": "#/$defs/VoiceReference_4" },
+            "text": { "type": "string" },
+            "mood": {
               "anyOf": [
-                { "type": "string", "const": "equalizer" },
-                { "type": "string", "const": "pitch" },
-                { "type": "string", "const": "highpass" },
-                { "type": "string", "const": "lowpass" },
-                { "type": "string", "const": "compressor" },
-                { "type": "string", "const": "limiter" },
-                { "type": "string", "const": "gate" },
-                { "type": "string", "const": "normalize" },
-                { "type": "string", "const": "denoise" },
-                { "type": "string", "const": "deesser" },
-                { "type": "string", "const": "echo" },
-                { "type": "string", "const": "reverb" },
-                { "type": "string", "const": "saturation" },
-                { "type": "string", "const": "distortion" },
-                { "type": "string", "const": "robot" },
-                { "type": "string", "const": "chorus" },
-                { "type": "string", "const": "flanger" },
-                { "type": "string", "const": "phaser" },
-                { "type": "string", "const": "tremolo" },
-                { "type": "string", "const": "vibrato" }
+                { "type": "string", "const": "happy" },
+                { "type": "string", "const": "excited" },
+                { "type": "string", "const": "angry" },
+                { "type": "string", "const": "sad" },
+                { "type": "string", "const": "calm" },
+                { "type": "string", "const": "surprised" },
+                { "type": "string", "const": "whisper" },
+                { "type": "string", "const": "shouting" },
+                { "type": "string", "const": "default" },
+                { "type": "string", "const": "enthusiastic" },
+                { "type": "string", "const": "amused" },
+                { "type": "string", "const": "laughing" },
+                { "type": "string", "const": "proud" },
+                { "type": "string", "const": "tender" },
+                { "type": "string", "const": "relieved" },
+                { "type": "string", "const": "stressed" },
+                { "type": "string", "const": "anxious" },
+                { "type": "string", "const": "panicked" },
+                { "type": "string", "const": "afraid" },
+                { "type": "string", "const": "irritated" },
+                { "type": "string", "const": "furious" },
+                { "type": "string", "const": "threatening" },
+                { "type": "string", "const": "determined" },
+                { "type": "string", "const": "impatient" },
+                { "type": "string", "const": "crying" },
+                { "type": "string", "const": "desperate" },
+                { "type": "string", "const": "disappointed" },
+                { "type": "string", "const": "regretful" },
+                { "type": "string", "const": "nostalgic" },
+                { "type": "string", "const": "dying" },
+                { "type": "string", "const": "exhausted" },
+                { "type": "string", "const": "breathless" },
+                { "type": "string", "const": "in-pain" },
+                { "type": "string", "const": "sleepy" },
+                { "type": "string", "const": "weak" },
+                { "type": "string", "const": "sarcastic" },
+                { "type": "string", "const": "ironic" },
+                { "type": "string", "const": "confused" },
+                { "type": "string", "const": "doubtful" },
+                { "type": "string", "const": "curious" },
+                { "type": "string", "const": "serious" },
+                { "type": "string", "const": "narration" },
+                { "type": "string", "const": "disgusted" }
               ]
             },
-            "enabled": { "type": "boolean" },
-            "parameters": {
-              "type": "object",
-              "properties": {},
-              "required": [],
-              "additionalProperties": { "type": "number" }
-            }
-          },
-          "required": ["kind", "enabled", "parameters"],
-          "additionalProperties": false
-        },
-        "VoicePoint_7": {
-          "type": "object",
-          "properties": { "atMs": { "type": "number" }, "level": { "type": "number" } },
-          "required": ["atMs", "level"],
-          "additionalProperties": false
-        },
-        "TranslationApproval_8": {
-          "type": "object",
-          "properties": {
-            "sourceLanguage": { "type": "string" },
-            "targetLanguage": { "type": "string" },
-            "sourceText": { "type": "string" },
-            "targetText": { "type": "string" }
-          },
-          "required": ["sourceLanguage", "targetLanguage", "sourceText", "targetText"],
-          "additionalProperties": false
-        },
-        "MediaAsset_9": {
-          "type": "object",
-          "properties": {
-            "id": { "type": "string" },
-            "path": { "type": "string" },
-            "previewPath": { "anyOf": [{ "type": "null" }, { "type": "string" }] },
-            "audioStreamIndex": { "anyOf": [{ "type": "null" }, { "type": "number" }] },
-            "originalName": { "type": "string" },
-            "durationMs": { "type": "number" },
-            "streams": { "type": "array", "items": { "$ref": "#/$defs/MediaStream_10" } }
-          },
-          "required": [
-            "id",
-            "path",
-            "previewPath",
-            "audioStreamIndex",
-            "originalName",
-            "durationMs",
-            "streams"
-          ],
-          "additionalProperties": false
-        },
-        "MediaStream_10": {
-          "type": "object",
-          "properties": {
-            "index": { "type": "number" },
-            "kind": { "type": "string" },
-            "codec": { "type": "string" },
-            "language": { "type": "string" },
-            "title": { "type": "string" },
-            "channels": { "anyOf": [{ "type": "null" }, { "type": "number" }] },
-            "width": { "anyOf": [{ "type": "null" }, { "type": "number" }] },
-            "height": { "anyOf": [{ "type": "null" }, { "type": "number" }] },
-            "bitmap": { "type": "boolean" }
-          },
-          "required": [
-            "index",
-            "kind",
-            "codec",
-            "language",
-            "title",
-            "channels",
-            "width",
-            "height",
-            "bitmap"
-          ],
-          "additionalProperties": false
-        },
-        "Cue_11": {
-          "type": "object",
-          "properties": {
-            "id": { "type": "string" },
-            "startMs": { "type": "number" },
-            "endMs": { "type": "number" },
-            "text": { "type": "string" }
-          },
-          "required": ["id", "startMs", "endMs", "text"],
-          "additionalProperties": false
-        },
-        "Dialogue_12": {
-          "type": "object",
-          "properties": {
-            "id": { "type": "string" },
-            "startMs": { "type": "number" },
-            "endMs": { "type": "number" },
-            "sourceCueIds": { "type": "array", "items": { "type": "string" } },
-            "targetCueIds": { "type": "array", "items": { "type": "string" } },
-            "ttsText": { "anyOf": [{ "type": "null" }, { "type": "string" }] },
-            "characterId": { "anyOf": [{ "type": "null" }, { "type": "string" }] },
             "status": {
               "anyOf": [
-                { "type": "string", "const": "ungenerated" },
-                { "type": "string", "const": "generated" },
-                { "type": "string", "const": "review" },
-                { "type": "string", "const": "validated" },
-                { "type": "string", "const": "error" }
+                { "type": "string", "const": "approved" },
+                { "type": "string", "const": "pending" },
+                { "type": "string", "const": "rejected" }
               ]
             },
-            "warnings": { "type": "array", "items": { "type": "string" } },
-            "selectedGenerationIds": {
-              "type": "object",
-              "properties": {},
-              "required": [],
-              "additionalProperties": { "type": "string" }
-            },
-            "voiceSettings": { "anyOf": [{ "$ref": "#/$defs/VoiceSettings_13" }] }
+            "options": { "$ref": "#/$defs/VoiceSettings_7" },
+            "sha256": { "type": "string" },
+            "createdAt": { "type": "string" },
+            "deviceName": { "type": "string" }
           },
           "required": [
             "id",
-            "startMs",
-            "endMs",
-            "sourceCueIds",
-            "targetCueIds",
-            "ttsText",
-            "characterId",
+            "sourceId",
+            "reference",
+            "text",
+            "mood",
             "status",
-            "warnings",
-            "selectedGenerationIds"
+            "options",
+            "sha256",
+            "createdAt",
+            "deviceName"
           ],
           "additionalProperties": false
         },
-        "VoiceSettings_13": {
+        "VoiceSettings_7": {
           "type": "object",
           "properties": {
-            "quality": { "anyOf": [{ "$ref": "#/$defs/VoiceQuality_14" }] },
+            "quality": { "anyOf": [{ "$ref": "#/$defs/VoiceQuality_8" }] },
             "mood": {
               "anyOf": [
                 { "type": "string", "const": "happy" },
@@ -4042,9 +4571,11 @@
                 { "type": "string", "const": "character" },
                 { "type": "string", "const": "current" },
                 { "type": "string", "const": "custom" },
-                { "type": "string", "const": "file" }
+                { "type": "string", "const": "file" },
+                { "type": "string", "const": "library" }
               ]
             },
+            "intonationGuide": { "anyOf": [{ "$ref": "#/$defs/IntonationGuide_9" }] },
             "referenceTrackId": { "anyOf": [{ "type": "string" }] },
             "referenceId": { "anyOf": [{ "type": "null" }, { "type": "string" }] },
             "mode": {
@@ -4059,7 +4590,7 @@
           "required": ["device", "referenceMode", "referenceId", "mode", "speed", "seed"],
           "additionalProperties": false
         },
-        "VoiceQuality_14": {
+        "VoiceQuality_8": {
           "type": "object",
           "properties": {
             "inferenceSteps": { "anyOf": [{ "type": "number" }] },
@@ -4075,7 +4606,246 @@
           "required": [],
           "additionalProperties": false
         },
-        "Track_15": {
+        "IntonationGuide_9": {
+          "type": "object",
+          "properties": {
+            "mode": {
+              "anyOf": [
+                { "type": "string", "const": "style" },
+                { "type": "string", "const": "hybrid" }
+              ]
+            },
+            "trackId": { "anyOf": [{ "type": "string" }] }
+          },
+          "required": ["mode"],
+          "additionalProperties": false
+        },
+        "CharacterPortrait_10": {
+          "type": "object",
+          "properties": {
+            "path": { "type": "string" },
+            "sourcePath": { "type": "string" },
+            "atMs": { "type": "number" },
+            "lineId": { "type": "string" },
+            "crop": {
+              "type": "object",
+              "properties": {
+                "x": { "type": "number" },
+                "y": { "type": "number" },
+                "width": { "type": "number" },
+                "height": { "type": "number" }
+              },
+              "required": ["x", "y", "width", "height"],
+              "additionalProperties": false
+            },
+            "differenceHash": { "type": "string" },
+            "colors": { "type": "array", "items": { "type": "number" } },
+            "confirmed": { "type": "boolean" }
+          },
+          "required": [
+            "path",
+            "sourcePath",
+            "atMs",
+            "lineId",
+            "crop",
+            "differenceHash",
+            "colors",
+            "confirmed"
+          ],
+          "additionalProperties": false
+        },
+        "VocalRegister_11": {
+          "type": "object",
+          "properties": {
+            "medianHz": { "type": "number" },
+            "confidence": { "type": "number" },
+            "analyzedMs": { "type": "number" }
+          },
+          "required": ["medianHz", "confidence", "analyzedMs"],
+          "additionalProperties": false
+        },
+        "VoiceEdit_12": {
+          "type": "object",
+          "properties": {
+            "pieces": { "type": "array", "items": { "$ref": "#/$defs/VoicePiece_13" } }
+          },
+          "required": ["pieces"],
+          "additionalProperties": false
+        },
+        "VoicePiece_13": {
+          "type": "object",
+          "properties": {
+            "effects": {
+              "anyOf": [{ "type": "array", "items": { "$ref": "#/$defs/AudioEffect_14" } }]
+            },
+            "sourceStartMs": { "anyOf": [{ "type": "null" }, { "type": "number" }] },
+            "sourceEndMs": { "anyOf": [{ "type": "null" }, { "type": "number" }] },
+            "durationMs": { "type": "number" },
+            "gain": { "type": "number" },
+            "envelope": {
+              "anyOf": [{ "type": "array", "items": { "$ref": "#/$defs/VoicePoint_15" } }]
+            }
+          },
+          "required": ["sourceStartMs", "sourceEndMs", "durationMs", "gain"],
+          "additionalProperties": false
+        },
+        "AudioEffect_14": {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "anyOf": [
+                { "type": "string", "const": "equalizer" },
+                { "type": "string", "const": "pitch" },
+                { "type": "string", "const": "highpass" },
+                { "type": "string", "const": "lowpass" },
+                { "type": "string", "const": "compressor" },
+                { "type": "string", "const": "limiter" },
+                { "type": "string", "const": "gate" },
+                { "type": "string", "const": "normalize" },
+                { "type": "string", "const": "denoise" },
+                { "type": "string", "const": "deesser" },
+                { "type": "string", "const": "echo" },
+                { "type": "string", "const": "reverb" },
+                { "type": "string", "const": "saturation" },
+                { "type": "string", "const": "distortion" },
+                { "type": "string", "const": "robot" },
+                { "type": "string", "const": "chorus" },
+                { "type": "string", "const": "flanger" },
+                { "type": "string", "const": "phaser" },
+                { "type": "string", "const": "tremolo" },
+                { "type": "string", "const": "vibrato" }
+              ]
+            },
+            "enabled": { "type": "boolean" },
+            "parameters": {
+              "type": "object",
+              "properties": {},
+              "required": [],
+              "additionalProperties": { "type": "number" }
+            }
+          },
+          "required": ["kind", "enabled", "parameters"],
+          "additionalProperties": false
+        },
+        "VoicePoint_15": {
+          "type": "object",
+          "properties": { "atMs": { "type": "number" }, "level": { "type": "number" } },
+          "required": ["atMs", "level"],
+          "additionalProperties": false
+        },
+        "TranslationApproval_16": {
+          "type": "object",
+          "properties": {
+            "sourceLanguage": { "type": "string" },
+            "targetLanguage": { "type": "string" },
+            "sourceText": { "type": "string" },
+            "targetText": { "type": "string" }
+          },
+          "required": ["sourceLanguage", "targetLanguage", "sourceText", "targetText"],
+          "additionalProperties": false
+        },
+        "MediaAsset_17": {
+          "type": "object",
+          "properties": {
+            "id": { "type": "string" },
+            "path": { "type": "string" },
+            "previewPath": { "anyOf": [{ "type": "null" }, { "type": "string" }] },
+            "audioStreamIndex": { "anyOf": [{ "type": "null" }, { "type": "number" }] },
+            "originalName": { "type": "string" },
+            "durationMs": { "type": "number" },
+            "streams": { "type": "array", "items": { "$ref": "#/$defs/MediaStream_18" } }
+          },
+          "required": [
+            "id",
+            "path",
+            "previewPath",
+            "audioStreamIndex",
+            "originalName",
+            "durationMs",
+            "streams"
+          ],
+          "additionalProperties": false
+        },
+        "MediaStream_18": {
+          "type": "object",
+          "properties": {
+            "index": { "type": "number" },
+            "kind": { "type": "string" },
+            "codec": { "type": "string" },
+            "language": { "type": "string" },
+            "title": { "type": "string" },
+            "channels": { "anyOf": [{ "type": "null" }, { "type": "number" }] },
+            "width": { "anyOf": [{ "type": "null" }, { "type": "number" }] },
+            "height": { "anyOf": [{ "type": "null" }, { "type": "number" }] },
+            "bitmap": { "type": "boolean" }
+          },
+          "required": [
+            "index",
+            "kind",
+            "codec",
+            "language",
+            "title",
+            "channels",
+            "width",
+            "height",
+            "bitmap"
+          ],
+          "additionalProperties": false
+        },
+        "Cue_19": {
+          "type": "object",
+          "properties": {
+            "id": { "type": "string" },
+            "startMs": { "type": "number" },
+            "endMs": { "type": "number" },
+            "text": { "type": "string" }
+          },
+          "required": ["id", "startMs", "endMs", "text"],
+          "additionalProperties": false
+        },
+        "Dialogue_20": {
+          "type": "object",
+          "properties": {
+            "id": { "type": "string" },
+            "startMs": { "type": "number" },
+            "endMs": { "type": "number" },
+            "sourceCueIds": { "type": "array", "items": { "type": "string" } },
+            "targetCueIds": { "type": "array", "items": { "type": "string" } },
+            "ttsText": { "anyOf": [{ "type": "null" }, { "type": "string" }] },
+            "characterId": { "anyOf": [{ "type": "null" }, { "type": "string" }] },
+            "status": {
+              "anyOf": [
+                { "type": "string", "const": "ungenerated" },
+                { "type": "string", "const": "generated" },
+                { "type": "string", "const": "review" },
+                { "type": "string", "const": "validated" },
+                { "type": "string", "const": "error" }
+              ]
+            },
+            "warnings": { "type": "array", "items": { "type": "string" } },
+            "selectedGenerationIds": {
+              "type": "object",
+              "properties": {},
+              "required": [],
+              "additionalProperties": { "type": "string" }
+            },
+            "voiceSettings": { "anyOf": [{ "$ref": "#/$defs/VoiceSettings_7" }] }
+          },
+          "required": [
+            "id",
+            "startMs",
+            "endMs",
+            "sourceCueIds",
+            "targetCueIds",
+            "ttsText",
+            "characterId",
+            "status",
+            "warnings",
+            "selectedGenerationIds"
+          ],
+          "additionalProperties": false
+        },
+        "Track_21": {
           "type": "object",
           "properties": {
             "name": { "anyOf": [{ "type": "string" }] },
@@ -4105,7 +4875,7 @@
             "solo": { "type": "boolean" },
             "gain": { "type": "number" },
             "regions": {
-              "anyOf": [{ "type": "array", "items": { "$ref": "#/$defs/AudioRegion_16" } }]
+              "anyOf": [{ "type": "array", "items": { "$ref": "#/$defs/AudioRegion_22" } }]
             },
             "regionsEnabled": {
               "anyOf": [
@@ -4117,7 +4887,7 @@
           "required": ["id", "kind", "language", "mute", "solo", "gain"],
           "additionalProperties": false
         },
-        "AudioRegion_16": {
+        "AudioRegion_22": {
           "type": "object",
           "properties": {
             "id": { "type": "string" },
@@ -4129,35 +4899,22 @@
           "required": ["id", "startMs", "endMs", "gain", "mute"],
           "additionalProperties": false
         },
-        "Character_17": {
+        "Character_23": {
           "type": "object",
           "properties": {
             "id": { "type": "string" },
             "name": { "type": "string" },
             "color": { "type": "string" },
-            "references": { "type": "array", "items": { "$ref": "#/$defs/VoiceReference_18" } },
+            "references": { "type": "array", "items": { "$ref": "#/$defs/VoiceReference_4" } },
             "defaultReferenceId": { "anyOf": [{ "type": "null" }, { "type": "string" }] }
           },
           "required": ["id", "name", "color", "references", "defaultReferenceId"],
           "additionalProperties": false
         },
-        "VoiceReference_18": {
+        "SpeakerAnalysis_24": {
           "type": "object",
           "properties": {
-            "id": { "type": "string" },
-            "label": { "type": "string" },
-            "path": { "type": "string" },
-            "durationMs": { "type": "number" },
-            "transcript": { "type": "string" },
-            "sourceDialogueId": { "anyOf": [{ "type": "null" }, { "type": "string" }] }
-          },
-          "required": ["id", "label", "path", "durationMs", "transcript"],
-          "additionalProperties": false
-        },
-        "SpeakerAnalysis_19": {
-          "type": "object",
-          "properties": {
-            "scope": { "anyOf": [{ "$ref": "#/$defs/SpeakerScope_20" }] },
+            "scope": { "anyOf": [{ "$ref": "#/$defs/SpeakerScope_25" }] },
             "audioSnapshot": {},
             "originalAssignments": {
               "anyOf": [
@@ -4204,8 +4961,8 @@
                 "type": "object",
                 "properties": {
                   "characterId": { "anyOf": [{ "type": "null" }, { "type": "string" }] },
-                  "portrait": { "anyOf": [{ "$ref": "#/$defs/CharacterPortrait_2" }] },
-                  "vocalRegister": { "anyOf": [{ "$ref": "#/$defs/VocalRegister_3" }] },
+                  "portrait": { "anyOf": [{ "$ref": "#/$defs/CharacterPortrait_10" }] },
+                  "vocalRegister": { "anyOf": [{ "$ref": "#/$defs/VocalRegister_11" }] },
                   "speaker": { "type": "number" },
                   "referencePath": { "type": "string" },
                   "durationMs": { "type": "number" },
@@ -4219,7 +4976,7 @@
           "required": ["id", "sourcePath", "lines", "assignments", "clusters"],
           "additionalProperties": false
         },
-        "SpeakerScope_20": {
+        "SpeakerScope_25": {
           "type": "object",
           "properties": {
             "startMs": { "anyOf": [{ "type": "number" }] },
@@ -4236,11 +4993,11 @@
           "required": [],
           "additionalProperties": false
         },
-        "Generation_21": {
+        "Generation_26": {
           "type": "object",
           "properties": {
-            "takeOrigin": { "anyOf": [{ "$ref": "#/$defs/TakeOrigin_22" }] },
-            "prosodyTransfer": { "anyOf": [{ "$ref": "#/$defs/ProsodyTransfer_23" }] },
+            "takeOrigin": { "anyOf": [{ "$ref": "#/$defs/TakeOrigin_27" }] },
+            "prosodyTransfer": { "anyOf": [{ "$ref": "#/$defs/ProsodyTransfer_28" }] },
             "kind": { "type": "string", "const": "tts" },
             "id": { "type": "string" },
             "dialogueId": { "type": "string" },
@@ -4256,7 +5013,7 @@
             "characterId": { "anyOf": [{ "type": "null" }, { "type": "string" }] },
             "durationMs": { "type": "number" },
             "sampleRate": { "type": "number" },
-            "options": { "$ref": "#/$defs/VoiceSettings_13" },
+            "options": { "$ref": "#/$defs/VoiceSettings_7" },
             "referenceTranscript": { "type": "string" },
             "referenceId": { "anyOf": [{ "type": "null" }, { "type": "string" }] },
             "device": { "type": "string" },
@@ -4298,7 +5055,7 @@
           ],
           "additionalProperties": false
         },
-        "TakeOrigin_22": {
+        "TakeOrigin_27": {
           "type": "object",
           "properties": {
             "type": {
@@ -4314,14 +5071,14 @@
           "required": ["type"],
           "additionalProperties": false
         },
-        "ProsodyTransfer_23": {
+        "ProsodyTransfer_28": {
           "type": "object",
           "properties": {
             "algorithm": { "type": "string", "const": "praat-psola-v1" },
             "sourceGenerationId": { "type": "string" },
             "sourceDurationMs": { "type": "number" },
             "guideDurationMs": { "type": "number" },
-            "options": { "$ref": "#/$defs/ProsodyOptions_24" }
+            "options": { "$ref": "#/$defs/ProsodyOptions_29" }
           },
           "required": [
             "algorithm",
@@ -4332,7 +5089,7 @@
           ],
           "additionalProperties": false
         },
-        "ProsodyOptions_24": {
+        "ProsodyOptions_29": {
           "type": "object",
           "properties": {
             "generationId": { "type": "string" },
@@ -4359,6 +5116,246 @@
             "rhythm",
             "energy"
           ],
+          "additionalProperties": false
+        }
+      }
+    },
+    "VoiceLibrarySourceOptions": {
+      "$ref": "#/$defs/VoiceLibrarySourceOptions_0",
+      "$defs": {
+        "VoiceLibrarySourceOptions_0": {
+          "type": "object",
+          "properties": {
+            "characterId": { "type": "string" },
+            "label": { "type": "string" },
+            "segments": { "type": "array", "items": { "$ref": "#/$defs/VoiceLibrarySegment_1" } }
+          },
+          "required": ["characterId", "label", "segments"],
+          "additionalProperties": false
+        },
+        "VoiceLibrarySegment_1": {
+          "type": "object",
+          "properties": {
+            "referenceId": { "anyOf": [{ "type": "null" }, { "type": "string" }] },
+            "dialogueId": { "anyOf": [{ "type": "null" }, { "type": "string" }] },
+            "trackId": { "anyOf": [{ "type": "string" }] },
+            "startMs": { "type": "number" },
+            "endMs": { "type": "number" }
+          },
+          "required": ["referenceId", "dialogueId", "startMs", "endMs"],
+          "additionalProperties": false
+        }
+      }
+    },
+    "VoiceLibraryGeneration": {
+      "$ref": "#/$defs/VoiceLibraryGeneration_0",
+      "$defs": {
+        "VoiceLibraryGeneration_0": {
+          "type": "object",
+          "properties": {
+            "characterId": { "type": "string" },
+            "sourceId": { "type": "string" },
+            "phrases": { "type": "array", "items": { "$ref": "#/$defs/VoiceLibraryPhrase_1" } },
+            "options": { "$ref": "#/$defs/VoiceSettings_2" }
+          },
+          "required": ["characterId", "sourceId", "phrases", "options"],
+          "additionalProperties": false
+        },
+        "VoiceLibraryPhrase_1": {
+          "type": "object",
+          "properties": {
+            "id": { "type": "string" },
+            "label": { "type": "string" },
+            "text": { "type": "string" },
+            "mood": {
+              "anyOf": [
+                { "type": "string", "const": "happy" },
+                { "type": "string", "const": "excited" },
+                { "type": "string", "const": "angry" },
+                { "type": "string", "const": "sad" },
+                { "type": "string", "const": "calm" },
+                { "type": "string", "const": "surprised" },
+                { "type": "string", "const": "whisper" },
+                { "type": "string", "const": "shouting" },
+                { "type": "string", "const": "default" },
+                { "type": "string", "const": "enthusiastic" },
+                { "type": "string", "const": "amused" },
+                { "type": "string", "const": "laughing" },
+                { "type": "string", "const": "proud" },
+                { "type": "string", "const": "tender" },
+                { "type": "string", "const": "relieved" },
+                { "type": "string", "const": "stressed" },
+                { "type": "string", "const": "anxious" },
+                { "type": "string", "const": "panicked" },
+                { "type": "string", "const": "afraid" },
+                { "type": "string", "const": "irritated" },
+                { "type": "string", "const": "furious" },
+                { "type": "string", "const": "threatening" },
+                { "type": "string", "const": "determined" },
+                { "type": "string", "const": "impatient" },
+                { "type": "string", "const": "crying" },
+                { "type": "string", "const": "desperate" },
+                { "type": "string", "const": "disappointed" },
+                { "type": "string", "const": "regretful" },
+                { "type": "string", "const": "nostalgic" },
+                { "type": "string", "const": "dying" },
+                { "type": "string", "const": "exhausted" },
+                { "type": "string", "const": "breathless" },
+                { "type": "string", "const": "in-pain" },
+                { "type": "string", "const": "sleepy" },
+                { "type": "string", "const": "weak" },
+                { "type": "string", "const": "sarcastic" },
+                { "type": "string", "const": "ironic" },
+                { "type": "string", "const": "confused" },
+                { "type": "string", "const": "doubtful" },
+                { "type": "string", "const": "curious" },
+                { "type": "string", "const": "serious" },
+                { "type": "string", "const": "narration" },
+                { "type": "string", "const": "disgusted" }
+              ]
+            }
+          },
+          "required": ["id", "label", "text", "mood"],
+          "additionalProperties": false
+        },
+        "VoiceSettings_2": {
+          "type": "object",
+          "properties": {
+            "quality": { "anyOf": [{ "$ref": "#/$defs/VoiceQuality_3" }] },
+            "mood": {
+              "anyOf": [
+                { "type": "string", "const": "happy" },
+                { "type": "string", "const": "excited" },
+                { "type": "string", "const": "angry" },
+                { "type": "string", "const": "sad" },
+                { "type": "string", "const": "calm" },
+                { "type": "string", "const": "surprised" },
+                { "type": "string", "const": "whisper" },
+                { "type": "string", "const": "shouting" },
+                { "type": "string", "const": "default" },
+                { "type": "string", "const": "enthusiastic" },
+                { "type": "string", "const": "amused" },
+                { "type": "string", "const": "laughing" },
+                { "type": "string", "const": "proud" },
+                { "type": "string", "const": "tender" },
+                { "type": "string", "const": "relieved" },
+                { "type": "string", "const": "stressed" },
+                { "type": "string", "const": "anxious" },
+                { "type": "string", "const": "panicked" },
+                { "type": "string", "const": "afraid" },
+                { "type": "string", "const": "irritated" },
+                { "type": "string", "const": "furious" },
+                { "type": "string", "const": "threatening" },
+                { "type": "string", "const": "determined" },
+                { "type": "string", "const": "impatient" },
+                { "type": "string", "const": "crying" },
+                { "type": "string", "const": "desperate" },
+                { "type": "string", "const": "disappointed" },
+                { "type": "string", "const": "regretful" },
+                { "type": "string", "const": "nostalgic" },
+                { "type": "string", "const": "dying" },
+                { "type": "string", "const": "exhausted" },
+                { "type": "string", "const": "breathless" },
+                { "type": "string", "const": "in-pain" },
+                { "type": "string", "const": "sleepy" },
+                { "type": "string", "const": "weak" },
+                { "type": "string", "const": "sarcastic" },
+                { "type": "string", "const": "ironic" },
+                { "type": "string", "const": "confused" },
+                { "type": "string", "const": "doubtful" },
+                { "type": "string", "const": "curious" },
+                { "type": "string", "const": "serious" },
+                { "type": "string", "const": "narration" },
+                { "type": "string", "const": "disgusted" }
+              ]
+            },
+            "accent": {
+              "anyOf": [
+                { "type": "string", "const": "auto" },
+                { "type": "string", "const": "fr-FR" },
+                { "type": "string", "const": "fr-CA" },
+                { "type": "string", "const": "fr-BE" },
+                { "type": "string", "const": "fr-CH" }
+              ]
+            },
+            "variantId": { "anyOf": [{ "type": "null" }, { "type": "string" }] },
+            "device": { "type": "string" },
+            "referenceMode": {
+              "anyOf": [
+                { "type": "string", "const": "character" },
+                { "type": "string", "const": "current" },
+                { "type": "string", "const": "custom" },
+                { "type": "string", "const": "file" },
+                { "type": "string", "const": "library" }
+              ]
+            },
+            "intonationGuide": { "anyOf": [{ "$ref": "#/$defs/IntonationGuide_4" }] },
+            "referenceTrackId": { "anyOf": [{ "type": "string" }] },
+            "referenceId": { "anyOf": [{ "type": "null" }, { "type": "string" }] },
+            "mode": {
+              "anyOf": [
+                { "type": "string", "const": "zeroShot" },
+                { "type": "string", "const": "crossLingual" }
+              ]
+            },
+            "speed": { "type": "number" },
+            "seed": { "type": "number" }
+          },
+          "required": ["device", "referenceMode", "referenceId", "mode", "speed", "seed"],
+          "additionalProperties": false
+        },
+        "VoiceQuality_3": {
+          "type": "object",
+          "properties": {
+            "inferenceSteps": { "anyOf": [{ "type": "number" }] },
+            "cfgStrength": { "anyOf": [{ "type": "number" }] },
+            "temperature": { "anyOf": [{ "type": "number" }] },
+            "topP": { "anyOf": [{ "type": "number" }] },
+            "topK": { "anyOf": [{ "type": "number" }] },
+            "repetitionPenalty": { "anyOf": [{ "type": "number" }] },
+            "minP": { "anyOf": [{ "type": "number" }] },
+            "cfgWeight": { "anyOf": [{ "type": "number" }] },
+            "exaggeration": { "anyOf": [{ "type": "number" }] }
+          },
+          "required": [],
+          "additionalProperties": false
+        },
+        "IntonationGuide_4": {
+          "type": "object",
+          "properties": {
+            "mode": {
+              "anyOf": [
+                { "type": "string", "const": "style" },
+                { "type": "string", "const": "hybrid" }
+              ]
+            },
+            "trackId": { "anyOf": [{ "type": "string" }] }
+          },
+          "required": ["mode"],
+          "additionalProperties": false
+        }
+      }
+    },
+    "VoiceLibraryReview": {
+      "$ref": "#/$defs/VoiceLibraryReview_0",
+      "$defs": {
+        "VoiceLibraryReview_0": {
+          "type": "object",
+          "properties": {
+            "characterId": { "type": "string" },
+            "sampleId": { "type": "string" },
+            "status": {
+              "anyOf": [
+                { "type": "null" },
+                { "type": "string", "const": "approved" },
+                { "type": "string", "const": "pending" },
+                { "type": "string", "const": "rejected" }
+              ]
+            },
+            "transcript": { "anyOf": [{ "type": "null" }, { "type": "string" }] },
+            "useDefault": { "type": "boolean" }
+          },
+          "required": ["characterId", "sampleId", "status", "transcript", "useDefault"],
           "additionalProperties": false
         }
       }
@@ -4483,9 +5480,11 @@
                 { "type": "string", "const": "character" },
                 { "type": "string", "const": "current" },
                 { "type": "string", "const": "custom" },
-                { "type": "string", "const": "file" }
+                { "type": "string", "const": "file" },
+                { "type": "string", "const": "library" }
               ]
             },
+            "intonationGuide": { "anyOf": [{ "$ref": "#/$defs/IntonationGuide_2" }] },
             "referenceTrackId": { "anyOf": [{ "type": "string" }] },
             "referenceId": { "anyOf": [{ "type": "null" }, { "type": "string" }] },
             "mode": {
@@ -4514,6 +5513,20 @@
             "exaggeration": { "anyOf": [{ "type": "number" }] }
           },
           "required": [],
+          "additionalProperties": false
+        },
+        "IntonationGuide_2": {
+          "type": "object",
+          "properties": {
+            "mode": {
+              "anyOf": [
+                { "type": "string", "const": "style" },
+                { "type": "string", "const": "hybrid" }
+              ]
+            },
+            "trackId": { "anyOf": [{ "type": "string" }] }
+          },
+          "required": ["mode"],
           "additionalProperties": false
         }
       }
@@ -4883,9 +5896,11 @@
                 { "type": "string", "const": "character" },
                 { "type": "string", "const": "current" },
                 { "type": "string", "const": "custom" },
-                { "type": "string", "const": "file" }
+                { "type": "string", "const": "file" },
+                { "type": "string", "const": "library" }
               ]
             },
+            "intonationGuide": { "anyOf": [{ "$ref": "#/$defs/IntonationGuide_3" }] },
             "referenceTrackId": { "anyOf": [{ "type": "string" }] },
             "referenceId": { "anyOf": [{ "type": "null" }, { "type": "string" }] },
             "mode": {
@@ -4914,6 +5929,20 @@
             "exaggeration": { "anyOf": [{ "type": "number" }] }
           },
           "required": [],
+          "additionalProperties": false
+        },
+        "IntonationGuide_3": {
+          "type": "object",
+          "properties": {
+            "mode": {
+              "anyOf": [
+                { "type": "string", "const": "style" },
+                { "type": "string", "const": "hybrid" }
+              ]
+            },
+            "trackId": { "anyOf": [{ "type": "string" }] }
+          },
+          "required": ["mode"],
           "additionalProperties": false
         }
       }

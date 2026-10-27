@@ -36,6 +36,7 @@ mod voice_capture;
 mod voice_edit;
 mod voice_engines;
 mod voice_fit;
+mod voice_library;
 mod voice_mood;
 mod voice_quality;
 mod voice_space;
@@ -623,6 +624,56 @@ async fn capture_character_portrait(
     options: character_review::PortraitOptions,
 ) -> Result<Project, String> {
     character_review::capture_portrait(core.inner().clone(), app, options).await
+}
+#[tauri::command]
+async fn prepare_voice_library_source(
+    app: tauri::AppHandle,
+    core: State<'_, Shared>,
+    options: voice_library::SourceOptions,
+) -> Result<Project, String> {
+    voice_library::prepare(core.inner().clone(), app, options).await
+}
+#[tauri::command]
+fn generate_voice_library(
+    app: tauri::AppHandle,
+    core: State<'_, Shared>,
+    options: voice_library::Generation,
+) -> Result<String, String> {
+    voice_library::enqueue(core.inner().clone(), app, options)
+}
+#[tauri::command]
+fn review_voice_library_sample(
+    app: tauri::AppHandle,
+    core: State<'_, Shared>,
+    options: voice_library::Review,
+) -> Result<Project, String> {
+    let mut guard = core.session.lock().map_err(io_error)?;
+    let s = guard.as_mut().ok_or("NO_PROJECT")?;
+    let next = voice_library::review(&s.project, &options)?;
+    let saved = s.replace(next, s.project.revision)?;
+    app.emit("project-changed", &saved).map_err(io_error)?;
+    Ok(saved)
+}
+#[tauri::command]
+fn voice_library_audio_path(
+    core: State<'_, Shared>,
+    character_id: String,
+    reference_id: String,
+) -> Result<String, String> {
+    let guard = core.session.lock().map_err(io_error)?;
+    let s = guard.as_ref().ok_or("NO_PROJECT")?;
+    let lib = voice_library::library(&s.project, &character_id)
+        .ok_or("VOICE_LIBRARY_REFERENCE_REQUIRED")?;
+    let r = lib
+        .sources
+        .iter()
+        .map(|s| &s.reference)
+        .chain(lib.samples.iter().map(|s| &s.reference))
+        .find(|r| r.id == reference_id)
+        .ok_or("VOICE_LIBRARY_REFERENCE_REQUIRED")?;
+    Ok(project::asset(&s.root, &r.path)?
+        .to_string_lossy()
+        .into_owned())
 }
 #[tauri::command]
 async fn prepare_character_reference(
@@ -1419,6 +1470,9 @@ fn retry_job(app: tauri::AppHandle, core: State<'_, Shared>, id: String) -> Resu
     if let Some(id) = record.voice_install {
         return voice_engines::install(core.inner().clone(), app, id);
     }
+    if let Some(request) = record.voice_library {
+        return voice_library::resume(core.inner().clone(), app, request);
+    }
     if let Some(request) = record.tts_request {
         let session = core.session.lock().map_err(io_error)?;
         let s = session.as_ref().ok_or("NO_PROJECT")?;
@@ -1683,6 +1737,10 @@ pub fn run() {
             character_asset_path,
             capture_character_portrait,
             prepare_character_reference,
+            prepare_voice_library_source,
+            generate_voice_library,
+            review_voice_library_sample,
+            voice_library_audio_path,
             preview_character_sample,
             separate_audio_region,
             local_separation_result,

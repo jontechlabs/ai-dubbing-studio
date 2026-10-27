@@ -33,6 +33,17 @@ def validate(request):
     validate_request(request)
     if request['variantId'] == 'voxcpm2-bf16' and request['mode'] == 'zeroShot' and not request.get('referenceTranscript', '').strip():
         raise ValueError('TTS_TRANSCRIPT_REQUIRED')
+    guide = request.get('intonationGuide')
+    if guide is not None:
+        if (not isinstance(guide, dict) or guide.get('mode') not in ('style', 'hybrid')
+                or request['variantId'] != 'voxcpm2-bf16' or request['mode'] != 'crossLingual'
+                or not isinstance(request.get('guideAudio'), str) or not request['guideAudio']):
+            raise ValueError('TTS_GUIDE_UNSUPPORTED')
+        if guide['mode'] == 'hybrid':
+            if not isinstance(request.get('guideTranscript'), str) or not request['guideTranscript'].strip():
+                raise ValueError('TTS_GUIDE_TRANSCRIPT_REQUIRED')
+            if request.get('accent', 'auto') not in (None, 'auto') or request.get('mood', 'default') not in (None, 'default'):
+                raise ValueError('TTS_GUIDE_UNSUPPORTED')
     if request['variantId'].startswith('chatterbox'):
         if request['mode'] != 'crossLingual':
             raise ValueError('INVALID_TTS_REQUEST')
@@ -42,7 +53,7 @@ def validate(request):
             raise ValueError('TTS_ACCENT_UNSUPPORTED')
 
 
-def voxcpm_arguments(request, reference):
+def voxcpm_arguments(request, reference, guide=None, guide_analysis=None):
     from voice_mood import mood_spec
     from voice_accent import accent_spec
     directions = []
@@ -52,6 +63,8 @@ def voxcpm_arguments(request, reference):
     if request.get('mood', 'default') not in (None, 'default'):
         directions.append(mood_spec(request)['fishInstruction'])
     text = request['text']
+    if guide_analysis and (request.get('intonationGuide') or {}).get('mode') == 'style':
+        directions.append(guide_analysis['direction'])
     if directions:
         text = '(' + ', '.join(directions) + ')' + text
     from voice_quality import quality_options
@@ -59,7 +72,13 @@ def voxcpm_arguments(request, reference):
     options = dict(text=text, cfg_value=quality["cfgStrength"], inference_timesteps=int(quality["inferenceSteps"]),
                    normalize=False, denoise=False, retry_badcase=True, retry_badcase_max_times=1,
                    max_len=1500)
-    if request['mode'] == 'zeroShot':
+    if (request.get('intonationGuide') or {}).get('mode') == 'hybrid':
+        import re
+        if guide is None: raise ValueError('TTS_GUIDE_UNSUPPORTED')
+        # Separate audio inputs. No pitch-resynthesis or Japanese audio mixing.
+        options.update(reference_wav_path=str(reference), prompt_wav_path=str(guide),
+                       prompt_text=re.sub(r'<[^>]*>', '', request['guideTranscript']).strip())
+    elif request['mode'] == 'zeroShot':
         options.update(prompt_wav_path=str(reference), prompt_text=request['referenceTranscript'])
     else:
         options['reference_wav_path'] = str(reference)
@@ -175,14 +194,23 @@ def generate(request, session=None):
         torch.cuda.manual_seed_all(request['seed'])
     else:
         torch.random.default_generator.manual_seed(request['seed'])
-    with prepare_reference(request['referenceAudio'], report, request.get('preparedReferenceAudio')) as reference:
+    guide_analysis = None
+    with contextlib.ExitStack() as stack:
+        reference = stack.enter_context(prepare_reference(request['referenceAudio'], report, request.get('preparedReferenceAudio')))
+        guide = None
+        if request.get('intonationGuide'):
+            guide = stack.enter_context(prepare_reference(request['guideAudio'], report, request.get('preparedGuideAudio')))
+            from intonation_guide import analyze
+            guide_analysis = analyze(guide)
+            guide_analysis['mode'] = request['intonationGuide']['mode']
+            report(log='Intonation guide (acoustic cues, not an emotion classifier): ' + json.dumps(guide_analysis, sort_keys=True))
         from voice_quality import quality_options
         report(log='Generation controls: ' + json.dumps(quality_options(request), sort_keys=True))
         report(stage='ttsGenerate', progress=None,
                log=f'{request["variantId"]}: target language {request["language"]}; selected device {name}')
         with torch.inference_mode():
             if request['variantId'] == 'voxcpm2-bf16':
-                audio = model.generate(**voxcpm_arguments(request, reference))
+                audio = model.generate(**voxcpm_arguments(request, reference, guide, guide_analysis))
                 rate = model.tts_model.sample_rate
             else:
                 audio = model.generate(**chatterbox_arguments(request, reference)).float().cpu().numpy()
@@ -204,6 +232,7 @@ def generate(request, session=None):
     sf.write(request['outputPath'], np.clip(audio, -1, 1), 24000, subtype='PCM_16')
     metadata = dict(device=device, deviceName=name, peakVramMb=
                     round(torch.cuda.max_memory_allocated(device) / 1024**2) if device.startswith('cuda:') else 0)
+    if guide_analysis is not None: metadata['guideAnalysis'] = guide_analysis
     Path(request['resultPath']).write_text(json.dumps(metadata), encoding='utf-8')
     if session is None:
         del model

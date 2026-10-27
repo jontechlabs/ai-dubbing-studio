@@ -4,10 +4,12 @@ import { voiceVariant, voiceSettingsFormat } from './voiceEngines';
 import { validAccent } from './voiceAccents';
 import { validMood } from './voiceMoods';
 import { validQuality } from './voiceQuality';
+import { libraryReference, validIntonationGuide } from './voiceLibrary';
 export function validVoiceSettings(value: unknown): value is VoiceSettings {
   if (!value || typeof value !== 'object') return false;
   const s = value as VoiceSettings;
   return (
+    validIntonationGuide(s.intonationGuide, s) &&
     validAccent(s.accent, s.variantId ?? undefined) &&
     validMood(s.mood) &&
     validQuality(s.quality, s.variantId) &&
@@ -15,7 +17,7 @@ export function validVoiceSettings(value: unknown): value is VoiceSettings {
       !s.mood ||
       s.mood === 'default') &&
     (s.variantId == null || !!voiceVariant(s.variantId)) &&
-    ['character', 'current', 'custom', 'file'].includes(s.referenceMode) &&
+    ['character', 'current', 'custom', 'file', 'library'].includes(s.referenceMode) &&
     (s.referenceTrackId === undefined ||
       (typeof s.referenceTrackId === 'string' &&
         s.referenceTrackId.length > 0 &&
@@ -61,7 +63,10 @@ export function selectedGeneration(project: Project, line: Dialogue) {
   );
 }
 export function staleGeneration(project: Project, line: Dialogue, generation: Generation) {
-  if (!generation.takeOrigin && generation.options.referenceMode === 'file') {
+  if (!generation.takeOrigin && generation.options.referenceMode === 'library') {
+    const reference = libraryReference(project, line.characterId, generation.referenceId ?? null);
+    if (!reference || reference.transcript !== generation.referenceTranscript) return true;
+  } else if (!generation.takeOrigin && generation.options.referenceMode === 'file') {
     const reference = project.voiceReferences?.find((r) => r.id === generation.referenceId);
     if (!reference || reference.transcript !== generation.referenceTranscript) return true;
   } else if (!generation.takeOrigin && generation.options.referenceMode !== 'current') {

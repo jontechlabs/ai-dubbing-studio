@@ -101,6 +101,8 @@ pub struct Profile {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub gender: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub voice_library: Option<crate::voice_library::Library>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub temporary_name: Option<bool>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub portrait: Option<Portrait>,
@@ -242,7 +244,7 @@ pub fn asset(core: &crate::Core, path: &str) -> Result<String, String> {
 
 // Short interactive previews have no queued job, unlike speaker analysis.
 // Bound their lifetime and close stdin; do not send them through the job-only runner.
-async fn direct_process(
+pub(crate) async fn direct_process(
     executable: &std::path::Path,
     args: &[String],
     flag: &std::sync::atomic::AtomicBool,

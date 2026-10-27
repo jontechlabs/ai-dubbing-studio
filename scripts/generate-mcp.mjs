@@ -73,6 +73,9 @@ function makeSchema(name) {
   return { ...root, ...(Object.keys(definitions).length ? { $defs: definitions } : {}) };
 }
 const mapping = {
+  'voice_library::SourceOptions': 'VoiceLibrarySourceOptions',
+  'voice_library::Generation': 'VoiceLibraryGeneration',
+  'voice_library::Review': 'VoiceLibraryReview',
   'voice_capture::Options': 'VoiceConversionOptions',
   'prosody::Options': 'ProsodyOptions',
   'tts::Options': 'VoiceSettings',
@@ -162,7 +165,7 @@ const context = object({
   expectedRevision: { type: 'integer', minimum: 0 },
 });
 const projectCommands = new Set(
-  'capture_character_portrait prepare_character_reference preview_character_sample separate_audio_region apply_local_separation apply_audio_effects convert_voice_timbre transfer_voice_prosody generate_line generate_dubbing_batch start_inpaint_batch inpaint_lips detect_inpaint_faces transfer_audio analyze_lips suggest_translation identify_speakers transcribe_voice_reference import_voice_reference import_dubbing_reference import_media prepare_proxy import_subtitles import_embedded_subtitles history separate_audio export_mkv export_generation export_audio_track export_subtitles'.split(
+  'prepare_voice_library_source generate_voice_library review_voice_library_sample capture_character_portrait prepare_character_reference preview_character_sample separate_audio_region apply_local_separation apply_audio_effects convert_voice_timbre transfer_voice_prosody generate_line generate_dubbing_batch start_inpaint_batch inpaint_lips detect_inpaint_faces transfer_audio analyze_lips suggest_translation identify_speakers transcribe_voice_reference import_voice_reference import_dubbing_reference import_media prepare_proxy import_subtitles import_embedded_subtitles history separate_audio export_mkv export_generation export_audio_track export_subtitles'.split(
     ' ',
   ),
 );

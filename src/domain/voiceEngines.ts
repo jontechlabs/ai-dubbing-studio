@@ -43,8 +43,10 @@ export function voiceSettingsFormat(settings: {
   accent?: string;
   referenceMode: string;
   quality?: unknown;
+  intonationGuide?: unknown;
 }) {
   return Math.max(
+    settings.intonationGuide !== undefined || settings.referenceMode === 'library' ? 21 : 5,
     settings.quality !== undefined ? 19 : 5,
     multilingualVariant(settings.variantId) ? 16 : 5,
     (settings.accent && settings.accent !== 'auto') || settings.referenceMode === 'file' ? 9 : 5,
