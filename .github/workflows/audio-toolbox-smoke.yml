@@ -1,13 +1,24 @@
 name: Real selected audio separation models
 on:
   workflow_dispatch:
-  push:
-    branches: [codex/dubbing-workbench]
-    paths: [.github/workflows/audio-toolbox-smoke.yml]
+    inputs:
+      stage_release_run:
+        description: 'Optional successful package run to authenticate and stage as a draft. Empty runs model inference tests.'
+        required: false
+        type: string
+      stage_models_run:
+        description: 'Successful full-weight model proof required when staging.'
+        required: false
+        type: string
+      stage_final_head:
+        description: 'Optional final source commit for adding source ZIP and checksums to the draft.'
+        required: false
+        type: string
 permissions:
   contents: read
 jobs:
   models:
+    if: inputs.stage_release_run == ''
     runs-on: windows-latest
     timeout-minutes: 75
     env:
@@ -32,3 +43,36 @@ jobs:
             .cache/audio-toolbox-smoke/*.log
           include-hidden-files: true
           if-no-files-found: warn
+  stage:
+    if: inputs.stage_release_run != ''
+    runs-on: windows-latest
+    timeout-minutes: 20
+    permissions:
+      contents: write
+      actions: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+      PYTHONDONTWRITEBYTECODE: '1'
+      PYTHONUTF8: '1'
+      PYTHONUNBUFFERED: '1'
+      STUDIO_STAGE_RUN: ${{ inputs.stage_release_run }}
+      STUDIO_MODELS_RUN: ${{ inputs.stage_models_run }}
+      STUDIO_FINAL_HEAD: ${{ inputs.stage_final_head }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12.10'
+      - name: Authenticate packages, model proof, signature and unchanged source inputs before draft upload
+        run: |
+          $studioStageArgs = @('--run', $env:STUDIO_STAGE_RUN, '--models-run', $env:STUDIO_MODELS_RUN)
+          if ($env:STUDIO_FINAL_HEAD) { $studioStageArgs += @('--final-head', $env:STUDIO_FINAL_HEAD) }
+          python scripts/stage-workbench-release.py @studioStageArgs
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: release-stage-proof
+          path: .cache/release-stage-proof/*
+          include-hidden-files: true
+          if-no-files-found: error
