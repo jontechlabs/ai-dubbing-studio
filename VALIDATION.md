@@ -1,5 +1,15 @@
 # Validation
 
+## v0.32.0 — validation scope
+
+The workbench changes are checked with TypeScript/domain tests, real Chrome audio and UI scenarios, native FFmpeg tests, Python worker regressions, shared MCP schemas and the packaged Windows desktop driven by the official MCP SDK. New scenarios cover editable source/voice text, selected-reference audition, staying in the dubbing panel, retained pipeline stages, explicit linked review, selected-region audition/mapping, insufficient-space preflight and stale-result refusal.
+
+The new native test renders an audible patch at 7 seconds over a one-second silent base. It verifies exact sample count, real PCM amplitude, unchanged source media, undo/redo and preserved cached outputs. The sample-count bound also fixes an EOF/timestampless `amix` case in which a duration-only `atrim` could leave padding unbounded. The regression has a deadline.
+
+A separate Windows workflow installs the exact embedded Python/CUDA dependency profile and performs CPU inference with full, SHA-256-verified weights for BS-RoFormer Viperx 1297, Kim Mel-Band RoFormer, htdemucs, htdemucs_ft and AudioSep. Its report records worker/runtime/model/source-archive hashes, output roles, 48 kHz stereo PCM frame counts and unchanged source audio. This establishes functional integration; it does not measure subjective separation quality or RTX 5060 Ti performance.
+
+Existing TTS/ChatterboxVC neural workers and old model/runtime manifests are checked byte-for-byte against v0.31. The existing TTS worker request and GGUF inference remain unchanged. Full-weight TTS/VC evidence below is reused for these unchanged cores; the new serial orchestration is covered by checkpoints, cancellation, provenance, UI and packaged MCP guards. No claim is made that the experimental contour guide faithfully reproduces acting or that timbre conversion always improves an accent. Project format 23 and 132 MCP tools are used. Final release evidence is recorded after successful packaging.
+
 ## v0.31.0 — 28 October 2026
 
 [Windows run 40718498448](https://github.com/jontechlabs/ai-dubbing-studio/actions/runs/40718498448) passed at `2fd7b22b29ad9a57210347dba19ad5365a202f1c`. **622 fresh suite checks:** 176 TypeScript, 180 Chrome scenarios, 170 Rust tests and 96 Python tests, plus build, lint, formatting and shared MCP schemas. Two explicitly opt-in Rust diagnostics remain ignored; real Japanese Whisper inference is instead run against the packaged executable.

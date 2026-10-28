@@ -158,13 +158,15 @@ def separator(r, spec, source, device):
             raise ValueError('MODEL_CHECKSUM_FAILED')
     engine = LocalSeparator(model_file_dir=str(model_dir), output_dir=str(raw), output_format='WAV', sample_rate=44100, use_soundfile=True, normalization_threshold=1.0, amplification_threshold=0.0, use_autocast=device.startswith('cuda:'), log_level=logging.WARNING, demucs_params={'segment_size':str(min(7, r['windowSeconds'])), 'shifts':1, 'overlap':.25, 'segments_enabled':True}, mdxc_params={'segment_size':256,'override_model_segment_size':False,'batch_size':1,'overlap':2})
     engine.load_model('model.ckpt' if spec['family'] == 'roformer' else ('htdemucs_ft.yaml' if r['modelId'] == 'htdemucs-ft' else 'htdemucs.yaml'))
+    # Preserve stem balance; attenuate all outputs together only after inference.
+    engine.model_instance.normalization_threshold = float('inf')
     # Export floating WAVs; the studio applies one common attenuation afterwards.
     def write_float(stem_path, stem_source):
         target=Path(stem_path)
         if not target.is_absolute():target=raw/target
         sf.write(target, np.asarray(stem_source).T if np.asarray(stem_source).shape[0] == 2 else stem_source, 44100, subtype='FLOAT')
     engine.model_instance.write_audio = write_float
-    mapping = {'Vocals':'vocals','Instrumental':'instrumental','Drums':'drums','Bass':'bass','Other':'other'}
+    mapping = {'Vocals':'vocals','Instrumental':'instrumental','Drums':'drums','Bass':'bass','Other':'instrumental' if spec['family']=='roformer' else 'other'}
     names = {name:role for name,role in mapping.items() if role in spec['outputs']}
     report(stage='toolboxSeparate', progress=None)
     files = engine.separate(clean_path(r['inputPath']), custom_output_names=names)
@@ -173,7 +175,9 @@ def separator(r, spec, source, device):
         file = Path(filename)
         if not file.is_absolute(): file = raw / file
         role = next((role for role in spec['outputs'] if file.stem == role), None)
-        if role is None: raise ValueError('AUDIO_TOOLBOX_INVALID_AUDIO')
+        if role is None:
+            logging.error('Unexpected separator output: %s',file.name)
+            raise ValueError('AUDIO_TOOLBOX_INVALID_AUDIO')
         data, rate = sf.read(file, dtype='float32', always_2d=True)
         if rate != 44100: raise ValueError('AUDIO_TOOLBOX_INVALID_AUDIO')
         data = resample_poly(data, 160, 147, axis=0)[:len(source)]

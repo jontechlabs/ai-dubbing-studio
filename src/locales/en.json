@@ -199,7 +199,9 @@
     "ttsValidateOutput": "Validating generated WAV",
     "toolboxModel": "Downloading audio model",
     "toolboxVerify": "Verifying audio models",
-    "toolboxSeparate": "Separating selected audio"
+    "toolboxSeparate": "Separating selected audio",
+    "toolboxPrepare": "Preparing selected audio",
+    "toolboxLoad": "Loading separation model"
   },
   "shortcuts": "Space: play · J/K/L: transport · O: original · Ctrl+S: save · Ctrl+Z/Y: undo/redo",
   "errors": {
@@ -404,7 +406,8 @@
     "AUDIO_TOOLBOX_FAILED": "Audio separation failed. Read the log for this task.",
     "AUDIO_TOOLBOX_INVALID_AUDIO": "The audio outputs are invalid; no track was replaced.",
     "AUDIO_TOOLBOX_ALREADY_APPLIED": "This result was already applied.",
-    "AUDIO_TOOLBOX_NOT_READY": "The result is not available yet."
+    "AUDIO_TOOLBOX_NOT_READY": "The result is not available yet.",
+    "INVALID_DUBBING_PIPELINE": "The two-stage dubbing information is invalid."
   },
   "preparingVideo": "Preparing video…",
   "loadingVideo": "Loading video…",
@@ -1542,8 +1545,8 @@
     "applied": "Original text updated. You can undo this change."
   },
   "workbench": {
-    "currentTask": "Current take processing",
-    "progress": "Current take progress",
+    "currentTask": "Current operation",
+    "progress": "Current operation progress",
     "addDub": "Add a dubbing take",
     "sharedVoiceText": "Shared with “Voice text” in Pronunciation. Editing this field does not change the translated subtitle.",
     "resolvedPronunciation": "With pronunciation rules",
@@ -1573,14 +1576,16 @@
     "window": "Processing window",
     "memoryHint": "Short windows reduce memory use. Performance and quality depend on model and content; 4 seconds is a starting point for 16 GB VRAM.",
     "weights": "of model files",
-    "disk": "Space required: {{required}} · available: {{available}}",
+    "disk": "Free space recommended for installation or repair: {{required}} · available: {{available}}",
     "install": "Install or repair this tool",
+    "verify": "Verify this tool’s files",
     "demucsHint": "Demucs separates vocals, drums, bass and other. It does not reliably distinguish music from sound effects. Audition before mapping outputs.",
     "separate": "Separate selection",
     "preview": "Outputs to audition",
     "listen": "Listen: {{name}}",
     "destination": "Destination: {{name}}",
     "skip": "Do not apply this output",
+    "uniqueDestination": "Choose a different destination for each output to apply.",
     "muteSource": "Mute this section of the source track",
     "applyHint": "Only chosen destinations are replaced in this interval, using undoable layers. The source track still plays unless muted. Ctrl+Z undoes the application.",
     "stale": "The source changed after analysis. Run separation again before applying.",
@@ -1602,5 +1607,6 @@
       "htdemucs-ft": "Separate instruments · Demucs v4 FT",
       "audiosep": "Isolate a described sound · AudioSep"
     }
-  }
+  },
+  "auto": "Automatic"
 }

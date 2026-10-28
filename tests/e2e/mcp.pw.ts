@@ -51,7 +51,7 @@ test('MCP bulk review is atomic, preserves voice takes and rejects stale or unkn
  const approved=await call(page,'studio_approve_translations',{context:current,ids:[...ids,ids[1]],approved:true});
  expect(approved.applied).toBe(true);
  let p=await data(page);expect(Object.keys(p.translationApprovals).sort()).toEqual(ids.slice(1).sort());
- expect(p.generations).toEqual(before.generations);expect(p.dialogues).toEqual(reviewBefore.dialogues);
+ expect(p.generations).toEqual(before.generations);expect(p.dialogues.map((l:any)=>({...l,status:undefined}))).toEqual(reviewBefore.dialogues.map((l:any)=>({...l,status:undefined})));expect(p.dialogues[2].status).toBe('validated');
  expect((await call(page,'studio_approve_translations',{context,ids,approved:false})).error).toContain('STALE_REVISION');
  expect((await call(page,'studio_approve_translations',{context:approved.context,ids:[ids[1],'missing'],approved:false})).error).toContain('MCP_UNKNOWN_DIALOGUE');
  expect((await data(page)).translationApprovals).toEqual(p.translationApprovals);

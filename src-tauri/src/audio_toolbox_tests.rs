@@ -181,28 +181,35 @@ async fn apply_creates_missing_tracks_at_original_timestamp_preserves_media_and_
     // A one-second silent base must still permit a patch much later in the movie.
     let out = root.join("audition.wav");
     let track = saved.tracks[0].id.clone();
-    audio_patch::snippet(
-        &core,
-        app.handle(),
-        &key,
-        &saved,
-        &root,
-        audio_patch::Snippet {
-            track_id: &track,
-            start_ms: 7000,
-            end_ms: 8000,
-            channels: 2,
-            rate: 48000,
-            fader: false,
-        },
-        &out,
-        &AtomicBool::new(false),
+    tokio::time::timeout(
+        std::time::Duration::from_secs(10),
+        audio_patch::snippet(
+            &core,
+            app.handle(),
+            &key,
+            &saved,
+            &root,
+            audio_patch::Snippet {
+                track_id: &track,
+                start_ms: 7000,
+                end_ms: 8000,
+                channels: 2,
+                rate: 48000,
+                fader: false,
+            },
+            &out,
+            &AtomicBool::new(false),
+        ),
     )
     .await
+    .expect("A late patch must terminate even with an EOF base")
     .unwrap();
     assert_eq!(crate::audio_files::wav_frames(&out).unwrap(), 48000);
     let rendered = std::fs::read(out).unwrap();
-    assert!(rendered[44..].iter().any(|b| *b != 0));
+    let data = rendered.windows(4).position(|w| w == b"data").unwrap() + 8;
+    assert!(rendered[data..]
+        .chunks_exact(2)
+        .any(|b| i16::from_le_bytes([b[0], b[1]]).unsigned_abs() > 1000));
     assert!(apply(
         core.clone(),
         app.handle().clone(),

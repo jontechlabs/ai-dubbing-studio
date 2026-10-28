@@ -139,6 +139,8 @@ export function AudioToolboxPanel({
       (model.family !== 'audiosep' || !!prompt.trim());
   const bytes = (n: number) => `${(n / 1024 ** 3).toFixed(2)} Gio`,
     tracks = audioTracks(project).filter((t) => t.kind !== 'dubbing');
+  const chosen = Object.values(mappings).filter(Boolean),
+    duplicateDestination = new Set(chosen).size !== chosen.length;
   const perform = (operation: () => Promise<unknown>) => {
     setWorking(true);
     void operation()
@@ -267,7 +269,7 @@ export function AudioToolboxPanel({
                   available: status?.availableBytes == null ? '?' : bytes(status.availableBytes),
                 })}
               </p>
-              {!model.installed && (
+              {
                 <button
                   className="button subtle wide"
                   disabled={
@@ -281,9 +283,9 @@ export function AudioToolboxPanel({
                     })
                   }
                 >
-                  {t('toolbox.install')}
+                  {t(model.installed ? 'toolbox.verify' : 'toolbox.install')}
                 </button>
-              )}
+              }
             </>
           )}
           {model?.family === 'demucs' && <p className="warning">{t('toolbox.demucsHint')}</p>}
@@ -366,12 +368,13 @@ export function AudioToolboxPanel({
                 {t('toolbox.muteSource')}
               </label>
               <small>{t('toolbox.applyHint')}</small>
+              {duplicateDestination && <p className="warning">{t('toolbox.uniqueDestination')}</p>}
               {result.stale && !result.applied && <p className="warning">{t('toolbox.stale')}</p>}
               {result.applied && <p role="status">{t('toolbox.applied')}</p>}
               <button
                 className="button accent wide"
                 disabled={
-                  locked || result.applied || result.stale || !Object.values(mappings).some(Boolean)
+                  locked || result.applied || result.stale || !chosen.length || duplicateDestination
                 }
                 onClick={() =>
                   perform(() =>

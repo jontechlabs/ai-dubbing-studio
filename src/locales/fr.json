@@ -199,7 +199,9 @@
     "ttsValidateOutput": "Vérification du WAV généré",
     "toolboxModel": "Téléchargement du modèle audio",
     "toolboxVerify": "Vérification des modèles audio",
-    "toolboxSeparate": "Séparation de la sélection"
+    "toolboxSeparate": "Séparation de la sélection",
+    "toolboxPrepare": "Préparation de la sélection",
+    "toolboxLoad": "Chargement du modèle de séparation"
   },
   "shortcuts": "Espace : lecture · J/K/L : transport · O : original · Ctrl+S : sauvegarde · Ctrl+Z/Y : annuler/rétablir",
   "errors": {
@@ -404,7 +406,8 @@
     "AUDIO_TOOLBOX_FAILED": "La séparation audio a échoué. Consultez le journal de cette tâche.",
     "AUDIO_TOOLBOX_INVALID_AUDIO": "Les sorties audio sont invalides ; aucune piste n’a été remplacée.",
     "AUDIO_TOOLBOX_ALREADY_APPLIED": "Ce résultat a déjà été appliqué.",
-    "AUDIO_TOOLBOX_NOT_READY": "Le résultat n’est pas encore disponible."
+    "AUDIO_TOOLBOX_NOT_READY": "Le résultat n’est pas encore disponible.",
+    "INVALID_DUBBING_PIPELINE": "Les informations du doublage en deux étapes sont invalides."
   },
   "preparingVideo": "Préparation de la vidéo…",
   "loadingVideo": "Chargement de la vidéo…",
@@ -1542,8 +1545,8 @@
     "applied": "Texte original mis à jour. Vous pouvez annuler cette modification."
   },
   "workbench": {
-    "currentTask": "Traitement de cet essai",
-    "progress": "Avancement de cet essai",
+    "currentTask": "Traitement de cette opération",
+    "progress": "Avancement de cette opération",
     "addDub": "Ajouter un doublage",
     "sharedVoiceText": "Texte partagé avec « Texte pour la voix » dans Prononciation. Modifier ce champ ne change pas le sous-titre traduit.",
     "resolvedPronunciation": "Avec les règles de prononciation",
@@ -1573,14 +1576,16 @@
     "window": "Fenêtre de traitement",
     "memoryHint": "Une fenêtre courte réduit la mémoire nécessaire. Les performances et la qualité varient selon le modèle et le contenu ; le profil 4 s est un point de départ pour 16 Go de VRAM.",
     "weights": "de modèles",
-    "disk": "Espace requis : {{required}} · disponible : {{available}}",
+    "disk": "Espace libre conseillé pour l’installation ou la réparation : {{required}} · disponible : {{available}}",
     "install": "Installer ou réparer cet outil",
+    "verify": "Vérifier les fichiers de cet outil",
     "demucsHint": "Demucs sépare voix, batterie, basse et reste. Il ne distingue pas de façon fiable musique et bruitages. Écoutez les sorties avant de les affecter.",
     "separate": "Isoler la sélection",
     "preview": "Résultats à écouter",
     "listen": "Écouter : {{name}}",
     "destination": "Destination : {{name}}",
     "skip": "Ne pas appliquer cette sortie",
+    "uniqueDestination": "Choisissez une destination différente pour chaque sortie à appliquer.",
     "muteSource": "Rendre muette la section de la piste source",
     "applyHint": "Seules les destinations choisies sont remplacées sur cet intervalle, par des couches annulables. La piste source continue de jouer si elle n’est pas rendue muette. Ctrl+Z annule l’application.",
     "stale": "La source a changé depuis l’analyse. Relancez la séparation avant d’appliquer.",
@@ -1602,5 +1607,6 @@
       "htdemucs-ft": "Séparer les instruments · Demucs v4 FT",
       "audiosep": "Isoler un son par description · AudioSep"
     }
-  }
+  },
+  "auto": "Automatique"
 }

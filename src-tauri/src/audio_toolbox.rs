@@ -66,7 +66,12 @@ fn required(core: &Core, m: &Model) -> u64 {
         })
         .map(|f| f.size)
         .sum::<u64>();
-    missing
+    let reserve = if ready(core, m) {
+        m.files.iter().map(|f| f.size).sum()
+    } else {
+        missing
+    };
+    reserve
         + if runtime(core).join("ready.json").is_file() {
             256 * 1024 * 1024
         } else {

@@ -295,7 +295,9 @@ pub async fn snippet<R: tauri::Runtime>(
         options.end_ms,
     )?;
     let duration = options.end_ms - options.start_ms;
-    filters.push(format!("[transfer]apad,atrim=duration={:.6},aeval=exprs='clip(val(0),-1,1)|clip(val(1),-1,1)':channel_layout=stereo[cut]",duration as f64/1000.0));
+    // An empty/EOF base can make amix emit frames without timestamps. Counting
+    // samples still bounds apad, whereas atrim=duration could then run forever.
+    filters.push(format!("[transfer]apad,atrim=end_sample={},asetpts=N/SR/TB,aeval=exprs='clip(val(0),-1,1)|clip(val(1),-1,1)':channel_layout=stereo[cut]",duration * 48));
     let graph_file = output.with_extension("ffgraph");
     project::atomic_write(&graph_file, filters.join(";\n").as_bytes())?;
     args.extend([

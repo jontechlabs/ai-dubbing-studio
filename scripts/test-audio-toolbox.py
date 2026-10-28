@@ -63,4 +63,4 @@ for model in models:
  proof.append(dict(model=model['id'],frames=60000,outputs=model['outputs'],seconds=round(time.monotonic()-start,2),device='CPU',sourceUnchanged=True))
  print('MODEL_SMOKE',proof[-1],flush=True)
 (ROOT/'artifacts').mkdir(exist_ok=True)
-(ROOT/'artifacts/audio-toolbox-validation.json').write_text(json.dumps(dict(models=proof,torchProfile=manifest['profile'],runtimeWheels=len(manifest['files']),gpuBenchmark=False),indent=2)+'\n')
+(ROOT/'artifacts/audio-toolbox-validation.json').write_text(json.dumps(dict(head=subprocess.check_output(['git','rev-parse','HEAD'],cwd=ROOT,text=True).strip(),models=proof,torchProfile=manifest['profile'],runtimeWheels=len(manifest['files']),identities={p:digest(ROOT/p) for p in ['workers/audio_toolbox_worker.py','workers/audio-toolbox-models.json','workers/audio-toolbox-runtime.json','workers/vendor/audio-toolbox/audiosep-core.zip']},gpuBenchmark=False),indent=2)+'\n')

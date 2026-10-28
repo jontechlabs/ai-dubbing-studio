@@ -1,6 +1,6 @@
 # Piloter le studio avec une IA via MCP
 
-Le studio fournit **125 outils MCP** en v0.31.0 : 93 commandes natives et 32 commandes d’édition, d’état et de lecture. Le serveur utilise **stdio** et le même exécutable que l’application. Cette intégration pilote **l’application ouverte** ; aucun environnement Node.js ou Python supplémentaire n’est requis pour la connexion.
+Le studio fournit **132 outils MCP** en v0.32.0 : 100 commandes natives et 32 commandes d’édition, d’état et de lecture. Le serveur utilise **stdio** et le même exécutable que l’application. Cette intégration pilote **l’application ouverte** ; aucun environnement Node.js ou Python supplémentaire n’est requis pour la connexion.
 
 `studio_audio_levels` mesure les niveaux stéréo en dBFS et permet d’effacer les crêtes maximales/voyants, sans modifier le projet. Les valeurs sont aussi dans `studio_get_state.audioLevels`. [Mesure, mix final et limites](AUDIO-LEVELS.md).
 
@@ -94,3 +94,9 @@ Depuis v0.24.0, `studio_suggest_translation` accepte aussi `direction` (facultat
 ## Transcription source et volume (v0.31)
 
 `studio_transcribe_dialogue_source` produit une proposition locale à relire. Consultez les tâches puis `studio_source_transcription_result` ; appliquez explicitement avec `studio_apply_source_transcription`. `studio_latest_source_transcription` retrouve la dernière analyse. `VoiceSettings.outputGain` et `studio_set_voice_output_gain` règlent les nouveaux essais et les essais existants de 0 à 4 (1,5 = +50%). [Guide, captures et format 22](SOURCE-TRANSCRIPTION-OUTPUT-VOLUME.md).
+
+## Atelier de doublage et boîte à outils audio (v0.32)
+
+Consultez `studio_get_state` et utilisez son `context` récent pour chaque commande du projet. `studio_preview_character_sample` écoute la référence de la réplique sur la piste choisie. Les outils d’édition existants modifient les champs partagés du texte original et de prononciation. `studio_generate_dubbing_pipeline` crée un TTS brut puis un essai ChatterboxVC indépendant ; `guideStrength` vaut 0 par défaut, ou 0–1 pour le guide source expérimental. Le champ interne `conversion.generationId` peut être « pipeline » : le pipeline choisit lui-même la sortie de l’étape précédente. Toutes les étapes achevées et les essais précédents restent conservés, même si une étape suivante échoue ou est annulée.
+
+`studio_audio_toolbox_status` expose modèles, espace requis/disponible et périphériques. `studio_install_audio_toolbox_model` installe un outil explicitement choisi. `studio_separate_audio_selection` traite 100–60000 ms de la piste source et retourne un job. AudioSep exige une description du son (`prompt`, de préférence en anglais). `studio_audio_toolbox_result` indique sorties, contexte périmé et application ; `studio_audio_toolbox_path` fournit chaque WAV pour écoute. `studio_apply_audio_toolbox_result` exige la liste explicite des sorties et destinations (`trackId` ou rôle `speech`, `music`, `sfx`), et un choix explicite `muteSource`. Ne présentez pas les stems instrumentaux Demucs comme une séparation fiable musique/bruitages. Ne supposez pas que la personne a écouté ou accepté un résultat. L’application est annulable et refuse une source modifiée. Le média principal n’est jamais réécrit.

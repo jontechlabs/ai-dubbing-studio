@@ -3741,7 +3741,7 @@ pre {
 .current-job-progress,
 .pipeline-controls,
 .audio-toolbox {
-  border: 1px solid var(--border);
+  border: 1px solid var(--line);
   border-radius: 8px;
   padding: 12px;
   margin-block: 12px;
@@ -3783,7 +3783,7 @@ pre {
   gap: 6px;
   margin-block: 12px;
   padding-block: 8px;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid var(--line);
 }
 .pipeline-controls input[type='range'] {
   width: 100%;
@@ -3794,7 +3794,7 @@ pre {
   gap: 8px;
   align-items: flex-start;
 }
-.workbench-original textarea {
+.dub-original-text textarea {
   width: 100%;
   min-height: 64px;
   resize: vertical;

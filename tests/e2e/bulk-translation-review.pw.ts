@@ -31,8 +31,10 @@ test('bulk translation review includes hidden checked lines, skips blanks and is
   expect(await countSaves()).toBe(savedBefore + 1);
   let after = await page.evaluate(() => (window as any).__getMockProject());
   expect(Object.keys(after.translationApprovals).sort()).toEqual(before.dialogues.slice(1, 3).map((l: any) => l.id).sort());
-  for (const field of ['dialogues', 'generations', 'sourceCues', 'targetCues', 'voiceEdits', 'tracks', 'media'])
+  for (const field of ['generations', 'sourceCues', 'targetCues', 'voiceEdits', 'tracks', 'media'])
     expect(after[field]).toEqual(before[field]);
+  expect(after.dialogues.map((l:any)=>({...l,status:undefined}))).toEqual(before.dialogues.map((l:any)=>({...l,status:undefined})));
+  expect(after.dialogues[2].status).toBe('validated');
   await page.getByRole('button', { name: 'Ctrl+Z', exact: true }).click();
   await expect(cards).toHaveCount(2);
   expect((await page.evaluate(() => (window as any).__getMockProject())).translationApprovals).toEqual(before.translationApprovals);

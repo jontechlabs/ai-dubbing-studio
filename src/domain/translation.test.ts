@@ -9,7 +9,7 @@ import {
 import { editDialogue } from './subtitles';
 import { rebaseProject } from './rebase';
 
-test('translation approval persists independently of voice validation and supports withdrawal', () => {
+test('translation approval persists and withdrawing it also withdraws selected voice validation', () => {
   const p = demoProject(),
     line = p.dialogues[0];
   line.status = 'validated';

@@ -11,6 +11,7 @@ import {verifyRelayLifecycle} from './test-mcp-lifecycle.mjs';
 import {verifyOneShot} from './test-mcp-one-shot.mjs';
 import {verifySshTransport} from './test-mcp-ssh-stdio.mjs';
 import {verifySourceAndVolume} from './test-source-and-volume.mjs';
+import {verifyDubbingWorkbench} from './test-dubbing-workbench.mjs';
 const args=Object.fromEntries(process.argv.slice(2).reduce((rows,value,index,all)=>index%2===0?[...rows,[value.slice(2),all[index+1]]]:rows,[]));
 const client=new Client({name:'studio-native-validation',version:'1.0.0'},{capabilities:{}});
 const transport=new StdioClientTransport({command:args.exe,args:['--mcp','--endpoint',args.endpoint],stderr:'pipe'});
@@ -221,7 +222,8 @@ try {
     const reviewed=await call('studio_approve_translations',{context:reviewContext,ids:[...reviewIds,reviewIds[0]],approved:true});
     assert.equal((await call('studio_get_dialogues',{status:'approved'})).total,reviewIds.length);
     const reviewProject=await call('studio_get_project');
-    for(const field of ['dialogues','generations','sourceCues','targetCues','tracks','voiceEdits','media'])assert.deepEqual(reviewProject[field],qualityProject[field]);
+    for(const field of ['generations','sourceCues','targetCues','tracks','voiceEdits','media'])assert.deepEqual(reviewProject[field],qualityProject[field]);
+    assert.deepEqual(reviewProject.dialogues.map(l=>({...l,status:undefined})),qualityProject.dialogues.map(l=>({...l,status:undefined})));
     const badReview=await client.callTool({name:'studio_approve_translations',arguments:{context:reviewed.context,ids:[reviewIds[0],'missing'],approved:false}});
     assert(badReview.isError);assert.deepEqual((await call('studio_get_project')).translationApprovals,reviewProject.translationApprovals);
     const staleReview=await client.callTool({name:'studio_approve_translations',arguments:{context:reviewContext,ids:reviewIds,approved:false}});assert(staleReview.isError);
@@ -270,6 +272,7 @@ try {
     assert.deepEqual(await fs.readFile(path.join(projectRoot,samplePath)),await fs.readFile(path.join(projectRoot,source.reference.path)));
     proofs.voiceLibrary={assembledOriginals:true,actualWavHash:true,explicitReview:true,transcriptRevokesDefault:true,undoAndReopenFormat21:true,takesAndWavsPreserved:true};
     proofs.sourceAndVolume=await verifySourceAndVolume({call,context,args,baseId,projectRoot});
+    proofs.dubbingWorkbench=await verifyDubbingWorkbench({client,call,context});
     await fs.writeFile(args.proof,JSON.stringify(proofs,null,2)+'\n','utf8');
     console.log('MCP_NATIVE_PROOF '+JSON.stringify(proofs));
 } catch(error){if(stderr)console.error(stderr.slice(-2000));throw error;}
