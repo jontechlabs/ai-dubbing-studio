@@ -18,6 +18,7 @@ head=command('git','rev-parse','HEAD');old=run['head_sha'];subprocess.run(['git'
 protected=['src','src-tauri/tauri.conf.json','package.json','pnpm-lock.yaml','public','resources','scripts/generate-mcp.mjs','vite.config.ts','tsconfig.json','eslint.config.js','playwright.config.ts','tests/e2e']
 changed=command('git','diff','--name-only',old,head,'--',*protected);assert not changed,changed
 log=command('gh','run','view',run_id,'--log')
+log=re.sub(r'(?:\x1b|\^\[)\[[0-9;:]*[A-Za-z]','',log)
 assert re.search(r'\b185 passed\b',log),'185 Chrome checks required'
 assert re.search(r'Tests\s+178 passed',log),'178 TypeScript checks required'
 native_unchanged=not command('git','diff','--name-only',old,head,'--','src-tauri','docs/MCP.md','resources')
