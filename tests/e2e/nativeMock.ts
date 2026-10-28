@@ -57,6 +57,10 @@ export async function nativeMock(page: Page, large = false, seededProject?: Proj
     host.__mcpCancel=(id:string)=>{const row=mcpRequests.get(id);if(row){row.resolve({error:'MCP_CANCELLED'});mcpRequests.delete(id);}};
     let lips:any=null;
     host.__llmReady=true;
+    const sourceAsrRows:any[]=JSON.parse(localStorage.getItem('mockSourceAsr')||'[]');
+    const sourceBasis=(lineId:string)=>{const l=project.dialogues.find((l:any)=>l.id===lineId);return {projectId:project.id,lineId,sourceLanguage:project.languages.source,sourcePath:project.media.path,startMs:l.startMs,endMs:l.endMs,slots:l.sourceCueIds.length?l.sourceCueIds.map((id:string)=>{const c=project.sourceCues.find((c:any)=>c.id===id);return {cueId:c.id,startMs:c.startMs,endMs:c.endMs,text:c.text};}):[{cueId:null,startMs:l.startMs,endMs:l.endMs,text:''}]};};
+    host.__completeSourceTranscription=(texts=['日本語の訂正。'],noSpeech=false)=>{if(job.status==='cancelled')return;const row=sourceAsrRows.find((r:any)=>r.id===job.id);row.segments=row.basis.slots.map((s:any,i:number)=>({text:noSpeech?s.text:(texts[i]??texts[0]),noSpeech}));localStorage.setItem('mockSourceAsr',JSON.stringify(sourceAsrRows));job={...job,status:'succeeded',stage:'done',progress:1};emit('job-changed',job);};
+
     const proposals:any[]=JSON.parse(localStorage.getItem('nativeMockProposals')||'[]');
     host.__completeTranslation=(translations=['Une traduction proposée.'])=>{if(job.status==='cancelled')return;const row=proposals.find((p:any)=>p.id===job.id);row.result={basis:row.basis,translations,direction:row.direction??'',model:'Qwen3-4B-Instruct-2507 · GGUF Q4_K_M'};localStorage.setItem('nativeMockProposals',JSON.stringify(proposals));job={...job,status:'succeeded',stage:'done',progress:1};emit('job-changed',job);};
     host.__completeTranslationInstall=()=>{host.__llmReady=true;job={...job,status:'succeeded',stage:'done',progress:1};emit('job-changed',job);};
@@ -130,6 +134,7 @@ export async function nativeMock(page: Page, large = false, seededProject?: Proj
       const {lineId,options}=host.__pendingTts,line=project.dialogues.find((d:any)=>d.id===lineId),id=`take-${project.generations.filter((g:any)=>g.kind==='tts').length+1}`;
       const text=line.ttsText??project.targetCues.filter((c:any)=>line.targetCueIds.includes(c.id)).map((c:any)=>c.text).join('\n');
       const generation={id,kind:'tts',dialogueId:lineId,providerId:options.variantId==='drama3-comfy-fp8'?'fish-drama3':options.variantId?.startsWith('fish')?'fish-s2':options.variantId?.startsWith('qwen')?'qwen3-tts':'cosyvoice3',modelId:options.variantId??'cosy3-official',path:`generations/${id}.wav`,createdAt:new Date().toISOString(),sourcePath:project.media.path,startMs:line.startMs,endMs:line.endMs,text,language:project.languages.target,characterId:line.characterId,durationMs,sampleRate:24000,options,referenceTranscript:'Hello',device:options.device,deviceName:'NVIDIA RTX 5060 Ti (simulation)',peakVramMb:0,inputHash:'mock'};
+      if(options.outputGain!==undefined&&options.outputGain!==1){project.formatVersion=22;(project.voiceEdits??={})[id]={outputGain:options.outputGain,pieces:[{sourceStartMs:0,sourceEndMs:durationMs,durationMs,gain:1}]};}
       project.generations.push(generation);project.formatVersion=Math.max(project.formatVersion,['voxcpm2-bf16','chatterbox-multilingual-v3'].includes(options.variantId)?16:5,options.mood&&options.mood!=='default'?(['angry','happy','sad','calm','surprised','whisper'].includes(options.mood)?7:15):5);line.selectedGenerationIds[project.languages.target]=id;line.status=durationMs>line.endMs-line.startMs?'review':'generated';project.revision++;emit('project-changed',structuredClone(project));job={...job,status:'succeeded',stage:'done',progress:1};emit('job-changed',job);localStorage.setItem('nativeMockProject',JSON.stringify(project));
     };
     host.__seedReference=(transcript='',custom=false)=>{
@@ -276,6 +281,23 @@ export async function nativeMock(page: Page, large = false, seededProject?: Proj
         project.voiceReferences.push({id,label:'Voix française',path:`characters/reference-${id}.wav`,durationMs:args.range?args.range.endMs-args.range.startMs:7000,transcript:'',sourceDialogueId:null});
         if(args.lineId)project.dialogues.find((l:any)=>l.id===args.lineId).voiceSettings={...args.options,referenceMode:'file',referenceId:id};
         project.formatVersion=Math.max(9,project.formatVersion);project.revision++;localStorage.setItem('nativeMockProject',JSON.stringify(project));return structuredClone(project);
+      }
+      if(command==='transcribe_dialogue_source'){
+        const id=crypto.randomUUID(),basis=sourceBasis(args.options.lineId);sourceAsrRows.push({id,basis,segments:[],trackId:args.options.trackId,language:args.options.language,model:'Whisper small multilingual Q5_1',stale:false});localStorage.setItem('mockSourceAsr',JSON.stringify(sourceAsrRows));host.__pendingSourceAsr=structuredClone(args.options);job={id,projectId:project.id,kind:'sourceTranscription',status:'running',stage:'asrTranscribe',progress:null,logs:[],error:null};emit('job-changed',job);return id;
+      }
+      if(command==='latest_source_transcription')return sourceAsrRows.filter((r:any)=>r.basis.lineId===args.lineId).at(-1)?.id??null;
+      if(command==='source_transcription_result'){const row=sourceAsrRows.find((r:any)=>r.id===args.id);return row?.segments.length?{...structuredClone(row),stale:JSON.stringify(row.basis)!==JSON.stringify(sourceBasis(row.basis.lineId))}:null;}
+      if(command==='apply_source_transcription'){
+        const row=sourceAsrRows.find((r:any)=>r.id===args.id);if(JSON.stringify(row.basis)!==JSON.stringify(sourceBasis(row.basis.lineId)))throw Error('STALE_REVISION');
+        undoStack.push(structuredClone(project));redoStack.length=0;
+        row.basis.slots.forEach((slot:any,i:number)=>{if(slot.cueId)project.sourceCues.find((c:any)=>c.id===slot.cueId).text=args.texts[i];else{const id=crypto.randomUUID();project.sourceCues.push({id,startMs:slot.startMs,endMs:slot.endMs,text:args.texts[i]});project.dialogues.find((l:any)=>l.id===row.basis.lineId).sourceCueIds.push(id);}});
+        delete project.translationApprovals?.[row.basis.lineId];project.revision++;localStorage.setItem('nativeMockProject',JSON.stringify(project));emit('project-changed',structuredClone(project));return structuredClone(project);
+      }
+      if(command==='set_voice_output_gain'){
+        if(!Number.isFinite(args.gain)||args.gain<0||args.gain>4)throw Error('INVALID_OUTPUT_GAIN');
+        const g=project.generations.find((g:any)=>g.kind==='tts'&&g.id===args.id);if(!g)throw Error('INVALID_GENERATION');undoStack.push(structuredClone(project));redoStack.length=0;
+        const edit=(project.voiceEdits??={})[g.id]??={pieces:[{sourceStartMs:0,sourceEndMs:g.durationMs,durationMs:g.durationMs,gain:1}]};
+        if(args.gain===1)delete edit.outputGain;else edit.outputGain=args.gain;project.formatVersion=22;project.revision++;localStorage.setItem('nativeMockProject',JSON.stringify(project));emit('project-changed',structuredClone(project));return structuredClone(project);
       }
       if(command==='transcribe_voice_reference'){host.__pendingTranscription=structuredClone(args);job={id:'asr-job',projectId:project.id,kind:'referenceTranscription',status:'running',stage:'asrTranscribe',progress:null,logs:['Local Whisper small Q5_1, CPU. No audio upload.'],error:null};emit('job-changed',job);return job.id;}
       if(command==='install_separation_runtime'){job={id:'runtime',projectId:null,kind:'runtime',status:'running',stage:'dependencies',progress:null,logs:[],error:null};emit('job-changed',job);return job.id;}

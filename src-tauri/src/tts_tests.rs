@@ -849,6 +849,28 @@ json.dump({'device':r['device'],'deviceName':'Protocol test','peakVramMb':0,'com
     assert_eq!(recovered.generations.len(), 3);
     assert_eq!(recovered.generations[2]["device"], "cuda:0");
     assert_eq!(recovered.generations[2]["compatibilityMode"], true);
+    let mut gained = request.clone();
+    gained.options.output_gain = Some(1.75);
+    let gain_key = jobs::create(&core, app.handle(), "tts", p.id.clone(), None);
+    execute_with_launch(
+        &core,
+        app.handle(),
+        &gain_key,
+        &gained,
+        &AtomicBool::new(false),
+        &launch,
+    )
+    .await
+    .unwrap();
+    let gained_project = project::load(&root).unwrap();
+    assert_eq!(gained_project.format_version, 22);
+    assert_eq!(&gained_project.generations[..3], &recovered.generations[..]);
+    let g = &gained_project.generations[3];
+    assert_eq!(g["options"]["outputGain"], 1.75);
+    let edit = &gained_project.voice_edits[g["id"].as_str().unwrap()];
+    assert_eq!(edit.output_gain, Some(1.75));
+    let dry = project::asset(&root, g["path"].as_str().unwrap()).unwrap();
+    assert_eq!(std::fs::read(dry).unwrap(), bytes);
     assert!(core
         .jobs
         .lock()

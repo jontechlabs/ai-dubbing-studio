@@ -10,6 +10,7 @@ import {execFileSync} from 'node:child_process';
 import {verifyRelayLifecycle} from './test-mcp-lifecycle.mjs';
 import {verifyOneShot} from './test-mcp-one-shot.mjs';
 import {verifySshTransport} from './test-mcp-ssh-stdio.mjs';
+import {verifySourceAndVolume} from './test-source-and-volume.mjs';
 const args=Object.fromEntries(process.argv.slice(2).reduce((rows,value,index,all)=>index%2===0?[...rows,[value.slice(2),all[index+1]]]:rows,[]));
 const client=new Client({name:'studio-native-validation',version:'1.0.0'},{capabilities:{}});
 const transport=new StdioClientTransport({command:args.exe,args:['--mcp','--endpoint',args.endpoint],stderr:'pipe'});
@@ -268,6 +269,7 @@ try {
     await call('studio_history',{context:await context(),direction:'undo'});await call('studio_open_project',{path:projectRoot});const bankReopened=await call('studio_get_project');assert.equal(bankReopened.characterProfiles['review-a'].voiceLibrary.defaultSampleId,sampleId);assert.deepEqual(bankReopened.generations,mergedCharacters.generations);
     assert.deepEqual(await fs.readFile(path.join(projectRoot,samplePath)),await fs.readFile(path.join(projectRoot,source.reference.path)));
     proofs.voiceLibrary={assembledOriginals:true,actualWavHash:true,explicitReview:true,transcriptRevokesDefault:true,undoAndReopenFormat21:true,takesAndWavsPreserved:true};
+    proofs.sourceAndVolume=await verifySourceAndVolume({call,context,args,baseId,projectRoot});
     await fs.writeFile(args.proof,JSON.stringify(proofs,null,2)+'\n','utf8');
     console.log('MCP_NATIVE_PROOF '+JSON.stringify(proofs));
 } catch(error){if(stderr)console.error(stderr.slice(-2000));throw error;}

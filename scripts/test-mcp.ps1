@@ -6,6 +6,12 @@ if(-not $PortablePath){$PortablePath=Join-Path $repoRoot 'artifacts/AI-Dubbing-S
 $testRoot=Join-Path $repoRoot ".cache/mcp-native/$([guid]::NewGuid().ToString('N'))/Contrôle 日本語"
 $dataRoot=Join-Path $testRoot 'session'
 New-Item -ItemType Directory -Force $dataRoot | Out-Null
+$asrSource=Join-Path $repoRoot '.cache/reference-transcription/Référence 日本語/ggml-small-q5_1.bin'
+if(Test-Path -LiteralPath $asrSource){
+    $asrDirectory=Join-Path $dataRoot 'whisper-reference'
+    New-Item -ItemType Directory -Force $asrDirectory | Out-Null
+    Copy-Item -LiteralPath $asrSource -Destination (Join-Path $asrDirectory 'ggml-small-q5_1.bin')
+}
 Expand-Archive -LiteralPath $PortablePath -DestinationPath $testRoot
 $executable=Join-Path $testRoot 'AI-Dubbing-Studio-Windows/AI Dubbing Studio.exe'
 [IO.File]::WriteAllText((Join-Path $dataRoot 'mcp-enabled'),'1')
