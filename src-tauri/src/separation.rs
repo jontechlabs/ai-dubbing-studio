@@ -288,12 +288,15 @@ pub(crate) async fn process<R: tauri::Runtime>(
             if ["referenceTranscription", "sourceTranscription"].contains(&job.kind.as_str()) {
                 failure = "ASR_FAILED";
             }
-            if ["tts", "ttsBatch", "ttsBatch"].contains(&job.kind.as_str()) {
+            if ["tts", "ttsBatch", "ttsPipeline"].contains(&job.kind.as_str()) {
                 failure = match status.code().map(|c| c as u32) {
                     Some(0xC0000005 | 0xC0000409 | 0xC000001D) => "TTS_NATIVE_CRASH",
                     Some(0xC0000017 | 0xC000009A) => "TTS_SYSTEM_MEMORY",
                     _ => "TTS_ENGINE_FAILED",
                 };
+            }
+            if ["audioToolbox", "toolboxInstall"].contains(&job.kind.as_str()) {
+                failure = "AUDIO_TOOLBOX_FAILED";
             }
             job.logs.push(format!(
                 "Worker terminated during {}: {}; exit code {} (0x{:08X}).",

@@ -456,9 +456,9 @@ pub async fn apply<R: tauri::Runtime>(
         {
             return Err("AUDIO_TOOLBOX_INVALID_AUDIO".into());
         }
-        let target = r.root.join(&rel);
-        assets.paths.push(target.clone());
-        std::fs::copy(source, target).map_err(io_error)?;
+        let asset_path = r.root.join(&rel);
+        assets.paths.push(asset_path.clone());
+        std::fs::copy(source, asset_path).map_err(io_error)?;
         next.generations.push(json!({"kind":"audioPatch","id":patch_id,"operationId":key,"operation":"separation","sourcePath":r.source_path,"sourceTrackId":r.options.source_track_id,"trackId":target,"startMs":r.options.start_ms,"endMs":r.options.end_ms,"mode":"replace","path":rel,"gain":1,"toolboxModel":m.id,"toolboxOutput":output,"prompt":r.options.prompt}));
     }
     if mute_source && !targets.contains(&r.options.source_track_id) {

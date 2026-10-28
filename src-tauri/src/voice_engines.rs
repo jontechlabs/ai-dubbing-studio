@@ -311,16 +311,29 @@ pub(crate) async fn install_python_profile<R: tauri::Runtime>(
             crate::domain::valid_relative(bundled)?;
             separation::resources(app).join(bundled)
         } else {
-            let shared = tts::root(core).join("wheels").join(name);
+            let mut shared = tts::root(core).join("wheels").join(name);
             let spec = crate::downloads::Spec {
                 urls: &[],
                 sha256: file["sha256"].as_str().ok_or("TTS_RUNTIME_FAILED")?,
                 size: file["size"].as_u64().ok_or("TTS_RUNTIME_FAILED")?,
             };
+            if !shared.exists() {
+                for profile in [
+                    "multilingual-runtime",
+                    "fish-runtime",
+                    "drama-runtime",
+                    "audio-toolbox-runtime",
+                ] {
+                    let candidate = root(core).join(profile).join("wheels").join(name);
+                    if crate::downloads::cached(&candidate, &spec, flag).await? {
+                        shared = candidate;
+                        break;
+                    }
+                }
+            }
             if crate::downloads::cached(&shared, &spec, flag).await? {
                 jobs::update(core, app, key, |j| {
-                    j.logs
-                        .push(format!("Reusing verified CosyVoice download: {name}"))
+                    j.logs.push(format!("Reusing verified download: {name}"))
                 });
                 shared
             } else {

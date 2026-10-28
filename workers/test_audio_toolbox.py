@@ -5,6 +5,11 @@ import numpy as np
 import audio_toolbox_worker as worker
 
 class AudioToolboxTests(unittest.TestCase):
+    def test_official_kim_and_uvr_configs_limit_the_actual_inference_window(self):
+        for config in [dict(model=dict(stft_hop_length=441,sample_rate=44100,dim=384),inference=dict(chunk_size=352800)),dict(model=dict(stft_hop_length=441),audio=dict(chunk_size=352800,hop_length=441,sample_rate=44100),inference=dict(dim_t=801))]:
+            original=json.loads(json.dumps(config));out=worker.roformer_config(config,2)
+            self.assertEqual(out['inference']['dim_t'],201);self.assertEqual(out['audio']['chunk_size'],88200)
+            self.assertEqual(out['model'],original['model']);self.assertEqual(config,original)
     def request(self):
         return dict(modelId='audiosep',windowSeconds=4,device='cpu',prompt='A person speaking',modelDir='models',runtimeDir='runtime',inputPath='source.wav',outputDir='outputs',resultPath='result.json')
 

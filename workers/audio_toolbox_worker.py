@@ -89,6 +89,21 @@ def clean_path(path):
     return value
 
 
+def roformer_config(value, seconds):
+    """Adapt the two official YAML layouts without altering model parameters."""
+    import copy
+    value=copy.deepcopy(value)
+    model=value['model'];audio=value.setdefault('audio',{});inference=value.setdefault('inference',{})
+    hop=model.get('stft_hop_length',audio.get('hop_length',441))
+    rate=model.get('sample_rate',audio.get('sample_rate',44100))
+    original=inference.get('dim_t',inference.get('chunk_size',audio.get('chunk_size',rate*8))//hop+1)
+    inference['dim_t']=min(original,seconds*rate//hop+1)
+    audio.setdefault('hop_length',hop);audio.setdefault('sample_rate',rate)
+    audio['chunk_size']=hop*(inference['dim_t']-1)
+    value['is_roformer']=True
+    return value
+
+
 def audiosep(r, source, device):
     import numpy as np
     import torch
@@ -138,9 +153,7 @@ def separator(r, spec, source, device):
             if spec['family'] == 'demucs':
                 return {'primary_stem': 'Vocals'}
             value = yaml.load((model_dir / path).read_text(), Loader=yaml.FullLoader)
-            value['is_roformer'] = True
-            value['audio']['chunk_size'] = min(value['audio']['chunk_size'], r['windowSeconds'] * 44100)
-            return value
+            return roformer_config(value,r['windowSeconds'])
         def download_file_if_not_exists(self, *_args, **_kwargs):
             raise ValueError('MODEL_CHECKSUM_FAILED')
     engine = LocalSeparator(model_file_dir=str(model_dir), output_dir=str(raw), output_format='WAV', sample_rate=44100, use_soundfile=True, normalization_threshold=1.0, amplification_threshold=0.0, use_autocast=device.startswith('cuda:'), log_level=logging.WARNING, demucs_params={'segment_size':str(min(7, r['windowSeconds'])), 'shifts':1, 'overlap':.25, 'segments_enabled':True}, mdxc_params={'segment_size':256,'override_model_segment_size':False,'batch_size':1,'overlap':2})
