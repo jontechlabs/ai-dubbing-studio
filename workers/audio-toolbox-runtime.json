@@ -480,6 +480,12 @@
       "url": "https://files.pythonhosted.org/packages/d1/89/5d4c86da1130d9059681e5b6cd7645df5c10279a6a079c5c37dcb2cc6f3f/narwhals-2.27.1-py3-none-any.whl",
       "size": 483211,
       "sha256": "d057df13f5852b8e157596e82eb5e955fad267425df5e420e0ee9863da483b31"
+    },
+    {
+      "name": "h5py-3.12.1-cp312-cp312-win_amd64.whl",
+      "url": "https://files.pythonhosted.org/packages/86/f7/bb465dcb92ca3521a15cbe1031f6d18234dbf1fb52a6796a00bfaa846ebf/h5py-3.12.1-cp312-cp312-win_amd64.whl",
+      "size": 2993055,
+      "sha256": "e4d51919110a030913201422fb07987db4338eba5ec8c5a15d6fab8e03d443fc"
     }
   ]
 }
