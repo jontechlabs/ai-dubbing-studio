@@ -1,11 +1,11 @@
 {
-  "version": "0.31.0",
-  "notes": "Transcription locale de l’audio source depuis Aide à la traduction : propositions à vérifier puis appliquer au SRT original. Volume de sortie avant génération unitaire ou par lot et sur les essais existants, de 0 à 400%, dont +50% (150%) et +75% (175%). Gain réversible pour l’écoute, le mix et les exports ; limiteur des crêtes. Créneaux, traductions, fichiers originaux et tous les essais conservés. 125 outils MCP, format de projet 22.",
-  "pub_date": "2026-10-28T16:32:23Z",
+  "version": "0.32.0",
+  "notes": "Atelier de doublage : écoute de la référence, textes original et prononcé modifiables, génération et suivi sans quitter le panneau, validations liées. Deux étapes locales TTS puis ChatterboxVC, référence de timbre indépendante et guide d’intonation facultatif expérimental. Boîte à outils sur une sélection audio : BS-RoFormer Viperx 1297, Kim Mel-Band RoFormer, Demucs htdemucs/htdemucs_ft et AudioSep par description. Préécoute, affectation des sorties au même intervalle, couches annulables, contrôle d’espace avant installation. Rendu audio après fin de base corrigé. Fichiers source et essais existants conservés. 132 outils MCP, format de projet 23.",
+  "pub_date": "2026-10-28T19:53:04Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSdFFyMUJGTFp3NkFYamRIR1p1dVowQitHU2JYMTJhVEJkVzAxNHZwdi9CQnh1MlZESkpxSC9lYU0vMW5ncW9odllqVUJQeGhkQkcrWXZWdUFmcURia0p1dXhXYVRtdEF3PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkzMjA0MTUzCWZpbGU6QUkgRHViYmluZyBTdHVkaW9fMC4zMS4wX3g2NC1zZXR1cC5leGUJdmVyc2lvbjowLjMxLjAKdUJ2Rk1FU1BuR0l4NGMrOVJVWnk1RVhoM0QwLzYzdm9BTjJUMnVMS0twWXVId0U2cTJ6QUwyYVp3ajBKVU9YQ3MxR1VDVGVaTmJKM2x0aG5kSW1zQXc9PQo=",
-      "url": "https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.31.0/AI-Dubbing-Studio-0.31.0-Setup.exe"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSdFFyMUJGTFp3NkNOMWVScEJTblZSVDJBL2ZIUDB1NUF5WXNpYzFiZjkvVlhpUXNzUGxkVDNHUFVlWDhYcHI0OTh3TDZrL0dMWC8rSnVwK0c5MXk3bEFHZjQrMFRmNUEwPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkzMjE1NjU2CWZpbGU6QUkgRHViYmluZyBTdHVkaW9fMC4zMi4wX3g2NC1zZXR1cC5leGUJdmVyc2lvbjowLjMyLjAKTWRXV1lRWGRORnd0VEx4cFpRTVNBaHFzUFkyQ1lselhiM2FmNXpxUlc0QUxNWFVOSEtLbmV5NTd6LzZ3dDJFd2g5c1dpQVk2VS9ITHp3WG55Y3NtQmc9PQo=",
+      "url": "https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.32.0/AI-Dubbing-Studio-0.32.0-Setup.exe"
     }
   }
 }

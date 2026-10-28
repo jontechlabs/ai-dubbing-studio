@@ -1,6 +1,16 @@
 # Validation
 
-## v0.32.0 — validation scope
+## v0.32.0 — 28 October 2026
+
+[Final Windows package run 40751153979](https://github.com/jontechlabs/ai-dubbing-studio/actions/runs/40751153979) passed at `280d73fed5332afe290d4561d3d9598540313a7d`. **642 suite checks:** 178 TypeScript, 176 native Rust and 103 Python tests rerun freshly, plus 185 Chrome scenarios from the successful frontend step of [run 40745425267](https://github.com/jontechlabs/ai-dubbing-studio/actions/runs/40745425267). The identity gate compares every UI, domain, browser-test and configuration input before reusing that step. The earlier run failed overall on a new Clippy test-code lint; that lint is fixed, and the final run passes fresh native tests, Clippy and formatting. Two opt-in Rust diagnostics remain ignored. MCP schemas, build, lint and frontend formatting pass in the final run.
+
+The signed installer and portable application are built by that final run and checked through the pinned official MCP SDK with **132 tools**. The new proof checks the seven workbench/toolbox tools, shared context guards, exact model status, preflight failures, a real reference WAV and unchanged project/takes. Existing source-ASR, output-gain, undo/reopen and process-lifecycle diagnostics also pass, with fresh Japanese CPU recognition in automatic and explicit Japanese modes.
+
+[Full-weight separation run 40749955489](https://github.com/jontechlabs/ai-dubbing-studio/actions/runs/40749955489) passes all five Windows CPU engines. All four worker/model/runtime/vendor SHA-256 identities match the final package run and every corresponding portable entry. Each diagnostic returns 60,000 frames of 48 kHz stereo audio without altering the source. Model weights are verified before use. These are functional smoke tests, not subjective quality or RTX memory/speed benchmarks.
+
+Release staging independently authenticates the complete GitHub artifact digests, installer PE version, standard updater signature and rejection of a modified installer, portable CRC, all packaged workers and the exact full-weight model identities. Final source/tag and updater metadata retain every compiled application input. The portable archive remains byte-identical to the tested runner archive; this validation document and final release metadata are finalized in the source archive after CI. No user project or remote studio is modified during release tests.
+
+### Validation scope
 
 The workbench changes are checked with TypeScript/domain tests, real Chrome audio and UI scenarios, native FFmpeg tests, Python worker regressions, shared MCP schemas and the packaged Windows desktop driven by the official MCP SDK. New scenarios cover editable source/voice text, selected-reference audition, staying in the dubbing panel, retained pipeline stages, explicit linked review, selected-region audition/mapping, insufficient-space preflight and stale-result refusal.
 
@@ -8,7 +18,7 @@ The new native test renders an audible patch at 7 seconds over a one-second sile
 
 A separate Windows workflow installs the exact embedded Python/CUDA dependency profile and performs CPU inference with full, SHA-256-verified weights for BS-RoFormer Viperx 1297, Kim Mel-Band RoFormer, htdemucs, htdemucs_ft and AudioSep. Its report records worker/runtime/model/source-archive hashes, output roles, 48 kHz stereo PCM frame counts and unchanged source audio. This establishes functional integration; it does not measure subjective separation quality or RTX 5060 Ti performance.
 
-Existing TTS/ChatterboxVC neural workers and old model/runtime manifests are checked byte-for-byte against v0.31. The existing TTS worker request and GGUF inference remain unchanged. Full-weight TTS/VC evidence below is reused for these unchanged cores; the new serial orchestration is covered by checkpoints, cancellation, provenance, UI and packaged MCP guards. No claim is made that the experimental contour guide faithfully reproduces acting or that timbre conversion always improves an accent. Project format 23 and 132 MCP tools are used. Final release evidence is recorded after successful packaging.
+Existing TTS/ChatterboxVC neural workers and old model/runtime manifests are checked byte-for-byte against v0.31. The existing TTS worker request and GGUF inference remain unchanged. Full-weight TTS/VC evidence below is reused for these unchanged cores; the new serial orchestration is covered by checkpoints, cancellation, provenance, UI and packaged MCP guards. No claim is made that the experimental contour guide faithfully reproduces acting or that timbre conversion always improves an accent. Project format 23 and 132 MCP tools are used. Release evidence and its limits are recorded above.
 
 ## v0.31.0 — 28 October 2026
 
