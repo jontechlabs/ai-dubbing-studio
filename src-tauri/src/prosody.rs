@@ -211,7 +211,7 @@ fn check(p: &Project, request: &Request) -> Result<(), String> {
     inputs(p, &request.options)?;
     Ok(())
 }
-async fn execute<R: tauri::Runtime>(
+pub(crate) async fn execute<R: tauri::Runtime>(
     core: &Arc<Core>,
     app: &tauri::AppHandle<R>,
     key: &str,
@@ -320,6 +320,10 @@ async fn execute<R: tauri::Runtime>(
     }
     check(&s.project, request)?;
     let mut derived = source.clone();
+    derived
+        .as_object_mut()
+        .ok_or("INVALID_GENERATION")?
+        .remove("dubbingPipeline");
     derived["id"] = json!(generation_id);
     derived["path"] = json!(relative);
     derived["createdAt"] = json!(now());

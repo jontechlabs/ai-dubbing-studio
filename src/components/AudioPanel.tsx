@@ -9,6 +9,7 @@ import { AudioRegionsEditor } from './AudioRegionsEditor';
 import { AudioEffectsPanel } from './AudioEffectsPanel';
 import { AudioMeter } from './AudioMeter';
 import { LocalSeparationPanel } from './LocalSeparationPanel';
+import { AudioToolboxPanel } from './AudioToolboxPanel';
 import { useAudioLevels } from '../hooks/useAudioLevels';
 import { audioTracks, editTrack, trackLabel, dubbingMix } from '../domain/audio';
 import { setAudioSource } from '../domain/audioPatch';
@@ -24,6 +25,8 @@ export function AudioPanel({
   selection,
   selected,
   videoRef,
+  toolboxModel,
+  snapshot,
 }: {
   project: Project | null;
   jobs: Job[];
@@ -34,6 +37,8 @@ export function AudioPanel({
   selection: AudioSelection | null;
   selected?: Dialogue;
   videoRef: RefObject<HTMLVideoElement | null>;
+  toolboxModel?: string | null;
+  snapshot: () => Promise<Project>;
 }) {
   const { t } = useTranslation();
   const levels = useAudioLevels();
@@ -95,6 +100,22 @@ export function AudioPanel({
     device === 'auto' || runtime?.devices.some((entry) => entry.id === device) ? device : 'auto';
   return (
     <div className="panel-body audio-panel">
+      {project?.media && (
+        <AudioToolboxPanel
+          project={project}
+          selection={selection}
+          initialModel={toolboxModel}
+          jobs={jobs}
+          busy={jobs.some((j) => ['running', 'queued', 'paused'].includes(j.status))}
+          run={run}
+          snapshot={snapshot}
+          onError={onError}
+          onAudition={() => {
+            videoRef.current?.pause();
+            document.dispatchEvent(new Event('studio-voice-preview'));
+          }}
+        />
+      )}
       <h3>{t('separationTitle')}</h3>
       <p className="panel-description">{t('separationHint')}</p>
       {runtime?.deviceProbeWarning && (

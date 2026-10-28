@@ -1,9 +1,17 @@
 import type { Project } from './types';
 export interface VoiceConversionOptions {
+  referenceMode?: 'current' | 'reference';
+  referenceTrackId?: string;
   generationId: string;
   referenceId: string;
   characterId: string | null;
   device: string;
+}
+export interface DubbingPipelineOptions {
+  lineId: string;
+  tts: import('./types').VoiceSettings;
+  conversion: VoiceConversionOptions;
+  guideStrength: number;
 }
 export interface TakeOrigin {
   type: 'microphone' | 'conversion';

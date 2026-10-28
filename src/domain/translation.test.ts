@@ -19,7 +19,7 @@ test('translation approval persists independently of voice validation and suppor
   expect(
     translationState(validateProject(JSON.parse(JSON.stringify(approved))), approved.dialogues[0]),
   ).toBe('approved');
-  expect(approveTranslation(approved, line.id, false).dialogues[0].status).toBe('validated');
+  expect(approveTranslation(approved, line.id, false).dialogues[0].status).toBe('review');
   expect(translationState(approveTranslation(approved, line.id, false), line)).toBe('translated');
 });
 test('text and language changes revoke approval, while timing and pronunciation edits preserve it', () => {
@@ -97,7 +97,7 @@ test('bulk approval skips empty translations and preserves unselected approvals,
     'translated',
     'approved',
   ]);
-  expect(withdrawn.dialogues[0].status).toBe('validated');
+  expect(withdrawn.dialogues[0].status).toBe('review');
 });
 
 test('bulk approval snapshots ordered multiline cues and is revoked by changed text or language', () => {

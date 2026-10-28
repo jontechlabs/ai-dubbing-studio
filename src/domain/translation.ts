@@ -1,5 +1,6 @@
 import type { Dialogue, Project } from './types';
 import { dialogueText } from './subtitles';
+import { selectedGeneration, staleGeneration } from './tts';
 
 export interface TranslationApproval {
   sourceLanguage: string;
@@ -55,7 +56,10 @@ export function cleanTranslationApprovals(project: Project): Project {
         line.sourceCueIds.map((id) => source.get(id) ?? '').join('\n'),
         line.targetCueIds.map((id) => target.get(id) ?? '').join('\n'),
       );
-      return !!current.targetText.replace(/<[^>]*>/g, '').trim() && matches(approval, current);
+      const valid =
+        !!current.targetText.replace(/<[^>]*>/g, '').trim() && matches(approval, current);
+      if (!valid && line.status === 'validated') line.status = 'review';
+      return valid;
     }),
   );
   return project;
@@ -69,6 +73,9 @@ export function approveTranslation(project: Project, id: string, approved: boole
     next.formatVersion = Math.max(10, next.formatVersion);
     next.translationApprovals[id] = snapshot(next, line);
   } else delete next.translationApprovals[id];
+  const take = selectedGeneration(next, line);
+  if (approved && take) line.status = staleGeneration(next, line, take) ? 'review' : 'validated';
+  else if (!approved && line.status === 'validated') line.status = 'review';
   return next;
 }
 
@@ -99,12 +106,29 @@ export function approveTranslations(project: Project, ids: string[], approved: b
     )
       changes.set(id, current);
   }
-  if (!changes.size) return project;
+  const voiceChanges = [...selected].some((id) => {
+    const l = lines.get(id)!;
+    const g = selectedGeneration(project, l);
+    return approved
+      ? !!g &&
+          hasTranslation(project, l) &&
+          !staleGeneration(project, l, g) &&
+          l.status !== 'validated'
+      : l.status === 'validated';
+  });
+  if (!changes.size && !voiceChanges) return project;
   const next = structuredClone(project);
   next.translationApprovals ??= {};
   for (const [id, approval] of changes) {
     if (approval) next.translationApprovals[id] = approval;
     else delete next.translationApprovals[id];
+  }
+  for (const id of selected) {
+    const l = next.dialogues.find((l) => l.id === id)!;
+    const g = selectedGeneration(next, l);
+    if (approved && g && hasTranslation(next, l))
+      l.status = staleGeneration(next, l, g) ? 'review' : 'validated';
+    else if (!approved && l.status === 'validated') l.status = 'review';
   }
   if (approved) next.formatVersion = Math.max(10, next.formatVersion);
   return next;

@@ -1,0 +1,28 @@
+{
+  "repository": "Audio-AGI/AudioSep",
+  "commit": "944583f18b84589dc965de3ad77525c945334252",
+  "sourceArchiveSha256": "f4c35d910c9f35069f2683eb781ff6f7742589171b88335b88581807a0aff4ba",
+  "patches": {
+    "models/CLAP/open_clip/factory.py": {
+      "upstream": "82231be390dd818f066dc1b6e9c0653fe36e5bbd4445e2db0d2c24e5800beef5",
+      "patched": "7cde1753d8208ae40dac09670c302e94e2bbc67af9979e220c17c3f465981a7c"
+    },
+    "models/CLAP/open_clip/model.py": {
+      "upstream": "a875be52eefee5909e6c338a9e321fd4003f97c80af56871522a6e65a9664b68",
+      "patched": "e006f1b49d9f8e154352dfa08a181fccd264c7861c79f5bcf3de13ac6d453770"
+    },
+    "models/audiosep.py": {
+      "upstream": "0ea772acb511e3b2ad1bd1166fb8fcb8e40819030133c84caefd264989396ce8",
+      "patched": "2bbe0889a817e59ff5b2f8727c9544ca50ff04cf0b6794673fc0c350ec6ac16b"
+    },
+    "models/clap_encoder.py": {
+      "upstream": "d57745e0d28a6283bea19cef224807c778be5693d711ad9298f44195fd653ae6",
+      "patched": "8e442fd310f4c9ef2297d0d8cdca0d97266f12fc0df1e4c91de3ca2db2ae319a"
+    }
+  },
+  "notes": [
+    "Offline local Roberta tokenizer/config; CLAP checkpoint supplies all text-encoder weights.",
+    "Remove import-time implicit model construction.",
+    "Explicit trusted-checkpoint/mmap loading for PyTorch 2.8."
+  ]
+}

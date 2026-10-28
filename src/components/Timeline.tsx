@@ -60,6 +60,7 @@ export const Timeline = memo(function Timeline({
   onAudioSelection,
   audioSelection,
   onAudioAdvanced,
+  onAudioToolbox,
   onContextMenu,
   onTransfer,
   onCharacters,
@@ -77,6 +78,7 @@ export const Timeline = memo(function Timeline({
   onAudioSelection: (selection: AudioSelection | null) => void;
   audioSelection: AudioSelection | null;
   onAudioAdvanced: () => void;
+  onAudioToolbox: (model: string) => void;
   onContextMenu: OpenContextMenu;
 }) {
   const { t } = useTranslation();
@@ -635,6 +637,21 @@ export const Timeline = memo(function Timeline({
                             run: onCharacters,
                           },
                           { label: t('timelineSelectionClear'), run: () => onAudioSelection(null) },
+                          ...[
+                            'bs-roformer-viperx-1297',
+                            'mel-band-roformer-kim',
+                            'htdemucs',
+                            'htdemucs-ft',
+                            'audiosep',
+                          ].map((model) => ({
+                            label: t(`toolbox.context.${model}`),
+                            disabled:
+                              busy ||
+                              track.kind === 'dubbing' ||
+                              selection.endMs - selection.startMs < 100 ||
+                              selection.endMs - selection.startMs > 60000,
+                            run: () => onAudioToolbox(model),
+                          })),
                         ]
                       : []),
                     {

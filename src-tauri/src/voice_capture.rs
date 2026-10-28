@@ -22,14 +22,18 @@ mod tests;
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct Options {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub reference_mode: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub reference_track_id: Option<String>,
     pub generation_id: String,
     pub reference_id: String,
     pub character_id: Option<String>,
     pub device: String,
 }
 impl Options {
-    fn validate(&self) -> Result<(), String> {
-        if [&self.generation_id, &self.reference_id]
+    pub(crate) fn validate(&self) -> Result<(), String> {
+        if [&self.generation_id]
             .iter()
             .any(|v| v.is_empty() || v.len() > 128)
             || self
@@ -43,8 +47,34 @@ impl Options {
         {
             return Err("INVALID_VOICE_CONVERSION".into());
         }
+        if self
+            .reference_mode
+            .as_deref()
+            .is_some_and(|s| !["current", "reference"].contains(&s))
+            || (self.reference_mode.as_deref() != Some("current")
+                && (self.reference_id.is_empty() || self.reference_id.len() > 128))
+        {
+            return Err("INVALID_VOICE_CONVERSION".into());
+        }
         Ok(())
     }
+}
+pub(crate) fn validate_reference(p: &Project, o: &Options, line_id: &str) -> Result<(), String> {
+    o.validate()?;
+    if o.reference_mode.as_deref() == Some("current") {
+        let line = p
+            .dialogues
+            .iter()
+            .find(|l| l.id == line_id)
+            .ok_or("NO_DIALOGUES")?;
+        if p.media.is_none() || line.end_ms - line.start_ms < 1000 {
+            return Err("INVALID_REFERENCE_AUDIO".into());
+        }
+        crate::audio_patch::source_track(p, o.reference_track_id.as_deref())?;
+    } else {
+        reference(p, o)?;
+    }
+    Ok(())
 }
 #[derive(Clone, Serialize, Deserialize)]
 pub struct Request {
@@ -75,6 +105,18 @@ fn reference<'a>(p: &'a Project, o: &Options) -> Result<&'a crate::domain::Voice
     let r = refs
         .iter()
         .find(|r| r.id == o.reference_id)
+        .or_else(|| {
+            o.character_id
+                .as_deref()
+                .and_then(|id| crate::voice_library::library(p, id))
+                .and_then(|library| {
+                    library
+                        .samples
+                        .iter()
+                        .find(|s| s.status == "approved" && s.reference.id == o.reference_id)
+                })
+                .map(|s| &s.reference)
+        })
         .ok_or("TTS_REFERENCE_REQUIRED")?;
     if !(1000..=20000).contains(&r.duration_ms) {
         return Err("INVALID_REFERENCE_AUDIO".into());
@@ -104,7 +146,19 @@ fn inputs<'a>(p: &'a Project, o: &Options) -> Result<&'a Value, String> {
     {
         return Err("NO_DIALOGUES".into());
     }
-    reference(p, o)?;
+    if o.reference_mode.as_deref() == Some("current") {
+        let l = p
+            .dialogues
+            .iter()
+            .find(|l| Some(l.id.as_str()) == g["dialogueId"].as_str())
+            .ok_or("NO_DIALOGUES")?;
+        if p.media.is_none() || l.end_ms - l.start_ms < 1000 {
+            return Err("INVALID_REFERENCE_AUDIO".into());
+        }
+        crate::audio_patch::source_track(p, o.reference_track_id.as_deref())?;
+    } else {
+        reference(p, o)?;
+    }
     Ok(g)
 }
 pub fn validate(p: &Project) -> Result<(), String> {
@@ -293,7 +347,7 @@ pub fn enqueue<R: tauri::Runtime>(
     });
     Ok(result)
 }
-async fn execute<R: tauri::Runtime>(
+pub(crate) async fn execute<R: tauri::Runtime>(
     core: &Arc<Core>,
     app: &tauri::AppHandle<R>,
     key: &str,
@@ -320,8 +374,38 @@ async fn execute<R: tauri::Runtime>(
         flag,
     )
     .await?;
-    let reference = project::asset(&request.root, &reference(&p, &request.options)?.path)?;
     let temporary = tempfile::tempdir().map_err(io_error)?;
+    let reference = if request.options.reference_mode.as_deref() == Some("current") {
+        let l = p
+            .dialogues
+            .iter()
+            .find(|l| Some(l.id.as_str()) == source["dialogueId"].as_str())
+            .ok_or("NO_DIALOGUES")?;
+        let track =
+            crate::audio_patch::source_track(&p, request.options.reference_track_id.as_deref())?;
+        let target = temporary.path().join("reference.wav");
+        crate::audio_patch::snippet(
+            core,
+            app,
+            key,
+            &p,
+            &request.root,
+            crate::audio_patch::Snippet {
+                track_id: &track.id,
+                start_ms: l.start_ms,
+                end_ms: l.end_ms.min(l.start_ms + 20000),
+                channels: 1,
+                rate: 24000,
+                fader: false,
+            },
+            &target,
+            flag,
+        )
+        .await?;
+        target
+    } else {
+        project::asset(&request.root, &reference(&p, &request.options)?.path)?
+    };
     let output = temporary.path().join("converted.wav");
     let result = temporary.path().join("result.json");
     let input = temporary.path().join("request.json");
@@ -353,13 +437,17 @@ async fn execute<R: tauri::Runtime>(
     generation
         .as_object_mut()
         .ok_or("INVALID_GENERATION")?
+        .remove("dubbingPipeline");
+    generation
+        .as_object_mut()
+        .ok_or("INVALID_GENERATION")?
         .remove("prosodyTransfer");
     generation["providerId"] = json!("chatterbox-vc");
     generation["modelId"] = json!("chatterbox-vc");
     for field in ["device", "deviceName", "peakVramMb"] {
         generation[field] = metadata[field].clone();
     }
-    generation["takeOrigin"] = json!({"type":"conversion","sourceGenerationId":request.options.generation_id,"referenceId":request.options.reference_id,"characterId":request.options.character_id});
+    generation["takeOrigin"] = json!({"type":"conversion","sourceGenerationId":request.options.generation_id,"referenceId":if request.options.reference_mode.as_deref()==Some("current"){format!("dialogue:{}",source["dialogueId"].as_str().unwrap_or_default())}else{request.options.reference_id.clone()},"characterId":request.options.character_id,"referenceMode":request.options.reference_mode,"referenceTrackId":request.options.reference_track_id});
     publish(
         core,
         app,

@@ -25,6 +25,13 @@
           "options_VoiceConversionOptions_0": {
             "type": "object",
             "properties": {
+              "referenceMode": {
+                "anyOf": [
+                  { "type": "string", "const": "reference" },
+                  { "type": "string", "const": "current" }
+                ]
+              },
+              "referenceTrackId": { "anyOf": [{ "type": "string" }] },
               "generationId": { "type": "string" },
               "referenceId": { "type": "string" },
               "characterId": { "anyOf": [{ "type": "null" }, { "type": "string" }] },
@@ -159,6 +166,335 @@
         "properties": { "lineId": { "type": "string" } },
         "required": ["lineId"],
         "additionalProperties": false
+      },
+      "annotations": { "readOnlyHint": true, "destructiveHint": false, "openWorldHint": false }
+    },
+    {
+      "name": "studio_generate_dubbing_pipeline",
+      "command": "generate_dubbing_pipeline",
+      "description": "generate dubbing pipeline. Uses the current desktop session. Local file paths must be absolute; long operations return job IDs. Existing native validation applies.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "options": { "$ref": "#/$defs/options_DubbingPipelineOptions_0" },
+          "context": {
+            "type": "object",
+            "properties": {
+              "projectId": { "type": "string" },
+              "expectedRevision": { "type": "integer", "minimum": 0 }
+            },
+            "required": ["projectId", "expectedRevision"],
+            "additionalProperties": false
+          }
+        },
+        "required": ["options", "context"],
+        "additionalProperties": false,
+        "$defs": {
+          "options_DubbingPipelineOptions_0": {
+            "type": "object",
+            "properties": {
+              "lineId": { "type": "string" },
+              "tts": { "$ref": "#/$defs/options_VoiceSettings_1" },
+              "conversion": { "$ref": "#/$defs/options_VoiceConversionOptions_4" },
+              "guideStrength": { "type": "number" }
+            },
+            "required": ["lineId", "tts", "conversion", "guideStrength"],
+            "additionalProperties": false
+          },
+          "options_VoiceSettings_1": {
+            "type": "object",
+            "properties": {
+              "outputGain": { "anyOf": [{ "type": "number" }] },
+              "quality": { "anyOf": [{ "$ref": "#/$defs/options_VoiceQuality_2" }] },
+              "mood": {
+                "anyOf": [
+                  { "type": "string", "const": "happy" },
+                  { "type": "string", "const": "excited" },
+                  { "type": "string", "const": "angry" },
+                  { "type": "string", "const": "sad" },
+                  { "type": "string", "const": "calm" },
+                  { "type": "string", "const": "surprised" },
+                  { "type": "string", "const": "whisper" },
+                  { "type": "string", "const": "shouting" },
+                  { "type": "string", "const": "default" },
+                  { "type": "string", "const": "enthusiastic" },
+                  { "type": "string", "const": "amused" },
+                  { "type": "string", "const": "laughing" },
+                  { "type": "string", "const": "proud" },
+                  { "type": "string", "const": "tender" },
+                  { "type": "string", "const": "relieved" },
+                  { "type": "string", "const": "stressed" },
+                  { "type": "string", "const": "anxious" },
+                  { "type": "string", "const": "panicked" },
+                  { "type": "string", "const": "afraid" },
+                  { "type": "string", "const": "irritated" },
+                  { "type": "string", "const": "furious" },
+                  { "type": "string", "const": "threatening" },
+                  { "type": "string", "const": "determined" },
+                  { "type": "string", "const": "impatient" },
+                  { "type": "string", "const": "crying" },
+                  { "type": "string", "const": "desperate" },
+                  { "type": "string", "const": "disappointed" },
+                  { "type": "string", "const": "regretful" },
+                  { "type": "string", "const": "nostalgic" },
+                  { "type": "string", "const": "dying" },
+                  { "type": "string", "const": "exhausted" },
+                  { "type": "string", "const": "breathless" },
+                  { "type": "string", "const": "in-pain" },
+                  { "type": "string", "const": "sleepy" },
+                  { "type": "string", "const": "weak" },
+                  { "type": "string", "const": "sarcastic" },
+                  { "type": "string", "const": "ironic" },
+                  { "type": "string", "const": "confused" },
+                  { "type": "string", "const": "doubtful" },
+                  { "type": "string", "const": "curious" },
+                  { "type": "string", "const": "serious" },
+                  { "type": "string", "const": "narration" },
+                  { "type": "string", "const": "disgusted" }
+                ]
+              },
+              "accent": {
+                "anyOf": [
+                  { "type": "string", "const": "auto" },
+                  { "type": "string", "const": "fr-FR" },
+                  { "type": "string", "const": "fr-CA" },
+                  { "type": "string", "const": "fr-BE" },
+                  { "type": "string", "const": "fr-CH" }
+                ]
+              },
+              "variantId": { "anyOf": [{ "type": "null" }, { "type": "string" }] },
+              "device": { "type": "string" },
+              "referenceMode": {
+                "anyOf": [
+                  { "type": "string", "const": "current" },
+                  { "type": "string", "const": "character" },
+                  { "type": "string", "const": "custom" },
+                  { "type": "string", "const": "file" },
+                  { "type": "string", "const": "library" }
+                ]
+              },
+              "intonationGuide": { "anyOf": [{ "$ref": "#/$defs/options_IntonationGuide_3" }] },
+              "referenceTrackId": { "anyOf": [{ "type": "string" }] },
+              "referenceId": { "anyOf": [{ "type": "null" }, { "type": "string" }] },
+              "mode": {
+                "anyOf": [
+                  { "type": "string", "const": "zeroShot" },
+                  { "type": "string", "const": "crossLingual" }
+                ]
+              },
+              "speed": { "type": "number" },
+              "seed": { "type": "number" }
+            },
+            "required": ["device", "referenceMode", "referenceId", "mode", "speed", "seed"],
+            "additionalProperties": false
+          },
+          "options_VoiceQuality_2": {
+            "type": "object",
+            "properties": {
+              "inferenceSteps": { "anyOf": [{ "type": "number" }] },
+              "cfgStrength": { "anyOf": [{ "type": "number" }] },
+              "temperature": { "anyOf": [{ "type": "number" }] },
+              "topP": { "anyOf": [{ "type": "number" }] },
+              "topK": { "anyOf": [{ "type": "number" }] },
+              "repetitionPenalty": { "anyOf": [{ "type": "number" }] },
+              "minP": { "anyOf": [{ "type": "number" }] },
+              "cfgWeight": { "anyOf": [{ "type": "number" }] },
+              "exaggeration": { "anyOf": [{ "type": "number" }] }
+            },
+            "required": [],
+            "additionalProperties": false
+          },
+          "options_IntonationGuide_3": {
+            "type": "object",
+            "properties": {
+              "mode": {
+                "anyOf": [
+                  { "type": "string", "const": "style" },
+                  { "type": "string", "const": "hybrid" }
+                ]
+              },
+              "trackId": { "anyOf": [{ "type": "string" }] }
+            },
+            "required": ["mode"],
+            "additionalProperties": false
+          },
+          "options_VoiceConversionOptions_4": {
+            "type": "object",
+            "properties": {
+              "referenceMode": {
+                "anyOf": [
+                  { "type": "string", "const": "reference" },
+                  { "type": "string", "const": "current" }
+                ]
+              },
+              "referenceTrackId": { "anyOf": [{ "type": "string" }] },
+              "generationId": { "type": "string" },
+              "referenceId": { "type": "string" },
+              "characterId": { "anyOf": [{ "type": "null" }, { "type": "string" }] },
+              "device": { "type": "string" }
+            },
+            "required": ["generationId", "referenceId", "characterId", "device"],
+            "additionalProperties": false
+          }
+        }
+      },
+      "annotations": { "readOnlyHint": false, "destructiveHint": true, "openWorldHint": false }
+    },
+    {
+      "name": "studio_audio_toolbox_status",
+      "command": "audio_toolbox_status",
+      "description": "audio toolbox status. Uses the current desktop session. Local file paths must be absolute; long operations return job IDs. Existing native validation applies.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "annotations": { "readOnlyHint": true, "destructiveHint": false, "openWorldHint": false }
+    },
+    {
+      "name": "studio_install_audio_toolbox_model",
+      "command": "install_audio_toolbox_model",
+      "description": "install audio toolbox model. Uses the current desktop session. Local file paths must be absolute; long operations return job IDs. Existing native validation applies.",
+      "inputSchema": {
+        "type": "object",
+        "properties": { "modelId": { "type": "string" } },
+        "required": ["modelId"],
+        "additionalProperties": false
+      },
+      "annotations": { "readOnlyHint": false, "destructiveHint": true, "openWorldHint": false }
+    },
+    {
+      "name": "studio_separate_audio_selection",
+      "command": "separate_audio_selection",
+      "description": "separate audio selection. Uses the current desktop session. Local file paths must be absolute; long operations return job IDs. Existing native validation applies.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "options": { "$ref": "#/$defs/options_AudioToolboxOptions_0" },
+          "context": {
+            "type": "object",
+            "properties": {
+              "projectId": { "type": "string" },
+              "expectedRevision": { "type": "integer", "minimum": 0 }
+            },
+            "required": ["projectId", "expectedRevision"],
+            "additionalProperties": false
+          }
+        },
+        "required": ["options", "context"],
+        "additionalProperties": false,
+        "$defs": {
+          "options_AudioToolboxOptions_0": {
+            "type": "object",
+            "properties": {
+              "modelId": { "type": "string" },
+              "sourceTrackId": { "type": "string" },
+              "startMs": { "type": "number" },
+              "endMs": { "type": "number" },
+              "device": { "type": "string" },
+              "prompt": { "type": "string" },
+              "windowSeconds": { "type": "number" }
+            },
+            "required": [
+              "modelId",
+              "sourceTrackId",
+              "startMs",
+              "endMs",
+              "device",
+              "prompt",
+              "windowSeconds"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "annotations": { "readOnlyHint": false, "destructiveHint": true, "openWorldHint": false }
+    },
+    {
+      "name": "studio_audio_toolbox_result",
+      "command": "audio_toolbox_result",
+      "description": "audio toolbox result. Uses the current desktop session. Local file paths must be absolute; long operations return job IDs. Existing native validation applies.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "context": {
+            "type": "object",
+            "properties": {
+              "projectId": { "type": "string" },
+              "expectedRevision": { "type": "integer", "minimum": 0 }
+            },
+            "required": ["projectId", "expectedRevision"],
+            "additionalProperties": false
+          }
+        },
+        "required": ["id", "context"],
+        "additionalProperties": false
+      },
+      "annotations": { "readOnlyHint": true, "destructiveHint": false, "openWorldHint": false }
+    },
+    {
+      "name": "studio_audio_toolbox_path",
+      "command": "audio_toolbox_path",
+      "description": "audio toolbox path. Uses the current desktop session. Local file paths must be absolute; long operations return job IDs. Existing native validation applies.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "outputId": { "type": "string" },
+          "context": {
+            "type": "object",
+            "properties": {
+              "projectId": { "type": "string" },
+              "expectedRevision": { "type": "integer", "minimum": 0 }
+            },
+            "required": ["projectId", "expectedRevision"],
+            "additionalProperties": false
+          }
+        },
+        "required": ["id", "outputId", "context"],
+        "additionalProperties": false
+      },
+      "annotations": { "readOnlyHint": true, "destructiveHint": false, "openWorldHint": false }
+    },
+    {
+      "name": "studio_apply_audio_toolbox_result",
+      "command": "apply_audio_toolbox_result",
+      "description": "apply audio toolbox result. Uses the current desktop session. Local file paths must be absolute; long operations return job IDs. Existing native validation applies.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "destinations": {
+            "type": "array",
+            "items": { "$ref": "#/$defs/destinations_AudioToolboxDestination_0" }
+          },
+          "muteSource": { "type": "boolean" },
+          "context": {
+            "type": "object",
+            "properties": {
+              "projectId": { "type": "string" },
+              "expectedRevision": { "type": "integer", "minimum": 0 }
+            },
+            "required": ["projectId", "expectedRevision"],
+            "additionalProperties": false
+          }
+        },
+        "required": ["id", "destinations", "muteSource", "context"],
+        "additionalProperties": false,
+        "$defs": {
+          "destinations_AudioToolboxDestination_0": {
+            "type": "object",
+            "properties": {
+              "outputId": { "type": "string" },
+              "trackId": { "anyOf": [{ "type": "null" }, { "type": "string" }] },
+              "role": { "anyOf": [{ "type": "null" }, { "type": "string" }] }
+            },
+            "required": ["outputId", "trackId", "role"],
+            "additionalProperties": false
+          }
+        }
       },
       "annotations": { "readOnlyHint": true, "destructiveHint": false, "openWorldHint": false }
     },
@@ -1105,8 +1441,8 @@
               "device": { "type": "string" },
               "referenceMode": {
                 "anyOf": [
-                  { "type": "string", "const": "character" },
                   { "type": "string", "const": "current" },
+                  { "type": "string", "const": "character" },
                   { "type": "string", "const": "custom" },
                   { "type": "string", "const": "file" },
                   { "type": "string", "const": "library" }
@@ -1876,8 +2212,8 @@
               "device": { "type": "string" },
               "referenceMode": {
                 "anyOf": [
-                  { "type": "string", "const": "character" },
                   { "type": "string", "const": "current" },
+                  { "type": "string", "const": "character" },
                   { "type": "string", "const": "custom" },
                   { "type": "string", "const": "file" },
                   { "type": "string", "const": "library" }
@@ -2277,8 +2613,8 @@
               "device": { "type": "string" },
               "referenceMode": {
                 "anyOf": [
-                  { "type": "string", "const": "character" },
                   { "type": "string", "const": "current" },
+                  { "type": "string", "const": "character" },
                   { "type": "string", "const": "custom" },
                   { "type": "string", "const": "file" },
                   { "type": "string", "const": "library" }
@@ -2448,8 +2784,8 @@
               "device": { "type": "string" },
               "referenceMode": {
                 "anyOf": [
-                  { "type": "string", "const": "character" },
                   { "type": "string", "const": "current" },
+                  { "type": "string", "const": "character" },
                   { "type": "string", "const": "custom" },
                   { "type": "string", "const": "file" },
                   { "type": "string", "const": "library" }
@@ -2618,8 +2954,8 @@
               "device": { "type": "string" },
               "referenceMode": {
                 "anyOf": [
-                  { "type": "string", "const": "character" },
                   { "type": "string", "const": "current" },
+                  { "type": "string", "const": "character" },
                   { "type": "string", "const": "custom" },
                   { "type": "string", "const": "file" },
                   { "type": "string", "const": "library" }
@@ -3655,8 +3991,8 @@
               "device": { "type": "string" },
               "referenceMode": {
                 "anyOf": [
-                  { "type": "string", "const": "character" },
                   { "type": "string", "const": "current" },
+                  { "type": "string", "const": "character" },
                   { "type": "string", "const": "custom" },
                   { "type": "string", "const": "file" },
                   { "type": "string", "const": "library" }
@@ -4755,8 +5091,8 @@
             "device": { "type": "string" },
             "referenceMode": {
               "anyOf": [
-                { "type": "string", "const": "character" },
                 { "type": "string", "const": "current" },
+                { "type": "string", "const": "character" },
                 { "type": "string", "const": "custom" },
                 { "type": "string", "const": "file" },
                 { "type": "string", "const": "library" }
@@ -5333,6 +5669,199 @@
         }
       }
     },
+    "AudioToolboxOptions": {
+      "$ref": "#/$defs/AudioToolboxOptions_0",
+      "$defs": {
+        "AudioToolboxOptions_0": {
+          "type": "object",
+          "properties": {
+            "modelId": { "type": "string" },
+            "sourceTrackId": { "type": "string" },
+            "startMs": { "type": "number" },
+            "endMs": { "type": "number" },
+            "device": { "type": "string" },
+            "prompt": { "type": "string" },
+            "windowSeconds": { "type": "number" }
+          },
+          "required": [
+            "modelId",
+            "sourceTrackId",
+            "startMs",
+            "endMs",
+            "device",
+            "prompt",
+            "windowSeconds"
+          ],
+          "additionalProperties": false
+        }
+      }
+    },
+    "AudioToolboxDestination": {
+      "$ref": "#/$defs/AudioToolboxDestination_0",
+      "$defs": {
+        "AudioToolboxDestination_0": {
+          "type": "object",
+          "properties": {
+            "outputId": { "type": "string" },
+            "trackId": { "anyOf": [{ "type": "null" }, { "type": "string" }] },
+            "role": { "anyOf": [{ "type": "null" }, { "type": "string" }] }
+          },
+          "required": ["outputId", "trackId", "role"],
+          "additionalProperties": false
+        }
+      }
+    },
+    "DubbingPipelineOptions": {
+      "$ref": "#/$defs/DubbingPipelineOptions_0",
+      "$defs": {
+        "DubbingPipelineOptions_0": {
+          "type": "object",
+          "properties": {
+            "lineId": { "type": "string" },
+            "tts": { "$ref": "#/$defs/VoiceSettings_1" },
+            "conversion": { "$ref": "#/$defs/VoiceConversionOptions_4" },
+            "guideStrength": { "type": "number" }
+          },
+          "required": ["lineId", "tts", "conversion", "guideStrength"],
+          "additionalProperties": false
+        },
+        "VoiceSettings_1": {
+          "type": "object",
+          "properties": {
+            "outputGain": { "anyOf": [{ "type": "number" }] },
+            "quality": { "anyOf": [{ "$ref": "#/$defs/VoiceQuality_2" }] },
+            "mood": {
+              "anyOf": [
+                { "type": "string", "const": "happy" },
+                { "type": "string", "const": "excited" },
+                { "type": "string", "const": "angry" },
+                { "type": "string", "const": "sad" },
+                { "type": "string", "const": "calm" },
+                { "type": "string", "const": "surprised" },
+                { "type": "string", "const": "whisper" },
+                { "type": "string", "const": "shouting" },
+                { "type": "string", "const": "default" },
+                { "type": "string", "const": "enthusiastic" },
+                { "type": "string", "const": "amused" },
+                { "type": "string", "const": "laughing" },
+                { "type": "string", "const": "proud" },
+                { "type": "string", "const": "tender" },
+                { "type": "string", "const": "relieved" },
+                { "type": "string", "const": "stressed" },
+                { "type": "string", "const": "anxious" },
+                { "type": "string", "const": "panicked" },
+                { "type": "string", "const": "afraid" },
+                { "type": "string", "const": "irritated" },
+                { "type": "string", "const": "furious" },
+                { "type": "string", "const": "threatening" },
+                { "type": "string", "const": "determined" },
+                { "type": "string", "const": "impatient" },
+                { "type": "string", "const": "crying" },
+                { "type": "string", "const": "desperate" },
+                { "type": "string", "const": "disappointed" },
+                { "type": "string", "const": "regretful" },
+                { "type": "string", "const": "nostalgic" },
+                { "type": "string", "const": "dying" },
+                { "type": "string", "const": "exhausted" },
+                { "type": "string", "const": "breathless" },
+                { "type": "string", "const": "in-pain" },
+                { "type": "string", "const": "sleepy" },
+                { "type": "string", "const": "weak" },
+                { "type": "string", "const": "sarcastic" },
+                { "type": "string", "const": "ironic" },
+                { "type": "string", "const": "confused" },
+                { "type": "string", "const": "doubtful" },
+                { "type": "string", "const": "curious" },
+                { "type": "string", "const": "serious" },
+                { "type": "string", "const": "narration" },
+                { "type": "string", "const": "disgusted" }
+              ]
+            },
+            "accent": {
+              "anyOf": [
+                { "type": "string", "const": "auto" },
+                { "type": "string", "const": "fr-FR" },
+                { "type": "string", "const": "fr-CA" },
+                { "type": "string", "const": "fr-BE" },
+                { "type": "string", "const": "fr-CH" }
+              ]
+            },
+            "variantId": { "anyOf": [{ "type": "null" }, { "type": "string" }] },
+            "device": { "type": "string" },
+            "referenceMode": {
+              "anyOf": [
+                { "type": "string", "const": "current" },
+                { "type": "string", "const": "character" },
+                { "type": "string", "const": "custom" },
+                { "type": "string", "const": "file" },
+                { "type": "string", "const": "library" }
+              ]
+            },
+            "intonationGuide": { "anyOf": [{ "$ref": "#/$defs/IntonationGuide_3" }] },
+            "referenceTrackId": { "anyOf": [{ "type": "string" }] },
+            "referenceId": { "anyOf": [{ "type": "null" }, { "type": "string" }] },
+            "mode": {
+              "anyOf": [
+                { "type": "string", "const": "zeroShot" },
+                { "type": "string", "const": "crossLingual" }
+              ]
+            },
+            "speed": { "type": "number" },
+            "seed": { "type": "number" }
+          },
+          "required": ["device", "referenceMode", "referenceId", "mode", "speed", "seed"],
+          "additionalProperties": false
+        },
+        "VoiceQuality_2": {
+          "type": "object",
+          "properties": {
+            "inferenceSteps": { "anyOf": [{ "type": "number" }] },
+            "cfgStrength": { "anyOf": [{ "type": "number" }] },
+            "temperature": { "anyOf": [{ "type": "number" }] },
+            "topP": { "anyOf": [{ "type": "number" }] },
+            "topK": { "anyOf": [{ "type": "number" }] },
+            "repetitionPenalty": { "anyOf": [{ "type": "number" }] },
+            "minP": { "anyOf": [{ "type": "number" }] },
+            "cfgWeight": { "anyOf": [{ "type": "number" }] },
+            "exaggeration": { "anyOf": [{ "type": "number" }] }
+          },
+          "required": [],
+          "additionalProperties": false
+        },
+        "IntonationGuide_3": {
+          "type": "object",
+          "properties": {
+            "mode": {
+              "anyOf": [
+                { "type": "string", "const": "style" },
+                { "type": "string", "const": "hybrid" }
+              ]
+            },
+            "trackId": { "anyOf": [{ "type": "string" }] }
+          },
+          "required": ["mode"],
+          "additionalProperties": false
+        },
+        "VoiceConversionOptions_4": {
+          "type": "object",
+          "properties": {
+            "referenceMode": {
+              "anyOf": [
+                { "type": "string", "const": "reference" },
+                { "type": "string", "const": "current" }
+              ]
+            },
+            "referenceTrackId": { "anyOf": [{ "type": "string" }] },
+            "generationId": { "type": "string" },
+            "referenceId": { "type": "string" },
+            "characterId": { "anyOf": [{ "type": "null" }, { "type": "string" }] },
+            "device": { "type": "string" }
+          },
+          "required": ["generationId", "referenceId", "characterId", "device"],
+          "additionalProperties": false
+        }
+      }
+    },
     "SourceTranscriptionOptions": {
       "$ref": "#/$defs/SourceTranscriptionOptions_0",
       "$defs": {
@@ -5525,8 +6054,8 @@
             "device": { "type": "string" },
             "referenceMode": {
               "anyOf": [
-                { "type": "string", "const": "character" },
                 { "type": "string", "const": "current" },
+                { "type": "string", "const": "character" },
                 { "type": "string", "const": "custom" },
                 { "type": "string", "const": "file" },
                 { "type": "string", "const": "library" }
@@ -5609,6 +6138,13 @@
         "VoiceConversionOptions_0": {
           "type": "object",
           "properties": {
+            "referenceMode": {
+              "anyOf": [
+                { "type": "string", "const": "reference" },
+                { "type": "string", "const": "current" }
+              ]
+            },
+            "referenceTrackId": { "anyOf": [{ "type": "string" }] },
             "generationId": { "type": "string" },
             "referenceId": { "type": "string" },
             "characterId": { "anyOf": [{ "type": "null" }, { "type": "string" }] },
@@ -5721,8 +6257,8 @@
             "device": { "type": "string" },
             "referenceMode": {
               "anyOf": [
-                { "type": "string", "const": "character" },
                 { "type": "string", "const": "current" },
+                { "type": "string", "const": "character" },
                 { "type": "string", "const": "custom" },
                 { "type": "string", "const": "file" },
                 { "type": "string", "const": "library" }
@@ -6139,8 +6675,8 @@
             "device": { "type": "string" },
             "referenceMode": {
               "anyOf": [
-                { "type": "string", "const": "character" },
                 { "type": "string", "const": "current" },
+                { "type": "string", "const": "character" },
                 { "type": "string", "const": "custom" },
                 { "type": "string", "const": "file" },
                 { "type": "string", "const": "library" }

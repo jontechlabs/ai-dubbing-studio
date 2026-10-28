@@ -1,0 +1,181 @@
+{
+  "models": [
+    {
+      "id": "bs-roformer-viperx-1297",
+      "name": "BS-RoFormer · Viperx 1297",
+      "family": "roformer",
+      "files": [
+        {
+          "name": "model.ckpt",
+          "url": "https://huggingface.co/Eddycrack864/audio-separator-models/resolve/56fc5c59fe52faeeb3f964067640ce3580b31b09/roformers/model_bs_roformer_ep_317_sdr_12.9755.ckpt",
+          "size": 639331213,
+          "sha256": "5b84f37e8d444c8cb30c79d77f613a41c05868ff9c9ac6c7049c00aefae115aa"
+        },
+        {
+          "name": "model.yaml",
+          "url": "https://huggingface.co/Eddycrack864/audio-separator-models/resolve/56fc5c59fe52faeeb3f964067640ce3580b31b09/roformers/model_bs_roformer_ep_317_sdr_12.9755.yaml",
+          "size": 2273,
+          "sha256": "2bfdd16c656bd9519aba757cc4f8834b7ede675eb1e00ec4772d74ae1c41af7f"
+        }
+      ],
+      "outputs": [
+        "vocals",
+        "instrumental"
+      ],
+      "license": "Poids communautaires Viperx : conditions non précisées par le distributeur",
+      "source": "https://github.com/TRvlvr/model_repo"
+    },
+    {
+      "id": "mel-band-roformer-kim",
+      "name": "Mel-Band RoFormer · Kim Vocals",
+      "family": "roformer",
+      "files": [
+        {
+          "name": "model.ckpt",
+          "url": "https://huggingface.co/KimberleyJSN/melbandroformer/resolve/ac9b0614ab3cd7f77219e18ba494dfd93956c348/MelBandRoformer.ckpt",
+          "size": 913106900,
+          "sha256": "87201f4d31afb5bc79993230fc49446918425574db48c01c405e44f365c7559e"
+        },
+        {
+          "name": "model.yaml",
+          "url": "https://raw.githubusercontent.com/KimberleyJensen/Mel-Band-Roformer-Vocal-Model/25f44ffb55ee3c301281bba21b2d6d311cb69ae2/configs/config_vocals_mel_band_roformer.yaml",
+          "size": 733,
+          "sha256": "87aabb300193b019159269b69d6fe5f313aae4201a22b4af6268bc2846ab2fe1"
+        }
+      ],
+      "outputs": [
+        "vocals",
+        "instrumental"
+      ],
+      "license": "MIT",
+      "source": "https://huggingface.co/KimberleyJSN/melbandroformer"
+    },
+    {
+      "id": "htdemucs",
+      "name": "Demucs v4 · htdemucs",
+      "family": "demucs",
+      "files": [
+        {
+          "name": "955717e8-8726e21a.th",
+          "url": "https://dl.fbaipublicfiles.com/demucs/hybrid_transformer/955717e8-8726e21a.th",
+          "size": 84141911,
+          "sha256": "8726e21a993978c7ba086d3872e7608d7d5bfca646ca4aca459ffda844faa8b4"
+        },
+        {
+          "name": "htdemucs.yaml",
+          "url": "https://github.com/TRvlvr/model_repo/releases/download/all_public_uvr_models/htdemucs.yaml",
+          "size": 21,
+          "sha256": "239c445d0b14454d541ad8bd9bb271c9e536d267e8a4625208744cbb2e7bb66c"
+        }
+      ],
+      "outputs": [
+        "vocals",
+        "drums",
+        "bass",
+        "other"
+      ],
+      "license": "MIT",
+      "source": "https://github.com/adefossez/demucs"
+    },
+    {
+      "id": "htdemucs-ft",
+      "name": "Demucs v4 · htdemucs_ft",
+      "family": "demucs",
+      "files": [
+        {
+          "name": "f7e0c4bc-ba3fe64a.th",
+          "url": "https://dl.fbaipublicfiles.com/demucs/hybrid_transformer/f7e0c4bc-ba3fe64a.th",
+          "size": 84141271,
+          "sha256": "ba3fe64ae8ef66ac9a4857222ce48efbdc5eb3ad375cb79dd13debee5aaa4066"
+        },
+        {
+          "name": "d12395a8-e57c48e6.th",
+          "url": "https://dl.fbaipublicfiles.com/demucs/hybrid_transformer/d12395a8-e57c48e6.th",
+          "size": 84141271,
+          "sha256": "e57c48e6b0e38af4f7118d7bd08c49f0a0c0edf7d09143bdd902ea0d237303e6"
+        },
+        {
+          "name": "92cfc3b6-ef3bcb9c.th",
+          "url": "https://dl.fbaipublicfiles.com/demucs/hybrid_transformer/92cfc3b6-ef3bcb9c.th",
+          "size": 84141271,
+          "sha256": "ef3bcb9c8b40d14ae5d51b6db2587339cc12c6b77c0be151ce6d69002e087bf2"
+        },
+        {
+          "name": "04573f0d-f3cf25b2.th",
+          "url": "https://dl.fbaipublicfiles.com/demucs/hybrid_transformer/04573f0d-f3cf25b2.th",
+          "size": 84141271,
+          "sha256": "f3cf25b222c4eed7cd49dd8b2c9597d50c18bd154090f7b919cfa5f93cf22c49"
+        },
+        {
+          "name": "htdemucs_ft.yaml",
+          "url": "https://github.com/TRvlvr/model_repo/releases/download/all_public_uvr_models/htdemucs_ft.yaml",
+          "size": 149,
+          "sha256": "69470b8c1bbd674437b51bc9fb491327a10ab0396b702c93389b9cf750016346"
+        }
+      ],
+      "outputs": [
+        "vocals",
+        "drums",
+        "bass",
+        "other"
+      ],
+      "license": "MIT",
+      "source": "https://github.com/adefossez/demucs"
+    },
+    {
+      "id": "audiosep",
+      "name": "AudioSep · séparation par description",
+      "family": "audiosep",
+      "files": [
+        {
+          "name": "audiosep.ckpt",
+          "url": "https://huggingface.co/spaces/Audio-AGI/AudioSep/resolve/0807a713283035d8b0d0628f1b8e3d6580459f7b/checkpoint/audiosep_base_4M_steps.ckpt",
+          "size": 1264844076,
+          "sha256": "f8cda01bfd0ebd141eef45d41db7a3ada23a56568465840d3cff04b8010ce82c"
+        },
+        {
+          "name": "clap.pt",
+          "url": "https://huggingface.co/spaces/Audio-AGI/AudioSep/resolve/0807a713283035d8b0d0628f1b8e3d6580459f7b/checkpoint/music_speech_audioset_epoch_15_esc_89.98.pt",
+          "size": 2352471003,
+          "sha256": "51c68f12f9d7ea25fdaaccf741ec7f81e93ee594455410f3bca4f47f88d8e006"
+        },
+        {
+          "name": "roberta/config.json",
+          "url": "https://huggingface.co/FacebookAI/roberta-base/resolve/e2da8e2f811d1448a5b465c236feacd80ffbac7b/config.json",
+          "size": 481,
+          "sha256": "ef0185e2aae6e06c5f105a285006952c340e20c7dbf43c86ec82601b13fc45e9"
+        },
+        {
+          "name": "roberta/vocab.json",
+          "url": "https://huggingface.co/FacebookAI/roberta-base/resolve/e2da8e2f811d1448a5b465c236feacd80ffbac7b/vocab.json",
+          "size": 898823,
+          "sha256": "9e7f63c2d15d666b52e21d250d2e513b87c9b713cfa6987a82ed89e5e6e50655"
+        },
+        {
+          "name": "roberta/merges.txt",
+          "url": "https://huggingface.co/FacebookAI/roberta-base/resolve/e2da8e2f811d1448a5b465c236feacd80ffbac7b/merges.txt",
+          "size": 456318,
+          "sha256": "1ce1664773c50f3e0cc8842619a93edc4624525b728b188a9e0be33b7726adc5"
+        },
+        {
+          "name": "roberta/tokenizer.json",
+          "url": "https://huggingface.co/FacebookAI/roberta-base/resolve/e2da8e2f811d1448a5b465c236feacd80ffbac7b/tokenizer.json",
+          "size": 1355863,
+          "sha256": "847bbeab6174d66a88898f729d52fa8d355fafe1bea101cf960dd404581df70e"
+        },
+        {
+          "name": "roberta/tokenizer_config.json",
+          "url": "https://huggingface.co/FacebookAI/roberta-base/resolve/e2da8e2f811d1448a5b465c236feacd80ffbac7b/tokenizer_config.json",
+          "size": 25,
+          "sha256": "994f46754c5bf4014f1aa92d34b1374319c3a6b3f702105cd5b742beaecd18ce"
+        }
+      ],
+      "outputs": [
+        "isolated",
+        "residual"
+      ],
+      "license": "MIT",
+      "source": "https://github.com/Audio-AGI/AudioSep"
+    }
+  ]
+}

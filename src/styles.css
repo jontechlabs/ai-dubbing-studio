@@ -3737,3 +3737,65 @@ pre {
 .output-gain-control > .button {
   grid-column: 1/-1;
 }
+/* Keep one operation and its audition controls beside the dubbing settings. */
+.current-job-progress,
+.pipeline-controls,
+.audio-toolbox {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px;
+  margin-block: 12px;
+  min-width: 0;
+}
+.current-job-progress {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.current-job-progress strong {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.current-job-progress progress,
+.current-reference-audio audio,
+.toolbox-output audio {
+  width: 100%;
+}
+.current-job-progress pre {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  max-height: 150px;
+  overflow: auto;
+  font-size: 11px;
+}
+.audio-toolbox > summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+.toolbox-range {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.toolbox-output {
+  display: grid;
+  gap: 6px;
+  margin-block: 12px;
+  padding-block: 8px;
+  border-bottom: 1px solid var(--border);
+}
+.pipeline-controls input[type='range'] {
+  width: 100%;
+}
+.audio-toolbox .checkbox-field,
+.pipeline-controls .checkbox-field {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+}
+.workbench-original textarea {
+  width: 100%;
+  min-height: 64px;
+  resize: vertical;
+}

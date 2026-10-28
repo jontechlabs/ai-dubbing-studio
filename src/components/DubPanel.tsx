@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Check, Download, Mic2, Play, RefreshCw, Trash2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { Dialogue, Generation, Job, Project, VoiceSettings } from '../domain/types';
@@ -18,6 +18,11 @@ import { installedVoiceVariants, voiceVariant } from '../domain/voiceEngines';
 import { audioTracks, trackLabel } from '../domain/audio';
 import { ReferenceTranscription } from './ReferenceTranscription';
 import { OutputGainControl } from './OutputGainControl';
+import { CurrentJobProgress } from './CurrentJobProgress';
+import { CurrentReferenceAudio } from './CurrentReferenceAudio';
+import { DubbingPipelineControls } from './DubbingPipelineControls';
+import { dialogueText, editDialogue } from '../domain/subtitles';
+import { editCueText } from '../domain/timing';
 import { accentSupported, voiceAccents } from '../domain/voiceAccents';
 import { ReferenceFileImport } from './ReferenceFileImport';
 import { BatchDubbingAction } from './BatchDubbingAction';
@@ -132,8 +137,10 @@ function ReferenceAudio({
   referenceId,
   onError,
   library = false,
+  onPlay,
 }: {
   library?: boolean;
+  onPlay: () => void;
   owner: string | null;
   referenceId: string;
   onError: (error: string) => void;
@@ -161,6 +168,7 @@ function ReferenceAudio({
     <audio
       key={referenceId}
       controls
+      onPlay={onPlay}
       preload="metadata"
       src={source || undefined}
       aria-label={t('ttsListenReference')}
@@ -184,6 +192,7 @@ export function DubPanel({
   onLips,
   onInpaint,
   onOriginal,
+  onReferencePlay,
   onPlay,
   activeGenerationId,
 }: {
@@ -201,6 +210,7 @@ export function DubPanel({
   onLips: () => void;
   onInpaint: () => void;
   onOriginal: (line: Dialogue) => void;
+  onReferencePlay: () => void;
   onPlay: (generation: Generation) => void;
   activeGenerationId: string | null;
 }) {
@@ -221,6 +231,32 @@ export function DubPanel({
     };
   });
   const [referencePending, setReferencePending] = useState(false);
+  const [pipeline, setPipeline] = useState(false),
+    [pipelineReady, setPipelineReady] = useState(false),
+    [guideStrength, setGuideStrength] = useState(0);
+  const [conversion, setConversion] = useState<
+    import('../domain/voiceCapture').VoiceConversionOptions
+  >({
+    generationId: 'pipeline',
+    referenceId: '',
+    characterId: null,
+    device: 'auto',
+    referenceMode: 'current',
+    referenceTrackId: 'auto',
+  });
+  const [currentJobId, setCurrentJobId] = useState<string | null>(null);
+  const newestTake = useRef<HTMLElement | null>(null),
+    previousTakes = useRef(project.generations.length);
+  useEffect(() => {
+    setCurrentJobId(null);
+  }, [line?.id]);
+  useEffect(() => {
+    if (project.generations.length > previousTakes.current && currentJobId)
+      requestAnimationFrame(() =>
+        newestTake.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' }),
+      );
+    previousTakes.current = project.generations.length;
+  }, [project.generations.length, currentJobId]);
   const [status, setStatus] = useState<bridge.TtsStatus | null>(null),
     [working, setWorking] = useState(false);
   const [engines, setEngines] = useState<bridge.VoiceStatus | null>(null);
@@ -529,6 +565,26 @@ export function DubPanel({
           </select>
         </label>
       )}
+      {settings.referenceMode === 'current' && !batch && (
+        <CurrentReferenceAudio
+          key={JSON.stringify([
+            line.id,
+            line.startMs,
+            line.endMs,
+            settings.referenceTrackId ?? 'auto',
+            project.media?.id,
+            project.media?.audioStreamIndex,
+            project.tracks,
+            project.generations.filter((g) => g.kind === 'audioPatch'),
+          ])}
+          lineId={line.id}
+          trackId={settings.referenceTrackId}
+          snapshot={snapshot}
+          onError={onError}
+          onPlay={onReferencePlay}
+          disabled={busy || !project.media}
+        />
+      )}
       <p className="panel-description">
         {settings.referenceMode === 'current'
           ? t('ttsCurrentReferenceHint')
@@ -575,6 +631,7 @@ export function DubPanel({
       {settings.referenceMode !== 'current' && reference && (
         <>
           <ReferenceAudio
+            onPlay={onReferencePlay}
             key={reference.id}
             library={libraryMode}
             owner={fileReference ? null : character!.id}
@@ -850,9 +907,49 @@ export function DubPanel({
         <>
           <label className="field">
             <span>{t('ttsResolvedText')}</span>
-            <textarea value={inputText} readOnly rows={3} />
+            <textarea
+              aria-label={t('ttsResolvedText')}
+              value={line.ttsText ?? dialogueText(project, line, 'target')}
+              disabled={busy}
+              rows={3}
+              onChange={(e) => onEdit((p) => editDialogue(p, line.id, 'tts', e.target.value))}
+            />
           </label>
-          <p className="panel-description">{t('ttsEditPronunciationHint')}</p>
+          <p className="panel-description">{t('workbench.sharedVoiceText')}</p>
+          {inputText !== (line.ttsText ?? dialogueText(project, line, 'target')) && (
+            <p className="pronunciation-preview">
+              {t('workbench.resolvedPronunciation')}: {inputText}
+            </p>
+          )}
+          <details className="dub-original-text" open>
+            <summary>{t('workbench.originalText')}</summary>
+            {(line.sourceCueIds.length
+              ? line.sourceCueIds.map((id) => project.sourceCues.find((c) => c.id === id)!)
+              : [{ id: '', text: '' }]
+            ).map((cue, index, cues) => (
+              <label className="field" key={cue.id || 'missing'}>
+                <span>
+                  {t('original')}
+                  {cues.length > 1 ? ` ${index + 1}` : ''}
+                </span>
+                <textarea
+                  aria-label={
+                    t('workbench.originalText') + (cues.length > 1 ? ` ${index + 1}` : '')
+                  }
+                  value={cue.text}
+                  disabled={busy}
+                  rows={2}
+                  onChange={(e) =>
+                    onEdit((p) =>
+                      cue.id
+                        ? editCueText(p, 'source', cue.id, e.target.value)
+                        : editDialogue(p, line.id, 'source', e.target.value),
+                    )
+                  }
+                />
+              </label>
+            ))}
+          </details>
           {(referenceMissing ||
             transcriptMissing ||
             shortReference ||
@@ -874,10 +971,23 @@ export function DubPanel({
               )}
             </p>
           )}
+          <DubbingPipelineControls
+            project={project}
+            enabled={pipeline}
+            setEnabled={setPipeline}
+            conversion={conversion}
+            setConversion={setConversion}
+            strength={guideStrength}
+            setStrength={setGuideStrength}
+            busy={busy}
+            onModels={onModels}
+            onReady={setPipelineReady}
+          />
           <button
             className="button accent wide"
             disabled={
               !bridge.native ||
+              (pipeline && !pipelineReady) ||
               busy ||
               referencePending ||
               !ready ||
@@ -900,13 +1010,20 @@ export function DubPanel({
               }));
               void snapshot()
                 .then(() =>
-                  bridge.generateLine(line.id, {
-                    ...settings,
-                    mode,
-                    accent,
-                  }),
+                  pipeline
+                    ? bridge.generateDubbingPipeline({
+                        lineId: line.id,
+                        tts: { ...settings, mode, accent },
+                        conversion,
+                        guideStrength,
+                      })
+                    : bridge.generateLine(line.id, {
+                        ...settings,
+                        mode,
+                        accent,
+                      }),
                 )
-                .then(onStarted)
+                .then(setCurrentJobId)
                 .catch((e) => onError(String(e)))
                 .finally(() => setWorking(false));
             }}
@@ -914,6 +1031,7 @@ export function DubPanel({
             <Mic2 size={15} />
             {t('ttsGenerateNew')}
           </button>
+          <CurrentJobProgress job={jobs.find((j) => j.id === currentJobId)} onError={onError} />
           <div className="generation-heading">
             <h3>{t('ttsGenerations', { count: generations.length })}</h3>
             <button
@@ -975,6 +1093,7 @@ export function DubPanel({
               long = generation.durationMs > line.endMs - line.startMs;
             return (
               <article
+                ref={index === 0 ? newestTake : undefined}
                 className={`generation-card ${active ? 'selected' : ''}`}
                 key={generation.id}
               >

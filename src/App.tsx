@@ -32,6 +32,7 @@ export default function App() {
   const [panel, setPanel] = useState<Panel>(null);
   const [timelineNavigation, setTimelineNavigation] = useState<TimelineNavigation | null>(null);
   const [audioSelection, setAudioSelection] = useState<AudioSelection | null>(null);
+  const [toolboxModel, setToolboxModel] = useState<string | null>(null);
   const selectAudio = useCallback((value: AudioSelection | null) => {
     setAudioSelection(value);
   }, []);
@@ -400,6 +401,7 @@ export default function App() {
               onEdit={edit}
             />
             <Editor
+              onDub={openDub}
               project={studio.project}
               selected={selected}
               onEdit={edit}
@@ -439,6 +441,10 @@ export default function App() {
           />
           <div className="timeline-container" style={{ height: timelineHeight, flexShrink: 0 }}>
             <Timeline
+              onAudioToolbox={(model) => {
+                setToolboxModel(model);
+                setPanel('audio');
+              }}
               onCharacters={() => setPanel('characters')}
               onTransfer={(options) =>
                 void studio.run(async () => {
@@ -487,6 +493,7 @@ export default function App() {
         </footer>
         <JobNotifications onOpen={showJobs} />
         <Panels
+          toolboxModel={toolboxModel}
           onSelectDialogue={select}
           batchIds={batchIds}
           activeGenerationId={generationAudio.active}

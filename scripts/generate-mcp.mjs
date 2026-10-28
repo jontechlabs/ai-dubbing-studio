@@ -73,6 +73,9 @@ function makeSchema(name) {
   return { ...root, ...(Object.keys(definitions).length ? { $defs: definitions } : {}) };
 }
 const mapping = {
+ 'audio_toolbox::Options':'AudioToolboxOptions',
+ 'audio_toolbox::Destination':'AudioToolboxDestination',
+  'dubbing_pipeline::Options':'DubbingPipelineOptions',
   'source_transcription::Options': 'SourceTranscriptionOptions',
   'character_match::Options': 'CharacterMatchOptions',
   'voice_library::SourceOptions': 'VoiceLibrarySourceOptions',
@@ -199,6 +202,7 @@ for (const command of [
   'transcribe_dialogue_source',
   'apply_source_transcription',
   'set_voice_output_gain',
+  'generate_dubbing_pipeline', 'separate_audio_selection', 'audio_toolbox_result', 'audio_toolbox_path', 'apply_audio_toolbox_result',
 ])
   projectCommands.add(command);
 const text = fs.readFileSync('src-tauri/src/lib.rs', 'utf8');

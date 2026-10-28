@@ -1,5 +1,6 @@
 import type { Dialogue, Generation, Project, VoiceSettings } from './types';
 import { dialogueText } from './subtitles';
+import { approveTranslation, hasTranslation } from './translation';
 import { voiceVariant, voiceSettingsFormat } from './voiceEngines';
 import { validAccent } from './voiceAccents';
 import { validMood } from './voiceMoods';
@@ -137,6 +138,9 @@ export function reviewGeneration(project: Project, lineId: string, validated: bo
   if (!generation || (validated && staleGeneration(next, line, generation)))
     throw Error('TTS_STALE_GENERATION');
   line.status = validated ? 'validated' : 'review';
+  if (hasTranslation(next, line)) return approveTranslation(next, line.id, validated);
+  if (validated) throw Error('TRANSLATION_REQUIRED');
+  delete next.translationApprovals?.[line.id];
   return next;
 }
 export function editVoiceSettings(

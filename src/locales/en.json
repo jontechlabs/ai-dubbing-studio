@@ -196,7 +196,10 @@
     "voiceLibraryGenerate": "Generating reference phrases",
     "characterMatch": "Comparing character references",
     "ttsQwenRecovery": "Qwen3 compatible retry · same GPU",
-    "ttsValidateOutput": "Validating generated WAV"
+    "ttsValidateOutput": "Validating generated WAV",
+    "toolboxModel": "Downloading audio model",
+    "toolboxVerify": "Verifying audio models",
+    "toolboxSeparate": "Separating selected audio"
   },
   "shortcuts": "Space: play · J/K/L: transport · O: original · Ctrl+S: save · Ctrl+Z/Y: undo/redo",
   "errors": {
@@ -392,7 +395,16 @@
     "INVALID_OUTPUT_GAIN": "Output volume must be between 0% and 400%.",
     "ASR_DISK_REQUIRED": "Not enough space for the transcription model (181 MiB plus a 64 MiB margin required).",
     "ASR_RANGE_TOO_LONG": "Range too long: at most 16 subtitles and 120 seconds per dialogue.",
-    "ASR_OUTPUT_INVALID": "Each proposal must contain non-empty text (up to 10,000 characters)."
+    "ASR_OUTPUT_INVALID": "Each proposal must contain non-empty text (up to 10,000 characters).",
+    "AUDIO_TOOLBOX_OPTIONS": "Invalid separation selection or settings (0.1–60 s).",
+    "AUDIO_TOOLBOX_PROMPT": "Describe the sound to isolate with AudioSep.",
+    "AUDIO_TOOLBOX_DISK_REQUIRED": "There is not enough free space to install this tool.",
+    "AUDIO_TOOLBOX_MODEL_REQUIRED": "Install this separation tool first.",
+    "AUDIO_TOOLBOX_GPU_OOM": "GPU memory is insufficient. Reduce the window or explicitly select CPU.",
+    "AUDIO_TOOLBOX_FAILED": "Audio separation failed. Read the log for this task.",
+    "AUDIO_TOOLBOX_INVALID_AUDIO": "The audio outputs are invalid; no track was replaced.",
+    "AUDIO_TOOLBOX_ALREADY_APPLIED": "This result was already applied.",
+    "AUDIO_TOOLBOX_NOT_READY": "The result is not available yet."
   },
   "preparingVideo": "Preparing video…",
   "loadingVideo": "Loading video…",
@@ -1231,7 +1243,10 @@
     "audioEffects": "Audio effects",
     "voiceLibrary": "Character voice library",
     "characterMatch": "Character suggestion",
-    "sourceTranscription": "Source dialogue transcription"
+    "sourceTranscription": "Source dialogue transcription",
+    "ttsPipeline": "Two-stage dubbing",
+    "toolboxInstall": "Audio tool installation",
+    "audioToolbox": "Selected audio separation"
   },
   "fxRemoveTrack": "Remove processed copy · {{name}}",
   "transferEffects": "Audio effects",
@@ -1525,5 +1540,67 @@
     "applyHint": "Review and correct the proposal before applying. Only original SRT text changes; timing, translations and all takes are preserved. Affected translations will need review.",
     "apply": "Apply to original SRT",
     "applied": "Original text updated. You can undo this change."
+  },
+  "workbench": {
+    "currentTask": "Current take processing",
+    "progress": "Current take progress",
+    "addDub": "Add a dubbing take",
+    "sharedVoiceText": "Shared with “Voice text” in Pronunciation. Editing this field does not change the translated subtitle.",
+    "resolvedPronunciation": "With pronunciation rules",
+    "originalText": "Original dialogue text",
+    "listenCurrentReference": "Listen to current voice reference",
+    "referenceExcerpt": "Excerpt from the chosen track, limited to the first 20 seconds of this dialogue."
+  },
+  "pipeline": {
+    "enable": "Two-stage dubbing: TTS then timbre",
+    "hint": "Creates a raw TTS take, then a separate ChatterboxVC take. Each stage retains its WAV and all earlier takes. Engines load in sequence.",
+    "target": "Reference for the final timbre",
+    "device": "Timbre conversion device",
+    "guide": "Source dialogue intonation guide (experimental)",
+    "guideHint": "0% retains the French TTS delivery. Higher values apply source pitch, rhythm and energy contours before conversion; this does not guarantee faithful acting and may reduce naturalness."
+  },
+  "toolbox": {
+    "title": "Audio toolbox · selection",
+    "hint": "Process 0.1 to 60 seconds of the chosen track. Audition outputs, then choose which to place on Speech, Music or Effects. The video and source files remain intact.",
+    "model": "Separation tool",
+    "source": "Track to analyze",
+    "start": "Start (s)",
+    "end": "End (s)",
+    "rangeHint": "0.1–60 second selection at the same timestamp.",
+    "prompt": "Sound to isolate",
+    "promptHint": "Describe a sound, preferably in English (e.g. footsteps, a man speaking). This describes audio; it does not execute commands.",
+    "device": "Separation device",
+    "window": "Processing window",
+    "memoryHint": "Short windows reduce memory use. Performance and quality depend on model and content; 4 seconds is a starting point for 16 GB VRAM.",
+    "weights": "of model files",
+    "disk": "Space required: {{required}} · available: {{available}}",
+    "install": "Install or repair this tool",
+    "demucsHint": "Demucs separates vocals, drums, bass and other. It does not reliably distinguish music from sound effects. Audition before mapping outputs.",
+    "separate": "Separate selection",
+    "preview": "Outputs to audition",
+    "listen": "Listen: {{name}}",
+    "destination": "Destination: {{name}}",
+    "skip": "Do not apply this output",
+    "muteSource": "Mute this section of the source track",
+    "applyHint": "Only chosen destinations are replaced in this interval, using undoable layers. The source track still plays unless muted. Ctrl+Z undoes the application.",
+    "stale": "The source changed after analysis. Run separation again before applying.",
+    "applied": "Outputs applied to the timeline.",
+    "apply": "Apply chosen outputs",
+    "outputs": {
+      "vocals": "Vocals",
+      "instrumental": "Instrumental",
+      "drums": "Drums",
+      "bass": "Bass",
+      "other": "Other",
+      "isolated": "Requested sound",
+      "residual": "Residual"
+    },
+    "context": {
+      "bs-roformer-viperx-1297": "Isolate vocals · BS-RoFormer Viperx 1297",
+      "mel-band-roformer-kim": "Isolate vocals · Mel-Band RoFormer Kim",
+      "htdemucs": "Separate instruments · Demucs v4",
+      "htdemucs-ft": "Separate instruments · Demucs v4 FT",
+      "audiosep": "Isolate a described sound · AudioSep"
+    }
   }
 }

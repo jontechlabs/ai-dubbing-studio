@@ -3,10 +3,12 @@ mod audio_effects;
 mod audio_files;
 mod audio_fx_job;
 mod audio_patch;
+mod audio_toolbox;
 mod character_match;
 mod character_review;
 mod domain;
 mod downloads;
+mod dubbing_pipeline;
 mod embedded;
 mod face_detection;
 mod graphics;
@@ -203,6 +205,64 @@ fn latest_source_transcription(
     line_id: String,
 ) -> Result<Option<String>, String> {
     source_transcription::latest(&core, &line_id)
+}
+#[tauri::command]
+fn generate_dubbing_pipeline(
+    app: tauri::AppHandle,
+    core: State<'_, Shared>,
+    options: dubbing_pipeline::Options,
+) -> Result<String, String> {
+    dubbing_pipeline::start(core.inner().clone(), app, options)
+}
+#[tauri::command]
+async fn audio_toolbox_status(
+    app: tauri::AppHandle,
+    core: State<'_, Shared>,
+) -> Result<serde_json::Value, String> {
+    audio_toolbox::status(core.inner().clone(), app).await
+}
+#[tauri::command]
+fn install_audio_toolbox_model(
+    app: tauri::AppHandle,
+    core: State<'_, Shared>,
+    model_id: String,
+) -> Result<String, String> {
+    audio_toolbox::install(core.inner().clone(), app, model_id)
+}
+#[tauri::command]
+fn separate_audio_selection(
+    app: tauri::AppHandle,
+    core: State<'_, Shared>,
+    options: audio_toolbox::Options,
+) -> Result<String, String> {
+    audio_toolbox::start(core.inner().clone(), app, options)
+}
+#[tauri::command]
+fn audio_toolbox_result(
+    app: tauri::AppHandle,
+    core: State<'_, Shared>,
+    id: String,
+) -> Result<serde_json::Value, String> {
+    audio_toolbox::result(&core, &app, &id)
+}
+#[tauri::command]
+fn audio_toolbox_path(
+    app: tauri::AppHandle,
+    core: State<'_, Shared>,
+    id: String,
+    output_id: String,
+) -> Result<String, String> {
+    audio_toolbox::path(&core, &app, &id, &output_id)
+}
+#[tauri::command]
+async fn apply_audio_toolbox_result(
+    app: tauri::AppHandle,
+    core: State<'_, Shared>,
+    id: String,
+    destinations: Vec<audio_toolbox::Destination>,
+    mute_source: bool,
+) -> Result<Project, String> {
+    audio_toolbox::apply(core.inner().clone(), app, id, destinations, mute_source).await
 }
 #[tauri::command]
 fn apply_source_transcription(
@@ -1511,6 +1571,15 @@ fn retry_job(app: tauri::AppHandle, core: State<'_, Shared>, id: String) -> Resu
     if let Some(request) = record.source_transcription {
         return source_transcription::resume(core.inner().clone(), app, request);
     }
+    if let Some(request) = record.toolbox_request {
+        return audio_toolbox::enqueue(core.inner().clone(), app, request);
+    }
+    if let Some(id) = record.toolbox_install {
+        return audio_toolbox::install(core.inner().clone(), app, id);
+    }
+    if let Some(request) = record.dubbing_pipeline {
+        return dubbing_pipeline::enqueue(core.inner().clone(), app, request);
+    }
     if let Some(request) = record.transcription {
         let session = core.session.lock().map_err(io_error)?;
         let s = session.as_ref().ok_or("NO_PROJECT")?;
@@ -1761,6 +1830,13 @@ pub fn run() {
             latest_source_transcription,
             apply_source_transcription,
             set_voice_output_gain,
+            generate_dubbing_pipeline,
+            audio_toolbox_status,
+            install_audio_toolbox_model,
+            separate_audio_selection,
+            audio_toolbox_result,
+            audio_toolbox_path,
+            apply_audio_toolbox_result,
             inpaint_status,
             install_inpaint,
             inpaint_lips,

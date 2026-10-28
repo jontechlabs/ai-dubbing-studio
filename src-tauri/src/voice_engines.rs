@@ -247,7 +247,7 @@ pub fn install<R: tauri::Runtime>(
     });
     Ok(returned)
 }
-async fn install_python_profile<R: tauri::Runtime>(
+pub(crate) async fn install_python_profile<R: tauri::Runtime>(
     core: &Arc<Core>,
     app: &tauri::AppHandle<R>,
     key: &str,
@@ -256,7 +256,10 @@ async fn install_python_profile<R: tauri::Runtime>(
 ) -> Result<(), String> {
     let drama = profile == "drama3";
     let multilingual = profile == "multilingual";
-    let folder = root(core).join(if multilingual {
+    let toolbox = profile == "audio-toolbox";
+    let folder = root(core).join(if toolbox {
+        "audio-toolbox-runtime"
+    } else if multilingual {
         "multilingual-runtime"
     } else if drama {
         "drama-runtime"
@@ -288,7 +291,9 @@ async fn install_python_profile<R: tauri::Runtime>(
         b"python312.zip\n.\nLib/site-packages\nimport site\n",
     )?;
     let runtime: serde_json::Value = serde_json::from_slice(
-        &std::fs::read(separation::resources(app).join(if multilingual {
+        &std::fs::read(separation::resources(app).join(if toolbox {
+            "audio-toolbox-runtime.json"
+        } else if multilingual {
             "multilingual-runtime.json"
         } else if drama {
             "drama-runtime.json"
@@ -368,11 +373,21 @@ async fn install_python_profile<R: tauri::Runtime>(
             .await
             .map_err(io_error)??;
     }
+    if toolbox {
+        let archive = separation::resources(app).join("vendor/audio-toolbox/audiosep-core.zip");
+        let destination = folder.join("audiosep");
+        let f = flag.clone();
+        tauri::async_runtime::spawn_blocking(move || tts::extract(&archive, &destination, &f))
+            .await
+            .map_err(io_error)??;
+    }
     if separation::probe(
         &separation::python(&folder),
         &[
             separation::resources(app)
-                .join(if multilingual {
+                .join(if toolbox {
+                    "audio_toolbox_worker.py"
+                } else if multilingual {
                     "multilingual_worker.py"
                 } else if drama {
                     "drama_worker.py"

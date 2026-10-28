@@ -196,7 +196,10 @@
     "voiceLibraryGenerate": "Génération des phrases de référence",
     "characterMatch": "Comparaison des références de personnages",
     "ttsQwenRecovery": "Reprise compatible Qwen3 · même GPU",
-    "ttsValidateOutput": "Vérification du WAV généré"
+    "ttsValidateOutput": "Vérification du WAV généré",
+    "toolboxModel": "Téléchargement du modèle audio",
+    "toolboxVerify": "Vérification des modèles audio",
+    "toolboxSeparate": "Séparation de la sélection"
   },
   "shortcuts": "Espace : lecture · J/K/L : transport · O : original · Ctrl+S : sauvegarde · Ctrl+Z/Y : annuler/rétablir",
   "errors": {
@@ -392,7 +395,16 @@
     "INVALID_OUTPUT_GAIN": "Le volume de sortie doit être compris entre 0% et 400%.",
     "ASR_DISK_REQUIRED": "Espace insuffisant pour télécharger le modèle de transcription (181 Mio et une marge de 64 Mio nécessaires).",
     "ASR_RANGE_TOO_LONG": "Sélection trop longue : au maximum 16 sous-titres et 120 secondes par réplique.",
-    "ASR_OUTPUT_INVALID": "Chaque proposition doit contenir un texte non vide (10 000 caractères au maximum)."
+    "ASR_OUTPUT_INVALID": "Chaque proposition doit contenir un texte non vide (10 000 caractères au maximum).",
+    "AUDIO_TOOLBOX_OPTIONS": "Sélection ou paramètres de séparation invalides (0,1 à 60 s).",
+    "AUDIO_TOOLBOX_PROMPT": "Décrivez le son à isoler avec AudioSep.",
+    "AUDIO_TOOLBOX_DISK_REQUIRED": "L’espace libre est insuffisant pour installer cet outil.",
+    "AUDIO_TOOLBOX_MODEL_REQUIRED": "Installez d’abord cet outil de séparation.",
+    "AUDIO_TOOLBOX_GPU_OOM": "Mémoire GPU insuffisante. Réduisez la fenêtre ou choisissez explicitement CPU.",
+    "AUDIO_TOOLBOX_FAILED": "La séparation audio a échoué. Consultez le journal de cette tâche.",
+    "AUDIO_TOOLBOX_INVALID_AUDIO": "Les sorties audio sont invalides ; aucune piste n’a été remplacée.",
+    "AUDIO_TOOLBOX_ALREADY_APPLIED": "Ce résultat a déjà été appliqué.",
+    "AUDIO_TOOLBOX_NOT_READY": "Le résultat n’est pas encore disponible."
   },
   "preparingVideo": "Préparation de la vidéo…",
   "loadingVideo": "Chargement de la vidéo…",
@@ -1231,7 +1243,10 @@
     "audioEffects": "Effets audio",
     "voiceLibrary": "Bibliothèque vocale du personnage",
     "characterMatch": "Proposition de personnage",
-    "sourceTranscription": "Transcription du dialogue source"
+    "sourceTranscription": "Transcription du dialogue source",
+    "ttsPipeline": "Doublage en 2 étapes",
+    "toolboxInstall": "Installation de l’outil audio",
+    "audioToolbox": "Séparation de la sélection"
   },
   "fxRemoveTrack": "Retirer la copie avec effets · {{name}}",
   "transferEffects": "Effets audio",
@@ -1525,5 +1540,67 @@
     "applyHint": "Vérifiez et corrigez la proposition avant de l’appliquer. Seul le texte du SRT original sera modifié ; ses créneaux, la traduction et tous les essais sont conservés. Les traductions concernées repassent à valider.",
     "apply": "Appliquer au SRT original",
     "applied": "Texte original mis à jour. Vous pouvez annuler cette modification."
+  },
+  "workbench": {
+    "currentTask": "Traitement de cet essai",
+    "progress": "Avancement de cet essai",
+    "addDub": "Ajouter un doublage",
+    "sharedVoiceText": "Texte partagé avec « Texte pour la voix » dans Prononciation. Modifier ce champ ne change pas le sous-titre traduit.",
+    "resolvedPronunciation": "Avec les règles de prononciation",
+    "originalText": "Texte original de la réplique",
+    "listenCurrentReference": "Écouter la référence vocale actuelle",
+    "referenceExcerpt": "Extrait de la piste choisie, limité aux 20 premières secondes de cette réplique."
+  },
+  "pipeline": {
+    "enable": "Doublage en 2 étapes : TTS puis timbre",
+    "hint": "Crée un essai TTS brut, puis un nouvel essai avec ChatterboxVC. Chaque étape conserve son WAV et les essais précédents. Les moteurs sont chargés successivement.",
+    "target": "Référence pour le timbre final",
+    "device": "Périphérique de conversion du timbre",
+    "guide": "Guide d’intonation de la réplique source (expérimental)",
+    "guideHint": "0 % conserve le jeu du TTS français. Une valeur supérieure applique les contours de hauteur, rythme et énergie de la réplique source avant conversion ; ce traitement ne garantit pas une interprétation fidèle et peut dégrader le naturel."
+  },
+  "toolbox": {
+    "title": "Boîte à outils audio · sélection",
+    "hint": "Traitez 0,1 à 60 secondes de la piste choisie. Écoutez les sorties puis affectez celles que vous souhaitez à Voix, Musique ou Effets. La vidéo et les fichiers source restent intacts.",
+    "model": "Outil de séparation",
+    "source": "Piste à analyser",
+    "start": "Début (s)",
+    "end": "Fin (s)",
+    "rangeHint": "Sélection de 0,1 à 60 secondes, au même timestamp.",
+    "prompt": "Son à isoler",
+    "promptHint": "Décrivez le son, de préférence en anglais (ex. footsteps, a man speaking). Il s’agit d’une description audio, pas de commandes à exécuter.",
+    "device": "Périphérique de séparation",
+    "window": "Fenêtre de traitement",
+    "memoryHint": "Une fenêtre courte réduit la mémoire nécessaire. Les performances et la qualité varient selon le modèle et le contenu ; le profil 4 s est un point de départ pour 16 Go de VRAM.",
+    "weights": "de modèles",
+    "disk": "Espace requis : {{required}} · disponible : {{available}}",
+    "install": "Installer ou réparer cet outil",
+    "demucsHint": "Demucs sépare voix, batterie, basse et reste. Il ne distingue pas de façon fiable musique et bruitages. Écoutez les sorties avant de les affecter.",
+    "separate": "Isoler la sélection",
+    "preview": "Résultats à écouter",
+    "listen": "Écouter : {{name}}",
+    "destination": "Destination : {{name}}",
+    "skip": "Ne pas appliquer cette sortie",
+    "muteSource": "Rendre muette la section de la piste source",
+    "applyHint": "Seules les destinations choisies sont remplacées sur cet intervalle, par des couches annulables. La piste source continue de jouer si elle n’est pas rendue muette. Ctrl+Z annule l’application.",
+    "stale": "La source a changé depuis l’analyse. Relancez la séparation avant d’appliquer.",
+    "applied": "Sorties appliquées à la timeline.",
+    "apply": "Appliquer les sorties choisies",
+    "outputs": {
+      "vocals": "Voix",
+      "instrumental": "Accompagnement",
+      "drums": "Batterie",
+      "bass": "Basse",
+      "other": "Reste",
+      "isolated": "Son demandé",
+      "residual": "Reste du signal"
+    },
+    "context": {
+      "bs-roformer-viperx-1297": "Isoler les voix · BS-RoFormer Viperx 1297",
+      "mel-band-roformer-kim": "Isoler les voix · Mel-Band RoFormer Kim",
+      "htdemucs": "Séparer les instruments · Demucs v4",
+      "htdemucs-ft": "Séparer les instruments · Demucs v4 FT",
+      "audiosep": "Isoler un son par description · AudioSep"
+    }
   }
 }

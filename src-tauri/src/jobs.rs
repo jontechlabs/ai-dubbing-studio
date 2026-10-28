@@ -88,6 +88,12 @@ pub struct ImportRequest {
 #[derive(Clone, Serialize, Deserialize)]
 pub struct PersistedJob {
     #[serde(default)]
+    pub toolbox_request: Option<crate::audio_toolbox::Request>,
+    #[serde(default)]
+    pub toolbox_install: Option<String>,
+    #[serde(default)]
+    pub dubbing_pipeline: Option<crate::dubbing_pipeline::Request>,
+    #[serde(default)]
     pub source_transcription: Option<crate::source_transcription::Request>,
     #[serde(default)]
     pub audio_effects: Option<crate::audio_fx_job::Request>,
@@ -261,6 +267,9 @@ pub fn create<R: tauri::Runtime>(
                     mix_request: None,
                     transcription: None,
                     source_transcription: None,
+                    toolbox_request: None,
+                    toolbox_install: None,
+                    dubbing_pipeline: None,
                 },
                 cancel: Arc::new(AtomicBool::new(false)),
                 paused: Arc::new(AtomicBool::new(false)),

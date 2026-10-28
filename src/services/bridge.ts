@@ -8,6 +8,37 @@ import { browserStore, downloadText, pickBrowserFile } from './browserStore';
 import { audioPeaks, type Waveform } from '../domain/waveform';
 
 export const native = isTauri();
+export function audioToolboxStatus() {
+  return invoke<import('../domain/audioToolbox').AudioToolboxStatus>('audio_toolbox_status');
+}
+export function installAudioToolboxModel(modelId: string) {
+  return invoke<string>('install_audio_toolbox_model', { modelId });
+}
+export function separateAudioSelection(
+  options: import('../domain/audioToolbox').AudioToolboxOptions,
+) {
+  return invoke<string>('separate_audio_selection', { options });
+}
+export function audioToolboxResult(id: string) {
+  return invoke<import('../domain/audioToolbox').AudioToolboxResult>('audio_toolbox_result', {
+    id,
+  });
+}
+export async function audioToolboxUrl(id: string, outputId: string) {
+  return convertFileSrc(await invoke<string>('audio_toolbox_path', { id, outputId }));
+}
+export function applyAudioToolboxResult(
+  id: string,
+  destinations: import('../domain/audioToolbox').AudioToolboxDestination[],
+  muteSource: boolean,
+) {
+  return invoke<Project>('apply_audio_toolbox_result', { id, destinations, muteSource });
+}
+export function generateDubbingPipeline(
+  options: import('../domain/voiceCapture').DubbingPipelineOptions,
+) {
+  return invoke<string>('generate_dubbing_pipeline', { options });
+}
 export interface CharacterMatchOptions {
   lineId: string;
   trackId: string | null;

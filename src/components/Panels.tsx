@@ -57,6 +57,7 @@ export function Panels({
   batchIds,
   onPanel,
   audioSelection,
+  toolboxModel,
   onPlayGeneration,
   onOriginal,
   activeGenerationId,
@@ -86,6 +87,7 @@ export function Panels({
   batchIds: string[];
   onPanel: (panel: Panel) => void;
   audioSelection: AudioSelection | null;
+  toolboxModel?: string | null;
   onPlayGeneration: (generation: Generation) => void;
   onOriginal: (line: Dialogue) => void;
   activeGenerationId: string | null;
@@ -132,6 +134,10 @@ export function Panels({
         )}
         {(panel === 'dub' || panel === 'batchDub') && project && (
           <DubPanel
+            onReferencePlay={() => {
+              videoRef.current?.pause();
+              document.dispatchEvent(new Event('studio-voice-preview'));
+            }}
             key={`${project.id}:${panel}`}
             batch={panel === 'batchDub' ? { selectedIds: batchIds } : undefined}
             run={run}
@@ -238,6 +244,8 @@ export function Panels({
         )}
         {panel === 'audio' && (
           <AudioPanel
+            toolboxModel={toolboxModel}
+            snapshot={snapshot}
             selection={audioSelection?.mediaId === project?.media?.id ? audioSelection : null}
             selected={project?.dialogues.find((line) => line.id === selectedId)}
             videoRef={videoRef}

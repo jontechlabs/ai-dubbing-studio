@@ -115,7 +115,7 @@ pub(crate) fn basis(p: &Project, line_id: &str) -> Result<Basis, String> {
         slots,
     })
 }
-fn stamp(root: &Path, path: &str) -> Result<serde_json::Value, String> {
+pub(crate) fn stamp(root: &Path, path: &str) -> Result<serde_json::Value, String> {
     let path = project::asset(root, path)?;
     let m = std::fs::metadata(path).map_err(io_error)?;
     Ok(

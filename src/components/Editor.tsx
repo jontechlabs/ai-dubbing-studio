@@ -19,6 +19,7 @@ export function Editor({
   selected,
   onEdit,
   onPlay,
+  onDub,
   busy,
   time,
   translationFocus,
@@ -30,6 +31,7 @@ export function Editor({
   selected: Dialogue | undefined;
   onEdit: (update: (p: Project) => Project) => void;
   onPlay: (d: Dialogue) => void;
+  onDub: (d: Dialogue) => void;
   busy: boolean;
   time: number;
   translationFocus: number;
@@ -74,6 +76,14 @@ export function Editor({
           {t('linePreview')}
         </button>
       </div>
+      <button
+        className="button subtle editor-dub-button"
+        disabled={busy || !target.trim()}
+        onClick={() => onDub(selected)}
+      >
+        <Mic2 size={14} />
+        {t('workbench.addDub')}
+      </button>
       <TimingEditor
         key={selected.id}
         project={project}
