@@ -52,7 +52,12 @@ export function CurrentReferenceAudio({
           autoPlay
           preload="metadata"
           aria-label={t('ttsListenReference')}
-          onPlay={onPlay}
+          onPlay={(event) => {
+            document.querySelectorAll('audio').forEach((a) => {
+              if (a !== event.currentTarget) a.pause();
+            });
+            onPlay();
+          }}
         />
       )}
       <small>{t('workbench.referenceExcerpt')}</small>

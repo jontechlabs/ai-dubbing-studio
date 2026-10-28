@@ -41,6 +41,72 @@ function take(p: Project, id = 'take1', durationMs = 2000): Generation {
   };
 }
 describe('dubbing takes', () => {
+  it('links explicit translation and selected voice review without approving a stale take', async () => {
+    const { approveTranslation, translationState } = await import('./translation');
+    const p = demoProject(),
+      line = p.dialogues[0],
+      g = take(p);
+    p.generations = [g];
+    line.selectedGenerationIds.fr = g.id;
+    line.status = 'generated';
+    const approved = approveTranslation(p, line.id, true);
+    expect(approved.dialogues[0].status).toBe('validated');
+    const withdrawn = reviewGeneration(approved, line.id, false);
+    expect(withdrawn.dialogues[0].status).toBe('review');
+    expect(translationState(withdrawn, withdrawn.dialogues[0])).toBe('translated');
+    const reviewed = reviewGeneration(withdrawn, line.id, true);
+    expect(translationState(reviewed, reviewed.dialogues[0])).toBe('approved');
+    const stale = structuredClone(p);
+    stale.dialogues[0].ttsText = 'Texte modifié';
+    expect(approveTranslation(stale, line.id, true).dialogues[0].status).toBe('review');
+    expect(() => reviewGeneration(stale, line.id, true)).toThrow('TTS_STALE_GENERATION');
+    expect(p.dialogues[0].status).toBe('generated');
+  });
+  it('persists a two-stage take and rejects corrupt provenance while retaining the raw take', () => {
+    const p = demoProject(),
+      raw = take(p, 'raw'),
+      final = take(p, 'final');
+    p.formatVersion = 23;
+    final.dubbingPipeline = {
+      stageIds: [raw.id, final.id],
+      engine: 'chatterbox-vc',
+      settings: {
+        lineId: p.dialogues[0].id,
+        tts: { ...defaultVoiceSettings },
+        conversion: {
+          generationId: 'pipeline',
+          referenceId: '',
+          characterId: null,
+          device: 'cpu',
+          referenceMode: 'current',
+        },
+        guideStrength: 0,
+      },
+    };
+    p.generations = [raw, final];
+    expect(validateProject(structuredClone(p)).generations).toEqual([raw, final]);
+    for (const change of [
+      (p: Project) => {
+        p.formatVersion = 22;
+      },
+      (p: Project) => {
+        (p.generations[1] as Generation).dubbingPipeline!.stageIds = ['raw', 'raw'];
+      },
+      (p: Project) => {
+        (p.generations[1] as Generation).dubbingPipeline!.settings.guideStrength = 2;
+      },
+      (p: Project) => {
+        (p.generations[1] as Generation).dubbingPipeline!.settings.lineId = 'other';
+      },
+    ]) {
+      const bad = structuredClone(p);
+      change(bad);
+      expect(() => validateProject(bad)).toThrow('INVALID_DUBBING_PIPELINE');
+    }
+    const retained = deleteGeneration(p, 'raw');
+    expect(validateProject(retained).generations).toHaveLength(1);
+    expect(p.generations).toEqual([raw, final]);
+  });
   it('persists accent instructions in format 9 and rejects unsupported Qwen accents', () => {
     const p = demoProject(),
       changed = editVoiceSettings(p, p.dialogues[0].id, {

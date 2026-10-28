@@ -2,7 +2,7 @@
 //! Completed stages are immutable takes; a failed stage never discards them.
 use crate::{
     domain::{io_error, Project},
-    jobs, project, tts, voice_capture, Core,
+    jobs, tts, voice_capture, Core,
 };
 use serde::{Deserialize, Serialize};
 use std::{
@@ -13,6 +13,9 @@ use std::{
     },
 };
 use tauri::Emitter;
+#[cfg(test)]
+#[path = "dubbing_pipeline_tests.rs"]
+mod tests;
 #[derive(Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct Options {
@@ -28,6 +31,37 @@ pub struct Request {
     pub revision: u64,
     pub options: Options,
     pub stages: Vec<String>,
+}
+pub fn validate_project(p: &Project) -> Result<(), String> {
+    for g in &p.generations {
+        if let Some(meta) = g.get("dubbingPipeline") {
+            let options: Options = serde_json::from_value(meta["settings"].clone())
+                .map_err(|_| "INVALID_DUBBING_PIPELINE")?;
+            let ids = meta["stageIds"]
+                .as_array()
+                .ok_or("INVALID_DUBBING_PIPELINE")?;
+            let expected = if options.guide_strength > 0.0 { 3 } else { 2 };
+            let mut seen = std::collections::HashSet::new();
+            if p.format_version < 23
+                || g["kind"] != "tts"
+                || meta["engine"] != "chatterbox-vc"
+                || options.line_id != g["dialogueId"]
+                || !options.guide_strength.is_finite()
+                || !(0.0..=1.0).contains(&options.guide_strength)
+                || ids.len() != expected
+                || ids.last() != Some(&g["id"])
+                || ids.iter().any(|v| {
+                    v.as_str()
+                        .is_none_or(|s| s.is_empty() || s.len() > 128 || !seen.insert(s))
+                })
+            {
+                return Err("INVALID_DUBBING_PIPELINE".into());
+            }
+            options.tts.validate()?;
+            options.conversion.validate()?;
+        }
+    }
+    Ok(())
 }
 fn validate(p: &Project, o: &Options) -> Result<(), String> {
     tts::validate_input(p, &o.line_id, &o.tts)?;
@@ -151,6 +185,9 @@ async fn run<R: tauri::Runtime>(
     mut r: Request,
     flag: &AtomicBool,
 ) -> Result<(), String> {
+    if flag.load(Ordering::Relaxed) {
+        return Err("CANCELLED".into());
+    }
     let guided = r.options.guide_strength > 0.0;
     if r.stages.is_empty() {
         let p = snapshot(core, &r)?;

@@ -491,7 +491,7 @@ pub fn enqueue<R: tauri::Runtime>(
     });
     Ok(output)
 }
-fn validate_input(p: &Project, line_id: &str, options: &Options) -> Result<(), String> {
+pub(crate) fn validate_input(p: &Project, line_id: &str, options: &Options) -> Result<(), String> {
     crate::voice_accent::validate(options, Some(&p.languages.target))?;
     let line = p
         .dialogues

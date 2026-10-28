@@ -110,6 +110,8 @@ export function editDialogue(
   if (!dialogue) return project;
   if (role === 'tts') {
     dialogue.ttsText = text || null;
+    if (dialogue.status === 'validated' || dialogue.status === 'generated')
+      dialogue.status = 'review';
     return next;
   }
   const cues = role === 'source' ? next.sourceCues : next.targetCues;

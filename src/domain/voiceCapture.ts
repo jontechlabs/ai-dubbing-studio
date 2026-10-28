@@ -1,4 +1,5 @@
 import type { Project } from './types';
+import { validVoiceSettings } from './tts';
 export interface VoiceConversionOptions {
   referenceMode?: 'current' | 'reference';
   referenceTrackId?: string;
@@ -12,6 +13,43 @@ export interface DubbingPipelineOptions {
   tts: import('./types').VoiceSettings;
   conversion: VoiceConversionOptions;
   guideStrength: number;
+}
+export interface DubbingPipelineRecord {
+  stageIds: string[];
+  settings: DubbingPipelineOptions;
+  engine: 'chatterbox-vc';
+}
+export function validateDubbingPipelines(project: Project) {
+  for (const g of project.generations) {
+    if (g.kind !== 'tts' || g.dubbingPipeline === undefined) continue;
+    const m = g.dubbingPipeline,
+      o = m?.settings,
+      c = o?.conversion,
+      ids = m?.stageIds;
+    if (
+      !m ||
+      !o ||
+      project.formatVersion < 23 ||
+      m.engine !== 'chatterbox-vc' ||
+      o?.lineId !== g.dialogueId ||
+      !Number.isFinite(o.guideStrength) ||
+      o.guideStrength < 0 ||
+      o.guideStrength > 1 ||
+      !Array.isArray(ids) ||
+      ids.length !== (o.guideStrength > 0 ? 3 : 2) ||
+      new Set(ids).size !== ids.length ||
+      ids.some((s) => typeof s !== 'string' || !s || s.length > 128) ||
+      ids.at(-1) !== g.id ||
+      !validVoiceSettings(o.tts) ||
+      !c ||
+      !c.generationId ||
+      c.generationId.length > 128 ||
+      (!['auto', 'cpu'].includes(c.device) && !/^cuda:\d{1,2}$/.test(c.device)) ||
+      (c.referenceMode !== undefined && !['current', 'reference'].includes(c.referenceMode)) ||
+      (c.referenceMode !== 'current' && (!c.referenceId || c.referenceId.length > 128))
+    )
+      throw Error('INVALID_DUBBING_PIPELINE');
+  }
 }
 export interface TakeOrigin {
   type: 'microphone' | 'conversion';

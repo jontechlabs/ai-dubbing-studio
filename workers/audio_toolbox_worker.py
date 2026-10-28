@@ -53,6 +53,8 @@ def chunks(x, infer, rate, seconds, progress):
     """Linear overlap-add with common boundaries, including very short clips."""
     import numpy as np
     n = len(x)
+    if x.ndim!=2 or n==0 or not np.isfinite(x).all():
+        raise ValueError('AUDIO_TOOLBOX_INVALID_AUDIO')
     window = rate * seconds
     overlap = min(rate // 2, window // 4)
     stride = window - overlap
@@ -200,6 +202,7 @@ def main():
     parser=argparse.ArgumentParser();parser.add_argument('--request');parser.add_argument('--runtime-info',action='store_true');parser.add_argument('--info',action='store_true');args=parser.parse_args()
     if args.runtime_info or args.info:
         import torch, audio_separator, lightning, torchlibrosa, rotary_embedding_torch
+        from audio_separator.separator.architectures import mdxc_separator, demucs_separator
         from cosyvoice_worker import device_info
         info=device_info()
         report(runtimeReady=True,torchVersion=torch.__version__.split('+')[0],cudaVersion=torch.version.cuda,devices=info['devices']);return

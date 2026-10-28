@@ -55,6 +55,7 @@ export interface VoiceSettings {
   seed: number;
 }
 export interface Generation {
+  dubbingPipeline?: import('./voiceCapture').DubbingPipelineRecord;
   takeOrigin?: import('./voiceCapture').TakeOrigin;
   prosodyTransfer?: import('./prosody').ProsodyTransfer;
   kind: 'tts';

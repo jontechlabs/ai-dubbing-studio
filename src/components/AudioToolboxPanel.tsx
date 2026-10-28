@@ -56,6 +56,12 @@ export function AudioToolboxPanel({
       )
       .map((j) => j.id + j.status)
       .join('|');
+  const latest = jobs.find(
+    (j) => j.kind === 'audioToolbox' && j.projectId === project.id && j.status === 'succeeded',
+  )?.id;
+  useEffect(() => {
+    if (!key && latest) setKey(latest);
+  }, [key, latest]);
   useEffect(() => {
     if (initialModel) {
       setOpen(true);
@@ -360,7 +366,7 @@ export function AudioToolboxPanel({
                 {t('toolbox.muteSource')}
               </label>
               <small>{t('toolbox.applyHint')}</small>
-              {result.stale && <p className="warning">{t('toolbox.stale')}</p>}
+              {result.stale && !result.applied && <p className="warning">{t('toolbox.stale')}</p>}
               {result.applied && <p role="status">{t('toolbox.applied')}</p>}
               <button
                 className="button accent wide"

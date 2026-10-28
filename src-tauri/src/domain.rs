@@ -221,6 +221,8 @@ pub struct TranslationApproval {
 }
 impl Project {
     pub fn clean_translation_approvals(&mut self) {
+        let before: std::collections::HashSet<String> =
+            self.translation_approvals.keys().cloned().collect();
         let source: HashMap<_, _> = self
             .source_cues
             .iter()
@@ -248,6 +250,14 @@ impl Project {
                 && !approval.target_text.trim().is_empty()
                 && approval.target_text == text(&line.target_cue_ids, &target)
         });
+        for line in &mut self.dialogues {
+            if before.contains(&line.id)
+                && !self.translation_approvals.contains_key(&line.id)
+                && line.status == "validated"
+            {
+                line.status = "review".into();
+            }
+        }
     }
 
     pub fn new(name: String, source: String, target: String) -> Self {
@@ -554,6 +564,7 @@ impl Project {
         }
         crate::tts::validate_generations(self)?;
         crate::voice_capture::validate(self)?;
+        crate::dubbing_pipeline::validate_project(self)?;
         crate::prosody::validate(self)?;
         crate::voice_edit::validate(self)?;
         crate::audio_fx_job::validate_project(self)?;

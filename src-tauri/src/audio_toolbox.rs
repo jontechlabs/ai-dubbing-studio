@@ -17,6 +17,9 @@ use std::{
     time::Duration,
 };
 use tauri::{Emitter, Manager};
+#[cfg(test)]
+#[path = "audio_toolbox_tests.rs"]
+mod tests;
 #[derive(Clone, Serialize, Deserialize)]
 pub struct Model {
     pub id: String,

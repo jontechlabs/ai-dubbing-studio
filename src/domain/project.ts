@@ -7,7 +7,7 @@ import { validateAudioPatches } from './audioPatch';
 import { validateLipVideos } from './inpaint';
 import { validateVoiceEdit } from './voiceEdit';
 import { validateProsody } from './prosody';
-import { validateTakeOrigins } from './voiceCapture';
+import { validateTakeOrigins, validateDubbingPipelines } from './voiceCapture';
 import { validateEffectsProject } from './audioEffects';
 import { validateCharacterProfiles } from './characterReview';
 import { validateVoiceLibraries } from './voiceLibrary';
@@ -395,6 +395,7 @@ export function validateProject(value: unknown): Project {
         throw Error('INVALID_GENERATION');
   }
   validateTakeOrigins(project);
+  validateDubbingPipelines(project);
   validateCharacterProfiles(project);
   validateVoiceLibraries(project);
   validateProsody(project);

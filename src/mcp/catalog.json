@@ -5520,8 +5520,9 @@
         "Generation_26": {
           "type": "object",
           "properties": {
-            "takeOrigin": { "anyOf": [{ "$ref": "#/$defs/TakeOrigin_27" }] },
-            "prosodyTransfer": { "anyOf": [{ "$ref": "#/$defs/ProsodyTransfer_28" }] },
+            "dubbingPipeline": { "anyOf": [{ "$ref": "#/$defs/DubbingPipelineRecord_27" }] },
+            "takeOrigin": { "anyOf": [{ "$ref": "#/$defs/TakeOrigin_30" }] },
+            "prosodyTransfer": { "anyOf": [{ "$ref": "#/$defs/ProsodyTransfer_31" }] },
             "kind": { "type": "string", "const": "tts" },
             "id": { "type": "string" },
             "dialogueId": { "type": "string" },
@@ -5604,7 +5605,46 @@
           ],
           "additionalProperties": false
         },
-        "TakeOrigin_27": {
+        "DubbingPipelineRecord_27": {
+          "type": "object",
+          "properties": {
+            "stageIds": { "type": "array", "items": { "type": "string" } },
+            "settings": { "$ref": "#/$defs/DubbingPipelineOptions_28" },
+            "engine": { "type": "string", "const": "chatterbox-vc" }
+          },
+          "required": ["stageIds", "settings", "engine"],
+          "additionalProperties": false
+        },
+        "DubbingPipelineOptions_28": {
+          "type": "object",
+          "properties": {
+            "lineId": { "type": "string" },
+            "tts": { "$ref": "#/$defs/VoiceSettings_7" },
+            "conversion": { "$ref": "#/$defs/VoiceConversionOptions_29" },
+            "guideStrength": { "type": "number" }
+          },
+          "required": ["lineId", "tts", "conversion", "guideStrength"],
+          "additionalProperties": false
+        },
+        "VoiceConversionOptions_29": {
+          "type": "object",
+          "properties": {
+            "referenceMode": {
+              "anyOf": [
+                { "type": "string", "const": "reference" },
+                { "type": "string", "const": "current" }
+              ]
+            },
+            "referenceTrackId": { "anyOf": [{ "type": "string" }] },
+            "generationId": { "type": "string" },
+            "referenceId": { "type": "string" },
+            "characterId": { "anyOf": [{ "type": "null" }, { "type": "string" }] },
+            "device": { "type": "string" }
+          },
+          "required": ["generationId", "referenceId", "characterId", "device"],
+          "additionalProperties": false
+        },
+        "TakeOrigin_30": {
           "type": "object",
           "properties": {
             "type": {
@@ -5620,14 +5660,14 @@
           "required": ["type"],
           "additionalProperties": false
         },
-        "ProsodyTransfer_28": {
+        "ProsodyTransfer_31": {
           "type": "object",
           "properties": {
             "algorithm": { "type": "string", "const": "praat-psola-v1" },
             "sourceGenerationId": { "type": "string" },
             "sourceDurationMs": { "type": "number" },
             "guideDurationMs": { "type": "number" },
-            "options": { "$ref": "#/$defs/ProsodyOptions_29" }
+            "options": { "$ref": "#/$defs/ProsodyOptions_32" }
           },
           "required": [
             "algorithm",
@@ -5638,7 +5678,7 @@
           ],
           "additionalProperties": false
         },
-        "ProsodyOptions_29": {
+        "ProsodyOptions_32": {
           "type": "object",
           "properties": {
             "generationId": { "type": "string" },

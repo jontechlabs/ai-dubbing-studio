@@ -93,7 +93,7 @@ test('new and existing take gains are independent, persist and keep all archived
   expect((await page.evaluate(() => (window as any).__pendingTts)).options.outputGain).toBe(1.5);
   await page.evaluate(() => (window as any).__completeTts());
   await page
-    .getByRole('dialog', { name: 'Traitements', exact: true })
+    .getByRole('dialog', { name: 'Doublage', exact: true })
     .getByRole('button', { name: 'Fermer', exact: true })
     .click();
   await page
