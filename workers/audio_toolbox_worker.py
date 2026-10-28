@@ -13,6 +13,7 @@ import re
 import sys
 
 HERE = Path(__file__).resolve().parent
+sys.path.insert(0,str(HERE))
 sys.dont_write_bytecode = True
 os.environ.update(HF_HUB_OFFLINE='1', TRANSFORMERS_OFFLINE='1', HF_HUB_DISABLE_TELEMETRY='1')
 IDS = {'bs-roformer-viperx-1297', 'mel-band-roformer-kim', 'htdemucs', 'htdemucs-ft', 'audiosep'}
