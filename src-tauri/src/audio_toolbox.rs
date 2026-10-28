@@ -359,6 +359,22 @@ fn silence(path: &Path) -> Result<(), String> {
     b.resize(44 + frames as usize * 4, 0);
     project::atomic_write(path, &b)
 }
+// Only fresh UUID assets enter this guard. An unsuccessful application removes
+// its own incomplete outputs; successful/undoable project assets remain intact.
+#[derive(Default)]
+struct NewAssets {
+    paths: Vec<PathBuf>,
+    keep: bool,
+}
+impl Drop for NewAssets {
+    fn drop(&mut self) {
+        if !self.keep {
+            for path in &self.paths {
+                let _ = std::fs::remove_file(path);
+            }
+        }
+    }
+}
 pub async fn apply<R: tauri::Runtime>(
     core: Arc<Core>,
     app: tauri::AppHandle<R>,
@@ -424,9 +440,12 @@ pub async fn apply<R: tauri::Runtime>(
         resolved.push((d.output_id.clone(), target));
     }
     project::ensure_directory(&r.root, "stems")?;
+    let mut assets = NewAssets::default();
     for t in &next.tracks {
         if !p.tracks.iter().any(|old| old.id == t.id) {
-            silence(&r.root.join(t.path.as_ref().ok_or("INVALID_PATH")?))?;
+            let path = r.root.join(t.path.as_ref().ok_or("INVALID_PATH")?);
+            assets.paths.push(path.clone());
+            silence(&path)?;
         }
     }
     for (output, target) in resolved {
@@ -437,7 +456,9 @@ pub async fn apply<R: tauri::Runtime>(
         {
             return Err("AUDIO_TOOLBOX_INVALID_AUDIO".into());
         }
-        std::fs::copy(source, r.root.join(&rel)).map_err(io_error)?;
+        let target = r.root.join(&rel);
+        assets.paths.push(target.clone());
+        std::fs::copy(source, target).map_err(io_error)?;
         next.generations.push(json!({"kind":"audioPatch","id":patch_id,"operationId":key,"operation":"separation","sourcePath":r.source_path,"sourceTrackId":r.options.source_track_id,"trackId":target,"startMs":r.options.start_ms,"endMs":r.options.end_ms,"mode":"replace","path":rel,"gain":1,"toolboxModel":m.id,"toolboxOutput":output,"prompt":r.options.prompt}));
     }
     if mute_source && !targets.contains(&r.options.source_track_id) {
@@ -450,6 +471,7 @@ pub async fn apply<R: tauri::Runtime>(
         return Err("STALE_REVISION".into());
     }
     let saved = s.replace(next, p.revision)?;
+    assets.keep = true;
     app.emit("project-changed", &saved).map_err(io_error)?;
     Ok(saved)
 }

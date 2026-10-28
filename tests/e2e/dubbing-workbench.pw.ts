@@ -36,7 +36,7 @@ test('toolbox uses timeline selection, auditions before mapping and applies only
  await page.getByRole('button',{name:'Sélectionner une zone audio (ou Maj + glisser)',exact:true}).click();
  const row=page.locator('.timeline-track[data-track-id="original"]');await row.scrollIntoViewIfNeeded();const box=(await row.boundingBox())!;
  await page.mouse.move(box.x+box.width*.1,box.y+box.height/2);await page.mouse.down();await page.mouse.move(box.x+box.width*.2,box.y+box.height/2);await page.mouse.up();
- await row.locator('.audio-range-selection.persistent').click({button:'right'});
+ const selected=(await row.locator('.audio-range-selection.persistent').boundingBox())!;await page.mouse.click(selected.x+selected.width/2,selected.y+selected.height/2,{button:'right'});
  await page.getByRole('menuitem',{name:'Isoler les voix · Mel-Band RoFormer Kim',exact:true}).click();
  const section=page.locator('.audio-toolbox');await expect(section).toBeVisible();const before=await page.evaluate(()=>(window as any).__getMockProject());
  await section.getByRole('spinbutton',{name:'Début (s)',exact:true}).fill('1');await section.getByRole('spinbutton',{name:'Fin (s)',exact:true}).fill('3');

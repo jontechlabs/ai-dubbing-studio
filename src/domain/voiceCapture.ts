@@ -22,7 +22,7 @@ export interface DubbingPipelineRecord {
 export function validateDubbingPipelines(project: Project) {
   for (const g of project.generations) {
     if (g.kind !== 'tts' || g.dubbingPipeline === undefined) continue;
-    const m = g.dubbingPipeline,
+    const m = g.dubbingPipeline as DubbingPipelineRecord,
       o = m?.settings,
       c = o?.conversion,
       ids = m?.stageIds;
