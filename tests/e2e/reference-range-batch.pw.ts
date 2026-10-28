@@ -42,7 +42,7 @@ test('shift checked selection excludes missing translations and dispatches a com
   await expect(panel.getByRole('combobox',{name:'Répliques à doubler'})).toHaveValue('selected');
   await panel.getByRole('button',{name:'Charger un fichier de référence'}).click();await panel.getByRole('spinbutton',{name:'Début de l’extrait (s)'}).fill('30');await panel.getByRole('spinbutton',{name:'Fin de l’extrait (s)'}).fill('38');await panel.getByRole('button',{name:'Utiliser cet extrait'}).click();
   await panel.getByRole('combobox',{name:'Périphérique de génération'}).selectOption('cuda:0');await panel.getByRole('combobox',{name:'Humeur / interprétation'}).selectOption('calm');await panel.getByRole('combobox',{name:'Accent souhaité (consigne)'}).selectOption('fr-FR');
-  await panel.getByRole('spinbutton',{name:'Graine'}).fill('42');await panel.getByRole('slider').focus();await panel.getByRole('slider').press('ArrowRight');
+  await panel.getByRole('spinbutton',{name:'Graine'}).fill('42');await panel.getByRole('slider',{name:/^Vitesse/}).focus();await panel.getByRole('slider',{name:/^Vitesse/}).press('ArrowRight');
   await expect(panel.getByText(/2 à générer · 0 déjà doublées · 1 sans traduction/)).toBeVisible();
   await panel.getByRole('button',{name:'Doubler 2 répliques',exact:true}).scrollIntoViewIfNeeded();await page.screenshot({path:'docs/screenshots/batch-configuration.png'});
   await panel.getByRole('button',{name:'Doubler 2 répliques',exact:true}).click();const selection=await page.evaluate(()=>(window as any).__pendingBatch);
