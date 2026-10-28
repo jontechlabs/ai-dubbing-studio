@@ -462,6 +462,18 @@
       "url": "https://files.pythonhosted.org/packages/a6/53/d78dc063216e62fc55f6b2eebb447f6a4b0a59f55c8406376f76bf959b08/pydub-0.25.1-py2.py3-none-any.whl",
       "size": 32327,
       "sha256": "65617e33033874b59d87db603aa1ed450633288aefead953b30bded59cb599a6"
+    },
+    {
+      "name": "six-1.17.0-py2.py3-none-any.whl",
+      "url": "https://files.pythonhosted.org/packages/b7/ce/149a00dd41f10bc29e5921b496af8b574d8413afcd5e30dfa0ed46c2cc5e/six-1.17.0-py2.py3-none-any.whl",
+      "size": 11050,
+      "sha256": "4721f391ed90541fddacab5acf947aa0d3dc7d27b2e1e8eda2be8970586c3274"
+    },
+    {
+      "name": "resampy-0.4.3-py3-none-any.whl",
+      "url": "https://files.pythonhosted.org/packages/4d/b9/3b00ac340a1aab3389ebcc52c779914a44aadf7b0cb7a3bf053195735607/resampy-0.4.3-py3-none-any.whl",
+      "size": 3076529,
+      "sha256": "ad2ed64516b140a122d96704e32bc0f92b23f45419e8b8f478e5a05f83edcebd"
     }
   ]
 }

@@ -1,0 +1,31 @@
+name: Real selected audio separation models
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  models:
+    runs-on: windows-latest
+    timeout-minutes: 75
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+      PYTHONUTF8: '1'
+      PYTHONUNBUFFERED: '1'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12.10'
+      - name: Prepare pinned FFmpeg
+        run: ./scripts/prepare-ffmpeg.ps1
+      - name: Verify isolated runtime and all five full-weight separation engines
+        run: python scripts/test-audio-toolbox.py
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: audio-toolbox-model-validation
+          path: |
+            artifacts/audio-toolbox-validation.json
+            .cache/audio-toolbox-smoke/*.log
+          include-hidden-files: true
+          if-no-files-found: warn
