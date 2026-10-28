@@ -98,8 +98,17 @@ def main():
   no_private_entries(z);assert z.testzip() is None;prefix='AI-Dubbing-Studio-Windows/'
   assert prefix+'AI Dubbing Studio.exe' in z.namelist() and prefix+'binaries/ffmpeg.exe' in z.namelist()
   for p,digest in model['identities'].items():assert hashlib.sha256(z.read(prefix+p)).hexdigest()==digest,p
-  for p in (ROOT/'workers').rglob('*'):
-   if p.is_file() and '__pycache__' not in p.parts and p.suffix!='.pyc':assert z.read(prefix+p.relative_to(ROOT).as_posix())==p.read_bytes(),str(p)
+  expected_workers=set()
+  for relative,destination in read(ROOT/'src-tauri/tauri.conf.json')['bundle']['resources'].items():
+   if not destination.startswith('workers/'):continue
+   source=(ROOT/'src-tauri'/relative).resolve();assert source.is_relative_to((ROOT/'workers').resolve())
+   entries=source.rglob('*') if source.is_dir() else [source]
+   for p in entries:
+    if not p.is_file():continue
+    name=destination.rstrip('/')+'/'+p.relative_to(source).as_posix() if source.is_dir() else destination
+    assert '__pycache__' not in p.parts and p.suffix!='.pyc'
+    assert z.read(prefix+name)==p.read_bytes(),name;expected_workers.add(prefix+name)
+  assert {p for p in z.namelist() if p.startswith(prefix+'workers/') and not p.endswith('/')}==expected_workers
  try:release=api('releases/tags/'+TAG)
  except RuntimeError as e:
   if 'HTTP 404' not in str(e):raise
