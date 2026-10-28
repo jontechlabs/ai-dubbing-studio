@@ -17,12 +17,20 @@
     },
     "models/clap_encoder.py": {
       "upstream": "d57745e0d28a6283bea19cef224807c778be5693d711ad9298f44195fd653ae6",
-      "patched": "8e442fd310f4c9ef2297d0d8cdca0d97266f12fc0df1e4c91de3ca2db2ae319a"
+      "patched": "979b0fb26654398552a9c654714bebd2fae9d0b3064c55612acd698811334132"
     }
   },
   "notes": [
     "Offline local Roberta tokenizer/config; CLAP checkpoint supplies all text-encoder weights.",
     "Remove import-time implicit model construction.",
-    "Explicit trusted-checkpoint/mmap loading for PyTorch 2.8."
-  ]
+    "Explicit trusted-checkpoint/mmap loading for PyTorch 2.8.",
+    "Text-only inference: defer audio-query training imports; include the upstream CLIP BPE vocabulary required at module import."
+  ],
+  "resources": {
+    "models/CLAP/open_clip/bpe_simple_vocab_16e6.txt.gz": {
+      "gitBlob": "7b5088a527f720063f044eb928eee315f63b2fc0",
+      "sha256": "924691ac288e54409236115652ad4aa250f48203de50a9e4722a6ecd48d6804a",
+      "bytes": 1356917
+    }
+  }
 }

@@ -111,7 +111,7 @@ def audiosep(r, source, device):
     from scipy.signal import resample_poly
     model_dir = Path(clean_path(r['modelDir']))
     os.environ['DUBBING_ROBERTA_DIR'] = str(model_dir / 'roberta')
-    core = Path(r['runtimeDir']) / 'audiosep'
+    core = Path(clean_path(r['runtimeDir'])) / 'audiosep'
     sys.path.insert(0, str(core))
     from models.clap_encoder import CLAP_Encoder
     from models.audiosep import AudioSep, get_model_class
@@ -219,8 +219,12 @@ def generate(r):
 def main():
     parser=argparse.ArgumentParser();parser.add_argument('--request');parser.add_argument('--runtime-info',action='store_true');parser.add_argument('--info',action='store_true');args=parser.parse_args()
     if args.runtime_info or args.info:
-        import torch, audio_separator, lightning, torchlibrosa, rotary_embedding_torch
-        from audio_separator.separator.architectures import mdxc_separator, demucs_separator
+        import torch
+        if args.runtime_info:
+            import audio_separator, lightning, torchlibrosa, rotary_embedding_torch
+            from audio_separator.separator.architectures import mdxc_separator, demucs_separator
+            sys.path.insert(0,str(Path(sys.executable).resolve().parent.parent/'audiosep'))
+            from models.audiosep import AudioSep
         from cosyvoice_worker import device_info
         info=device_info()
         report(runtimeReady=True,torchVersion=torch.__version__.split('+')[0],cudaVersion=torch.version.cuda,devices=info['devices']);return

@@ -5,6 +5,15 @@ import numpy as np
 import audio_toolbox_worker as worker
 
 class AudioToolboxTests(unittest.TestCase):
+    def test_vendor_archive_contains_tokenizer_data_and_offline_text_imports(self):
+        import ast,zipfile
+        root=Path(__file__).parent/'vendor/audio-toolbox';meta=json.loads((root/'UPSTREAM.json').read_text())
+        with zipfile.ZipFile(root/'audiosep-core.zip') as z:
+            for path,hashes in meta['patches'].items():self.assertEqual(hashlib.sha256(z.read(path)).hexdigest(),hashes['patched'])
+            for path,data in meta['resources'].items():self.assertEqual(hashlib.sha256(z.read(path)).hexdigest(),data['sha256'])
+            module=ast.parse(z.read('models/clap_encoder.py').decode())
+            self.assertFalse(any(isinstance(n,ast.ImportFrom) and n.module=='models.CLAP.training.data' for n in module.body))
+            self.assertIn(b'query_encoder: nn.Module = None',z.read('models/audiosep.py'))
     def test_official_kim_and_uvr_configs_limit_the_actual_inference_window(self):
         for config in [dict(model=dict(stft_hop_length=441,sample_rate=44100,dim=384),inference=dict(chunk_size=352800)),dict(model=dict(stft_hop_length=441),audio=dict(chunk_size=352800,hop_length=441,sample_rate=44100),inference=dict(dim_t=801))]:
             original=json.loads(json.dumps(config));out=worker.roformer_config(config,2)
