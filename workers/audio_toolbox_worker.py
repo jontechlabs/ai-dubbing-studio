@@ -141,6 +141,10 @@ def separator(r, spec, source, device):
     model_dir = Path(clean_path(r['modelDir']))
     raw = Path(r['outputDir']) / 'raw'; raw.mkdir()
     class LocalSeparator(Separator):
+        def check_ffmpeg_installed(self):
+            # The native studio has already decoded PCM WAV. This adapter reads
+            # with SoundFile/librosa and writes float WAV, without pydub codecs.
+            self.logger.debug('Using native-decoded WAV and SoundFile; no system FFmpeg required.')
         def setup_torch_device(self, _info):
             self.torch_device = torch.device(device)
             self.torch_device_cpu = torch.device('cpu')

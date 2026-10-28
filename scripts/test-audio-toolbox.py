@@ -38,7 +38,9 @@ for spec in manifest['files']:
  extract(wheel,site)
 extract(ROOT/'workers/vendor/audio-toolbox/audiosep-core.zip',runtime/'audiosep')
 env={**os.environ,'PYTHONUNBUFFERED':'1','PYTHONDONTWRITEBYTECODE':'1','PYTHONUTF8':'1','OMP_NUM_THREADS':'2','MKL_NUM_THREADS':'2','HF_HUB_OFFLINE':'1','TRANSFORMERS_OFFLINE':'1'}
-env['PATH']=str(ROOT/'src-tauri/binaries')+os.pathsep+env['PATH']
+# Prove that the neural adapter does not depend on a system FFmpeg installation.
+# The studio's native decoder below is invoked by its explicit bundled path.
+env['PATH']=os.pathsep.join(p for p in env['PATH'].split(os.pathsep) if p and not (Path(p)/'ffmpeg.exe').is_file())
 worker=ROOT/'workers/audio_toolbox_worker.py'
 subprocess.run([str(python),'-B',str(worker),'--runtime-info'],check=True,env=env,timeout=180)
 sample=fetch(dict(url='https://huggingface.co/csukuangfj/sherpa-onnx-sense-voice-zh-en-ja-ko-yue-2024-07-17/resolve/2365baeacb507f821a0c8120fcee3d484dba7a07/test_wavs/ja.wav',size=230444,sha256='460bd8dccb0d2a5f4e29c628f837be4082d13defc64c3fc21dd1b6bb0e119095'),WORK/'ja.wav')
