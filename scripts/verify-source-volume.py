@@ -7,7 +7,7 @@ This does not claim identical native application code or a new GPU benchmark.
 from pathlib import Path
 import json,subprocess
 ROOT=Path(__file__).resolve().parents[1]
-BASE='268b4c72e28ae149c65d052d0d52c5911d1bbe14'
+BASE='25679ed25d7916fedcb3941bcc76c985171b804a'
 def git(*args):return subprocess.check_output(['git',*args],cwd=ROOT,text=True).strip()
 identities={}
 for path in ['workers','resources','public','pnpm-lock.yaml','src-tauri/src/voice_engines.rs','src-tauri/src/tts_session.rs','src-tauri/src/voice_capture.rs','src-tauri/src/prosody.rs','src-tauri/src/qwen_safety.rs']:
