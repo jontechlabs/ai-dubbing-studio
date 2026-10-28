@@ -1,6 +1,9 @@
 name: Real selected audio separation models
 on:
   workflow_dispatch:
+  push:
+    branches: [codex/dubbing-workbench]
+    paths: [.github/workflows/audio-toolbox-smoke.yml]
 permissions:
   contents: read
 jobs:
