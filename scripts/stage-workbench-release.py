@@ -4,7 +4,7 @@ Never publishes a release, changes its tag or pushes an updater feed. The final
 source archive is optional and must retain every compiled application input.
 """
 from pathlib import Path
-import argparse,ctypes,hashlib,json,os,re,subprocess,urllib.error,urllib.request,zipfile
+import argparse,ctypes,hashlib,json,os,re,subprocess,urllib.error,urllib.parse,urllib.request,zipfile
 ROOT=Path(__file__).resolve().parents[1];WORK=ROOT/'.cache/release-stage';WORK.mkdir(parents=True,exist_ok=True)
 PROOF=ROOT/'.cache/release-stage-proof';PROOF.mkdir(parents=True,exist_ok=True)
 SLUG='jontechlabs/ai-dubbing-studio';VERSION='0.32.0';TAG='v'+VERSION
@@ -57,14 +57,21 @@ def no_private_entries(z):
   assert Path(name).suffix.lower() not in ['.key','.pfx','.p12','.ckpt','.safetensors','.gguf','.th'],name
   assert Path(name).name not in ['.env','mcp-endpoint.json','mcp-token','mcp-token.txt'],name
 def upload(path):
- release=api('releases/tags/'+TAG);assert release['draft'] and release['prerelease']
+ release=api('releases/'+str(DRAFT_ID));assert release['draft'] and release['prerelease']
  old=next((a for a in release['assets'] if a['name']==path.name),None)
  if old:assert old['digest']=='sha256:'+sha(path) and old['size']==path.stat().st_size
- else:gh('release','upload',TAG,path)
- asset=next(a for a in api('releases/tags/'+TAG)['assets'] if a['name']==path.name)
+ else:
+  url=f'https://uploads.github.com/repos/{SLUG}/releases/{DRAFT_ID}/assets?name='+urllib.parse.quote(path.name)
+  try:
+   with path.open('rb') as data:
+    request=urllib.request.Request(url,data=data,headers={**HEADERS,'Content-Type':'application/octet-stream','Content-Length':str(path.stat().st_size)},method='POST')
+    with urllib.request.build_opener(NoRedirect).open(request,timeout=300) as response:assert response.status==201
+  except urllib.error.HTTPError as e:raise RuntimeError('Draft asset upload HTTP '+str(e.code)) from None
+ asset=next(a for a in api('releases/'+str(DRAFT_ID))['assets'] if a['name']==path.name)
  assert asset['digest']=='sha256:'+sha(path) and asset['size']==path.stat().st_size and asset['state']=='uploaded'
  return dict(name=path.name,size=asset['size'],sha256=sha(path),id=asset['id'])
 def main():
+ global DRAFT_ID
  parser=argparse.ArgumentParser();parser.add_argument('--run',required=True);parser.add_argument('--models-run',required=True);parser.add_argument('--final-head');args=parser.parse_args()
  assert args.run.isdigit() and args.models_run.isdigit()
  run=api('actions/runs/'+args.run);assert run['status']=='completed' and run['conclusion']=='success' and run['path']=='.github/workflows/dubbing-workbench.yml'
@@ -109,10 +116,13 @@ def main():
     assert '__pycache__' not in p.parts and p.suffix!='.pyc'
     assert z.read(prefix+name)==p.read_bytes(),name;expected_workers.add(prefix+name)
   assert {p for p in z.namelist() if p.startswith(prefix+'workers/') and not p.endswith('/')}==expected_workers
- try:release=api('releases/tags/'+TAG)
- except RuntimeError as e:
-  if 'HTTP 404' not in str(e):raise
-  gh('release','create',TAG,'--draft','--prerelease','--target',code_head,'--title','v0.32.0 — Atelier de doublage et outils audio','--notes','Paquets en cours de vérification avant publication.');release=api('releases/tags/'+TAG)
+ # A draft with no published tag is not returned by /releases/tags/:tag.
+ # Resolve it explicitly from the authenticated draft-inclusive release list.
+ release=next((r for r in api('releases?per_page=100') if r['tag_name']==TAG),None)
+ if release is None:
+  gh('release','create',TAG,'--draft','--prerelease','--target',code_head,'--title','v0.32.0 — Atelier de doublage et outils audio','--notes','Paquets en cours de vérification avant publication.')
+  release=next(r for r in api('releases?per_page=100') if r['tag_name']==TAG)
+ DRAFT_ID=release['id']
  assert release['draft'] and release['prerelease'];allowed=set(expected)|{f'AI-Dubbing-Studio-{VERSION}-Sources.zip','SHA256SUMS.txt'};assert all(a['name'] in allowed for a in release['assets'])
  assets=[upload(p) for p in [setup,signature,portable]]
  if args.final_head:
