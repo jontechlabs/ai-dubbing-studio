@@ -5,7 +5,7 @@
   "patches": {
     "models/CLAP/open_clip/factory.py": {
       "upstream": "82231be390dd818f066dc1b6e9c0653fe36e5bbd4445e2db0d2c24e5800beef5",
-      "patched": "7cde1753d8208ae40dac09670c302e94e2bbc67af9979e220c17c3f465981a7c"
+      "patched": "677c2ad380e84224bc144045ae29ec77b5adf97ea73da0f331e4ef273d40328a"
     },
     "models/CLAP/open_clip/model.py": {
       "upstream": "a875be52eefee5909e6c338a9e321fd4003f97c80af56871522a6e65a9664b68",
@@ -24,7 +24,8 @@
     "Offline local Roberta tokenizer/config; CLAP checkpoint supplies all text-encoder weights.",
     "Remove import-time implicit model construction.",
     "Explicit trusted-checkpoint/mmap loading for PyTorch 2.8.",
-    "Text-only inference: defer audio-query training imports; include the upstream CLIP BPE vocabulary required at module import."
+    "Text-only inference: defer audio-query training imports; include the upstream CLIP BPE vocabulary required at module import.",
+    "Check and drop only the obsolete, deterministic RoBERTa position_ids buffer; all CLAP learned weights still load strictly."
   ],
   "resources": {
     "models/CLAP/open_clip/bpe_simple_vocab_16e6.txt.gz": {

@@ -122,6 +122,13 @@ async fn apply_creates_missing_tracks_at_original_timestamp_preserves_media_and_
         ]
     };
     let mut bad = destinations();
+    bad[0].track_id = Some("original".into());
+    assert!(
+        apply(core.clone(), app.handle().clone(), key.clone(), bad, true)
+            .await
+            .is_err()
+    );
+    let mut bad = destinations();
     bad[1].role = Some("speech".into());
     assert!(
         apply(core.clone(), app.handle().clone(), key.clone(), bad, true)
@@ -208,7 +215,9 @@ async fn apply_creates_missing_tracks_at_original_timestamp_preserves_media_and_
     let rendered = std::fs::read(out).unwrap();
     let data = rendered.windows(4).position(|w| w == b"data").unwrap() + 8;
     assert!(rendered[data..]
-        .chunks_exact(2)
+        .as_chunks::<2>()
+        .0
+        .iter()
         .any(|b| i16::from_le_bytes([b[0], b[1]]).unsigned_abs() > 1000));
     assert!(apply(
         core.clone(),

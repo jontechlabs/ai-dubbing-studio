@@ -1,9 +1,11 @@
 name: Dubbing workbench and audio toolbox packages
 on:
   workflow_dispatch:
-  push:
-    branches: [codex/dubbing-workbench]
-    paths: [.github/workflows/dubbing-workbench.yml]
+    inputs:
+      proof_run:
+        description: 'Optional workbench run with a successful frontend step and identical inputs. Native checks run unless the complete native proof also passed unchanged.'
+        required: false
+        type: string
 permissions:
   contents: read
   actions: read
@@ -30,6 +32,11 @@ jobs:
           python-version: '3.12.10'
       - name: Verify preserved TTS cores and new toolbox identities
         run: python scripts/verify-workbench.py
+      - name: Verify identical previously passed native and Chrome inputs
+        if: inputs.proof_run != ''
+        env:
+          STUDIO_PROOF_RUN: ${{ inputs.proof_run }}
+        run: python scripts/verify-workbench-proof.py $env:STUDIO_PROOF_RUN
       - name: Prepare pinned tools and dependencies
         run: |
           npm install --global pnpm@11.25.0
@@ -50,14 +57,19 @@ jobs:
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
           pnpm format:check
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
-          pnpm test:e2e
+          if (-not $env:STUDIO_REUSED_CHROME) {
+            pnpm test:e2e
+            if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          }
       - name: Native tests with real FFmpeg, lints and formatting
         run: |
           git restore -- docs/screenshots
-          cargo test --locked --manifest-path src-tauri/Cargo.toml
-          if ($LASTEXITCODE) { exit $LASTEXITCODE }
-          cargo clippy --locked --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings
-          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          if (-not $env:STUDIO_REUSED_NATIVE_UI) {
+            cargo test --locked --manifest-path src-tauri/Cargo.toml
+            if ($LASTEXITCODE) { exit $LASTEXITCODE }
+            cargo clippy --locked --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings
+            if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          }
           cargo fmt --manifest-path src-tauri/Cargo.toml --check
       - name: Worker regression checks
         run: |

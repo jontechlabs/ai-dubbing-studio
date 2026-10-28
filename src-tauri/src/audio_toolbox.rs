@@ -413,6 +413,9 @@ pub async fn apply<R: tauri::Runtime>(
     let tracks = crate::mix::tracks(&p);
     let mut resolved = vec![];
     for d in &destinations {
+        if d.track_id.is_some() == d.role.is_some() {
+            return Err("AUDIO_TOOLBOX_OPTIONS".into());
+        }
         if !m.outputs.contains(&d.output_id) || !outputs.insert(&d.output_id) {
             return Err("AUDIO_TOOLBOX_OPTIONS".into());
         }
