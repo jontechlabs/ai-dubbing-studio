@@ -1,6 +1,6 @@
 # Piloter le studio avec une IA via MCP
 
-Le studio fournit **120 outils MCP** en v0.30.0 : 88 commandes natives et 32 commandes d’édition, d’état et de lecture. Le serveur utilise **stdio** et le même exécutable que l’application. Cette intégration pilote **l’application ouverte** ; aucun environnement Node.js ou Python supplémentaire n’est requis pour la connexion.
+Le studio fournit **125 outils MCP** en v0.31.0 : 93 commandes natives et 32 commandes d’édition, d’état et de lecture. Le serveur utilise **stdio** et le même exécutable que l’application. Cette intégration pilote **l’application ouverte** ; aucun environnement Node.js ou Python supplémentaire n’est requis pour la connexion.
 
 `studio_audio_levels` mesure les niveaux stéréo en dBFS et permet d’effacer les crêtes maximales/voyants, sans modifier le projet. Les valeurs sont aussi dans `studio_get_state.audioLevels`. [Mesure, mix final et limites](AUDIO-LEVELS.md).
 
@@ -90,3 +90,7 @@ Depuis v0.24.0, `studio_suggest_translation` accepte aussi `direction` (facultat
 
 
 `studio_voice_quality_catalog` expose les paramètres de synthèse, leurs bornes, les valeurs standard et les profils de chaque moteur. Le champ `VoiceSettings.quality` est accepté pour la génération individuelle et par lot ; il est conservé avec les essais et nécessite le format de projet 19. [Guide qualité](VOICE-QUALITY.md).
+
+## Transcription source et volume (v0.31)
+
+`studio_transcribe_dialogue_source` produit une proposition locale à relire. Consultez les tâches puis `studio_source_transcription_result` ; appliquez explicitement avec `studio_apply_source_transcription`. `studio_latest_source_transcription` retrouve la dernière analyse. `VoiceSettings.outputGain` et `studio_set_voice_output_gain` règlent les nouveaux essais et les essais existants de 0 à 4 (1,5 = +50%). [Guide, captures et format 22](SOURCE-TRANSCRIPTION-OUTPUT-VOLUME.md).

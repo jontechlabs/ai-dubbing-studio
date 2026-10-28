@@ -1,11 +1,11 @@
 {
-  "version": "0.30.0",
-  "notes": "Bibliothèque vocale par personnage : assemblage de plusieurs extraits, phrases françaises à écouter/valider et références validées en doublage unitaire ou par lot. VoxCPM2 : choix explicite Standard (Ultimate / Hi-Fi désactivé) ou Ultimate / Hi-Fi activé, par réplique et par lot ; privilégiez Standard pour une source japonaise et un accent français. Fidélité à une référence française avec transcription exacte et texte cible sans préfixe anglais ; guide acoustique japonais ou deux audios expérimentaux. Propositions de personnage à accepter manuellement. Qwen3 GGUF : budget de durée, contrôle du WAV et reprise compatible unique sur le même périphérique. Tous les essais et sources restent conservés. Format de projet 21, 120 outils MCP.",
-  "pub_date": "2026-10-27T18:07:43Z",
+  "version": "0.31.0",
+  "notes": "Transcription locale de l’audio source depuis Aide à la traduction : propositions à vérifier puis appliquer au SRT original. Volume de sortie avant génération unitaire ou par lot et sur les essais existants, de 0 à 400%, dont +50% (150%) et +75% (175%). Gain réversible pour l’écoute, le mix et les exports ; limiteur des crêtes. Créneaux, traductions, fichiers originaux et tous les essais conservés. 125 outils MCP, format de projet 22.",
+  "pub_date": "2026-10-28T16:32:23Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSdFFyMUJGTFp3NkNTN295NTRsUlZwRU1NcU14NHA5RlNZK2M1Z1JCS25LV2l6OTZLdEtxS1dWN3QwTExvOGUxbDA2QTdSdmx1N0RTWDd3M0poazM5emttNzE1S0o2aWdzPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkzMTIzNzc4CWZpbGU6QUkgRHViYmluZyBTdHVkaW9fMC4zMC4wX3g2NC1zZXR1cC5leGUJdmVyc2lvbjowLjMwLjAKOTl5ckdkdm5XNnBOZS9UMnptQWx5Zlp4bFE0RjFoamcxT1g1aEZQeXg1OEJnZ2ttWU0vWTRYOU1zaTlmNlVRR0Zkb0tqTUp0R0NhMUZRNUg2WjkzQXc9PQo=",
-      "url": "https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.30.0/AI-Dubbing-Studio-0.30.0-Setup.exe"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSdFFyMUJGTFp3NkFYamRIR1p1dVowQitHU2JYMTJhVEJkVzAxNHZwdi9CQnh1MlZESkpxSC9lYU0vMW5ncW9odllqVUJQeGhkQkcrWXZWdUFmcURia0p1dXhXYVRtdEF3PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkzMjA0MTUzCWZpbGU6QUkgRHViYmluZyBTdHVkaW9fMC4zMS4wX3g2NC1zZXR1cC5leGUJdmVyc2lvbjowLjMxLjAKdUJ2Rk1FU1BuR0l4NGMrOVJVWnk1RVhoM0QwLzYzdm9BTjJUMnVMS0twWXVId0U2cTJ6QUwyYVp3ajBKVU9YQ3MxR1VDVGVaTmJKM2x0aG5kSW1zQXc9PQo=",
+      "url": "https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.31.0/AI-Dubbing-Studio-0.31.0-Setup.exe"
     }
   }
 }
