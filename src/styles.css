@@ -3699,3 +3699,41 @@ pre {
 .character-suggestion > small {
   display: block;
 }
+.source-transcription {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 9px;
+  margin-bottom: 12px;
+}
+.source-transcription > summary {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.source-asr-options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.source-asr-original {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.source-asr-proposal {
+  margin-top: 12px;
+}
+.output-gain-control {
+  display: grid;
+  grid-template-columns: minmax(100px, 1fr) minmax(100px, 150px);
+  gap: 8px;
+  align-items: end;
+  margin: 12px 0;
+}
+.output-gain-control .panel-description {
+  grid-column: 1/-1;
+  margin: 0;
+}
+.output-gain-control > .button {
+  grid-column: 1/-1;
+}

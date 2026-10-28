@@ -10,6 +10,8 @@ export function validVoiceSettings(value: unknown): value is VoiceSettings {
   const s = value as VoiceSettings;
   return (
     validIntonationGuide(s.intonationGuide, s) &&
+    (s.outputGain === undefined ||
+      (Number.isFinite(s.outputGain) && s.outputGain >= 0 && s.outputGain <= 4)) &&
     validAccent(s.accent, s.variantId ?? undefined) &&
     validMood(s.mood) &&
     validQuality(s.quality, s.variantId) &&

@@ -26,6 +26,7 @@ mod prosody;
 mod qwen_safety;
 mod separation;
 mod smoke;
+mod source_transcription;
 mod speakers;
 mod subtitles;
 mod transcription;
@@ -172,6 +173,54 @@ pub fn transcribe_reference_worker(
     output: &Path,
 ) -> Result<(), String> {
     transcription::worker(model, audio, language, output)
+}
+pub fn transcribe_dialogue_worker(
+    model: &Path,
+    audio: &Path,
+    language: &str,
+    output: &Path,
+) -> Result<(), String> {
+    transcription::worker_dialogue(model, audio, language, output)
+}
+#[tauri::command]
+fn transcribe_dialogue_source(
+    app: tauri::AppHandle,
+    core: State<'_, Shared>,
+    options: source_transcription::Options,
+) -> Result<String, String> {
+    source_transcription::enqueue(core.inner().clone(), app, options)
+}
+#[tauri::command]
+fn source_transcription_result(
+    core: State<'_, Shared>,
+    id: String,
+) -> Result<Option<source_transcription::Proposal>, String> {
+    source_transcription::result(&core, &id)
+}
+#[tauri::command]
+fn latest_source_transcription(
+    core: State<'_, Shared>,
+    line_id: String,
+) -> Result<Option<String>, String> {
+    source_transcription::latest(&core, &line_id)
+}
+#[tauri::command]
+fn apply_source_transcription(
+    app: tauri::AppHandle,
+    core: State<'_, Shared>,
+    id: String,
+    texts: Vec<String>,
+) -> Result<Project, String> {
+    source_transcription::apply(&core, &app, id, texts)
+}
+#[tauri::command]
+async fn set_voice_output_gain(
+    app: tauri::AppHandle,
+    core: State<'_, Shared>,
+    id: String,
+    gain: f64,
+) -> Result<Project, String> {
+    voice_edit::set_output_gain(core.inner().clone(), app, id, gain).await
 }
 
 use domain::{io_error, MediaAsset, MediaInfo, Project};
@@ -1459,6 +1508,9 @@ fn retry_job(app: tauri::AppHandle, core: State<'_, Shared>, id: String) -> Resu
         drop(session);
         return mix::enqueue(core.inner().clone(), app, request.output, request.options);
     }
+    if let Some(request) = record.source_transcription {
+        return source_transcription::resume(core.inner().clone(), app, request);
+    }
     if let Some(request) = record.transcription {
         let session = core.session.lock().map_err(io_error)?;
         let s = session.as_ref().ok_or("NO_PROJECT")?;
@@ -1704,6 +1756,11 @@ pub fn run() {
             suggest_translation,
             translation_result,
             latest_translation,
+            transcribe_dialogue_source,
+            source_transcription_result,
+            latest_source_transcription,
+            apply_source_transcription,
+            set_voice_output_gain,
             inpaint_status,
             install_inpaint,
             inpaint_lips,

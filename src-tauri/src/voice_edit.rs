@@ -7,8 +7,88 @@ use std::{
     path::{Path, PathBuf},
     sync::atomic::{AtomicBool, Ordering},
 };
+use tauri::Emitter;
 use tokio::io::AsyncReadExt;
 static EDIT_GATE: tokio::sync::Semaphore = tokio::sync::Semaphore::const_new(2);
+pub async fn set_output_gain<R: tauri::Runtime>(
+    core: std::sync::Arc<crate::Core>,
+    app: tauri::AppHandle<R>,
+    id: String,
+    gain: f64,
+) -> Result<crate::domain::Project, String> {
+    if !gain.is_finite() || !(0.0..=4.0).contains(&gain) {
+        return Err("INVALID_OUTPUT_GAIN".into());
+    }
+    let (root, p, g) = {
+        let guard = core.session.lock().map_err(io_error)?;
+        let s = guard.as_ref().ok_or("NO_PROJECT")?;
+        let g = s
+            .project
+            .generations
+            .iter()
+            .find(|g| g["kind"] == "tts" && g["id"] == id)
+            .ok_or("INVALID_GENERATION")?
+            .clone();
+        (s.root.clone(), s.project.clone(), g)
+    };
+    if p.voice_edits
+        .get(&id)
+        .and_then(|e| e.output_gain)
+        .unwrap_or(1.0)
+        == gain
+    {
+        return Ok(p);
+    }
+    let duration = g["durationMs"].as_u64().ok_or("INVALID_GENERATION")?;
+    let mut edit = p.voice_edits.get(&id).cloned().unwrap_or(Edit {
+        output_gain: None,
+        pieces: vec![Piece {
+            source_start_ms: Some(0),
+            source_end_ms: Some(duration),
+            duration_ms: duration,
+            gain: 1.0,
+            envelope: None,
+            effects: vec![],
+        }],
+    });
+    edit.output_gain = (gain != 1.0).then_some(gain);
+    edit.validate(duration)?;
+    let path = g["path"].as_str().ok_or("INVALID_GENERATION")?;
+    let input = project::asset(&root, path)?;
+    let original = crate::voice_library::digest(&input)?;
+    render(
+        &root,
+        path,
+        Some(&edit),
+        &media::binary(&app, "ffmpeg")?,
+        &AtomicBool::new(false),
+    )
+    .await?;
+    if crate::voice_library::digest(&input)? != original {
+        return Err("STALE_REVISION".into());
+    }
+    let mut guard = core.session.lock().map_err(io_error)?;
+    let s = guard.as_mut().ok_or("NO_PROJECT")?;
+    if s.root != root || s.project.id != p.id || s.project.revision != p.revision {
+        return Err("STALE_REVISION".into());
+    }
+    let mut next = s.project.clone();
+    next.format_version = next.format_version.max(22);
+    next.voice_edits.insert(id.clone(), edit);
+    for line in &mut next.dialogues {
+        if line
+            .selected_generation_ids
+            .values()
+            .any(|selected| selected == &id)
+            && line.status == "validated"
+        {
+            line.status = "review".into();
+        }
+    }
+    let saved = s.replace(next, p.revision)?;
+    app.emit("project-changed", &saved).map_err(io_error)?;
+    Ok(saved)
+}
 pub(crate) const MAX_DURATION_MS: u64 = 120_000;
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
@@ -31,6 +111,12 @@ pub struct Piece {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Edit {
+    #[serde(
+        default,
+        rename = "outputGain",
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub output_gain: Option<f64>,
     pub pieces: Vec<Piece>,
 }
 impl Edit {
@@ -38,6 +124,12 @@ impl Edit {
         self.pieces.iter().map(|p| p.duration_ms).sum()
     }
     pub fn validate(&self, source_ms: u64) -> Result<(), String> {
+        if self
+            .output_gain
+            .is_some_and(|g| !g.is_finite() || !(0.0..=4.0).contains(&g))
+        {
+            return Err("INVALID_OUTPUT_GAIN".into());
+        }
         if self.pieces.is_empty() || self.pieces.len() > 256 {
             return Err("INVALID_VOICE_EDIT".into());
         }
@@ -88,6 +180,9 @@ pub fn validate(p: &crate::domain::Project) -> Result<(), String> {
         return Err("INVALID_VOICE_EDIT".into());
     }
     for (id, edit) in &p.voice_edits {
+        if edit.output_gain.is_some() && p.format_version < 22 {
+            return Err("INVALID_OUTPUT_GAIN".into());
+        }
         let g = p
             .generations
             .iter()
@@ -219,15 +314,20 @@ pub async fn render(
         ));
     }
     filters.push(format!(
-        "{}concat=n={}:v=0:a=1{}[out]",
+        "{}concat=n={}:v=0:a=1{}{}[out]",
         (0..edit.pieces.len())
             .map(|i| format!("[p{i}]"))
             .collect::<String>(),
         edit.pieces.len(),
+        edit.output_gain
+            .filter(|g| *g != 1.0)
+            .map(|g| format!(",volume={g:.9}"))
+            .unwrap_or_default(),
         if edit
             .pieces
             .iter()
             .any(|p| p.effects.iter().any(|e| e.enabled))
+            || edit.output_gain.is_some_and(|g| g > 0.0 && g != 1.0)
         {
             ",alimiter=limit=0.98:level=0:latency=1"
         } else {

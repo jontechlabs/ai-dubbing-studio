@@ -5,6 +5,7 @@ use std::{collections::HashMap, sync::Mutex};
 
 fn options() -> Options {
     Options {
+        output_gain: None,
         quality: None,
         intonation_guide: None,
         mood: None,
@@ -17,6 +18,24 @@ fn options() -> Options {
         mode: "crossLingual".into(),
         speed: 1.0,
         seed: 7,
+    }
+}
+#[test]
+fn generation_output_gain_requires_format22_without_changing_legacy_options() {
+    let mut o = options();
+    assert!(serde_json::to_value(&o)
+        .unwrap()
+        .get("outputGain")
+        .is_none());
+    o.output_gain = Some(1.5);
+    o.validate().unwrap();
+    assert_eq!(o.required_format(), 22);
+    assert_eq!(serde_json::to_value(&o).unwrap()["outputGain"], 1.5);
+    o.output_gain = Some(1.0);
+    assert_eq!(o.required_format(), 5);
+    for bad in [-1.0, 4.01, f64::NAN] {
+        o.output_gain = Some(bad);
+        assert_eq!(o.validate().unwrap_err(), "INVALID_OUTPUT_GAIN");
     }
 }
 #[test]

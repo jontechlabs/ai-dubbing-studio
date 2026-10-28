@@ -260,6 +260,7 @@ fn voice_fades_reject_non_finite_out_of_bounds_and_unordered_envelopes() {
         ]),
     };
     assert!(Edit {
+        output_gain: None,
         pieces: vec![good.clone()]
     }
     .validate(1000)
@@ -306,6 +307,7 @@ fn voice_fades_reject_non_finite_out_of_bounds_and_unordered_envelopes() {
         ],
     ] {
         assert!(Edit {
+            output_gain: None,
             pieces: vec![Piece {
                 effects: vec![],
                 envelope: Some(points),
@@ -401,6 +403,7 @@ async fn voice_local_edits_render_silence_gain_deletion_and_preserve_original() 
     )
     .unwrap();
     let silent = crate::voice_edit::Edit {
+        output_gain: None,
         pieces: vec![crate::voice_edit::Piece {
             effects: vec![],
             source_start_ms: None,
@@ -476,6 +479,7 @@ async fn voice_local_stretch_preserves_pitch_exact_length_and_does_not_stretch_o
         );
     }
     let changed = crate::voice_edit::Edit {
+        output_gain: None,
         pieces: vec![crate::voice_edit::Piece {
             effects: vec![],
             source_start_ms: Some(0),
@@ -576,6 +580,7 @@ fn voice_local_edit_validation_rejects_corrupt_ranges_and_unbounded_plans() {
         envelope: None,
     };
     assert!(Edit {
+        output_gain: None,
         pieces: vec![piece.clone()]
     }
     .validate(1000)
@@ -602,9 +607,15 @@ fn voice_local_edit_validation_rejects_corrupt_ranges_and_unbounded_plans() {
             ..piece.clone()
         },
     ] {
-        assert!(Edit { pieces: vec![p] }.validate(1000).is_err());
+        assert!(Edit {
+            output_gain: None,
+            pieces: vec![p]
+        }
+        .validate(1000)
+        .is_err());
     }
     assert!(Edit {
+        output_gain: None,
         pieces: vec![piece; 257]
     }
     .validate(1000)

@@ -24,6 +24,7 @@ export function Editor({
   translationFocus,
   jobs,
   snapshot,
+  run,
 }: {
   project: Project | null;
   selected: Dialogue | undefined;
@@ -34,6 +35,7 @@ export function Editor({
   translationFocus: number;
   jobs: Job[];
   snapshot: () => Promise<Project>;
+  run: (operation: () => Promise<Project | null>) => Promise<void>;
 }) {
   const { t } = useTranslation();
   const [tab, setTab] = useState<'text' | 'tts'>('text');
@@ -87,6 +89,7 @@ export function Editor({
           line={selected}
           jobs={jobs}
           snapshot={snapshot}
+          run={run}
           onEdit={onEdit}
           busy={busy}
         />

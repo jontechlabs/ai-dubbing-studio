@@ -285,7 +285,7 @@ pub(crate) async fn process<R: tauri::Runtime>(
             if job.kind == "inpaint" {
                 failure = "INPAINT_FAILED";
             }
-            if job.kind == "referenceTranscription" {
+            if ["referenceTranscription", "sourceTranscription"].contains(&job.kind.as_str()) {
                 failure = "ASR_FAILED";
             }
             if ["tts", "ttsBatch", "ttsBatch"].contains(&job.kind.as_str()) {

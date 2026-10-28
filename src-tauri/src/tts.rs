@@ -21,6 +21,8 @@ mod tests;
 #[serde(rename_all = "camelCase")]
 pub struct Options {
     #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub output_gain: Option<f64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub quality: Option<serde_json::Value>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub intonation_guide: Option<IntonationGuide>,
@@ -51,6 +53,12 @@ impl Options {
         self.variant_id.as_deref().unwrap_or("cosy3-official")
     }
     pub fn validate(&self) -> Result<(), String> {
+        if self
+            .output_gain
+            .is_some_and(|g| !g.is_finite() || !(0.0..=4.0).contains(&g))
+        {
+            return Err("INVALID_OUTPUT_GAIN".into());
+        }
         if let Some(g) = &self.intonation_guide {
             if self.variant() != "voxcpm2-bf16"
                 || self.reference_mode == "current"
@@ -110,6 +118,9 @@ impl Options {
         Ok(())
     }
     pub fn required_format(&self) -> u32 {
+        if self.output_gain.is_some_and(|g| g != 1.0) {
+            return 22;
+        }
         if self.reference_mode == "library" || self.intonation_guide.is_some() {
             return 21;
         }
@@ -842,6 +853,31 @@ pub(crate) async fn execute_with_session<R: tauri::Runtime>(
         .into());
     }
     let generation = serde_json::json!({"id":generation_id,"kind":"tts","dialogueId":line.id,"providerId":if request.options.variant()=="cosy3-official"{"cosyvoice3"}else if request.options.variant()=="voxcpm2-bf16"{"voxcpm2"}else if request.options.variant()=="chatterbox-multilingual-v3"{"chatterbox"}else if request.options.variant()=="drama3-comfy-fp8"{"fish-drama3"}else if request.options.variant().starts_with("fish"){"fish-s2"}else{"qwen3-tts"},"modelId":request.options.variant(),"path":format!("generations/{generation_id}.wav"),"createdAt":now(),"sourcePath":p.media.as_ref().map(|m|&m.path),"startMs":line.start_ms,"endMs":line.end_ms,"text":text(&p,line),"language":p.languages.target,"characterId":line.character_id,"durationMs":duration,"sampleRate":24000,"options":request.options,"referenceTranscript":transcript,"qwenRecovery":metadata["qwenRecovery"],"guideAnalysis":metadata["guideAnalysis"],"guideTranscript":if request.options.intonation_guide.is_some(){Some(&guide_transcript)}else{None},"referenceId":if request.options.reference_mode=="current"{None}else{reference(&p,line,&request.options).ok().map(|r|&r.id)},"device":metadata["device"],"deviceName":metadata["deviceName"],"peakVramMb":metadata["peakVramMb"],"expertsInRam":metadata["expertsInRam"],"expertCacheGiB":metadata["expertCacheGiB"],"expertMemoryMode":metadata["expertMemoryMode"],"compatibilityMode":metadata["compatibilityMode"].as_bool().unwrap_or(false),"batchItemId":request.batch_item_id,"inputHash":request.fingerprint});
+    let output_edit = request
+        .options
+        .output_gain
+        .filter(|g| *g != 1.0)
+        .map(|gain| crate::voice_edit::Edit {
+            output_gain: Some(gain),
+            pieces: vec![crate::voice_edit::Piece {
+                source_start_ms: Some(0),
+                source_end_ms: Some(duration),
+                duration_ms: duration,
+                gain: 1.0,
+                envelope: None,
+                effects: vec![],
+            }],
+        });
+    if let Some(edit) = &output_edit {
+        crate::voice_edit::render(
+            &request.root,
+            generation["path"].as_str().ok_or("INVALID_GENERATION")?,
+            Some(edit),
+            &crate::media::binary(app, "ffmpeg")?,
+            flag,
+        )
+        .await?;
+    }
     let mut session = core.session.lock().map_err(io_error)?;
     let s = session.as_mut().ok_or("NO_PROJECT")?;
     if s.root != request.root || s.project.id != request.project_id {
@@ -851,6 +887,9 @@ pub(crate) async fn execute_with_session<R: tauri::Runtime>(
     let mut next = s.project.clone();
     next.format_version = next.format_version.max(request.options.required_format());
     next.generations.push(generation);
+    if let Some(edit) = output_edit {
+        next.voice_edits.insert(generation_id.clone(), edit);
+    }
     if let Some(line) = next.dialogues.iter_mut().find(|l| l.id == request.line_id) {
         if unchanged {
             if request.batch_item_id.is_some() {

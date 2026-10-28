@@ -88,6 +88,8 @@ pub struct ImportRequest {
 #[derive(Clone, Serialize, Deserialize)]
 pub struct PersistedJob {
     #[serde(default)]
+    pub source_transcription: Option<crate::source_transcription::Request>,
+    #[serde(default)]
     pub audio_effects: Option<crate::audio_fx_job::Request>,
     #[serde(default)]
     pub prosody: Option<crate::prosody::Request>,
@@ -258,6 +260,7 @@ pub fn create<R: tauri::Runtime>(
                     character_match: None,
                     mix_request: None,
                     transcription: None,
+                    source_transcription: None,
                 },
                 cancel: Arc::new(AtomicBool::new(false)),
                 paused: Arc::new(AtomicBool::new(false)),

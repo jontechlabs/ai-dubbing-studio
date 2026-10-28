@@ -40,6 +40,7 @@ export interface Dialogue {
   voiceSettings?: VoiceSettings;
 }
 export interface VoiceSettings {
+  outputGain?: number;
   quality?: import('./voiceQuality').VoiceQuality;
   mood?: import('./voiceMoods').VoiceMood;
   accent?: 'auto' | 'fr-FR' | 'fr-CA' | 'fr-BE' | 'fr-CH';

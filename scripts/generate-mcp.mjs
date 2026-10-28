@@ -73,6 +73,7 @@ function makeSchema(name) {
   return { ...root, ...(Object.keys(definitions).length ? { $defs: definitions } : {}) };
 }
 const mapping = {
+  'source_transcription::Options': 'SourceTranscriptionOptions',
   'character_match::Options': 'CharacterMatchOptions',
   'voice_library::SourceOptions': 'VoiceLibrarySourceOptions',
   'voice_library::Generation': 'VoiceLibraryGeneration',
@@ -117,6 +118,16 @@ function rustSchema(type) {
 const readOnly =
   /^(environment|graphics_info|.*_status|.*_result|latest_.*|audio_effects_catalog|.*_path|.*_paths|list_jobs|model_storage_info|model_storage_size|voice_install_space|preview_.*|reference_audio_info|get_waveform)$/;
 const notes = {
+  transcribe_dialogue_source:
+    'Transcribe each source subtitle of a dialogue from the chosen audio track using local Whisper CPU. Returns a job ID. Does not replace subtitles or takes. Read and explicitly review the proposal before applying.',
+  source_transcription_result:
+    'Read original-language transcription segments, original text/timings and stale status. Silence retains old text. Does not apply anything.',
+  latest_source_transcription:
+    'Read the latest source-transcription job ID for this dialogue in the open project.',
+  apply_source_transcription:
+    'Explicitly accept reviewed texts of a source-transcription proposal. Rejects changed source/audio. Preserves cue IDs/timings, target SRT and takes; revokes affected translation approvals. Undoable.',
+  set_voice_output_gain:
+    'Set whole-take output gain without rewriting its original WAV or local edits. gain 0–4; 1.5 is +50%, 1.75 is +75%. Checks rendered audio before saving, limits boosted peaks, and applies to audition, timeline, WAV and MKV.',
   prepare_voice_library_source:
     'Assemble 1–16 owned original character references or assigned dialogue excerpts, total 5–20 seconds, into a NEW immutable source WAV. Explicitly choose this character and excerpts; existing audio/takes are retained. Returns project.',
   generate_voice_library:
@@ -184,6 +195,12 @@ const projectCommands = new Set(
     ' ',
   ),
 );
+for (const command of [
+  'transcribe_dialogue_source',
+  'apply_source_transcription',
+  'set_voice_output_gain',
+])
+  projectCommands.add(command);
 const text = fs.readFileSync('src-tauri/src/lib.rs', 'utf8');
 const commands = [];
 for (const match of text.matchAll(

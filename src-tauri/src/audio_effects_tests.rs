@@ -65,6 +65,55 @@ fn samples(path: &Path) -> Vec<i16> {
         .map(|b| i16::from_le_bytes(*b))
         .collect()
 }
+#[tokio::test]
+async fn whole_take_gain_is_reversible_limited_and_keeps_exact_frames_and_original() {
+    let dir = tempfile::tempdir().unwrap();
+    let root = crate::project::create_root(dir.path(), "Gain é").unwrap();
+    tone(&root.join("tone.wav"));
+    let original = std::fs::read(root.join("tone.wav")).unwrap();
+    let flag = AtomicBool::new(false);
+    let ffmpeg = crate::mix::tests::tool("ffmpeg");
+    let mut edit:voice_edit::Edit=serde_json::from_value(serde_json::json!({"pieces":[{"sourceStartMs":0,"sourceEndMs":1500,"durationMs":1500,"gain":1}]})).unwrap();
+    assert!(serde_json::to_value(&edit)
+        .unwrap()
+        .get("outputGain")
+        .is_none());
+    let base = voice_edit::render(&root, "tone.wav", Some(&edit), &ffmpeg, &flag)
+        .await
+        .unwrap();
+    let rms =
+        |s: &[i16]| (s.iter().map(|v| f64::from(*v).powi(2)).sum::<f64>() / s.len() as f64).sqrt();
+    let reference = rms(&samples(&base)[2400..33600]);
+    for gain in [1.5, 1.75, 0.0, 4.0] {
+        edit.output_gain = Some(gain);
+        let output = voice_edit::render(&root, "tone.wav", Some(&edit), &ffmpeg, &flag)
+            .await
+            .unwrap();
+        let wave = samples(&output);
+        assert_eq!(wave.len(), 36000);
+        assert!(wave.iter().all(|v| f64::from(*v).abs() <= 32768.0 * 0.981));
+        if gain == 0.0 {
+            assert!(wave.iter().all(|v| *v == 0));
+        } else {
+            assert!((rms(&wave[2400..33600]) / reference - gain).abs() < 0.002);
+        }
+    }
+    // A loud input with local gain must saturate the limiter, never integer-wrap.
+    edit.pieces[0].gain = 2.0;
+    edit.output_gain = Some(4.0);
+    let output = voice_edit::render(&root, "tone.wav", Some(&edit), &ffmpeg, &flag)
+        .await
+        .unwrap();
+    let wave = samples(&output);
+    assert_eq!(wave.len(), 36000);
+    assert!(wave.iter().any(|v| v.unsigned_abs() > 31000));
+    assert!(wave.iter().all(|v| v.unsigned_abs() < 32150));
+    for bad in [-0.01, 4.01, f64::NAN, f64::INFINITY] {
+        edit.output_gain = Some(bad);
+        assert_eq!(edit.validate(1500).unwrap_err(), "INVALID_OUTPUT_GAIN");
+    }
+    assert_eq!(std::fs::read(root.join("tone.wav")).unwrap(), original);
+}
 #[test]
 fn catalog_presets_and_bounds_reject_untrusted_or_excessive_filters() {
     assert_eq!(catalog()["effects"].as_array().unwrap().len(), 20);
@@ -100,6 +149,7 @@ async fn all_twenty_effects_render_exact_duration_without_touching_source() {
     for spec in catalog()["effects"].as_array().unwrap() {
         let e = effect(spec["id"].as_str().unwrap());
         let edit = voice_edit::Edit {
+            output_gain: None,
             pieces: vec![voice_edit::Piece {
                 effects: vec![e.clone()],
                 source_start_ms: Some(0),
@@ -139,6 +189,7 @@ async fn pitch_changes_frequency_only_inside_selection_and_muted_pieces_stay_sil
     let mut pitch = effect("pitch");
     pitch.parameters.insert("semitones".into(), 12.0);
     let mut edit = voice_edit::Edit {
+        output_gain: None,
         pieces: vec![
             voice_edit::Piece {
                 effects: vec![pitch],

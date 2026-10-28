@@ -409,6 +409,7 @@ export default function App() {
               translationFocus={translationFocus}
               jobs={studio.jobs}
               snapshot={studio.snapshot}
+              run={studio.run}
             />
           </WorkspacePanels>
           <div

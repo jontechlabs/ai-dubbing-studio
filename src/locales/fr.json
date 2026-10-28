@@ -388,7 +388,11 @@
     "SPEAKER_REFERENCES_REQUIRED": "Ajoutez une référence vocale d’origine à un personnage avant de demander une proposition.",
     "VOICE_LIBRARY_REFERENCE_CHANGED": "Le fichier de référence de la bibliothèque a changé. Préparez une nouvelle source.",
     "TTS_OUTPUT_TOO_LONG": "Le moteur a produit plus de 120 secondes. L’essai est refusé, sans modifier les précédents. Essayez une référence plus propre ou le mode sans transcription.",
-    "TTS_GENERATION_LIMIT": "Qwen3 a atteint la limite de durée sans terminer normalement, même après reprise. Aucun audio tronqué n’est ajouté. Essayez une autre référence ou une autre graine."
+    "TTS_GENERATION_LIMIT": "Qwen3 a atteint la limite de durée sans terminer normalement, même après reprise. Aucun audio tronqué n’est ajouté. Essayez une autre référence ou une autre graine.",
+    "INVALID_OUTPUT_GAIN": "Le volume de sortie doit être compris entre 0% et 400%.",
+    "ASR_DISK_REQUIRED": "Espace insuffisant pour télécharger le modèle de transcription (181 Mio et une marge de 64 Mio nécessaires).",
+    "ASR_RANGE_TOO_LONG": "Sélection trop longue : au maximum 16 sous-titres et 120 secondes par réplique.",
+    "ASR_OUTPUT_INVALID": "Chaque proposition doit contenir un texte non vide (10 000 caractères au maximum)."
   },
   "preparingVideo": "Préparation de la vidéo…",
   "loadingVideo": "Chargement de la vidéo…",
@@ -1226,7 +1230,8 @@
     "modelMove": "Déplacement des modèles",
     "audioEffects": "Effets audio",
     "voiceLibrary": "Bibliothèque vocale du personnage",
-    "characterMatch": "Proposition de personnage"
+    "characterMatch": "Proposition de personnage",
+    "sourceTranscription": "Transcription du dialogue source"
   },
   "fxRemoveTrack": "Retirer la copie avec effets · {{name}}",
   "transferEffects": "Effets audio",
@@ -1495,5 +1500,30 @@
     "hint": "Analyse CPU des références d’origine. Aucune assignation n’est changée sans validation ; les essais restent conservés.",
     "settings": "Réglages de la proposition"
   },
-  "ttsQwenRecovered": "Qwen3 : reprise sans transcription de référence · {{device}} · graine {{seed}}. Paramètres demandés conservés ; ce mode effectif est enregistré pour cet essai."
+  "ttsQwenRecovered": "Qwen3 : reprise sans transcription de référence · {{device}} · graine {{seed}}. Paramètres demandés conservés ; ce mode effectif est enregistré pour cet essai.",
+  "outputGain": {
+    "newTitle": "Volume de sortie des nouveaux essais",
+    "takeTitle": "Volume de cet essai",
+    "preset": "Préréglage du volume de sortie",
+    "mute": "Muet (0%)",
+    "unity": "Volume initial (100%)",
+    "apply": "Appliquer le volume",
+    "newHint": "100% conserve le volume initial ; +50% = 150%, +75% = 175%. Réglage modifiable après génération. Les crêtes sont limitées.",
+    "takeHint": "Réglage réversible pour l’écoute, le mix et l’export. Le WAV d’origine, les autres essais et les réglages locaux sont conservés."
+  },
+  "sourceAsr": {
+    "title": "Vérifier le texte original par transcription",
+    "hint": "Transcrivez l’audio de cette réplique dans sa langue d’origine, puis comparez la proposition au SRT source. Aucune traduction automatique ni modification sans votre accord.",
+    "language": "Langue de l’audio source",
+    "track": "Piste à transcrire",
+    "start": "Transcrire l’audio source",
+    "modelHint": "Whisper small multilingue Q5_1 · CPU local · 181 Mio au premier usage, partagé avec la transcription des références. Jusqu’à 16 sous-titres et 120 s par réplique.",
+    "absent": "Texte source absent",
+    "noSpeech": "Aucune parole exploitable détectée sur ce créneau. Le texte original est conservé ; vérifiez à l’écoute.",
+    "proposal": "Proposition source {{number}}",
+    "stale": "Le texte source, ses créneaux ou l’audio ont changé. Relancez la transcription avant d’appliquer.",
+    "applyHint": "Vérifiez et corrigez la proposition avant de l’appliquer. Seul le texte du SRT original sera modifié ; ses créneaux, la traduction et tous les essais sont conservés. Les traductions concernées repassent à valider.",
+    "apply": "Appliquer au SRT original",
+    "applied": "Texte original mis à jour. Vous pouvez annuler cette modification."
+  }
 }

@@ -388,7 +388,11 @@
     "SPEAKER_REFERENCES_REQUIRED": "Add an original character voice reference before requesting a suggestion.",
     "VOICE_LIBRARY_REFERENCE_CHANGED": "The library reference file changed. Prepare a new source.",
     "TTS_OUTPUT_TOO_LONG": "The engine produced over 120 seconds. The take was rejected; older takes are unchanged. Try a cleaner reference or transcript-free mode.",
-    "TTS_GENERATION_LIMIT": "Qwen3 reached its duration budget without ending normally, including its retry. No truncated take was added. Try another reference or seed."
+    "TTS_GENERATION_LIMIT": "Qwen3 reached its duration budget without ending normally, including its retry. No truncated take was added. Try another reference or seed.",
+    "INVALID_OUTPUT_GAIN": "Output volume must be between 0% and 400%.",
+    "ASR_DISK_REQUIRED": "Not enough space for the transcription model (181 MiB plus a 64 MiB margin required).",
+    "ASR_RANGE_TOO_LONG": "Range too long: at most 16 subtitles and 120 seconds per dialogue.",
+    "ASR_OUTPUT_INVALID": "Each proposal must contain non-empty text (up to 10,000 characters)."
   },
   "preparingVideo": "Preparing video…",
   "loadingVideo": "Loading video…",
@@ -1226,7 +1230,8 @@
     "modelMove": "Model relocation",
     "audioEffects": "Audio effects",
     "voiceLibrary": "Character voice library",
-    "characterMatch": "Character suggestion"
+    "characterMatch": "Character suggestion",
+    "sourceTranscription": "Source dialogue transcription"
   },
   "fxRemoveTrack": "Remove processed copy · {{name}}",
   "transferEffects": "Audio effects",
@@ -1495,5 +1500,30 @@
     "hint": "CPU analysis of original voice references. No assignment changes without approval; takes are retained.",
     "settings": "Suggestion settings"
   },
-  "ttsQwenRecovered": "Qwen3: recovered with transcript-free reference conditioning · {{device}} · seed {{seed}}. Requested settings are retained; this take records the effective recovery."
+  "ttsQwenRecovered": "Qwen3: recovered with transcript-free reference conditioning · {{device}} · seed {{seed}}. Requested settings are retained; this take records the effective recovery.",
+  "outputGain": {
+    "newTitle": "Output volume for new takes",
+    "takeTitle": "Volume of this take",
+    "preset": "Output volume preset",
+    "mute": "Mute (0%)",
+    "unity": "Original volume (100%)",
+    "apply": "Apply volume",
+    "newHint": "100% preserves the original volume; +50% = 150%, +75% = 175%. Adjustable after generation. Peaks are limited.",
+    "takeHint": "Reversible for audition, mix and export. The original WAV, other takes and local edits are preserved."
+  },
+  "sourceAsr": {
+    "title": "Check original text with transcription",
+    "hint": "Transcribe this dialogue in its original language and compare the proposal with the source SRT. No translation or changes without your acceptance.",
+    "language": "Source audio language",
+    "track": "Track to transcribe",
+    "start": "Transcribe source audio",
+    "modelHint": "Whisper small multilingual Q5_1 · local CPU · 181 MiB on first use, shared with reference transcription. Up to 16 subtitles and 120 seconds per dialogue.",
+    "absent": "Missing source text",
+    "noSpeech": "No usable speech detected in this slot. Original text retained; check by listening.",
+    "proposal": "Source proposal {{number}}",
+    "stale": "The source text, time slots or audio have changed. Transcribe again before applying.",
+    "applyHint": "Review and correct the proposal before applying. Only original SRT text changes; timing, translations and all takes are preserved. Affected translations will need review.",
+    "apply": "Apply to original SRT",
+    "applied": "Original text updated. You can undo this change."
+  }
 }

@@ -26,7 +26,7 @@ pub struct Request {
     pub original_transcript: String,
 }
 
-fn language_valid(language: &str) -> bool {
+pub(crate) fn language_valid(language: &str) -> bool {
     ["auto", "ja", "fr", "en", "zh", "ko", "de", "es", "it", "ru"].contains(&language)
 }
 
@@ -108,10 +108,7 @@ pub fn enqueue<R: tauri::Runtime>(
         let result = async {
             let _permit = tokio::select! { _ = jobs::cancelled(&flag) => return Err("CANCELLED".into()), permit = core.gate.clone().acquire_owned() => permit.map_err(io_error)?, };
             jobs::update(&core, &app, &key, |job| { job.status = "running".into(); job.stage = "asrModel".into(); job.progress = Some(0.0); job.logs.push("Local transcription: Whisper small multilingual Q5_1, CPU. No audio upload; TTS GPU selection is unchanged.".into()); });
-            let model_root = crate::model_storage::root(&core).join("whisper-reference");
-            std::fs::create_dir_all(&model_root).map_err(io_error)?;
-            let model = model_root.join(MODEL);
-            separation::fetch(&core, &app, &key, &[format!("https://huggingface.co/ggerganov/whisper.cpp/resolve/{REVISION}/{MODEL}")], &model, (SHA256, SIZE), &flag).await?;
+            let model = ensure_model(&core, &app, &key, &flag).await?;
             let input = {
                 let session = core.session.lock().map_err(io_error)?;
                 let s = session.as_ref().ok_or("NO_PROJECT")?;
@@ -168,7 +165,7 @@ fn media_binary<R: tauri::Runtime>(app: &tauri::AppHandle<R>) -> Result<PathBuf,
 struct Transcript {
     text: String,
 }
-fn valid_transcript(text: &str) -> Result<String, String> {
+pub(crate) fn valid_transcript(text: &str) -> Result<String, String> {
     let text = text.trim();
     if text.is_empty() {
         return Err("ASR_EMPTY_AUDIO".into());
@@ -180,11 +177,58 @@ fn valid_transcript(text: &str) -> Result<String, String> {
 }
 
 pub fn worker(model: &Path, audio: &Path, language: &str, output: &Path) -> Result<(), String> {
+    worker_bounded(model, audio, language, output, 20)
+}
+pub fn worker_dialogue(
+    model: &Path,
+    audio: &Path,
+    language: &str,
+    output: &Path,
+) -> Result<(), String> {
+    worker_bounded(model, audio, language, output, 120)
+}
+pub async fn ensure_model<R: tauri::Runtime>(
+    core: &Arc<Core>,
+    app: &tauri::AppHandle<R>,
+    key: &str,
+    flag: &std::sync::atomic::AtomicBool,
+) -> Result<PathBuf, String> {
+    let root = crate::model_storage::root(core).join("whisper-reference");
+    std::fs::create_dir_all(&root).map_err(io_error)?;
+    let path = root.join(MODEL);
+    if !std::fs::metadata(&path).is_ok_and(|m| m.len() == SIZE)
+        && crate::voice_space::available(&root)
+            .ok()
+            .is_some_and(|b| b < SIZE + 64 * 1024 * 1024)
+    {
+        return Err("ASR_DISK_REQUIRED".into());
+    }
+    separation::fetch(
+        core,
+        app,
+        key,
+        &[format!(
+            "https://huggingface.co/ggerganov/whisper.cpp/resolve/{REVISION}/{MODEL}"
+        )],
+        &path,
+        (SHA256, SIZE),
+        flag,
+    )
+    .await?;
+    Ok(path)
+}
+fn worker_bounded(
+    model: &Path,
+    audio: &Path,
+    language: &str,
+    output: &Path,
+    max_seconds: usize,
+) -> Result<(), String> {
     if !language_valid(language) {
         return Err("ASR_LANGUAGE_UNSUPPORTED".into());
     }
     let bytes = std::fs::read(audio).map_err(io_error)?;
-    if bytes.len() % 4 != 0 || !(16000 * 4..=20 * 16000 * 4).contains(&bytes.len()) {
+    if bytes.len() % 4 != 0 || !(16000 * 4..=max_seconds * 16000 * 4).contains(&bytes.len()) {
         return Err("INVALID_REFERENCE_AUDIO".into());
     }
     let samples: Vec<f32> = bytes

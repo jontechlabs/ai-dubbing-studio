@@ -13,9 +13,17 @@ fn main() {
         }
         return;
     }
-    if args.get(1).is_some_and(|v| v == "--transcribe-reference") {
+    if args
+        .get(1)
+        .is_some_and(|v| v == "--transcribe-reference" || v == "--transcribe-dialogue")
+    {
         let result = if args.len() == 6 {
-            dubbing_studio_lib::transcribe_reference_worker(
+            let worker = if args[1] == "--transcribe-dialogue" {
+                dubbing_studio_lib::transcribe_dialogue_worker
+            } else {
+                dubbing_studio_lib::transcribe_reference_worker
+            };
+            worker(
                 std::path::Path::new(&args[2]),
                 std::path::Path::new(&args[3]),
                 &args[4].to_string_lossy(),

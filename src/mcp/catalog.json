@@ -104,6 +104,113 @@
       "annotations": { "readOnlyHint": false, "destructiveHint": true, "openWorldHint": false }
     },
     {
+      "name": "studio_transcribe_dialogue_source",
+      "command": "transcribe_dialogue_source",
+      "description": "Transcribe each source subtitle of a dialogue from the chosen audio track using local Whisper CPU. Returns a job ID. Does not replace subtitles or takes. Read and explicitly review the proposal before applying.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "options": { "$ref": "#/$defs/options_SourceTranscriptionOptions_0" },
+          "context": {
+            "type": "object",
+            "properties": {
+              "projectId": { "type": "string" },
+              "expectedRevision": { "type": "integer", "minimum": 0 }
+            },
+            "required": ["projectId", "expectedRevision"],
+            "additionalProperties": false
+          }
+        },
+        "required": ["options", "context"],
+        "additionalProperties": false,
+        "$defs": {
+          "options_SourceTranscriptionOptions_0": {
+            "type": "object",
+            "properties": {
+              "lineId": { "type": "string" },
+              "language": { "type": "string" },
+              "trackId": { "anyOf": [{ "type": "null" }, { "type": "string" }] }
+            },
+            "required": ["lineId", "language"],
+            "additionalProperties": false
+          }
+        }
+      },
+      "annotations": { "readOnlyHint": false, "destructiveHint": true, "openWorldHint": false }
+    },
+    {
+      "name": "studio_source_transcription_result",
+      "command": "source_transcription_result",
+      "description": "Read original-language transcription segments, original text/timings and stale status. Silence retains old text. Does not apply anything.",
+      "inputSchema": {
+        "type": "object",
+        "properties": { "id": { "type": "string" } },
+        "required": ["id"],
+        "additionalProperties": false
+      },
+      "annotations": { "readOnlyHint": true, "destructiveHint": false, "openWorldHint": false }
+    },
+    {
+      "name": "studio_latest_source_transcription",
+      "command": "latest_source_transcription",
+      "description": "Read the latest source-transcription job ID for this dialogue in the open project.",
+      "inputSchema": {
+        "type": "object",
+        "properties": { "lineId": { "type": "string" } },
+        "required": ["lineId"],
+        "additionalProperties": false
+      },
+      "annotations": { "readOnlyHint": true, "destructiveHint": false, "openWorldHint": false }
+    },
+    {
+      "name": "studio_apply_source_transcription",
+      "command": "apply_source_transcription",
+      "description": "Explicitly accept reviewed texts of a source-transcription proposal. Rejects changed source/audio. Preserves cue IDs/timings, target SRT and takes; revokes affected translation approvals. Undoable.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "texts": { "type": "array", "items": { "type": "string" } },
+          "context": {
+            "type": "object",
+            "properties": {
+              "projectId": { "type": "string" },
+              "expectedRevision": { "type": "integer", "minimum": 0 }
+            },
+            "required": ["projectId", "expectedRevision"],
+            "additionalProperties": false
+          }
+        },
+        "required": ["id", "texts", "context"],
+        "additionalProperties": false
+      },
+      "annotations": { "readOnlyHint": false, "destructiveHint": true, "openWorldHint": false }
+    },
+    {
+      "name": "studio_set_voice_output_gain",
+      "command": "set_voice_output_gain",
+      "description": "Set whole-take output gain without rewriting its original WAV or local edits. gain 0–4; 1.5 is +50%, 1.75 is +75%. Checks rendered audio before saving, limits boosted peaks, and applies to audition, timeline, WAV and MKV.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "gain": { "type": "number" },
+          "context": {
+            "type": "object",
+            "properties": {
+              "projectId": { "type": "string" },
+              "expectedRevision": { "type": "integer", "minimum": 0 }
+            },
+            "required": ["projectId", "expectedRevision"],
+            "additionalProperties": false
+          }
+        },
+        "required": ["id", "gain", "context"],
+        "additionalProperties": false
+      },
+      "annotations": { "readOnlyHint": false, "destructiveHint": true, "openWorldHint": false }
+    },
+    {
       "name": "studio_translation_status",
       "command": "translation_status",
       "description": "translation status. Uses the current desktop session. Local file paths must be absolute; long operations return job IDs. Existing native validation applies.",
@@ -936,6 +1043,7 @@
           "options_VoiceSettings_0": {
             "type": "object",
             "properties": {
+              "outputGain": { "anyOf": [{ "type": "number" }] },
               "quality": { "anyOf": [{ "$ref": "#/$defs/options_VoiceQuality_1" }] },
               "mood": {
                 "anyOf": [
@@ -1071,6 +1179,7 @@
           "edit_VoiceEdit_0": {
             "type": "object",
             "properties": {
+              "outputGain": { "anyOf": [{ "type": "number" }] },
               "pieces": { "type": "array", "items": { "$ref": "#/$defs/edit_VoicePiece_1" } }
             },
             "required": ["pieces"],
@@ -1157,6 +1266,7 @@
           "edit_VoiceEdit_0": {
             "type": "object",
             "properties": {
+              "outputGain": { "anyOf": [{ "type": "number" }] },
               "pieces": { "type": "array", "items": { "$ref": "#/$defs/edit_VoicePiece_1" } }
             },
             "required": ["pieces"],
@@ -1253,6 +1363,7 @@
           "edit_VoiceEdit_0": {
             "type": "object",
             "properties": {
+              "outputGain": { "anyOf": [{ "type": "number" }] },
               "pieces": { "type": "array", "items": { "$ref": "#/$defs/edit_VoicePiece_1" } }
             },
             "required": ["pieces"],
@@ -1703,6 +1814,7 @@
           "options_VoiceSettings_2": {
             "type": "object",
             "properties": {
+              "outputGain": { "anyOf": [{ "type": "number" }] },
               "quality": { "anyOf": [{ "$ref": "#/$defs/options_VoiceQuality_3" }] },
               "mood": {
                 "anyOf": [
@@ -2103,6 +2215,7 @@
           "options_VoiceSettings_0": {
             "type": "object",
             "properties": {
+              "outputGain": { "anyOf": [{ "type": "number" }] },
               "quality": { "anyOf": [{ "$ref": "#/$defs/options_VoiceQuality_1" }] },
               "mood": {
                 "anyOf": [
@@ -2273,6 +2386,7 @@
           "selection_VoiceSettings_1": {
             "type": "object",
             "properties": {
+              "outputGain": { "anyOf": [{ "type": "number" }] },
               "quality": { "anyOf": [{ "$ref": "#/$defs/selection_VoiceQuality_2" }] },
               "mood": {
                 "anyOf": [
@@ -2442,6 +2556,7 @@
           "selection_VoiceSettings_1": {
             "type": "object",
             "properties": {
+              "outputGain": { "anyOf": [{ "type": "number" }] },
               "quality": { "anyOf": [{ "$ref": "#/$defs/selection_VoiceQuality_2" }] },
               "mood": {
                 "anyOf": [
@@ -3478,6 +3593,7 @@
           "VoiceSettings_6": {
             "type": "object",
             "properties": {
+              "outputGain": { "anyOf": [{ "type": "number" }] },
               "quality": { "anyOf": [{ "$ref": "#/$defs/VoiceQuality_7" }] },
               "mood": {
                 "anyOf": [
@@ -4577,6 +4693,7 @@
         "VoiceSettings_7": {
           "type": "object",
           "properties": {
+            "outputGain": { "anyOf": [{ "type": "number" }] },
             "quality": { "anyOf": [{ "$ref": "#/$defs/VoiceQuality_8" }] },
             "mood": {
               "anyOf": [
@@ -4737,6 +4854,7 @@
         "VoiceEdit_12": {
           "type": "object",
           "properties": {
+            "outputGain": { "anyOf": [{ "type": "number" }] },
             "pieces": { "type": "array", "items": { "$ref": "#/$defs/VoicePiece_13" } }
           },
           "required": ["pieces"],
@@ -5215,6 +5333,21 @@
         }
       }
     },
+    "SourceTranscriptionOptions": {
+      "$ref": "#/$defs/SourceTranscriptionOptions_0",
+      "$defs": {
+        "SourceTranscriptionOptions_0": {
+          "type": "object",
+          "properties": {
+            "lineId": { "type": "string" },
+            "language": { "type": "string" },
+            "trackId": { "anyOf": [{ "type": "null" }, { "type": "string" }] }
+          },
+          "required": ["lineId", "language"],
+          "additionalProperties": false
+        }
+      }
+    },
     "CharacterMatchOptions": {
       "$ref": "#/$defs/CharacterMatchOptions_0",
       "$defs": {
@@ -5330,6 +5463,7 @@
         "VoiceSettings_2": {
           "type": "object",
           "properties": {
+            "outputGain": { "anyOf": [{ "type": "number" }] },
             "quality": { "anyOf": [{ "$ref": "#/$defs/VoiceQuality_3" }] },
             "mood": {
               "anyOf": [
@@ -5525,6 +5659,7 @@
         "VoiceSettings_0": {
           "type": "object",
           "properties": {
+            "outputGain": { "anyOf": [{ "type": "number" }] },
             "quality": { "anyOf": [{ "$ref": "#/$defs/VoiceQuality_1" }] },
             "mood": {
               "anyOf": [
@@ -5646,6 +5781,7 @@
         "VoiceEdit_0": {
           "type": "object",
           "properties": {
+            "outputGain": { "anyOf": [{ "type": "number" }] },
             "pieces": { "type": "array", "items": { "$ref": "#/$defs/VoicePiece_1" } }
           },
           "required": ["pieces"],
@@ -5941,6 +6077,7 @@
         "VoiceSettings_1": {
           "type": "object",
           "properties": {
+            "outputGain": { "anyOf": [{ "type": "number" }] },
             "quality": { "anyOf": [{ "$ref": "#/$defs/VoiceQuality_2" }] },
             "mood": {
               "anyOf": [

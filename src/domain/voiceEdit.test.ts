@@ -2,7 +2,13 @@ import { it, expect } from 'vitest';
 import { demoProject, validateProject } from './project';
 import { defaultVoiceSettings, deleteGeneration } from './tts';
 import { dubbingClips, resizeDubbing, mixReport } from './mix';
-import { editVoice, editDuration, voicePlan, resetVoiceEdit } from './voiceEdit';
+import {
+  editVoice,
+  editDuration,
+  voicePlan,
+  resetVoiceEdit,
+  setVoiceOutputGain,
+} from './voiceEdit';
 import { rebaseProject } from './rebase';
 import type { Generation } from './types';
 import { envelopeLevel } from './voiceEnvelope';
@@ -39,6 +45,30 @@ function fixture() {
   ];
   return p;
 }
+it('changes whole-take output gain without rewriting takes, local edits, effects, timing or fades', () => {
+  let p = editVoice(fixture(), 'take', 300, 900, {
+    kind: 'effects',
+    effects: [defaultEffect('echo')],
+  });
+  p = editVoice(p, 'take', 300, 900, { kind: 'gain', gain: 0.7 });
+  const before = structuredClone(p),
+    next = setVoiceOutputGain(p, 'take', 1.75);
+  expect(next.formatVersion).toBe(22);
+  validateProject(next);
+  expect(next.generations).toEqual(before.generations);
+  expect(next.dubbingTiming).toEqual(before.dubbingTiming);
+  expect(next.voiceEdits!.take.pieces).toEqual(before.voiceEdits!.take.pieces);
+  const edited = editVoice(next, 'take', 300, 900, { kind: 'stretch', durationMs: 750 });
+  expect(edited.voiceEdits!.take.outputGain).toBe(1.75);
+  validateProject(edited);
+  expect(setVoiceOutputGain(next, 'take', 1).voiceEdits!.take.outputGain).toBeUndefined();
+  expect(setVoiceOutputGain(next, 'take', 0).voiceEdits!.take.outputGain).toBe(0);
+  expect(validateProject(JSON.parse(JSON.stringify(next))).voiceEdits!.take.outputGain).toBe(1.75);
+  for (const bad of [-0.1, 4.01, NaN, Infinity])
+    expect(() => setVoiceOutputGain(next, 'take', bad)).toThrow('INVALID_OUTPUT_GAIN');
+  expect(() => validateProject({ ...next, formatVersion: 21 })).toThrow('INVALID_OUTPUT_GAIN');
+  expect(p).toEqual(before);
+});
 it('replaces effects on a selected range and preserves them through gain, split and stretch edits', () => {
   const base = fixture();
   const pitch = defaultEffect('pitch');

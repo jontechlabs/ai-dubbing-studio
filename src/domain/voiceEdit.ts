@@ -21,6 +21,7 @@ export interface VoicePiece {
   envelope?: VoicePoint[];
 }
 export interface VoiceEdit {
+  outputGain?: number;
   pieces: VoicePiece[];
 }
 export const editDuration = (edit: VoiceEdit) => edit.pieces.reduce((n, p) => n + p.durationMs, 0);
@@ -28,6 +29,8 @@ export function validateVoiceEdit(edit: VoiceEdit, duration: number) {
   if (Array.isArray(edit?.pieces)) for (const p of edit.pieces) validateEffects(p.effects ?? []);
   if (
     !edit ||
+    (edit.outputGain !== undefined &&
+      (!Number.isFinite(edit.outputGain) || edit.outputGain < 0 || edit.outputGain > 4)) ||
     !Array.isArray(edit.pieces) ||
     !edit.pieces.length ||
     edit.pieces.length > 256 ||
@@ -63,6 +66,7 @@ export function voicePlan(project: Project, generation: Generation): VoiceEdit {
       target,
     );
     return {
+      ...existing,
       pieces: existing.pieces.map((p, i) => ({
         ...p,
         durationMs: durations[i],
@@ -229,7 +233,7 @@ export function editVoice(
       last.durationMs += p.durationMs;
     } else merged.push({ ...p });
   }
-  const edit = { pieces: merged };
+  const edit = { ...plan, pieces: merged };
   validateVoiceEdit(edit, generation.durationMs);
   const duration = editDuration(edit);
   if (duration > dubbingBounds(project, clip.line.id).max) throw Error('VOICE_EDIT_NO_ROOM');
@@ -243,6 +247,38 @@ export function editVoice(
   if (line.status === 'validated') line.status = 'review';
   for (const g of next.generations)
     if (g.kind === 'lipVideo' && g.generationId === generationId) g.enabled = false;
+  return next;
+}
+/** Whole-take gain, independent of local regions, fades, effects and timing. */
+export function setVoiceOutputGain(project: Project, generationId: string, gain: number): Project {
+  if (!Number.isFinite(gain) || gain < 0 || gain > 4) throw Error('INVALID_OUTPUT_GAIN');
+  const generation = project.generations.find((g) => g.kind === 'tts' && g.id === generationId) as
+    Generation | undefined;
+  if (!generation) throw Error('INVALID_GENERATION');
+  const current = project.voiceEdits?.[generationId];
+  if ((current?.outputGain ?? 1) === gain) return project;
+  const next = structuredClone(project);
+  const edit: VoiceEdit = current
+    ? structuredClone(current)
+    : {
+        pieces: [
+          {
+            sourceStartMs: 0,
+            sourceEndMs: generation.durationMs,
+            durationMs: generation.durationMs,
+            gain: 1,
+          },
+        ],
+      };
+  if (gain === 1) delete edit.outputGain;
+  else edit.outputGain = gain;
+  validateVoiceEdit(edit, generation.durationMs);
+  (next.voiceEdits ??= {})[generationId] = edit;
+  next.formatVersion = Math.max(next.formatVersion, 22);
+  const line = next.dialogues.find(
+    (l) => l.selectedGenerationIds[generation.language] === generationId,
+  );
+  if (line?.status === 'validated') line.status = 'review';
   return next;
 }
 export function resetVoiceEdit(project: Project, generationId: string): Project {

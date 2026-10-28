@@ -424,6 +424,26 @@ export function transcribeVoiceReference(
 ) {
   return invoke<string>('transcribe_voice_reference', { characterId, referenceId, language });
 }
+export function transcribeDialogueSource(
+  options: import('../domain/sourceTranscription').SourceTranscriptionOptions,
+) {
+  return invoke<string>('transcribe_dialogue_source', { options });
+}
+export function sourceTranscriptionResult(id: string) {
+  return invoke<import('../domain/sourceTranscription').SourceTranscriptionProposal | null>(
+    'source_transcription_result',
+    { id },
+  );
+}
+export function latestSourceTranscription(lineId: string) {
+  return invoke<string | null>('latest_source_transcription', { lineId });
+}
+export function applySourceTranscription(id: string, texts: string[]) {
+  return invoke<Project>('apply_source_transcription', { id, texts });
+}
+export function setVoiceOutputGain(id: string, gain: number) {
+  return invoke<Project>('set_voice_output_gain', { id, gain });
+}
 export async function graphicsInfo() {
   const data = await invoke<{
     preference: string;

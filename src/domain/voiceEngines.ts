@@ -38,6 +38,7 @@ export function multilingualVariant(id?: string | null) {
   return id === 'voxcpm2-bf16' || id === 'chatterbox-multilingual-v3';
 }
 export function voiceSettingsFormat(settings: {
+  outputGain?: number;
   variantId?: string | null;
   mood?: import('./voiceMoods').VoiceMood;
   accent?: string;
@@ -46,6 +47,7 @@ export function voiceSettingsFormat(settings: {
   intonationGuide?: unknown;
 }) {
   return Math.max(
+    settings.outputGain !== undefined && settings.outputGain !== 1 ? 22 : 5,
     settings.intonationGuide !== undefined || settings.referenceMode === 'library' ? 21 : 5,
     settings.quality !== undefined ? 19 : 5,
     multilingualVariant(settings.variantId) ? 16 : 5,

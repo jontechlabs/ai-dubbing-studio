@@ -17,6 +17,7 @@ import * as bridge from '../services/bridge';
 import { installedVoiceVariants, voiceVariant } from '../domain/voiceEngines';
 import { audioTracks, trackLabel } from '../domain/audio';
 import { ReferenceTranscription } from './ReferenceTranscription';
+import { OutputGainControl } from './OutputGainControl';
 import { accentSupported, voiceAccents } from '../domain/voiceAccents';
 import { ReferenceFileImport } from './ReferenceFileImport';
 import { BatchDubbingAction } from './BatchDubbingAction';
@@ -796,6 +797,11 @@ export function DubPanel({
             : 'ttsAccentUnsupported',
         )}
       </p>
+      <OutputGainControl
+        value={settings.outputGain ?? 1}
+        disabled={busy}
+        onChange={(gain) => edit({ outputGain: gain === 1 ? undefined : gain })}
+      />
       <VoiceQualityControls
         variant={variant.id}
         value={settings.quality}
@@ -1037,6 +1043,14 @@ export function DubPanel({
                 )}
                 {(stale || long) && (
                   <p className="warning">{t(stale ? 'ttsStale' : 'ttsTooLong')}</p>
+                )}
+                {active && (
+                  <OutputGainControl
+                    take
+                    value={project.voiceEdits?.[generation.id]?.outputGain ?? 1}
+                    disabled={busy}
+                    commit={(gain) => run(() => bridge.setVoiceOutputGain(generation.id, gain))}
+                  />
                 )}
                 <div className="generation-actions">
                   <button className="button subtle" onClick={() => onPlay(generation)}>

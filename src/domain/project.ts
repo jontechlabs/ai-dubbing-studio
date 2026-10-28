@@ -111,7 +111,7 @@ export function validateProject(value: unknown): Project {
   if (
     !Number.isInteger(project.formatVersion) ||
     project.formatVersion < 1 ||
-    project.formatVersion > 21
+    project.formatVersion > 22
   )
     throw new Error('UNSUPPORTED_PROJECT_VERSION');
   if (project.voiceEdits !== undefined) {
@@ -126,6 +126,8 @@ export function validateProject(value: unknown): Project {
       const g = project.generations.find((g) => g.kind === 'tts' && g.id === id);
       if (!g) throw Error('INVALID_VOICE_EDIT');
       validateVoiceEdit(edit, Number(g.durationMs));
+      if (edit.outputGain !== undefined && project.formatVersion < 22)
+        throw Error('INVALID_OUTPUT_GAIN');
       if (project.formatVersion < 18 && edit.pieces.some((p) => p.effects?.length))
         throw Error('INVALID_AUDIO_EFFECTS');
       if (project.formatVersion < 12 && edit.pieces.some((p) => p.envelope !== undefined))

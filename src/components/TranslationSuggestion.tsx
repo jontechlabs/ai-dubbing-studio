@@ -1,4 +1,5 @@
 import { JobDuration } from './JobDuration';
+import { SourceTranscription } from './SourceTranscription';
 import { useEffect, useState } from 'react';
 import { Languages, LoaderCircle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -16,6 +17,7 @@ export function TranslationSuggestion({
   line,
   jobs,
   snapshot,
+  run: runProject,
   onEdit,
   busy,
 }: {
@@ -23,6 +25,7 @@ export function TranslationSuggestion({
   line: Dialogue;
   jobs: Job[];
   snapshot: () => Promise<Project>;
+  run: (operation: () => Promise<Project | null>) => Promise<void>;
   onEdit: (update: (p: Project) => Project) => void;
   busy: boolean;
 }) {
@@ -131,6 +134,14 @@ export function TranslationSuggestion({
       </button>
       {open && (
         <div className="translation-suggestion-body">
+          <SourceTranscription
+            project={project}
+            line={line}
+            jobs={jobs}
+            snapshot={snapshot}
+            run={runProject}
+            busy={busy}
+          />
           <strong>{status?.modelName ?? 'Qwen3-4B-Instruct-2507 · GGUF Q4_K_M'}</strong>
           <p className="panel-description">{t('llmHint')}</p>
           {!status ? (
