@@ -1546,6 +1546,7 @@
     "applied": "Original text updated. You can undo this change."
   },
   "workbench": {
+    "startingTask": "Preparing the operation…",
     "currentTask": "Current operation",
     "progress": "Current operation progress",
     "addDub": "Add a dubbing take",

@@ -3758,6 +3758,22 @@ pre {
   margin-block: 12px;
   min-width: 0;
 }
+.dub-task-progress {
+  position: sticky;
+  top: -23px;
+  z-index: 3;
+  background: var(--panel);
+  padding-block: 8px;
+  max-height: 45vh;
+  overflow: auto;
+}
+.dub-task-progress .current-job-progress {
+  margin: 0;
+}
+.generation-card:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
 .current-job-progress {
   display: flex;
   flex-direction: column;

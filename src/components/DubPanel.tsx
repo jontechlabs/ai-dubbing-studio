@@ -35,6 +35,7 @@ import { CharacterSuggestion } from './CharacterSuggestion';
 import { qualityPreset, resolvedQuality } from '../domain/voiceQuality';
 import { ProsodyTransfer } from './ProsodyTransfer';
 import { moodGroup, moodGroups, voiceMoods } from '../domain/voiceMoods';
+import { useDubbingTask } from '../hooks/useDubbingTask';
 
 export function CosyModel({
   jobs,
@@ -179,13 +180,12 @@ function ReferenceAudio({
 
 export function DubPanel({
   batch,
-  run,
+  run: runProject,
   project,
   line,
   jobs,
   onEdit,
   snapshot,
-  onStarted,
   onError,
   onModels,
   onCharacters,
@@ -203,7 +203,6 @@ export function DubPanel({
   jobs: Job[];
   onEdit: (update: (p: Project) => Project) => void;
   snapshot: () => Promise<Project>;
-  onStarted: () => void;
   onError: (error: string) => void;
   onModels: () => void;
   onCharacters: () => void;
@@ -244,19 +243,21 @@ export function DubPanel({
     referenceMode: 'current',
     referenceTrackId: 'auto',
   });
-  const [currentJobId, setCurrentJobId] = useState<string | null>(null);
-  const newestTake = useRef<HTMLElement | null>(null),
-    previousTakes = useRef(project.generations.length);
+  const task = useDubbingTask(project, line?.id, !!batch, jobs, runProject);
+  const run = task.run;
+  const takeNodes = useRef(new Map<string, HTMLElement>()),
+    focused = useRef('');
   useEffect(() => {
-    setCurrentJobId(null);
-  }, [line?.id]);
-  useEffect(() => {
-    if (project.generations.length > previousTakes.current && currentJobId)
-      requestAnimationFrame(() =>
-        newestTake.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' }),
-      );
-    previousTakes.current = project.generations.length;
-  }, [project.generations.length, currentJobId]);
+    if (!task.focusId || focused.current === task.focusKey) return;
+    const card = takeNodes.current.get(task.focusId);
+    if (!card) return;
+    const frame = requestAnimationFrame(() => {
+      focused.current = task.focusKey;
+      card.focus({ preventScroll: true });
+      card.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [task.focusId, task.focusKey, project.revision]);
   const [status, setStatus] = useState<bridge.TtsStatus | null>(null),
     [working, setWorking] = useState(false);
   const [engines, setEngines] = useState<bridge.VoiceStatus | null>(null);
@@ -356,11 +357,18 @@ export function DubPanel({
               ? settings.referenceId
               : character.defaultReferenceId),
         );
+  const takeLine =
+    batch && task.result
+      ? (project.dialogues.find((l) => l.id === task.result!.dialogueId) ?? line)
+      : line;
   const generations = voiceGenerations(project).filter(
-    (g) => g.dialogueId === line.id && g.language === project.languages.target,
+    (g) => g.dialogueId === takeLine.id && g.language === project.languages.target,
   );
-  const chosen = selectedGeneration(project, line),
-    busy = working || jobs.some((j) => ['queued', 'running', 'paused'].includes(j.status));
+  const chosen = selectedGeneration(project, takeLine),
+    busy =
+      task.pending ||
+      working ||
+      jobs.some((j) => ['queued', 'running', 'paused'].includes(j.status));
   const inputText = spokenText(project, line);
   const referenceMissing = settings.referenceMode !== 'current' && !reference;
   const transcriptMissing =
@@ -384,6 +392,22 @@ export function DubPanel({
   };
   return (
     <div className="panel-body dub-panel">
+      {(task.job || task.pending || task.error) && (
+        <div className="dub-task-progress">
+          <CurrentJobProgress
+            job={task.job}
+            starting={task.pending}
+            error={task.error}
+            onError={onError}
+            onRetry={(id) =>
+              task.start(async () => {
+                await snapshot();
+                return (await bridge.retryJob(id)) ?? id;
+              })
+            }
+          />
+        </div>
+      )}
       {line.excludedFromDubbing && !batch && (
         <p className="panel-description">{t('dialogueExcludedHint')}</p>
       )}
@@ -410,7 +434,7 @@ export function DubPanel({
           jobs={jobs}
           snapshot={snapshot}
           run={run}
-          onStarted={onStarted}
+          startTask={task.start}
           onError={onError}
           onModels={onModels}
         />
@@ -646,13 +670,14 @@ export function DubPanel({
               busy={busy || shortReference}
               onError={onError}
               start={async (language) => {
-                await snapshot();
-                await bridge.transcribeVoiceReference(
-                  fileReference ? null : character!.id,
-                  reference.id,
-                  language,
-                );
-                onStarted();
+                await task.start(async () => {
+                  await snapshot();
+                  return bridge.transcribeVoiceReference(
+                    fileReference ? null : character!.id,
+                    reference.id,
+                    language,
+                  );
+                });
               }}
             />
           )}
@@ -903,7 +928,7 @@ export function DubPanel({
           busy={busy || referencePending}
           ready={!!ready}
           snapshot={snapshot}
-          onStarted={onStarted}
+          startTask={task.start}
           onError={onError}
         />
       ) : (
@@ -1012,22 +1037,23 @@ export function DubPanel({
                   voiceVariantId: variant.id,
                 },
               }));
-              void snapshot()
-                .then(() =>
-                  pipeline
-                    ? bridge.generateDubbingPipeline({
-                        lineId: line.id,
-                        tts: { ...settings, mode, accent },
-                        conversion,
-                        guideStrength,
-                      })
-                    : bridge.generateLine(line.id, {
-                        ...settings,
-                        mode,
-                        accent,
-                      }),
+              void task
+                .start(() =>
+                  snapshot().then(() =>
+                    pipeline
+                      ? bridge.generateDubbingPipeline({
+                          lineId: line.id,
+                          tts: { ...settings, mode, accent },
+                          conversion,
+                          guideStrength,
+                        })
+                      : bridge.generateLine(line.id, {
+                          ...settings,
+                          mode,
+                          accent,
+                        }),
+                  ),
                 )
-                .then(setCurrentJobId)
                 .catch((e) => onError(String(e)))
                 .finally(() => setWorking(false));
             }}
@@ -1035,29 +1061,41 @@ export function DubPanel({
             <Mic2 size={15} />
             {t('ttsGenerateNew')}
           </button>
-          <CurrentJobProgress job={jobs.find((j) => j.id === currentJobId)} onError={onError} />
+        </>
+      )}
+      {(!batch || task.result) && (
+        <>
+          {batch && (
+            <p className="panel-description">
+              {t('batchLine', {
+                number: project.dialogues.findIndex((l) => l.id === takeLine.id) + 1,
+              })}
+            </p>
+          )}
           <div className="generation-heading">
             <h3>{t('ttsGenerations', { count: generations.length })}</h3>
             <button
               className="text-button"
-              onClick={() => onOriginal(line)}
+              onClick={() => onOriginal(takeLine)}
               disabled={!project.media}
             >
               <Play size={13} />
               {t('original')}
             </button>
           </div>
-          <ProsodyTransfer
-            key={line.id}
-            project={project}
-            line={line}
-            takes={generations}
-            chosen={chosen}
-            jobs={jobs}
-            snapshot={snapshot}
-            onStarted={onStarted}
-            onError={onError}
-          />
+          {!batch && (
+            <ProsodyTransfer
+              key={takeLine.id}
+              project={project}
+              line={line}
+              takes={generations}
+              chosen={chosen}
+              jobs={jobs}
+              snapshot={snapshot}
+              startTask={task.start}
+              onError={onError}
+            />
+          )}
           {generations.length > 1 && (
             <div className="generation-compare">
               <strong>{t('ttsCompare')}</strong>
@@ -1093,11 +1131,17 @@ export function DubPanel({
           {!generations.length && <p className="panel-description">{t('ttsNoGeneration')}</p>}
           {[...generations].reverse().map((generation, index) => {
             const active = chosen?.id === generation.id,
-              stale = staleGeneration(project, line, generation),
-              long = generation.durationMs > line.endMs - line.startMs;
+              stale = staleGeneration(project, takeLine, generation),
+              long = generation.durationMs > takeLine.endMs - takeLine.startMs;
             return (
               <article
-                ref={index === 0 ? newestTake : undefined}
+                ref={(node) => {
+                  if (node) takeNodes.current.set(generation.id, node);
+                  else takeNodes.current.delete(generation.id);
+                }}
+                tabIndex={-1}
+                data-generation-id={generation.id}
+                aria-label={t('ttsGenerationNumber', { number: generations.length - index })}
                 className={`generation-card ${active ? 'selected' : ''}`}
                 key={generation.id}
               >
@@ -1213,11 +1257,11 @@ export function DubPanel({
           })}
           {chosen && (
             <div className="generation-review">
-              <span>{t(line.status)}</span>
+              <span>{t(takeLine.status)}</span>
               <button
                 className="button accent"
-                disabled={busy || staleGeneration(project, line, chosen)}
-                onClick={() => onEdit((p) => reviewGeneration(p, line.id, true))}
+                disabled={busy || staleGeneration(project, takeLine, chosen)}
+                onClick={() => onEdit((p) => reviewGeneration(p, takeLine.id, true))}
               >
                 <Check size={14} />
                 {t('ttsValidate')}
@@ -1225,7 +1269,7 @@ export function DubPanel({
               <button
                 className="text-button"
                 disabled={busy}
-                onClick={() => onEdit((p) => reviewGeneration(p, line.id, false))}
+                onClick={() => onEdit((p) => reviewGeneration(p, takeLine.id, false))}
               >
                 {t('ttsReview')}
               </button>

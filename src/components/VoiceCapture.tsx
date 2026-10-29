@@ -47,7 +47,7 @@ export function VoiceCapture({
   jobs,
   snapshot,
   run,
-  onStarted,
+  startTask,
   onError,
   onModels,
 }: {
@@ -58,7 +58,7 @@ export function VoiceCapture({
   jobs: Job[];
   snapshot: () => Promise<Project>;
   run: (operation: () => Promise<Project | null>) => Promise<void>;
-  onStarted: () => void;
+  startTask: (operation: () => Promise<string>) => Promise<string>;
   onError: (error: string) => void;
   onModels: () => void;
 }) {
@@ -370,14 +370,15 @@ export function VoiceCapture({
               onClick={() =>
                 void perform(async () => {
                   if (!source || !reference) return;
-                  await snapshot();
-                  await bridge.convertVoiceTimbre({
-                    generationId: source.id,
-                    referenceId: reference.id,
-                    characterId: reference.owner,
-                    device: gpu,
+                  await startTask(async () => {
+                    await snapshot();
+                    return bridge.convertVoiceTimbre({
+                      generationId: source.id,
+                      referenceId: reference.id,
+                      characterId: reference.owner,
+                      device: gpu,
+                    });
                   });
-                  onStarted();
                 })
               }
             >

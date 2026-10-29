@@ -1,5 +1,7 @@
 # Atelier de doublage et boîte à outils audio — v0.32
 
+Depuis **v0.32.3**, le suivi intégré concerne aussi le timbre, l’intonation, la transcription et les lots, avec focus sur le nouvel essai sélectionné. [Guide détaillé et captures](DUBBING-INLINE-TASKS.md).
+
 ## Doubler et comparer sans quitter le panneau
 
 Sélectionnez une réplique et cliquez sur **Ajouter un doublage** dans l’éditeur SRT, ou **Doubler / Régénérer** sur sa carte.

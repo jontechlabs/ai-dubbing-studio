@@ -7,12 +7,36 @@ import * as bridge from '../services/bridge';
 export function CurrentJobProgress({
   job,
   onError,
+  starting = false,
+  error,
+  onRetry,
 }: {
   job: Job | undefined;
   onError: (error: string) => void;
+  starting?: boolean;
+  error?: string;
+  onRetry?: (id: string) => Promise<unknown>;
 }) {
   const { t } = useTranslation();
-  if (!job) return null;
+  if (!job)
+    return starting || error ? (
+      <section
+        className="current-job-progress"
+        aria-label={t('workbench.currentTask')}
+        aria-live="polite"
+      >
+        <strong>
+          {starting ? <LoaderCircle size={14} className="spin" /> : <XCircle size={14} />}
+          {t(starting ? 'workbench.startingTask' : 'jobFailed')}
+        </strong>
+        {starting && <progress aria-label={t('workbench.progress')} />}
+        {error && (
+          <p role="alert">
+            {t(`errors.${error.replace(/^Error: /, '').split(':')[0]}`, { defaultValue: error })}
+          </p>
+        )}
+      </section>
+    ) : null;
   const active = ['queued', 'running', 'paused'].includes(job.status),
     success = job.status === 'succeeded';
   return (
@@ -47,6 +71,7 @@ export function CurrentJobProgress({
         <progress max={1} value={job.progress ?? undefined} aria-label={t('workbench.progress')} />
       )}
       <JobDuration job={job} />
+      {job.batch && <span>{t('batchJobSummary', job.batch)}</span>}
       {job.error && (
         <p role="alert">{t(`errors.${job.error.split(':')[0]}`, { defaultValue: job.error })}</p>
       )}
@@ -56,6 +81,14 @@ export function CurrentJobProgress({
           onClick={() => void bridge.cancelJob(job.id).catch((e) => onError(String(e)))}
         >
           {t('cancel')}
+        </button>
+      )}
+      {!active && !success && onRetry && (
+        <button
+          className="text-button"
+          onClick={() => void onRetry(job.id).catch((e) => onError(String(e)))}
+        >
+          {t('retry')}
         </button>
       )}
       {!!job.logs.length && (

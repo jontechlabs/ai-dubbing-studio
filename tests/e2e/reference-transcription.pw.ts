@@ -13,11 +13,9 @@ test('saved Fish cross-language settings show the exact-transcript help and pres
   await expect(panel.getByRole('button', {name:'Générer un nouvel essai'})).toBeDisabled();
   await panel.getByRole('combobox', {name:'Langue de l’audio de référence'}).selectOption('ja');
   await panel.getByRole('button', {name:'Transcrire automatiquement',exact:true}).click();
-  await expect(page.getByRole('dialog', {name:'Traitements'}).getByText('Transcription de la référence vocale', {exact:true})).toBeVisible();
+  await expect(panel.locator('.current-job-progress')).toContainText('Transcription de la référence vocale');await expect(page.getByRole('dialog',{name:'Traitements',exact:true})).toHaveCount(0);
   expect(await page.evaluate(() => (window as any).__pendingTranscription)).toEqual({characterId:'speaker-ja',referenceId:'reference-ja',language:'ja'});
   await page.evaluate(() => (window as any).__completeTranscription());
-  await page.getByRole('button', {name:'Fermer',exact:true}).click();
-  await page.locator('.dialogue-card').first().getByRole('button', {name:'Doubler',exact:true}).click();
   await expect(panel.getByRole('textbox', {name:'Texte réellement prononcé'})).toHaveValue('彼の名前は坂本太郎です。');
   await expect(panel.getByRole('button', {name:'Générer un nouvel essai'})).toBeEnabled();
   await panel.getByRole('button', {name:'Générer un nouvel essai'}).click();
@@ -51,12 +49,10 @@ test('custom reference selection is respected and cancellation or failure preser
   await open(); const panel=page.getByRole('dialog', {name:'Doublage'});
   await panel.getByRole('button', {name:'Transcrire automatiquement',exact:true}).click();
   expect(await page.evaluate(() => (window as any).__pendingTranscription.referenceId)).toBe('reference-custom');
-  await page.getByRole('dialog', {name:'Traitements'}).getByRole('button', {name:'Annuler',exact:true}).click();
+  await panel.locator('.current-job-progress').getByRole('button', {name:'Annuler',exact:true}).click();
   await page.evaluate(() => (window as any).__completeTranscription('Texte à ignorer'));
-  await page.getByRole('dialog', {name:'Traitements'}).getByRole('button', {name:'Fermer',exact:true}).click(); await open();
   await expect(panel.getByRole('textbox', {name:'Texte réellement prononcé'})).toHaveValue('日本語の参照です。');
   await panel.getByRole('button', {name:'Transcrire automatiquement',exact:true}).click(); await page.evaluate(() => (window as any).__failTranscription());
-  await expect(page.getByRole('dialog', {name:'Traitements'}).getByRole('button', {name:'Réessayer',exact:true})).toBeVisible();
-  await page.getByRole('dialog', {name:'Traitements'}).getByRole('button', {name:'Fermer',exact:true}).click(); await open();
+  await expect(panel.locator('.current-job-progress').getByRole('button', {name:'Réessayer',exact:true})).toBeVisible();
   await expect(panel.getByRole('textbox', {name:'Texte réellement prononcé'})).toHaveValue('日本語の参照です。');
 });

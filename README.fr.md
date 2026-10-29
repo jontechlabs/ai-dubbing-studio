@@ -1,5 +1,7 @@
 # AI Dubbing Studio
 
+**v0.32.3 — Traitements intégrés au panneau Doublage.** Génération, changement de timbre, transfert d’intonation, transcription et lots gardent leur progression dans le panneau, avec durée, annulation et relance. Le nouvel essai sélectionné reçoit le focus à la fin ; les essais précédents restent conservés. [Guide et captures](docs/DUBBING-INLINE-TASKS.md).
+
 **v0.32.2 — Actions compactes dans l’éditeur.** « Ajouter un doublage » et « Exclure du doublage » sont regroupés dans l’en-tête sous forme d’icônes avec infobulles et libellés accessibles. Le panneau s’adapte aux petites largeurs. [Aperçu](docs/JOINT-REVIEW-DIALOGUE-EDITING.md).
 
 **v0.32.1 — Validation commune, ajout et exclusion de répliques.** La validation suit le texte et l’essai sélectionné : toute modification du texte, du montage vocal ou du calage la retire. Ajoutez une réplique avec ses horaires et ses textes, ou excluez une ou plusieurs répliques du doublage en conservant les deux SRT, tous les essais et les calages. Vue des exclusions, réintégration, Ctrl+Z/Ctrl+Y et 134 outils MCP. [Guide et captures](docs/JOINT-REVIEW-DIALOGUE-EDITING.md).

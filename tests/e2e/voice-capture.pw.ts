@@ -25,6 +25,7 @@ test('real Web Audio microphone capture is auditioned, saved as another take, an
   await page.screenshot({path:'docs/screenshots/microphone-recording-fr.png'});
   await panel.getByRole('button',{name:'Conserver comme nouvel essai',exact:true}).click();
   await expect(page.locator('.microphone-indicator')).toHaveCount(0);
+  await expect(panel.locator('.generation-card.selected')).toBeFocused();
   await expect(panel.getByText('Prise enregistrée au microphone',{exact:true})).toBeVisible();
   const saved=await page.evaluate(()=>(window as any).__getMockProject());
   expect(saved.formatVersion).toBe(17);expect(saved.generations.at(-1).takeOrigin.type).toBe('microphone');

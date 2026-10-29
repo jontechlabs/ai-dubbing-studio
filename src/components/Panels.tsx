@@ -149,7 +149,6 @@ export function Panels({
             jobs={jobs}
             onEdit={onEdit}
             snapshot={snapshot}
-            onStarted={showJobs}
             onError={onError}
             onModels={() => onPanel('models')}
             onCharacters={() => onPanel('characters')}

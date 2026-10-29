@@ -1,5 +1,7 @@
 # AI Dubbing Studio
 
+**v0.32.3 — Inline dubbing operations.** Generation, timbre conversion, prosody transfer, reference transcription and batches keep their progress, elapsed time, cancellation and retry in the Dubbing panel. Completion focuses the newly selected take, retaining every earlier take. [Guide and screenshots](docs/DUBBING-INLINE-TASKS.md).
+
 **v0.32.2 — Compact subtitle-editor actions.** Add dubbing and Exclude from dubbing now sit together in the header as icon buttons with tooltips and accessible labels. The header wraps cleanly in a narrow inspector. [Preview](docs/JOINT-REVIEW-DIALOGUE-EDITING.md).
 
 **v0.32.1 — Joint text/take review and dialogue management.** Approval follows one exact text, selected take, local edit and placement. Add timed dialogue lines, or exclude selected lines from dubbing while retaining both SRTs, every take and placement. Excluded-lines view, restoration, undo/redo, project format 24 and 134 MCP tools. [Guide and screenshots](docs/JOINT-REVIEW-DIALOGUE-EDITING.md).

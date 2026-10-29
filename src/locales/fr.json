@@ -1546,6 +1546,7 @@
     "applied": "Texte original mis à jour. Vous pouvez annuler cette modification."
   },
   "workbench": {
+    "startingTask": "Préparation du traitement…",
     "currentTask": "Traitement de cette opération",
     "progress": "Avancement de cette opération",
     "addDub": "Ajouter un doublage",

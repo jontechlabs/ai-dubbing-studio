@@ -1,5 +1,9 @@
 # Validation
 
+## v0.32.3 — validation in progress
+
+Local TypeScript/lint checks and 23 distinct targeted Chrome scenarios pass. Eight new regressions cover both event orders for timbre/prosody completion, an instant result before the start reply, cancel/fail/retry, intentional closing and a rejected launch. Existing microphone, reference transcription, batch and pipeline coverage confirms in-panel progress and selected-take focus. Full fresh Windows packaging and actual packaged SDK checks are required before publication.
+
 ## v0.32.2 — 29 October 2026
 
 [Fresh Windows run 40885060419](https://github.com/jontechlabs/ai-dubbing-studio/actions/runs/40885060419) passes at `200cb47290b5cdc96932cf24880f8c5eba12f2aa`: **662 fresh suite checks** (188 TypeScript, 188 Chrome, 183 Rust, 103 Python), lint, Clippy, formatting, shared schemas and signed Windows packaging. Two explicitly opt-in Rust diagnostics remain ignored. The installer and portable executable are rebuilt from that tested commit.

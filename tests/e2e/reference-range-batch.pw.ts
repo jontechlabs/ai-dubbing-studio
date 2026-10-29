@@ -58,15 +58,15 @@ test('all-translated batch keeps current takes unless forced and retains earlier
   expect((await page.evaluate(()=>(window as any).__pendingBatch)).force).toBe(true);
   await page.evaluate(()=>{(window as any).__advanceBatch();(window as any).__advanceBatch();(window as any).__advanceBatch();(window as any).__advanceBatch();});
   expect((await page.evaluate(()=>JSON.parse(localStorage.getItem('nativeMockProject')!))).generations.filter((g:any)=>g.kind==='tts')).toHaveLength(8);
-  await expect(page.getByText(/4 \/ 4 traitées · 4 réussies/)).toBeVisible();
+  await expect(panel.locator('.current-job-progress')).toContainText('4 / 4 traitées · 4 réussies');await expect(panel.locator('.generation-card.selected')).toBeFocused();await expect(page.getByRole('dialog',{name:'Traitements',exact:true})).toHaveCount(0);
 });
 
 test('batch progress survives cancel and retry resumes remaining lines with the same settings',async({page})=>{
   await nativeMock(page);await page.goto('/');await page.getByRole('button',{name:/Doublage par lot/}).click();const panel=page.getByRole('dialog',{name:'Doublage par lot',exact:true});
   await panel.getByRole('combobox',{name:'Référence vocale',exact:true}).selectOption('current');await panel.getByRole('spinbutton',{name:'Graine'}).fill('17');await panel.getByRole('button',{name:'Doubler 4 répliques'}).click();
   await page.evaluate(()=>(window as any).__advanceBatch());await expect(page.getByText(/1 \/ 4 traitées · 1 réussies/)).toBeVisible();
-  await page.getByRole('dialog',{name:'Traitements'}).getByRole('button',{name:'Annuler',exact:true}).click();await page.getByRole('button',{name:'Réessayer',exact:true}).click();
-  await page.evaluate(()=>{(window as any).__advanceBatch();(window as any).__advanceBatch();(window as any).__advanceBatch();});await expect(page.getByText(/4 \/ 4 traitées · 4 réussies/)).toBeVisible();
+  await panel.locator('.current-job-progress').getByRole('button',{name:'Annuler',exact:true}).click();await page.getByRole('button',{name:'Réessayer',exact:true}).click();
+  await page.evaluate(()=>{(window as any).__advanceBatch();(window as any).__advanceBatch();(window as any).__advanceBatch();});await expect(panel.locator('.current-job-progress')).toContainText('4 / 4 traitées · 4 réussies');await expect(panel.locator('.generation-card.selected')).toBeFocused();await expect(page.getByRole('dialog',{name:'Traitements',exact:true})).toHaveCount(0);
   const saved=await page.evaluate(()=>JSON.parse(localStorage.getItem('nativeMockProject')!));expect(saved.generations.filter((g:any)=>g.kind==='tts')).toHaveLength(4);expect(saved.generations.every((g:any)=>g.options.seed===17)).toBe(true);
   await page.screenshot({path:'docs/screenshots/batch-progress.png'});
 });

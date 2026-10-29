@@ -12,7 +12,7 @@ export function ProsodyTransfer({
   chosen,
   jobs,
   snapshot,
-  onStarted,
+  startTask,
   onError,
 }: {
   project: Project;
@@ -21,7 +21,7 @@ export function ProsodyTransfer({
   chosen: Generation | undefined;
   jobs: Job[];
   snapshot: () => Promise<Project>;
-  onStarted: () => void;
+  startTask: (operation: () => Promise<string>) => Promise<string>;
   onError: (error: string) => void;
 }) {
   const { t } = useTranslation();
@@ -193,9 +193,10 @@ export function ProsodyTransfer({
             ...parts,
           };
           setWorking(true);
-          void snapshot()
-            .then(() => bridge.transferVoiceProsody(options))
-            .then(onStarted)
+          void startTask(async () => {
+            await snapshot();
+            return bridge.transferVoiceProsody(options);
+          })
             .catch((error) => onError(String(error)))
             .finally(() => setWorking(false));
         }}

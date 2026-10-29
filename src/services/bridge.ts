@@ -769,8 +769,8 @@ export async function jobs(): Promise<Job[]> {
 export async function cancelJob(id: string): Promise<void> {
   if (native) await invoke('cancel_job', { id });
 }
-export async function retryJob(id: string): Promise<void> {
-  if (native) await invoke('retry_job', { id });
+export async function retryJob(id: string): Promise<string | undefined> {
+  if (native) return invoke<string>('retry_job', { id });
 }
 export async function subscribe(
   onProject: (p: Project) => void,

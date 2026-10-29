@@ -10,7 +10,7 @@ export function BatchDubbingAction({
   busy,
   ready,
   snapshot,
-  onStarted,
+  startTask,
   onError,
 }: {
   project: Project;
@@ -19,7 +19,7 @@ export function BatchDubbingAction({
   busy: boolean;
   ready: boolean;
   snapshot: () => Promise<Project>;
-  onStarted: () => void;
+  startTask: (operation: () => Promise<string>) => Promise<string>;
   onError: (error: string) => void;
 }) {
   const { t } = useTranslation();
@@ -130,9 +130,10 @@ export function BatchDubbingAction({
         disabled={!bridge.native || busy || working || !ready || !plan?.ready.length}
         onClick={() => {
           setWorking(true);
-          void snapshot()
-            .then(() => bridge.generateDubbingBatch(JSON.parse(selectionKey)))
-            .then(onStarted)
+          void startTask(async () => {
+            await snapshot();
+            return bridge.generateDubbingBatch(JSON.parse(selectionKey));
+          })
             .catch((e) => onError(String(e)))
             .finally(() => setWorking(false));
         }}
