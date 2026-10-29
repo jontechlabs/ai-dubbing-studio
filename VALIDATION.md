@@ -1,8 +1,16 @@
 # Validation
 
-## v0.32.3 — validation in progress
+## v0.32.3 — 29 October 2026
 
-Local TypeScript/lint checks and 23 distinct targeted Chrome scenarios pass. Eight new regressions cover both event orders for timbre/prosody completion, an instant result before the start reply, cancel/fail/retry, intentional closing and a rejected launch. Existing microphone, reference transcription, batch and pipeline coverage confirms in-panel progress and selected-take focus. Full fresh Windows packaging and actual packaged SDK checks are required before publication.
+[Fresh Windows run 40914488928](https://github.com/jontechlabs/ai-dubbing-studio/actions/runs/40914488928) passes at `9989ba1e64732ea76edb7a626d0571fc23dc144e`: **670 fresh suite checks** (188 TypeScript, 196 Chrome, 183 Rust, 103 Python), lint, Clippy, formatting, shared schemas and signed packaging. Two explicitly opt-in Rust diagnostics remain ignored. The installer and portable executable are rebuilt from this tested commit.
+
+Eight new Chrome regressions launch timbre/prosody operations from the real React controls with simulated native responses. They verify both project-first and job-first delivery, completion before the start reply, cancel/fail/retry without old-take changes, an intentional close followed by another dialogue, and rejection before a job is created. The latter also prunes the finished task from the global 100-record history and checks that its cached terminal result stays usable. Existing microphone, reference transcription, batch and two-stage tests assert retained in-panel progress and selected-result focus. Across 23 distinct targeted local scenarios, every preceding take is preserved; batch completion displays the last generated dialogue and focuses its selected take without changing the batch panel. Screenshots use synthetic data.
+
+The actual packaged desktop passes the pinned official SDK suite with **134 MCP tools**, including native source ASR, output gain, common review, reversible addition/exclusion, media export and relay lifecycle. Japanese CPU recognition passes again in automatic and explicit Japanese modes. These packaged diagnostics are distinct from Chrome tests using simulated native completion and do not claim new neural/GPU quality benchmarks.
+
+Native application logic, inference workers, runtime/model manifests, vendored sources and the MCP catalog remain byte-identical to v0.32.2. Project format remains 24. The existing five-separator complete-weight CPU proof [40749955489](https://github.com/jontechlabs/ai-dubbing-studio/actions/runs/40749955489) is authenticated against the four exact worker/model/runtime/vendor SHA-256 identities in the rebuilt packages. Neural quality tests are not repeated for this frontend task-following change.
+
+Release staging authenticates complete Actions artifact digests, installer PE version 0.32.3.0, the standard updater signature and rejection of a modified installer, portable ZIP CRC and every declared worker resource. Final source/tag preserve the compiled application inputs; final validation and updater metadata are added after successful CI. All five public downloads are streamed and SHA-256 checked after publication. No real user project or open studio is modified during these diagnostics.
 
 ## v0.32.2 — 29 October 2026
 
