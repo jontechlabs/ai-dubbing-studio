@@ -12,6 +12,7 @@ import {
   type TimingRole,
 } from '../domain/timing';
 import { TranslationSuggestion } from './TranslationSuggestion';
+import { IconButton } from './IconButton';
 import { formatTime, parseTime } from '../domain/time';
 
 export function Editor({
@@ -73,23 +74,31 @@ export function Editor({
             {t('ttsTab')}
           </button>
         </div>
-        <button className="line-preview" onClick={() => onPlay(selected)} disabled={!project.media}>
-          <Play size={12} />
-          {t('linePreview')}
-        </button>
+        <div className="editor-actions">
+          <button
+            className="line-preview"
+            onClick={() => onPlay(selected)}
+            disabled={!project.media}
+          >
+            <Play size={12} />
+            {t('linePreview')}
+          </button>
+          <IconButton
+            label={t('workbench.addDub')}
+            disabled={busy || selected.excludedFromDubbing || !target.trim()}
+            onClick={() => onDub(selected)}
+          >
+            <Mic2 size={14} aria-hidden="true" />
+          </IconButton>
+          <IconButton
+            label={t('dialogueDeleteTitle')}
+            disabled={busy}
+            onClick={() => onDelete(selected)}
+          >
+            <Trash2 size={14} aria-hidden="true" />
+          </IconButton>
+        </div>
       </div>
-      <button
-        className="button subtle editor-dub-button"
-        disabled={busy || selected.excludedFromDubbing || !target.trim()}
-        onClick={() => onDub(selected)}
-      >
-        <Mic2 size={14} />
-        {t('workbench.addDub')}
-      </button>
-      <button className="button subtle" disabled={busy} onClick={() => onDelete(selected)}>
-        <Trash2 size={13} />
-        {t('dialogueDeleteTitle')}
-      </button>
       <TimingEditor
         key={selected.id}
         project={project}
