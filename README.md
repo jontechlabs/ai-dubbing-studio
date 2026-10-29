@@ -1,5 +1,7 @@
 # AI Dubbing Studio
 
+**v0.32.2 — Compact subtitle-editor actions.** Add dubbing and Exclude from dubbing now sit together in the header as icon buttons with tooltips and accessible labels. The header wraps cleanly in a narrow inspector. [Preview](docs/JOINT-REVIEW-DIALOGUE-EDITING.md).
+
 **v0.32.1 — Joint text/take review and dialogue management.** Approval follows one exact text, selected take, local edit and placement. Add timed dialogue lines, or exclude selected lines from dubbing while retaining both SRTs, every take and placement. Excluded-lines view, restoration, undo/redo, project format 24 and 134 MCP tools. [Guide and screenshots](docs/JOINT-REVIEW-DIALOGUE-EDITING.md).
 
 **v0.32.0 — Dubbing workbench and selected audio toolbox.** Edit spoken/original text and audition the chosen voice reference without leaving Dubbing. New takes show their own progress. Optional local TTS → ChatterboxVC pipeline retains every stage, with an experimental source-intonation guide. Right-click a source-audio selection for BS-RoFormer Viperx 1297, Mel-Band RoFormer Kim, Demucs v4/FT or text-conditioned AudioSep; audition outputs before mapping them to Speech/Music/Effects at the same timestamp. Source media stays intact. Explicit translation/voice review actions are linked. **132 MCP tools, format 23.** [Guide, model comparison and screenshots](docs/DUBBING-WORKBENCH-AUDIO-TOOLBOX.md).

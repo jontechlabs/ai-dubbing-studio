@@ -1,5 +1,9 @@
 # Validation
 
+## v0.32.2 — validation in progress
+
+UI-only maintenance: compact editor icon buttons and wrapping header. Local TypeScript/lint/format checks and Chrome inspection at inspector widths 344, 300 and 260 px pass; both actions open their original panels. Fresh Windows packaging and official packaged-MCP verification are required before release. Final run evidence is recorded after completion.
+
 ## v0.32.1 — 29 October 2026
 
 [Fresh Windows run 40817943515](https://github.com/jontechlabs/ai-dubbing-studio/actions/runs/40817943515) passes at `a51d836c930842495dbb6299afc6d2e61a8a473d`: **662 fresh suite checks** (188 TypeScript, 188 Chrome, 183 Rust, 103 Python), Clippy, formatting, MCP schemas and signed packaging. Two explicitly opt-in Rust diagnostics remain ignored. The installer and portable executable are built from that tested commit.

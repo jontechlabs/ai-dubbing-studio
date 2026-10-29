@@ -1,5 +1,11 @@
 # Validation commune et gestion des répliques — v0.32.1
 
+## Actions compactes — v0.32.2
+
+Dans l’en-tête de l’éditeur, utilisez le microphone pour **Ajouter un doublage** et la corbeille pour **Exclure du doublage**. Chaque icône dispose d’une infobulle et d’un libellé pour les lecteurs d’écran. Les actions se regroupent sur une ligne à la largeur habituelle et passent à la ligne si le panneau est plus étroit.
+
+![Actions compactes dans l’éditeur](screenshots/editor-actions-fr.png)
+
 ## Une validation pour le texte et le doublage
 
 « Valider » dans la liste et dans Doublage confirme désormais la même version de la réplique : sous-titres original/traduit, texte parlé, dictionnaire de prononciation, essai sélectionné, référence, montage local, effets, volume et calage enregistré.

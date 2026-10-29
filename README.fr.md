@@ -1,5 +1,7 @@
 # AI Dubbing Studio
 
+**v0.32.2 — Actions compactes dans l’éditeur.** « Ajouter un doublage » et « Exclure du doublage » sont regroupés dans l’en-tête sous forme d’icônes avec infobulles et libellés accessibles. Le panneau s’adapte aux petites largeurs. [Aperçu](docs/JOINT-REVIEW-DIALOGUE-EDITING.md).
+
 **v0.32.1 — Validation commune, ajout et exclusion de répliques.** La validation suit le texte et l’essai sélectionné : toute modification du texte, du montage vocal ou du calage la retire. Ajoutez une réplique avec ses horaires et ses textes, ou excluez une ou plusieurs répliques du doublage en conservant les deux SRT, tous les essais et les calages. Vue des exclusions, réintégration, Ctrl+Z/Ctrl+Y et 134 outils MCP. [Guide et captures](docs/JOINT-REVIEW-DIALOGUE-EDITING.md).
 
 **v0.32.0 — Atelier de doublage et boîte à outils audio.** Écoutez la référence, modifiez les textes vocal et original, suivez la génération et comparez les essais dans le panneau Doublage. Le mode local TTS → ChatterboxVC conserve chaque étape, avec un guide d’intonation source expérimental facultatif. Au clic droit sur une sélection audio : BS-RoFormer Viperx 1297, Mel-Band RoFormer Kim, Demucs v4/FT et AudioSep par description, avec préécoute et affectation des sorties à Voix/Musique/Effets au même timestamp. Les médias source restent intacts. Les actions explicites de validation traduction/voix sont liées. **132 outils MCP, format 23.** [Guide, comparaison des modèles et captures](docs/DUBBING-WORKBENCH-AUDIO-TOOLBOX.md).
