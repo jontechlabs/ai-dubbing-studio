@@ -15,14 +15,14 @@ test('translation approval persists and withdrawing it also withdraws selected v
   line.status = 'validated';
   expect(translationState(p, line)).toBe('translated');
   const approved = approveTranslation(p, line.id, true);
-  expect(approved.formatVersion).toBe(10);
+  expect(approved.formatVersion).toBe(24);
   expect(
     translationState(validateProject(JSON.parse(JSON.stringify(approved))), approved.dialogues[0]),
   ).toBe('approved');
   expect(approveTranslation(approved, line.id, false).dialogues[0].status).toBe('review');
   expect(translationState(approveTranslation(approved, line.id, false), line)).toBe('translated');
 });
-test('text and language changes revoke approval, while timing and pronunciation edits preserve it', () => {
+test('text, language, timing and pronunciation changes revoke common approval', () => {
   const p = demoProject(),
     id = p.dialogues[0].id,
     approved = approveTranslation(p, id, true);
@@ -36,7 +36,7 @@ test('text and language changes revoke approval, while timing and pronunciation 
   expect(cleanTranslationApprovals(language).translationApprovals?.[id]).toBeUndefined();
   const timed = editDialogue(approved, id, 'tts', 'Texte parlé');
   timed.dialogues[0].startMs++;
-  expect(translationState(cleanTranslationApprovals(timed), timed.dialogues[0])).toBe('approved');
+  expect(translationState(cleanTranslationApprovals(timed), timed.dialogues[0])).toBe('translated');
 });
 test('empty or formatting-only translations cannot be approved and legacy projects stay unapproved', () => {
   const p = demoProject(),

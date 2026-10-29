@@ -50,7 +50,7 @@ pub fn load(root: &Path) -> Result<Project, String> {
         let value: serde_json::Value =
             serde_json::from_slice(&std::fs::read(path).map_err(io_error)?)
                 .map_err(|_| "INVALID_PROJECT".to_string())?;
-        if !matches!(value["formatVersion"].as_u64(), Some(1..=23)) {
+        if !matches!(value["formatVersion"].as_u64(), Some(1..=24)) {
             return Err("UNSUPPORTED_PROJECT_VERSION".into());
         }
         let mut p: Project =
@@ -216,7 +216,7 @@ mod tests {
         save(&root, &project).unwrap();
         assert_eq!(load(&root).unwrap().format_version, 13);
         let mut future = serde_json::to_value(project).unwrap();
-        future["formatVersion"] = serde_json::json!(24);
+        future["formatVersion"] = serde_json::json!(25);
         atomic_write(
             &root.join("project.json"),
             &serde_json::to_vec(&future).unwrap(),
@@ -240,6 +240,7 @@ mod tests {
         p.translation_approvals.insert(
             key.clone(),
             crate::domain::TranslationApproval {
+                joint: None,
                 source_language: "ja".into(),
                 target_language: "fr".into(),
                 source_text: "Original".into(),
@@ -281,6 +282,7 @@ mod tests {
         altered.translation_approvals.insert(
             "missing".into(),
             crate::domain::TranslationApproval {
+                joint: None,
                 source_language: "ja".into(),
                 target_language: "fr".into(),
                 source_text: "A".into(),

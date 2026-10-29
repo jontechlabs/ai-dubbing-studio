@@ -281,6 +281,9 @@ pub fn save_microphone<R: tauri::Runtime>(
         .iter()
         .find(|l| l.id == capture.line_id)
         .ok_or("NO_DIALOGUES")?;
+    if line.excluded_from_dubbing == Some(true) {
+        return Err("DIALOGUE_EXCLUDED".into());
+    }
     let generation = json!({"kind":"tts","dialogueId":line.id,"providerId":"microphone","modelId":"microphone-pcm24","sourcePath":p.media.as_ref().map(|m| &m.path),"startMs":line.start_ms,"endMs":line.end_ms,"text":tts::text(&p,line),"language":p.languages.target,"characterId":line.character_id,"sampleRate":24000,"options":{"device":"cpu","referenceMode":"current","referenceId":null,"mode":"crossLingual","speed":1.0,"seed":0},"referenceTranscript":"","device":"cpu","deviceName":"Microphone","peakVramMb":0,"inputHash":"microphone","takeOrigin":{"type":"microphone"}});
     publish(
         &core,

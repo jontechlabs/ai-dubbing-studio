@@ -1,7 +1,16 @@
 import type { Project } from '../domain/types';
 import { validateProject } from '../domain/project';
 import { editDialogue } from '../domain/subtitles';
-import { approveTranslation, approveTranslations } from '../domain/translation';
+import {
+  approveTranslation,
+  approveTranslations,
+  cleanTranslationApprovals,
+} from '../domain/translation';
+import {
+  addDialogue,
+  setDialogueExclusion,
+  type NewDialogueOptions,
+} from '../domain/dialogueEditing';
 import {
   editCharacterProfile,
   mergeCharacters,
@@ -95,7 +104,7 @@ export function patchProject(project: Project, patches: Patch[]): Project {
       record[last] = structuredClone(patch.value);
     } else throw Error('MCP_INVALID_PATCH');
   }
-  return validateProject(next);
+  return validateProject(cleanTranslationApprovals(next));
 }
 
 // All saved edits share the desktop's pure domain functions and native save/
@@ -113,6 +122,21 @@ export function editProject(
   };
   let next: Project;
   switch (tool) {
+    case 'studio_add_dialogue':
+      next = addDialogue(project, args.options as unknown as NewDialogueOptions);
+      break;
+    case 'studio_set_dialogue_exclusion':
+      if (
+        !Array.isArray(args.ids) ||
+        !args.ids.length ||
+        args.ids.some((id) => typeof id !== 'string')
+      )
+        throw Error('MCP_INVALID_ARGUMENTS');
+      if (args.ids.some((id) => !project.dialogues.some((l) => l.id === id)))
+        throw Error('MCP_UNKNOWN_DIALOGUE');
+      if (typeof args.excluded !== 'boolean') throw Error('MCP_INVALID_ARGUMENTS');
+      next = setDialogueExclusion(project, args.ids as string[], args.excluded);
+      break;
     case 'studio_set_character_profile':
       next = editCharacterProfile(project, id, args.changes as CharacterProfile);
       break;
@@ -215,5 +239,5 @@ export function editProject(
     default:
       throw Error('MCP_UNKNOWN_TOOL');
   }
-  return validateProject(next);
+  return validateProject(cleanTranslationApprovals(next));
 }

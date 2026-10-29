@@ -3799,3 +3799,43 @@ pre {
   min-height: 64px;
   resize: vertical;
 }
+
+.dialogue-manage-form,
+.dialogue-manage-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.dialogue-manage-form {
+  gap: 16px;
+}
+.dialogue-manage-form textarea {
+  min-height: 80px;
+  resize: vertical;
+}
+.dialogue-manage-times,
+.dialogue-manage-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+}
+.dialogue-manage-times label {
+  flex: 1;
+  min-width: 0;
+}
+.dialogue-manage-times input {
+  width: 100%;
+  min-width: 0;
+}
+.subtitle-imports {
+  flex-wrap: wrap;
+}
+
+.dialogue-card.dialogue-excluded {
+  border-left-color: #7d8491;
+  opacity: 0.8;
+}
+.dialogue-excluded-toggle {
+  padding: 6px 14px;
+  font-size: 11px;
+}

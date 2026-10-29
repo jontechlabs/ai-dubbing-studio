@@ -1,8 +1,16 @@
 import type { Dialogue, Project } from './types';
 import { dialogueText } from './subtitles';
 import { selectedGeneration, staleGeneration } from './tts';
+import {
+  jointReviewSnapshot,
+  sameReview,
+  reviewIndex,
+  indexedTake,
+  type JointReviewSnapshot,
+} from './jointReview';
 
 export interface TranslationApproval {
+  joint?: JointReviewSnapshot;
   sourceLanguage: string;
   targetLanguage: string;
   sourceText: string;
@@ -35,15 +43,35 @@ function matches(approval: TranslationApproval | undefined, current: Translation
     )
   );
 }
+function matchesReview(
+  project: Project,
+  line: Dialogue,
+  approval: TranslationApproval | undefined,
+  current: TranslationApproval,
+  index?: ReturnType<typeof reviewIndex>,
+) {
+  if (line.excludedFromDubbing) return false;
+  if (!matches(approval, current)) return false;
+  const take = index ? indexedTake(project, line, index) : selectedGeneration(project, line);
+  if (take && (line.status !== 'validated' || staleGeneration(project, line, take))) return false;
+  return (
+    !approval!.joint ||
+    sameReview(approval!.joint, jointReviewSnapshot(project, line, take ?? null, index))
+  );
+}
 export function translationState(project: Project, line: Dialogue) {
   if (!hasTranslation(project, line)) return 'untranslated';
   const approval = project.translationApprovals?.[line.id];
   const current = snapshot(project, line);
-  return matches(approval, current) ? 'approved' : 'translated';
+  return matchesReview(project, line, approval, current) ? 'approved' : 'translated';
 }
 export function cleanTranslationApprovals(project: Project): Project {
-  if (!project.translationApprovals) return project;
+  if (!project.translationApprovals) {
+    for (const line of project.dialogues) if (line.status === 'validated') line.status = 'review';
+    return project;
+  }
   const lines = new Map(project.dialogues.map((line) => [line.id, line]));
+  const index = reviewIndex(project);
   const source = new Map(project.sourceCues.map((cue) => [cue.id, cue.text]));
   const target = new Map(project.targetCues.map((cue) => [cue.id, cue.text]));
   project.translationApprovals = Object.fromEntries(
@@ -57,23 +85,41 @@ export function cleanTranslationApprovals(project: Project): Project {
         line.targetCueIds.map((id) => target.get(id) ?? '').join('\n'),
       );
       const valid =
-        !!current.targetText.replace(/<[^>]*>/g, '').trim() && matches(approval, current);
+        !!current.targetText.replace(/<[^>]*>/g, '').trim() &&
+        matchesReview(project, line, approval, current, index);
+      if (valid && !approval.joint) {
+        approval.joint = jointReviewSnapshot(
+          project,
+          line,
+          indexedTake(project, line, index),
+          index,
+        );
+        project.formatVersion = Math.max(24, project.formatVersion);
+      }
       if (!valid && line.status === 'validated') line.status = 'review';
       return valid;
     }),
   );
+  for (const line of project.dialogues)
+    if (line.status === 'validated' && !project.translationApprovals[line.id])
+      line.status = 'review';
   return project;
 }
 export function approveTranslation(project: Project, id: string, approved: boolean): Project {
   const next = structuredClone(project),
     line = next.dialogues.find((line) => line.id === id);
   if (!line || !hasTranslation(next, line)) throw Error('TRANSLATION_REQUIRED');
+  if (line.excludedFromDubbing) throw Error('DIALOGUE_EXCLUDED');
+  const take = selectedGeneration(next, line);
+  if (approved && take && staleGeneration(next, line, take)) throw Error('TTS_STALE_GENERATION');
   next.translationApprovals ??= {};
   if (approved) {
-    next.formatVersion = Math.max(10, next.formatVersion);
-    next.translationApprovals[id] = snapshot(next, line);
+    next.formatVersion = Math.max(24, next.formatVersion);
+    next.translationApprovals[id] = {
+      ...snapshot(next, line),
+      joint: jointReviewSnapshot(next, line),
+    };
   } else delete next.translationApprovals[id];
-  const take = selectedGeneration(next, line);
   if (approved && take) line.status = staleGeneration(next, line, take) ? 'review' : 'validated';
   else if (!approved && line.status === 'validated') line.status = 'review';
   return next;
@@ -82,6 +128,7 @@ export function approveTranslation(project: Project, id: string, approved: boole
 // Index subtitles once and commit the entire selection as a single project edit.
 // Empty translations are skipped; an unknown dialogue rejects the whole edit.
 export function approveTranslations(project: Project, ids: string[], approved: boolean): Project {
+  const index = reviewIndex(project);
   const lines = new Map(project.dialogues.map((line) => [line.id, line]));
   const selected = new Set(ids);
   if ([...selected].some((id) => !lines.has(id))) throw Error('NO_DIALOGUES');
@@ -94,6 +141,8 @@ export function approveTranslations(project: Project, ids: string[], approved: b
       continue;
     }
     const line = lines.get(id)!;
+    if (line.excludedFromDubbing) continue;
+    const take = indexedTake(project, line, index);
     const current = snapshot(
       project,
       line,
@@ -102,15 +151,17 @@ export function approveTranslations(project: Project, ids: string[], approved: b
     );
     if (
       current.targetText.replace(/<[^>]*>/g, '').trim() &&
-      !matches(project.translationApprovals?.[id], current)
+      !(take && staleGeneration(project, line, take)) &&
+      !matchesReview(project, line, project.translationApprovals?.[id], current, index)
     )
-      changes.set(id, current);
+      changes.set(id, { ...current, joint: jointReviewSnapshot(project, line, take, index) });
   }
   const voiceChanges = [...selected].some((id) => {
     const l = lines.get(id)!;
-    const g = selectedGeneration(project, l);
+    const g = indexedTake(project, l, index);
     return approved
-      ? !!g &&
+      ? !l.excludedFromDubbing &&
+          !!g &&
           hasTranslation(project, l) &&
           !staleGeneration(project, l, g) &&
           l.status !== 'validated'
@@ -126,16 +177,17 @@ export function approveTranslations(project: Project, ids: string[], approved: b
   for (const id of selected) {
     const l = next.dialogues.find((l) => l.id === id)!;
     const g = selectedGeneration(next, l);
-    if (approved && g && hasTranslation(next, l))
+    if (approved && !l.excludedFromDubbing && g && hasTranslation(next, l))
       l.status = staleGeneration(next, l, g) ? 'review' : 'validated';
     else if (!approved && l.status === 'validated') l.status = 'review';
   }
-  if (approved) next.formatVersion = Math.max(10, next.formatVersion);
+  if (approved) next.formatVersion = Math.max(24, next.formatVersion);
   return next;
 }
 
 export type TranslationState = 'untranslated' | 'translated' | 'approved';
 export function translationStates(project: Project): Map<string, TranslationState> {
+  const index = reviewIndex(project);
   const source = new Map(project.sourceCues.map((cue) => [cue.id, cue.text]));
   const target = new Map(project.targetCues.map((cue) => [cue.id, cue.text]));
   return new Map(
@@ -148,7 +200,7 @@ export function translationStates(project: Project): Map<string, TranslationStat
       );
       const state: TranslationState = !current.targetText.replace(/<[^>]*>/g, '').trim()
         ? 'untranslated'
-        : matches(project.translationApprovals?.[line.id], current)
+        : matchesReview(project, line, project.translationApprovals?.[line.id], current, index)
           ? 'approved'
           : 'translated';
       return [line.id, state];

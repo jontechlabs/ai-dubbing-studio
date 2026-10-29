@@ -1,5 +1,9 @@
 # Validation
 
+## v0.32.1 — validation in progress
+
+Joint-review and exclusion changes have shared JavaScript/Rust JSON fixtures, domain and browser regressions, and fresh native/packaged-MCP checks. Both SRTs, every historical take, edits and placement are retained during exclusion. New generation workers and all neural resources remain byte-identical to v0.32; the preceding complete-weight model evidence remains applicable. Final run IDs and counts are recorded after successful packaging.
+
 ## v0.32.0 — 28 October 2026
 
 [Final Windows package run 40751153979](https://github.com/jontechlabs/ai-dubbing-studio/actions/runs/40751153979) passed at `280d73fed5332afe290d4561d3d9598540313a7d`. **642 suite checks:** 178 TypeScript, 176 native Rust and 103 Python tests rerun freshly, plus 185 Chrome scenarios from the successful frontend step of [run 40745425267](https://github.com/jontechlabs/ai-dubbing-studio/actions/runs/40745425267). The identity gate compares every UI, domain, browser-test and configuration input before reusing that step. The earlier run failed overall on a new Clippy test-code lint; that lint is fixed, and the final run passes fresh native tests, Clippy and formatting. Two opt-in Rust diagnostics remain ignored. MCP schemas, build, lint and frontend formatting pass in the final run.

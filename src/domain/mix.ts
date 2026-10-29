@@ -198,6 +198,7 @@ export function dubbingClips(project: Project) {
     .flatMap((line) => {
       const generation = generations.get(line.selectedGenerationIds[project.languages.target]);
       if (
+        line.excludedFromDubbing ||
         !generation ||
         generation.dialogueId !== line.id ||
         generation.language !== project.languages.target ||

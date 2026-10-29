@@ -196,6 +196,9 @@ pub fn plan(
     let mut approved = p.clone();
     approved.clean_translation_approvals();
     for line in &p.dialogues {
+        if line.excluded_from_dubbing == Some(true) {
+            continue;
+        }
         if selection.scope == "selected" && !ids.contains(&line.id) {
             continue;
         }
@@ -326,10 +329,21 @@ fn progress(request: &Request, current: Option<String>) -> Progress {
         .count();
     Progress {
         total: request.items.len(),
-        completed: succeeded + failed,
+        completed: succeeded
+            + failed
+            + request
+                .items
+                .iter()
+                .filter(|i| i.status == "skipped")
+                .count(),
         succeeded,
         failed,
-        skipped: request.skipped,
+        skipped: request.skipped
+            + request
+                .items
+                .iter()
+                .filter(|i| i.status == "skipped")
+                .count(),
         current_line_id: current,
     }
 }
@@ -463,6 +477,9 @@ fn start_with_launch<R: tauri::Runtime>(
                 let committed={let session=core.session.lock().map_err(io_error)?;let s=session.as_ref().ok_or("NO_PROJECT")?;if s.root!=request.root||s.project.id!=request.project_id||s.project.languages.target!=request.language{return Err("STALE_REVISION".into());}already_committed(&s.project,&s.root,&request.items[index])};
                 if committed{request.items[index].status="succeeded".into();record_item(&core,&key,index,&request.items[index])?;persist(&core,&app,&key,&request,None);continue;}
                 let item=&request.items[index];let line_id=item.request.line_id.clone();
+                let excluded={let guard=core.session.lock().map_err(io_error)?;let session=guard.as_ref().ok_or("NO_PROJECT")?;session.project.dialogues.iter().any(|l|l.id==line_id&&l.excluded_from_dubbing==Some(true))};
+                if excluded {request.items[index].status="skipped".into();request.items[index].error=None;record_item(&core,&key,index,&request.items[index])?;persist(&core,&app,&key,&request,None);jobs::update(&core,&app,&key,|j|j.logs.push(format!("Skipped excluded dialogue: {line_id}")));continue;}
+                let item=&request.items[index];
                 if request.approved_only || request.unapproved_only {
                     let session=core.session.lock().map_err(io_error)?;let s=session.as_ref().ok_or("NO_PROJECT")?;
                     let mut current=s.project.clone();current.clean_translation_approvals();

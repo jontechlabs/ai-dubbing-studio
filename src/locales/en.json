@@ -407,7 +407,8 @@
     "AUDIO_TOOLBOX_INVALID_AUDIO": "The audio outputs are invalid; no track was replaced.",
     "AUDIO_TOOLBOX_ALREADY_APPLIED": "This result was already applied.",
     "AUDIO_TOOLBOX_NOT_READY": "The result is not available yet.",
-    "INVALID_DUBBING_PIPELINE": "The two-stage dubbing information is invalid."
+    "INVALID_DUBBING_PIPELINE": "The two-stage dubbing information is invalid.",
+    "DIALOGUE_EXCLUDED": "This dialogue is excluded from dubbing. Its subtitles and takes are retained. Restore it from the dialogue list before generating new takes."
   },
   "preparingVideo": "Preparing video…",
   "loadingVideo": "Loading video…",
@@ -963,7 +964,7 @@
   "referenceRangeHint": "Selected duration: {{seconds}} s. Choose between 1 and 20 seconds within the file.",
   "translationApprove": "Approve translation for line {{number}}",
   "translationUnapprove": "Remove translation approval for line {{number}}",
-  "translationReviewHint": "Translation approval is independent of voice-take approval. Editing the source, translation or language removes approval.",
+  "translationReviewHint": "Common review of the text and current selected take. Text, pronunciation, take, local audio or placement edits withdraw approval. Without a take, text can be approved for batch preparation.",
   "translationLegend": "Translation status",
   "translationState": {
     "untranslated": "Untranslated",
@@ -1327,7 +1328,7 @@
   "translationSelectionCount_other": "{{count}} checked",
   "translationApproveSelection": "Approve checked translations",
   "translationUnapproveSelection": "Withdraw approval of checked translations",
-  "translationApproveSelectionHint": "Approve {{count}} pending translation(s) among checked lines, including those hidden by filters. Empty translations are skipped.",
+  "translationApproveSelectionHint": "Approve {{count}} eligible checked dialogue(s), including hidden lines. Empty translations and stale selected takes are skipped.",
   "translationUnapproveSelectionHint": "Withdraw {{count}} approval(s) among checked lines, including those hidden by filters.",
   "translationApproveCompact": "Approve",
   "translationUnapproveCompact": "Withdraw",
@@ -1608,5 +1609,21 @@
       "audiosep": "Isolate a described sound · AudioSep"
     }
   },
-  "auto": "Automatic"
+  "auto": "Automatic",
+  "dialogueAdd": "Add dialogue",
+  "dialogueDeleteTitle": "Exclude from dubbing",
+  "dialogueDeleteLine": "Exclude dialogue {{number}} from dubbing",
+  "dialogueDeleteSelection": "Exclude checked dialogues from dubbing",
+  "dialogueContext": "Dialogue actions",
+  "dialogueDeleteConfirm": "Exclude {{count}} dialogue(s) from dubbing?",
+  "dialogueDeleteKeep": "Original and translated subtitles stay unchanged. Takes, edits and placement are preserved. The dialogue is omitted from batches and the voice mix. Ctrl+Z undoes exclusion; the excluded-lines view also allows restoration.",
+  "dialogueStart": "New dialogue start",
+  "dialogueEnd": "New dialogue end",
+  "dialogueSource": "New dialogue original text",
+  "dialogueTarget": "New dialogue translation",
+  "dialogueAddHint": "Enter the original, translation, or both. Use at least 100 ms within the video. Other dialogues stay in place.",
+  "dialogueShowExcluded": "Show excluded dialogues ({{count}})",
+  "dialogueRestore": "Restore to dubbing",
+  "dialogueExcluded": "Excluded from dubbing",
+  "dialogueExcludedHint": "This dialogue is excluded from dubbing. Its subtitles and takes are retained. Restore it from the dialogue list before generating new takes."
 }

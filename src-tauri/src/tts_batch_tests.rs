@@ -146,16 +146,82 @@ else:
 
 fn approve(p: &mut Project, index: usize) {
     let line = &p.dialogues[index];
-    p.format_version = 10;
+    p.format_version = 24;
     p.translation_approvals.insert(
         line.id.clone(),
         crate::domain::TranslationApproval {
+            joint: Some(crate::joint_review::snapshot(p, line)),
             source_language: p.languages.source.clone(),
             target_language: p.languages.target.clone(),
             source_text: String::new(),
             target_text: p.target_cues[index].text.clone(),
         },
     );
+}
+#[test]
+fn excluded_dialogues_are_never_enqueued_even_with_force_or_selected_scope() {
+    let tmp = tempfile::tempdir().unwrap();
+    let mut p = fixture(tmp.path(), &["Un", "Deux"]);
+    p.format_version = 24;
+    p.dialogues[0].excluded_from_dubbing = Some(true);
+    let mut s = selection();
+    s.force = true;
+    let (preview, _) = plan(&p, tmp.path(), &s).unwrap();
+    assert_eq!(preview.requested, 1);
+    assert_eq!(preview.ready, vec![p.dialogues[1].id.clone()]);
+    s.scope = "selected".into();
+    s.line_ids = vec![p.dialogues[0].id.clone()];
+    let (preview, items) = plan(&p, tmp.path(), &s).unwrap();
+    assert_eq!(preview.requested, 0);
+    assert!(items.is_empty());
+    assert_eq!(
+        tts::validate_input(&p, &p.dialogues[0].id, &options()).unwrap_err(),
+        "DIALOGUE_EXCLUDED"
+    );
+}
+#[tokio::test]
+async fn exclusion_after_enqueue_skips_the_item_without_loading_it_and_processes_the_other_lines() {
+    let tmp = tempfile::tempdir().unwrap();
+    let root = tmp.path().canonicalize().unwrap();
+    let mut p = fixture(&root, &["Un", "Deux"]);
+    let req = request(&p, &root);
+    let second = p.dialogues[1].id.clone();
+    let cues = serde_json::to_value(&p.target_cues).unwrap();
+    p.format_version = 24;
+    p.dialogues[0].excluded_from_dubbing = Some(true);
+    let core = core(&root, p);
+    let app = tauri::test::mock_app();
+    let key = start_with_launch(
+        core.clone(),
+        app.handle().clone(),
+        req,
+        None,
+        Some(worker(&root)),
+    )
+    .unwrap();
+    let job = finished(&core, &key).await;
+    assert_eq!(job.status, "succeeded");
+    let progress = job.batch.unwrap();
+    assert_eq!(
+        (
+            progress.total,
+            progress.completed,
+            progress.succeeded,
+            progress.failed,
+            progress.skipped
+        ),
+        (2, 2, 1, 0, 1)
+    );
+    let calls = std::fs::read_to_string(root.join("calls.jsonl")).unwrap();
+    assert_eq!(calls.lines().count(), 1);
+    assert_eq!(
+        serde_json::from_str::<serde_json::Value>(calls.trim()).unwrap()["text"],
+        "Deux"
+    );
+    let saved = project::load(&root).unwrap();
+    assert_eq!(serde_json::to_value(&saved.target_cues).unwrap(), cues);
+    assert_eq!(saved.generations.len(), 1);
+    assert_eq!(saved.generations[0]["dialogueId"], second);
 }
 #[test]
 fn approved_only_intersects_all_or_selection_and_force_does_not_bypass_approval() {

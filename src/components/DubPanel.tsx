@@ -384,6 +384,9 @@ export function DubPanel({
   };
   return (
     <div className="panel-body dub-panel">
+      {line.excludedFromDubbing && !batch && (
+        <p className="panel-description">{t('dialogueExcludedHint')}</p>
+      )}
       <h3>{variant.name}</h3>
       {!batch && (
         <CharacterSuggestion
@@ -397,7 +400,7 @@ export function DubPanel({
           onModels={onModels}
         />
       )}
-      {!batch && (
+      {!batch && !line.excludedFromDubbing && (
         <VoiceCapture
           key={project.id + line.id}
           project={project}
@@ -412,7 +415,7 @@ export function DubPanel({
           onModels={onModels}
         />
       )}
-      {!batch && chosen && project.media && (
+      {!batch && !line.excludedFromDubbing && chosen && project.media && (
         <div className="settings-section">
           <button className="button accent wide" onClick={onLips} disabled={busy}>
             {t('lipsAnalyze')}
@@ -987,6 +990,7 @@ export function DubPanel({
             className="button accent wide"
             disabled={
               !bridge.native ||
+              line.excludedFromDubbing ||
               (pipeline && !pipelineReady) ||
               busy ||
               referencePending ||

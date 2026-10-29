@@ -110,6 +110,9 @@ pub fn plan(
     let by_id: std::collections::HashMap<_, _> = clips.iter().map(|c| (c.id.as_str(), c)).collect();
     let mut items = vec![];
     for line in &p.dialogues {
+        if line.excluded_from_dubbing == Some(true) {
+            continue;
+        }
         if selection.scope == "selected" && !ids.contains(&line.id) {
             continue;
         }
@@ -262,10 +265,21 @@ fn progress<R: tauri::Runtime>(
     jobs::update(core, app, key, |j| {
         j.batch = Some(crate::tts_batch::Progress {
             total: request.items.len(),
-            completed: succeeded + failed,
+            completed: succeeded
+                + failed
+                + request
+                    .items
+                    .iter()
+                    .filter(|i| i.status == "skipped")
+                    .count(),
             succeeded,
             failed,
-            skipped: request.skipped,
+            skipped: request.skipped
+                + request
+                    .items
+                    .iter()
+                    .filter(|i| i.status == "skipped")
+                    .count(),
             current_line_id: current,
         })
     });
@@ -434,6 +448,9 @@ fn start_with_launch<R: tauri::Runtime>(
                     inpaint::edits(&s.project)?.iter().any(|e|e.id==target && inpaint::current(&s.project,e) && project::asset(&s.root,&e.path).is_ok())
                 };
                 let line=request.items[index].request.options.line_id.clone();
+                let excluded={let guard=core.session.lock().map_err(io_error)?;let session=guard.as_ref().ok_or("NO_PROJECT")?;session.project.dialogues.iter().any(|l|l.id==line&&l.excluded_from_dubbing==Some(true))};
+                if excluded {request.items[index].status="skipped".into();request.items[index].error=None;record(&core,&key,index,&request.items[index])?;progress(&core,&app,&key,&request,None);continue;}
+
                 progress(&core,&app,&key,&request,Some(line.clone()));
                 jobs::update(&core,&app,&key,|j|{j.progress=None;j.logs.push(format!("Dialogue {}/{}: {}",index+1,request.items.len(),line));});
                 let result: Result<(), String> = async {

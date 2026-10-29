@@ -97,7 +97,7 @@ export async function verifyOneShot(executable, parent = os.tmpdir(), legacy = f
       child.stdin.write([init('init'), initialized, { jsonrpc: '2.0', id: 'first', method: 'ping' }].map(v => JSON.stringify(v)).join('\n') + '\n');
       await receive('first'); await delay(1000); assert.equal(child.exitCode, null);
       child.stdin.write(JSON.stringify({ jsonrpc: '2.0', id: 'later', method: 'tools/list' }) + '\n');
-      assert.equal((await receive('later')).result.tools.length, 132);
+      assert.equal((await receive('later')).result.tools.length, 134);
       child.stdin.end(); assert.deepEqual(await bounded(exited, 5000, 'Normal client EOF failed'), { code: 0, signal: null }); proof.persistentClient = true;
     }
     // Cancellation only releases completed RPC ownership, never studio jobs.

@@ -432,6 +432,12 @@ pub(crate) fn prepare_request(
     })
 }
 pub(crate) fn matches_request(p: &Project, request: &Request) -> bool {
+    if p.dialogues
+        .iter()
+        .any(|l| l.id == request.line_id && l.excluded_from_dubbing == Some(true))
+    {
+        return false;
+    }
     fingerprint(p, &request.line_id).is_ok_and(|v| v == request.fingerprint)
         && request.option_fingerprint.as_ref().is_none_or(|expected| {
             option_fingerprint(p, &request.line_id, &request.options)
@@ -492,6 +498,12 @@ pub fn enqueue<R: tauri::Runtime>(
     Ok(output)
 }
 pub(crate) fn validate_input(p: &Project, line_id: &str, options: &Options) -> Result<(), String> {
+    if p.dialogues
+        .iter()
+        .any(|l| l.id == line_id && l.excluded_from_dubbing == Some(true))
+    {
+        return Err("DIALOGUE_EXCLUDED".into());
+    }
     crate::voice_accent::validate(options, Some(&p.languages.target))?;
     let line = p
         .dialogues

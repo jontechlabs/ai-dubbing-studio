@@ -51,6 +51,8 @@ pub struct MediaAsset {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Dialogue {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub excluded_from_dubbing: Option<bool>,
     pub id: String,
     pub start_ms: u64,
     pub end_ms: u64,
@@ -214,6 +216,8 @@ pub struct DubbingTiming {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct TranslationApproval {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub joint: Option<serde_json::Value>,
     pub source_language: String,
     pub target_language: String,
     pub source_text: String,
@@ -221,43 +225,7 @@ pub struct TranslationApproval {
 }
 impl Project {
     pub fn clean_translation_approvals(&mut self) {
-        let before: std::collections::HashSet<String> =
-            self.translation_approvals.keys().cloned().collect();
-        let source: HashMap<_, _> = self
-            .source_cues
-            .iter()
-            .map(|c| (&c.id, c.text.as_str()))
-            .collect();
-        let target: HashMap<_, _> = self
-            .target_cues
-            .iter()
-            .map(|c| (&c.id, c.text.as_str()))
-            .collect();
-        let lines: HashMap<_, _> = self.dialogues.iter().map(|l| (&l.id, l)).collect();
-        self.translation_approvals.retain(|id, approval| {
-            let Some(line) = lines.get(id) else {
-                return false;
-            };
-            let text = |ids: &[String], cues: &HashMap<&String, &str>| {
-                ids.iter()
-                    .map(|id| cues.get(id).copied().unwrap_or(""))
-                    .collect::<Vec<_>>()
-                    .join("\n")
-            };
-            approval.source_language == self.languages.source
-                && approval.target_language == self.languages.target
-                && approval.source_text == text(&line.source_cue_ids, &source)
-                && !approval.target_text.trim().is_empty()
-                && approval.target_text == text(&line.target_cue_ids, &target)
-        });
-        for line in &mut self.dialogues {
-            if before.contains(&line.id)
-                && !self.translation_approvals.contains_key(&line.id)
-                && line.status == "validated"
-            {
-                line.status = "review".into();
-            }
-        }
+        crate::joint_review::clean(self);
     }
 
     pub fn new(name: String, source: String, target: String) -> Self {
@@ -296,7 +264,7 @@ impl Project {
         references.iter().find(|r| r.id == id)
     }
     pub fn validate(&self) -> Result<(), String> {
-        if !(1..=23).contains(&self.format_version) {
+        if !(1..=24).contains(&self.format_version) {
             return Err("UNSUPPORTED_PROJECT_VERSION".into());
         }
         if !self.translation_approvals.is_empty()
@@ -306,6 +274,11 @@ impl Project {
                         || a.source_language.is_empty()
                         || a.target_language.is_empty()
                         || a.target_text.trim().is_empty()
+                        || a.joint.as_ref().is_some_and(|v| {
+                            self.format_version < 24
+                                || !v.is_object()
+                                || v.to_string().len() > 512_000
+                        })
                 }))
         {
             return Err("INVALID_PROJECT".into());
@@ -422,6 +395,9 @@ impl Project {
         }
         let mut ids = std::collections::HashSet::new();
         for d in &self.dialogues {
+            if d.excluded_from_dubbing.is_some() && self.format_version < 24 {
+                return Err("INVALID_PROJECT".into());
+            }
             if let Some(settings) = &d.voice_settings {
                 if self.format_version < 5 {
                     return Err("INVALID_TTS_REQUEST".into());

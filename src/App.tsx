@@ -6,6 +6,12 @@ import { JobDuration } from './components/JobDuration';
 import { JobNotifications } from './components/JobNotifications';
 import { readMicrophone } from './services/microphone';
 import { Dialogues } from './components/Dialogues';
+import { DialogueManageModal, type DialogueAction } from './components/DialogueManageModal';
+import {
+  addDialogue,
+  setDialogueExclusion,
+  validateNewDialogueOptions,
+} from './domain/dialogueEditing';
 import { Editor } from './components/Editor';
 import { WorkspacePanels } from './components/WorkspacePanels';
 import { Header, type Panel } from './components/Header';
@@ -30,6 +36,7 @@ export default function App() {
   const studio = useProject();
   const updater = useUpdater(studio.flush);
   const [panel, setPanel] = useState<Panel>(null);
+  const [dialogueAction, setDialogueAction] = useState<DialogueAction | null>(null);
   const [timelineNavigation, setTimelineNavigation] = useState<TimelineNavigation | null>(null);
   const [audioSelection, setAudioSelection] = useState<AudioSelection | null>(null);
   const [toolboxModel, setToolboxModel] = useState<string | null>(null);
@@ -353,6 +360,44 @@ export default function App() {
           busy={busy}
           updateAvailable={!!updater.available}
         />
+        {dialogueAction && (
+          <DialogueManageModal
+            action={dialogueAction}
+            busy={busy}
+            onClose={() => setDialogueAction(null)}
+            onAdd={(options) => {
+              if (!studio.project) return;
+              validateNewDialogueOptions(studio.project, options);
+              edit((p) => {
+                const next = addDialogue(p, options);
+                const previous = new Set(p.dialogues.map((l) => l.id));
+                const added = next.dialogues.find((l) => !previous.has(l.id));
+                if (added) select(added);
+                return next;
+              });
+              setDialogueAction(null);
+            }}
+            onDelete={(ids) => {
+              stopGeneration();
+              checkBatch(batchIds.filter((id) => !ids.includes(id)));
+              transport.videoRef.current?.pause();
+              edit((p) => {
+                const first = p.dialogues.find((l) => ids.includes(l.id))?.startMs ?? 0;
+                const next = setDialogueExclusion(p, ids);
+                const active = next.dialogues.filter((l) => !l.excludedFromDubbing);
+                const neighbour = active.find((l) => l.startMs >= first) ?? active.at(-1);
+                if (neighbour) select(neighbour);
+                else {
+                  setSelectedId(null);
+                  setTimelineNavigation(null);
+                  setAudioSelection(null);
+                }
+                return next;
+              });
+              setDialogueAction(null);
+            }}
+          />
+        )}
         {!bridge.native && (
           <div className="browser-banner">
             <ShieldCheck size={12} />
@@ -362,6 +407,16 @@ export default function App() {
         <main className="workspace">
           <WorkspacePanels>
             <Dialogues
+              onAdd={(atMs) => {
+                const limit = studio.project?.media?.durationMs ?? 86_400_000;
+                const startMs = Math.max(
+                  0,
+                  Math.min(Math.round(atMs ?? transport.time), limit - 100),
+                );
+                setDialogueAction({ kind: 'add', startMs, endMs: Math.min(limit, startMs + 2000) });
+              }}
+              onDelete={(ids) => setDialogueAction({ kind: 'delete', ids })}
+              openContext={openContext}
               checkedIds={batchIds}
               onCheck={checkBatch}
               onBatch={openBatch}
@@ -401,6 +456,7 @@ export default function App() {
               onEdit={edit}
             />
             <Editor
+              onDelete={(line) => setDialogueAction({ kind: 'delete', ids: [line.id] })}
               onDub={openDub}
               project={studio.project}
               selected={selected}

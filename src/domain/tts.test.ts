@@ -58,7 +58,7 @@ describe('dubbing takes', () => {
     expect(translationState(reviewed, reviewed.dialogues[0])).toBe('approved');
     const stale = structuredClone(p);
     stale.dialogues[0].ttsText = 'Texte modifié';
-    expect(approveTranslation(stale, line.id, true).dialogues[0].status).toBe('review');
+    expect(() => approveTranslation(stale, line.id, true)).toThrow('TTS_STALE_GENERATION');
     expect(() => reviewGeneration(stale, line.id, true)).toThrow('TTS_STALE_GENERATION');
     expect(p.dialogues[0].status).toBe('generated');
   });

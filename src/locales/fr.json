@@ -407,7 +407,8 @@
     "AUDIO_TOOLBOX_INVALID_AUDIO": "Les sorties audio sont invalides ; aucune piste n’a été remplacée.",
     "AUDIO_TOOLBOX_ALREADY_APPLIED": "Ce résultat a déjà été appliqué.",
     "AUDIO_TOOLBOX_NOT_READY": "Le résultat n’est pas encore disponible.",
-    "INVALID_DUBBING_PIPELINE": "Les informations du doublage en deux étapes sont invalides."
+    "INVALID_DUBBING_PIPELINE": "Les informations du doublage en deux étapes sont invalides.",
+    "DIALOGUE_EXCLUDED": "Cette réplique est exclue du doublage. Ses sous-titres et ses essais sont conservés. Réintégrez-la depuis la liste pour générer de nouveaux essais."
   },
   "preparingVideo": "Préparation de la vidéo…",
   "loadingVideo": "Chargement de la vidéo…",
@@ -963,7 +964,7 @@
   "referenceRangeHint": "Durée sélectionnée : {{seconds}} s. Choisissez entre 1 et 20 secondes, dans les limites du fichier.",
   "translationApprove": "Valider la traduction de la réplique {{number}}",
   "translationUnapprove": "Retirer la validation de la traduction de la réplique {{number}}",
-  "translationReviewHint": "Validation de la traduction, indépendante de la validation de la voix. Un changement du texte original, traduit ou de langue retire cette validation.",
+  "translationReviewHint": "Validation commune du texte et de l’essai sélectionné à jour. Modifier le texte, la prononciation, l’essai, son montage ou son calage retire la validation. Sans essai, le texte reste validable pour préparer un lot.",
   "translationLegend": "État des traductions",
   "translationState": {
     "untranslated": "Non traduite",
@@ -1327,7 +1328,7 @@
   "translationSelectionCount_other": "{{count}} cochées",
   "translationApproveSelection": "Valider les traductions cochées",
   "translationUnapproveSelection": "Retirer la validation des traductions cochées",
-  "translationApproveSelectionHint": "{{count}} traduction(s) à valider parmi les répliques cochées, même masquées par un filtre. Les traductions vides sont ignorées.",
+  "translationApproveSelectionHint": "{{count}} réplique(s) à valider parmi celles cochées, même masquées. Les traductions vides et les essais périmés sont ignorés.",
   "translationUnapproveSelectionHint": "Retirer {{count}} validation(s) parmi les répliques cochées, même masquées par un filtre.",
   "translationApproveCompact": "Valider",
   "translationUnapproveCompact": "Retirer",
@@ -1608,5 +1609,21 @@
       "audiosep": "Isoler un son par description · AudioSep"
     }
   },
-  "auto": "Automatique"
+  "auto": "Automatique",
+  "dialogueAdd": "Ajouter une réplique",
+  "dialogueDeleteTitle": "Exclure du doublage",
+  "dialogueDeleteLine": "Exclure la réplique {{number}} du doublage",
+  "dialogueDeleteSelection": "Exclure les répliques cochées du doublage",
+  "dialogueContext": "Actions sur la réplique",
+  "dialogueDeleteConfirm": "Exclure {{count}} réplique(s) du doublage ?",
+  "dialogueDeleteKeep": "Les sous-titres source et traduits restent inchangés. Les essais, montages et calages sont conservés. La réplique quitte les lots et le mix vocal. Ctrl+Z annule cette exclusion ; vous pouvez aussi la réintégrer depuis la vue des répliques exclues.",
+  "dialogueStart": "Début de la nouvelle réplique",
+  "dialogueEnd": "Fin de la nouvelle réplique",
+  "dialogueSource": "Texte original de la nouvelle réplique",
+  "dialogueTarget": "Traduction de la nouvelle réplique",
+  "dialogueAddHint": "Saisissez le texte original, sa traduction ou les deux. L’intervalle doit durer au moins 100 ms et rester dans la vidéo. Les autres répliques ne sont pas déplacées.",
+  "dialogueShowExcluded": "Afficher les répliques exclues ({{count}})",
+  "dialogueRestore": "Réintégrer au doublage",
+  "dialogueExcluded": "Exclue du doublage",
+  "dialogueExcludedHint": "Cette réplique est exclue du doublage. Ses sous-titres et ses essais sont conservés. Réintégrez-la depuis la liste pour générer de nouveaux essais."
 }

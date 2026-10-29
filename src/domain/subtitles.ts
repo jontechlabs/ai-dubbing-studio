@@ -82,6 +82,7 @@ export function reconcileDialogues(previous: Dialogue[], aligned: Dialogue[]): D
       ? {
           ...line,
           id: old.id,
+          excludedFromDubbing: old.excludedFromDubbing,
           ttsText: old.ttsText,
           characterId: old.characterId,
           selectedGenerationIds: old.selectedGenerationIds,

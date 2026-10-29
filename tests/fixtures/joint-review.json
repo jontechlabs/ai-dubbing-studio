@@ -1,0 +1,176 @@
+{
+  "formatVersion": 24,
+  "appVersion": "0.32.1",
+  "id": "joint-fixture",
+  "name": "Joint review",
+  "revision": 0,
+  "createdAt": "2026-10-29T00:00:00Z",
+  "updatedAt": "2026-10-29T00:00:00Z",
+  "languages": {
+    "source": "ja",
+    "target": "fr"
+  },
+  "media": null,
+  "sourceCues": [
+    {
+      "id": "source1",
+      "startMs": 0,
+      "endMs": 2000,
+      "text": "はい"
+    }
+  ],
+  "targetCues": [
+    {
+      "id": "target1",
+      "startMs": 0,
+      "endMs": 2000,
+      "text": "Bonjour."
+    }
+  ],
+  "dialogues": [
+    {
+      "id": "line1",
+      "startMs": 0,
+      "endMs": 2000,
+      "sourceCueIds": [
+        "source1"
+      ],
+      "targetCueIds": [
+        "target1"
+      ],
+      "ttsText": null,
+      "characterId": null,
+      "status": "validated",
+      "warnings": [],
+      "selectedGenerationIds": {
+        "fr": "take1"
+      }
+    }
+  ],
+  "tracks": [],
+  "characters": [],
+  "generations": [
+    {
+      "kind": "tts",
+      "id": "take1",
+      "dialogueId": "line1",
+      "providerId": "cosyvoice3",
+      "modelId": "cosyvoice3-05b-rl",
+      "path": "generations/take1.wav",
+      "createdAt": "2026-10-29T00:00:00Z",
+      "sourcePath": null,
+      "startMs": 0,
+      "endMs": 2000,
+      "text": "Bonjour.",
+      "language": "fr",
+      "characterId": null,
+      "durationMs": 1500,
+      "sampleRate": 24000,
+      "options": {
+        "device": "cpu",
+        "referenceMode": "current",
+        "referenceId": null,
+        "mode": "crossLingual",
+        "speed": 1,
+        "seed": 0
+      },
+      "referenceTranscript": "",
+      "device": "cpu",
+      "deviceName": "CPU",
+      "peakVramMb": 0,
+      "inputHash": "fixture"
+    }
+  ],
+  "pronunciation": {},
+  "voiceEdits": {
+    "take1": {
+      "outputGain": 1.5,
+      "pieces": [
+        {
+          "sourceStartMs": 0,
+          "sourceEndMs": 1500,
+          "durationMs": 1500,
+          "gain": 1
+        }
+      ]
+    }
+  },
+  "translationApprovals": {
+    "line1": {
+      "sourceLanguage": "ja",
+      "targetLanguage": "fr",
+      "sourceText": "はい",
+      "targetText": "Bonjour.",
+      "joint": {
+        "ttsText": null,
+        "pronunciation": {},
+        "startMs": 0,
+        "endMs": 2000,
+        "characterId": null,
+        "sourcePath": null,
+        "generation": {
+          "kind": "tts",
+          "id": "take1",
+          "dialogueId": "line1",
+          "providerId": "cosyvoice3",
+          "modelId": "cosyvoice3-05b-rl",
+          "path": "generations/take1.wav",
+          "createdAt": "2026-10-29T00:00:00Z",
+          "sourcePath": null,
+          "startMs": 0,
+          "endMs": 2000,
+          "text": "Bonjour.",
+          "language": "fr",
+          "characterId": null,
+          "durationMs": 1500,
+          "sampleRate": 24000,
+          "options": {
+            "device": "cpu",
+            "referenceMode": "current",
+            "referenceId": null,
+            "mode": "crossLingual",
+            "speed": 1,
+            "seed": 0
+          },
+          "referenceTranscript": "",
+          "device": "cpu",
+          "deviceName": "CPU",
+          "peakVramMb": 0,
+          "inputHash": "fixture"
+        },
+        "reference": null,
+        "edit": {
+          "outputGain": 1.5,
+          "pieces": [
+            {
+              "sourceStartMs": 0,
+              "sourceEndMs": 1500,
+              "durationMs": 1500,
+              "gain": 1,
+              "envelope": [],
+              "effects": []
+            }
+          ]
+        },
+        "offsetMs": 0,
+        "durationMs": null,
+        "sourceCues": [
+          {
+            "id": "source1",
+            "startMs": 0,
+            "endMs": 2000,
+            "text": "はい"
+          }
+        ],
+        "targetCues": [
+          {
+            "id": "target1",
+            "startMs": 0,
+            "endMs": 2000,
+            "text": "Bonjour."
+          }
+        ]
+      }
+    }
+  }
+}

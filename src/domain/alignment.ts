@@ -224,6 +224,7 @@ export function applyAlignment(project: Project, proposal: Alignment): Project {
     return reviewLine(
       {
         id,
+        excludedFromDubbing: previous.some((l) => l.excludedFromDubbing) || undefined,
         ...bounds,
         sourceCueIds,
         targetCueIds,

@@ -15,6 +15,8 @@ import {
   RefreshCw,
   Search,
   UserRound,
+  Plus,
+  Trash2,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { dialogueText } from '../domain/subtitles';
@@ -23,6 +25,9 @@ import type { Dialogue, Project } from '../domain/types';
 import { assignCharacter } from '../domain/characters';
 import { CharacterAvatar } from './CharacterTools';
 import { selectedGeneration, staleGeneration } from '../domain/tts';
+import { canApproveJointReview, reviewIndex, indexedTake } from '../domain/jointReview';
+import type { OpenContextMenu } from './ContextMenu';
+import { setDialogueExclusion } from '../domain/dialogueEditing';
 import {
   approveTranslation,
   approveTranslations,
@@ -32,6 +37,9 @@ import {
 } from '../domain/translation';
 
 function DialoguesPane({
+  onAdd,
+  onDelete,
+  openContext,
   checkedIds,
   onCheck,
   onBatch,
@@ -49,6 +57,9 @@ function DialoguesPane({
   onDub,
   onPlayDub,
 }: {
+  onAdd: (atMs?: number) => void;
+  onDelete: (ids: string[]) => void;
+  openContext: OpenContextMenu;
   checkedIds: string[];
   onCheck: (ids: string[]) => void;
   onBatch: () => void;
@@ -69,15 +80,23 @@ function DialoguesPane({
   const { t } = useTranslation();
   const [search, setSearch] = useState('');
   const [review, setReview] = useState(false);
+  const [showExcluded, setShowExcluded] = useState(false);
   const [translationFilter, setTranslationFilter] = useState<'all' | TranslationState>('all');
   const states = useMemo(() => (project ? translationStates(project) : new Map()), [project]);
-  const selectedTranslations = useMemo(
-    () => ({
-      pending: checkedIds.filter((id) => states.get(id) === 'translated').length,
+  const selectedTranslations = useMemo(() => {
+    const lines = new Map(project?.dialogues.map((l) => [l.id, l]));
+    const index = project ? reviewIndex(project) : null;
+    return {
+      pending: checkedIds.filter((id) => {
+        const l = lines.get(id);
+        if (!project || !index || !l || l.excludedFromDubbing || states.get(id) !== 'translated')
+          return false;
+        const g = indexedTake(project, l, index);
+        return !g || !staleGeneration(project, l, g);
+      }).length,
       approved: checkedIds.filter((id) => states.get(id) === 'approved').length,
-    }),
-    [checkedIds, states],
-  );
+    };
+  }, [checkedIds, states, project]);
   const scrollRef = useRef<HTMLDivElement>(null);
   const checkedAnchor = useRef<string | null>(null);
   const numbers = useMemo(
@@ -90,6 +109,7 @@ function DialoguesPane({
     const target = new Map(project.targetCues.map((cue) => [cue.id, cue.text]));
     return project.dialogues.filter(
       (d) =>
+        (!d.excludedFromDubbing || showExcluded) &&
         (translationFilter === 'all' || states.get(d.id) === translationFilter) &&
         (!review ||
           d.warnings.length > 0 ||
@@ -104,7 +124,7 @@ function DialoguesPane({
           .toLocaleLowerCase()
           .includes(search.toLocaleLowerCase()),
     );
-  }, [project, review, search, translationFilter, states]);
+  }, [project, review, search, translationFilter, states, showExcluded]);
   const getItemKey = useCallback((index: number) => lines[index].id, [lines]);
   const virtual = useVirtualizer({
     count: lines.length,
@@ -175,6 +195,18 @@ function DialoguesPane({
           {lines.length} / {project?.dialogues.length ?? 0}
         </span>
       </label>
+      {project?.dialogues.some((l) => l.excludedFromDubbing) && (
+        <label className="checkbox-field dialogue-excluded-toggle">
+          <input
+            type="checkbox"
+            checked={showExcluded}
+            onChange={(e) => setShowExcluded(e.target.checked)}
+          />
+          {t('dialogueShowExcluded', {
+            count: project.dialogues.filter((l) => l.excludedFromDubbing).length,
+          })}
+        </label>
+      )}
       <label className="search-field">
         <Search size={15} />
         <input
@@ -184,6 +216,10 @@ function DialoguesPane({
         />
       </label>
       <div className="subtitle-imports">
+        <button disabled={!project || busy} onClick={() => onAdd()}>
+          <Plus size={14} />
+          {t('dialogueAdd')}
+        </button>
         <button disabled={!project || busy} onClick={() => onImport('source')}>
           <FilePlus2 size={14} />
           {t('importSource')}
@@ -218,6 +254,15 @@ function DialoguesPane({
           onClick={() => onCheck([])}
         >
           <ListX size={14} />
+        </button>
+        <button
+          className="button subtle"
+          aria-label={t('dialogueDeleteSelection')}
+          title={t('dialogueDeleteSelection')}
+          disabled={busy || !checkedIds.length}
+          onClick={() => onDelete(checkedIds)}
+        >
+          <Trash2 size={14} />
         </button>
         <button
           className="button accent"
@@ -299,6 +344,35 @@ function DialoguesPane({
                   }}
                 >
                   <DialogueCard
+                    onRestore={() => onEdit((p) => setDialogueExclusion(p, [line.id], false))}
+                    onDelete={() => onDelete([line.id])}
+                    openContext={(event) =>
+                      openContext(event, t('dialogueContext'), [
+                        { label: t('dialogueAdd'), disabled: busy, run: () => onAdd(line.endMs) },
+                        {
+                          label: t(
+                            line.excludedFromDubbing ? 'dialogueRestore' : 'dialogueDeleteTitle',
+                          ),
+                          disabled: busy,
+                          danger: true,
+                          run: () =>
+                            line.excludedFromDubbing
+                              ? onEdit((p) => setDialogueExclusion(p, [line.id], false))
+                              : onDelete([line.id]),
+                        },
+                        ...(checkedIds.includes(line.id)
+                          ? [
+                              {
+                                label: t('dialogueDeleteSelection'),
+                                disabled: busy,
+                                danger: true,
+                                run: () => onDelete(checkedIds),
+                              },
+                            ]
+                          : []),
+                      ])
+                    }
+                    busy={busy}
                     checked={checkedIds.includes(line.id)}
                     onCheck={(shift) => {
                       const next = new Set(checkedIds),
@@ -355,6 +429,10 @@ function DialoguesPane({
 }
 export const Dialogues = memo(DialoguesPane);
 function DialogueCard({
+  onRestore,
+  onDelete,
+  openContext,
+  busy,
   checked,
   onCheck,
   project,
@@ -370,6 +448,10 @@ function DialogueCard({
   onPlayDub,
   onApprove,
 }: {
+  onRestore: () => void;
+  onDelete: () => void;
+  openContext: (event: import('react').MouseEvent<HTMLElement>) => void;
+  busy: boolean;
   onApprove: () => void;
   checked: boolean;
   onCheck: (shift: boolean) => void;
@@ -391,8 +473,12 @@ function DialogueCard({
   const stale = !!generation && staleGeneration(project, line, generation);
   return (
     <article
-      className={`dialogue-card translation-${translation} ${selected ? 'selected' : ''}`}
+      className={`dialogue-card translation-${translation} ${line.excludedFromDubbing ? 'dialogue-excluded' : ''} ${selected ? 'selected' : ''}`}
       onClick={onSelect}
+      onContextMenu={(event) => {
+        if ((event.target as HTMLElement).closest('input,textarea,select')) return;
+        openContext(event);
+      }}
     >
       <button
         className="line-select"
@@ -510,9 +596,16 @@ function DialogueCard({
         </div>
       </div>
       <div className="translation-review">
+        {line.excludedFromDubbing && (
+          <span className="translation-badge untranslated">{t('dialogueExcluded')}</span>
+        )}
         <button
           className={`translation-badge ${translation}`}
-          disabled={translation === 'untranslated'}
+          disabled={
+            busy ||
+            translation === 'untranslated' ||
+            (translation !== 'approved' && !canApproveJointReview(project, line))
+          }
           aria-pressed={translation === 'approved'}
           aria-label={t(
             translation === 'approved' ? 'translationUnapprove' : 'translationApprove',
@@ -529,6 +622,23 @@ function DialogueCard({
         </button>
       </div>
       <div className="card-footer">
+        <button
+          className="icon-button"
+          aria-label={t(line.excludedFromDubbing ? 'dialogueRestore' : 'dialogueDeleteLine', {
+            number: index,
+          })}
+          title={t(line.excludedFromDubbing ? 'dialogueRestore' : 'dialogueDeleteLine', {
+            number: index,
+          })}
+          disabled={busy}
+          onClick={(e) => {
+            e.stopPropagation();
+            if (line.excludedFromDubbing) onRestore();
+            else onDelete();
+          }}
+        >
+          <Trash2 size={13} />
+        </button>
         <button
           className="status"
           title={t('ttsOpenHint')}

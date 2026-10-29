@@ -89,6 +89,7 @@ fn near(a: &Cue, b: &Cue) -> bool {
 fn dialogue(source: Option<&Cue>, target: Option<&Cue>, uncertain: bool) -> Dialogue {
     let cue = source.or(target).expect("at least one cue");
     Dialogue {
+        excluded_from_dubbing: None,
         id: id(),
         start_ms: cue.start_ms,
         end_ms: cue.end_ms,
@@ -143,6 +144,7 @@ pub fn reconcile(previous: &[Dialogue], aligned: Vec<Dialogue>) -> Vec<Dialogue>
                     || (!line.target_cue_ids.is_empty() && d.target_cue_ids == line.target_cue_ids)
             }) {
                 line.id = old.id.clone();
+                line.excluded_from_dubbing = old.excluded_from_dubbing;
                 line.tts_text = old.tts_text.clone();
                 line.character_id = old.character_id.clone();
                 line.selected_generation_ids = old.selected_generation_ids.clone();

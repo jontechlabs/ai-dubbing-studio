@@ -111,7 +111,7 @@ export function validateProject(value: unknown): Project {
   if (
     !Number.isInteger(project.formatVersion) ||
     project.formatVersion < 1 ||
-    project.formatVersion > 23
+    project.formatVersion > 24
   )
     throw new Error('UNSUPPORTED_PROJECT_VERSION');
   if (project.voiceEdits !== undefined) {
@@ -149,7 +149,12 @@ export function validateProject(value: unknown): Project {
         ['sourceLanguage', 'targetLanguage', 'sourceText', 'targetText'].some(
           (key) => typeof approval[key as keyof typeof approval] !== 'string',
         ) ||
-        !approval.targetText.trim()
+        !approval.targetText.trim() ||
+        (approval.joint !== undefined &&
+          (project.formatVersion < 24 ||
+            !approval.joint ||
+            typeof approval.joint !== 'object' ||
+            Array.isArray(approval.joint)))
       )
         throw Error('INVALID_PROJECT');
     }
@@ -314,6 +319,11 @@ export function validateProject(value: unknown): Project {
     referenceIds.add(reference.id);
   }
   for (const dialogue of project.dialogues) {
+    if (
+      dialogue.excludedFromDubbing !== undefined &&
+      (typeof dialogue.excludedFromDubbing !== 'boolean' || project.formatVersion < 24)
+    )
+      throw Error('INVALID_PROJECT');
     if (dialogue.characterId && !characterIds.has(dialogue.characterId))
       throw new Error('INVALID_CHARACTER');
     if (

@@ -164,6 +164,7 @@ export function mergeDialogue(project: Project, id: string): Project {
   if (!first || !second) throw new Error('NO_NEXT_DIALOGUE');
   const merged: Dialogue = {
     ...first,
+    excludedFromDubbing: first.excludedFromDubbing || second.excludedFromDubbing || undefined,
     startMs: Math.min(first.startMs, second.startMs),
     endMs: Math.max(first.endMs, second.endMs),
     sourceCueIds: [...new Set([...first.sourceCueIds, ...second.sourceCueIds])],

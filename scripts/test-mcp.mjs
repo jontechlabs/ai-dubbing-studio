@@ -12,6 +12,7 @@ import {verifyOneShot} from './test-mcp-one-shot.mjs';
 import {verifySshTransport} from './test-mcp-ssh-stdio.mjs';
 import {verifySourceAndVolume} from './test-source-and-volume.mjs';
 import {verifyDubbingWorkbench} from './test-dubbing-workbench.mjs';
+import {verifyJointReview} from './test-joint-review.mjs';
 const args=Object.fromEntries(process.argv.slice(2).reduce((rows,value,index,all)=>index%2===0?[...rows,[value.slice(2),all[index+1]]]:rows,[]));
 const client=new Client({name:'studio-native-validation',version:'1.0.0'},{capabilities:{}});
 const transport=new StdioClientTransport({command:args.exe,args:['--mcp','--endpoint',args.endpoint],stderr:'pipe'});
@@ -240,6 +241,10 @@ try {
     assert.deepEqual(reopenedReview.generations,qualityProject.generations);
     assert.deepEqual(await fs.readFile(path.join(projectRoot,basePath)),baseWave);
     proofs.bulkTranslationReview={atomic:true,undoRedo:true,reopen:true,staleAndUnknownRejected:true,voiceTakesPreserved:true};
+    proofs.jointReview=await verifyJointReview({call,context,client,projectRoot,baseId});
+    // The independent older-format round trips below intentionally omit the
+    // new format-24 review/exclusion extensions from this synthetic project.
+    await call('studio_approve_translations',{context:await context(),ids:(await call('studio_get_project')).dialogues.map(l=>l.id),approved:false});
     // Exercise actual packaged FFmpeg and saved merge/profile operations on test-owned files.
     await fs.mkdir(path.join(projectRoot,'characters'),{recursive:true});
     for(const id of ['review-a','review-b'])await fs.writeFile(path.join(projectRoot,`characters/${id}.wav`),baseWave);

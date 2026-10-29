@@ -1,4 +1,4 @@
-import { Mic2, Play, Type, Scissors, Combine } from 'lucide-react';
+import { Mic2, Play, Type, Scissors, Combine, Trash2 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { dialogueText, editDialogue } from '../domain/subtitles';
@@ -15,6 +15,7 @@ import { TranslationSuggestion } from './TranslationSuggestion';
 import { formatTime, parseTime } from '../domain/time';
 
 export function Editor({
+  onDelete,
   project,
   selected,
   onEdit,
@@ -27,6 +28,7 @@ export function Editor({
   snapshot,
   run,
 }: {
+  onDelete: (line: Dialogue) => void;
   project: Project | null;
   selected: Dialogue | undefined;
   onEdit: (update: (p: Project) => Project) => void;
@@ -78,11 +80,15 @@ export function Editor({
       </div>
       <button
         className="button subtle editor-dub-button"
-        disabled={busy || !target.trim()}
+        disabled={busy || selected.excludedFromDubbing || !target.trim()}
         onClick={() => onDub(selected)}
       >
         <Mic2 size={14} />
         {t('workbench.addDub')}
+      </button>
+      <button className="button subtle" disabled={busy} onClick={() => onDelete(selected)}>
+        <Trash2 size={13} />
+        {t('dialogueDeleteTitle')}
       </button>
       <TimingEditor
         key={selected.id}

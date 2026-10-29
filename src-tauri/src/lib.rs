@@ -17,6 +17,7 @@ mod inpaint_batch;
 #[cfg(test)]
 mod integration_tests;
 mod jobs;
+mod joint_review;
 mod lips;
 mod local_separation;
 mod mcp;

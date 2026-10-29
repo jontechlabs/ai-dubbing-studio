@@ -72,6 +72,7 @@ pub(crate) fn clips(p: &Project) -> Vec<Clip> {
     let mut clips: Vec<_> = p
         .dialogues
         .iter()
+        .filter(|l| l.excluded_from_dubbing != Some(true))
         .filter_map(|line| {
             let id = line.selected_generation_ids.get(&p.languages.target)?;
             let g = *generations.get(id.as_str())?;
@@ -335,6 +336,9 @@ fn validate(p: &Project, options: &Options) -> Result<(), String> {
     if !options.allow_incomplete {
         let selected = clips(p);
         for line in &p.dialogues {
+            if line.excluded_from_dubbing == Some(true) {
+                continue;
+            }
             if tts::text(p, line).is_empty() {
                 continue;
             }

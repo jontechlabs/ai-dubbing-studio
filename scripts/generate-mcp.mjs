@@ -406,9 +406,11 @@ tool(
   ['lineId', 'role', 'text'],
   true,
 );
+tool('studio_add_dialogue','Add a timed dialogue with optional original or translated text (at least one nonempty). Creates independent SRT cues without moving existing lines. Context required; undoable. Read studio_get_project to retrieve its new ID.',{options:makeSchema('NewDialogueOptions')},['options'],true);
+tool('studio_set_dialogue_exclusion','Exclude or restore dialogues for dubbing. Preserve source/translated subtitles, every historical take, voice edit and placement. Excluded lines stay outside voice mixing, generation and lip batches. Undoable; unknown IDs reject atomically.',{ids:{type:'array',minItems:1,items:string},excluded:bool},['ids','excluded'],true);
 tool(
   'studio_approve_translations',
-  'Approve or withdraw translation approval for all supplied dialogue IDs in one undoable saved edit. Empty translations are skipped; unknown IDs reject the entire edit. Does not change text, timing or voice takes. Read checkedIds from studio_get_state to act on the visible UI selection, including checked dialogues hidden by filters.',
+  'Approve or withdraw the common text and selected-current-voice review for supplied dialogue IDs in one undoable saved edit. Empty translations and stale selected takes are skipped; unknown IDs reject the entire edit. Without a selected take, approve text for batch preparation; a new selected take withdraws that approval. Any text, pronunciation, take, edit or placement change withdraws the common approval. Historical takes are preserved. Read checkedIds from studio_get_state to include checked lines hidden by filters.',
   { ids: { type: 'array', minItems: 1, items: string }, approved: bool },
   ['ids', 'approved'],
   true,
