@@ -1,11 +1,11 @@
 {
-  "version": "0.32.1",
-  "notes": "Validation commune du texte et de l’essai sélectionné : toute modification des sous-titres, du texte parlé, de la prononciation, de l’essai, du montage, du volume ou du calage retire la validation. Ajout de répliques avec horaires et textes. Exclusion du doublage, unitaire ou par sélection, en conservant les deux SRT, tous les essais, montages et calages. Vue des répliques exclues, réintégration et annulation/rétablissement. Lots TTS/labiaux et mix vocal respectent les exclusions. 134 outils MCP, format de projet 24.",
-  "pub_date": "2026-10-29T05:15:04Z",
+  "version": "0.32.2",
+  "notes": "Éditeur de sous-titres compact : Ajouter un doublage et Exclure du doublage sont regroupés dans l’en-tête sous forme d’icônes avec infobulles et libellés accessibles. L’en-tête se replie proprement dans un panneau étroit. Les deux SRT, tous les essais et les montages restent conservés lors de l’exclusion. Format de projet 24 et 134 outils MCP.",
+  "pub_date": "2026-10-29T14:40:32Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSdFFyMUJGTFp3NlBvdzlWa1IzWk1TWG5LdHBkcmRVTG5pMC9hcGs5d2JRTlhWcFo5QXRwaTYza01acmZTeDY5VVQzaDg0RTZ1bzk3Z2lZNzRadjY1bW0rY0x1aFI0NXdnPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkzMjQ5OTM0CWZpbGU6QUkgRHViYmluZyBTdHVkaW9fMC4zMi4xX3g2NC1zZXR1cC5leGUJdmVyc2lvbjowLjMyLjEKc2poOEdON1dpZ3UybmdOUEFxSHJmTTF4czN2R0dYb3EyRTJTSm5POFdpSnZiUkh3blNRWnBYNDV5ekFXcTZXbjdQT0JiZ1o0a2xtS3J0ZFp6R2p5QkE9PQo=",
-      "url": "https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.32.1/AI-Dubbing-Studio-0.32.1-Setup.exe"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSdFFyMUJGTFp3Nk51dWk1R2djS3Z3aG1OVWkxTVhUaVNTUEFnWExXeFhTMVpTSXliS1pTbENnSk1ONDJMU1BZcG84VTN3REx3dTdYK2hXK0F6STdYSjR6ZUFGWUxMekFrPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkzMjgzNzc3CWZpbGU6QUkgRHViYmluZyBTdHVkaW9fMC4zMi4yX3g2NC1zZXR1cC5leGUJdmVyc2lvbjowLjMyLjIKV0MwNDBXTURxNXI0d3lGL3l3U29PQTVHZTVBVXIrS3NQdXVJcG9MR1lxMnNWcDVUVDJsR2gvdnhzNlVyVXZ4ZzR2aWc4ZDBWSzFUSldEdVR2QzVpRHc9PQo=",
+      "url": "https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.32.2/AI-Dubbing-Studio-0.32.2-Setup.exe"
     }
   }
 }

@@ -1,8 +1,16 @@
 # Validation
 
-## v0.32.2 — validation in progress
+## v0.32.2 — 29 October 2026
 
-UI-only maintenance: compact editor icon buttons and wrapping header. Local TypeScript/lint/format checks and Chrome inspection at inspector widths 344, 300 and 260 px pass; both actions open their original panels. Fresh Windows packaging and official packaged-MCP verification are required before release. Final run evidence is recorded after completion.
+[Fresh Windows run 40885060419](https://github.com/jontechlabs/ai-dubbing-studio/actions/runs/40885060419) passes at `200cb47290b5cdc96932cf24880f8c5eba12f2aa`: **662 fresh suite checks** (188 TypeScript, 188 Chrome, 183 Rust, 103 Python), lint, Clippy, formatting, shared schemas and signed Windows packaging. Two explicitly opt-in Rust diagnostics remain ignored. The installer and portable executable are rebuilt from that tested commit.
+
+The actual packaged desktop passes its pinned official-SDK proof with **134 MCP tools**, including source-ASR, output gain, common approval, reversible dialogue addition/exclusion, media export and relay lifecycle. Original audio files, both SRTs and historical takes survive the exclusion/restoration/reopening checks. Japanese CPU recognition passes again in automatic and explicit Japanese modes.
+
+The functional change since v0.32.1 is confined to `Editor.tsx` and its layout styles. A separate local Chrome inspection verifies the two accessible icon buttons and their original actions at inspector widths 344, 300 and 260 px; no horizontal overflow occurs, and both the Dubbing panel and exclusion confirmation open. The screenshot uses synthetic project data and simulated native responses. No real user project is modified.
+
+Native application logic, workers, model/runtime manifests, vendored sources, media, project format 24 and the MCP catalog remain byte-identical to v0.32.1. Package versions and release documentation are updated. The complete-weight five-separator CPU proof [40749955489](https://github.com/jontechlabs/ai-dubbing-studio/actions/runs/40749955489) is authenticated against the same exact worker/model/runtime/vendor SHA-256 identities; neural quality and GPU benchmarks are not repeated for an icon/layout change.
+
+Release staging authenticates Actions artifact digests, installer PE version 0.32.2.0, the standard updater signature and rejection of a modified installer, portable ZIP CRC and every declared worker resource. The final source archive and tag retain the compiled application inputs; final validation and updater metadata are added after successful CI. Public installer, portable, source, signature and checksum downloads are streamed and SHA-256 checked after publication.
 
 ## v0.32.1 — 29 October 2026
 
