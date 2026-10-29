@@ -1,8 +1,16 @@
 # Validation
 
-## v0.32.1 — validation in progress
+## v0.32.1 — 29 October 2026
 
-Joint-review and exclusion changes have shared JavaScript/Rust JSON fixtures, domain and browser regressions, and fresh native/packaged-MCP checks. Both SRTs, every historical take, edits and placement are retained during exclusion. New generation workers and all neural resources remain byte-identical to v0.32; the preceding complete-weight model evidence remains applicable. Final run IDs and counts are recorded after successful packaging.
+[Fresh Windows run 40817943515](https://github.com/jontechlabs/ai-dubbing-studio/actions/runs/40817943515) passes at `a51d836c930842495dbb6299afc6d2e61a8a473d`: **662 fresh suite checks** (188 TypeScript, 188 Chrome, 183 Rust, 103 Python), Clippy, formatting, MCP schemas and signed packaging. Two explicitly opt-in Rust diagnostics remain ignored. The installer and portable executable are built from that tested commit.
+
+A shared JSON fixture checks the JS/Rust common-review snapshot across default fields, JSON key order, integral floats, persisted reopening and history. Tests withdraw review for text, pronunciation, selected generation, gain, edits, fades/effects and timing changes, retain unrelated state, migrate only already-approved compatible legacy pairs and refuse approval inheritance by a new take. Exclusion preserves both SRTs, every historical take, selected-take bindings, edits and placement; native mix/lip planners and forced TTS batches omit it. A protocol worker proves that exclusion after enqueue skips that item and generates only the remaining dialogue, then releases the worker.
+
+The actual packaged desktop is driven by the pinned official SDK with **134 MCP tools**. Its new proof checks a real native gain change withdrawing common approval, exact undo, timed dialogue addition, exclusion without source/target SRT or audio mutation, batch omission, stale/unknown-ID rejection, restoration and saved reopening. Original WAV bytes and all historical takes remain identical. Existing source-ASR, output-gain, media export and relay-lifecycle checks pass; Japanese CPU recognition is rerun in automatic and explicit Japanese modes.
+
+All neural workers, runtime/model manifests and vendored sources remain byte-identical to v0.32.0; the existing TTS request JSON and GGUF inference body are unchanged. The complete-weight five-separator CPU proof from [40749955489](https://github.com/jontechlabs/ai-dubbing-studio/actions/runs/40749955489) is authenticated against the four exact worker/model/runtime/vendor SHA-256 identities in these packages. Neural quality and RTX performance tests are not repeated for review/exclusion metadata.
+
+Release staging authenticates complete Actions artifact digests, installer PE version, the standard updater signature and rejection of a modified installer, portable CRC and every declared worker resource. Final source/tag and update-feed metadata retain all compiled application inputs. The portable ZIP is byte-identical to the tested runner archive; this validation document and final updater metadata are completed in the source archive after CI. Screenshots use synthetic media and simulated native responses, separately from actual desktop proofs. No real user project or remote studio is changed during testing.
 
 ## v0.32.0 — 28 October 2026
 
