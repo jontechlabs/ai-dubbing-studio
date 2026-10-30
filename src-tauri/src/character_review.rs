@@ -696,7 +696,7 @@ pub async fn preview_sample<R: tauri::Runtime>(
             end_ms: line.end_ms.min(line.start_ms + 20000),
             channels: 1,
             rate: 24000,
-            fader: false,
+            levels: crate::audio_patch::SnippetLevels::Reference,
         },
         &output,
         &flag,

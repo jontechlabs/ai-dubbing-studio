@@ -1,5 +1,9 @@
 # Validation
 
+## v0.32.5 — validation in progress
+
+Three new native FFmpeg regressions cover references from muted selections on every source-track role, retained transfers and structural silence, and actual reference audition followed by an unchanged muted-source MKV mix. Full Windows checks and signed packages must pass before publication.
+
 ## v0.32.4 — 30 October 2026
 
 [Fresh Windows run 41068875459](https://github.com/jontechlabs/ai-dubbing-studio/actions/runs/41068875459) passes at `a4096900ca53113a39339e0e3a59994ee424c8f7`: **673 fresh suite checks** (188 TypeScript, 199 Chrome, 183 Rust, 103 Python), lint, Clippy, formatting, shared schemas and signed packaging. Two explicitly opt-in Rust diagnostics remain ignored. Installer and portable executable are rebuilt from this tested commit.

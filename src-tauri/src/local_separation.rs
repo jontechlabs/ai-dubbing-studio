@@ -168,7 +168,7 @@ pub fn enqueue<R: tauri::Runtime>(
             jobs::update(&core,&app,&key,|j|{j.status="running".into();j.stage="audioExtract".into();j.progress=None;});
             project::ensure_directory(&request.root,"stems")?;std::fs::create_dir(&folder).map_err(io_error)?;
             let input=folder.join("input.wav");
-            audio_patch::snippet(&core,&app,&key,&snapshot,&request.root,audio_patch::Snippet{track_id:&request.options.source_track_id,start_ms:request.options.start_ms,end_ms:request.options.end_ms,channels:2,rate:48000,fader:false},&input,&flag).await?;
+            audio_patch::snippet(&core,&app,&key,&snapshot,&request.root,audio_patch::Snippet{track_id:&request.options.source_track_id,start_ms:request.options.start_ms,end_ms:request.options.end_ms,channels:2,rate:48000,levels:crate::audio_patch::SnippetLevels::Regions},&input,&flag).await?;
             jobs::update(&core,&app,&key,|j|{j.stage="localSeparation".into();j.progress=Some(0.0);j.logs.push("Local separation preview only. No project track or original source is overwritten.".into());});
             separation::process(&core,&app,&key,&separation::python(&separation::runtime(&core)),&[separation::resources(&app).join("bandit_worker.py").to_string_lossy().into_owned(),"--input".into(),input.to_string_lossy().into_owned(),"--output".into(),folder.to_string_lossy().into_owned(),"--model".into(),separation::runtime(&core).join("checkpoint-multi.ckpt").to_string_lossy().into_owned(),"--device".into(),request.options.device.clone()],&flag).await?;
             if flag.load(Ordering::Relaxed){return Err("CANCELLED".into());}

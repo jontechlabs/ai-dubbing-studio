@@ -148,7 +148,7 @@ async fn selection_becomes_ordered_replace_layer_without_baking_volume_twice() {
             end_ms: 4000,
             channels: 2,
             rate: 48000,
-            fader: true,
+            levels: crate::audio_patch::SnippetLevels::Mix,
         },
         &output,
         &AtomicBool::new(false),

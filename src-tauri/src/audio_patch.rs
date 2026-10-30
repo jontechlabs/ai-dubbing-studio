@@ -222,13 +222,22 @@ pub fn source_track(p: &Project, requested: Option<&str>) -> Result<Track, Strin
     };
     selected.cloned().ok_or("INVALID_AUDIO_TRANSFER".into())
 }
+#[derive(Clone, Copy)]
+pub enum SnippetLevels {
+    /// Playback/export: track fader and selection levels.
+    Mix,
+    /// Editing tools: selection levels, before the track fader.
+    Regions,
+    /// Voice reference: before all listening controls, keeping audio patches.
+    Reference,
+}
 pub struct Snippet<'a> {
     pub track_id: &'a str,
     pub start_ms: u64,
     pub end_ms: u64,
     pub channels: u8,
     pub rate: u32,
-    pub fader: bool,
+    pub levels: SnippetLevels,
 }
 #[allow(clippy::too_many_arguments)]
 pub async fn snippet<R: tauri::Runtime>(
@@ -241,7 +250,12 @@ pub async fn snippet<R: tauri::Runtime>(
     output: &Path,
     flag: &AtomicBool,
 ) -> Result<(), String> {
-    let track = source_track(p, Some(options.track_id))?;
+    let mut track = source_track(p, Some(options.track_id))?;
+    if matches!(options.levels, SnippetLevels::Reference) {
+        // Mute/volume automation belongs to the mix, not the voice supplied to
+        // a model. Change only this extraction's cloned track; keep its patches.
+        track.regions_enabled = Some(false);
+    }
     let media = p.media.as_ref().ok_or("MEDIA_MISSING")?;
     if options.end_ms <= options.start_ms || options.end_ms > media.info.duration_ms {
         return Err("INVALID_AUDIO_TRANSFER".into());
@@ -271,7 +285,7 @@ pub async fn snippet<R: tauri::Runtime>(
     args.extend(["-i".into(), source.to_string_lossy().into_owned()]);
     let mut index = 1;
     let mut filters = vec![];
-    let base = if options.fader {
+    let base = if matches!(options.levels, SnippetLevels::Mix) {
         if track.mute {
             0.0
         } else {
@@ -427,7 +441,7 @@ pub async fn transfer<R: tauri::Runtime>(
             end_ms: o.end_ms,
             channels: 2,
             rate: 48000,
-            fader: false,
+            levels: crate::audio_patch::SnippetLevels::Regions,
         },
         &a,
         flag,
@@ -446,7 +460,7 @@ pub async fn transfer<R: tauri::Runtime>(
                 end_ms: o.end_ms,
                 channels: 2,
                 rate: 48000,
-                fader: false,
+                levels: crate::audio_patch::SnippetLevels::Regions,
             },
             &b,
             flag,

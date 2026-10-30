@@ -276,7 +276,7 @@ async fn execute<R: tauri::Runtime>(
                     end_ms: o.end_ms,
                     channels: 2,
                     rate: 48000,
-                    fader: false,
+                    levels: crate::audio_patch::SnippetLevels::Regions,
                 },
                 &dry,
                 flag,

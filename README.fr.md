@@ -1,5 +1,7 @@
 # AI Dubbing Studio
 
+**v0.32.5 — Doubler une zone rendue muette.** Les références vocales et les guides d’intonation ignorent les volumes et silences de piste et de sélection. La préécoute de référence reste audible ; le mix conserve ses zones muettes. Les transferts audio et tous les essais restent conservés. [Guide](docs/REFERENCE-AUDIO-LEVELS.md).
+
 **v0.32.4 — Identification des personnages à la demande.** Dans Doublage, cliquez sur **Proposer un personnage** pour comparer les voix. L’ouverture du panneau, le changement de réplique et les réglages ne lancent plus d’analyse automatique, même avec une ancienne préférence activée. L’assignation reste à confirmer ; tous les essais sont conservés. [Guide](docs/CHARACTER-VOICE-LIBRARY.md#personnage-proposé-au-moment-du-doublage).
 
 **v0.32.3 — Traitements intégrés au panneau Doublage.** Génération, changement de timbre, transfert d’intonation, transcription et lots gardent leur progression dans le panneau, avec durée, annulation et relance. Le nouvel essai sélectionné reçoit le focus à la fin ; les essais précédents restent conservés. [Guide et captures](docs/DUBBING-INLINE-TASKS.md).

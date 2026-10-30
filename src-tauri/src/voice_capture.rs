@@ -399,7 +399,7 @@ pub(crate) async fn execute<R: tauri::Runtime>(
                 end_ms: l.end_ms.min(l.start_ms + 20000),
                 channels: 1,
                 rate: 24000,
-                fader: false,
+                levels: crate::audio_patch::SnippetLevels::Reference,
             },
             &target,
             flag,

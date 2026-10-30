@@ -1,5 +1,7 @@
 # AI Dubbing Studio
 
+**v0.32.5 — Dub muted selections.** Voice references and dialogue prosody guides bypass track and selection volume/mute controls. Reference audition remains audible while the mix keeps its muted regions. Audio transfers and every take are retained. [Guide](docs/REFERENCE-AUDIO-LEVELS.md).
+
 **v0.32.4 — Character matching on request.** Click **Suggest a character** in Dubbing to compare voices. Opening the panel, switching dialogues or changing settings no longer starts automatic analysis, including with an old enabled preference. Assignment still requires approval and every take is retained. [Guide](docs/CHARACTER-VOICE-LIBRARY.md#personnage-proposé-au-moment-du-doublage).
 
 **v0.32.3 — Inline dubbing operations.** Generation, timbre conversion, prosody transfer, reference transcription and batches keep their progress, elapsed time, cancellation and retry in the Dubbing panel. Completion focuses the newly selected take, retaining every earlier take. [Guide and screenshots](docs/DUBBING-INLINE-TASKS.md).

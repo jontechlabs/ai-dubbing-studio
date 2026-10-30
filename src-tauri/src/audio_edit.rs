@@ -170,7 +170,7 @@ pub fn enqueue<R: tauri::Runtime>(
                         end_ms: duration,
                         channels: 2,
                         rate: 48000,
-                        fader: true,
+                        levels: crate::audio_patch::SnippetLevels::Mix,
                     },
                     &temporary,
                     &flag,

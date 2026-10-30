@@ -202,7 +202,7 @@ async fn apply_creates_missing_tracks_at_original_timestamp_preserves_media_and_
                 end_ms: 8000,
                 channels: 2,
                 rate: 48000,
-                fader: false,
+                levels: crate::audio_patch::SnippetLevels::Regions,
             },
             &out,
             &AtomicBool::new(false),

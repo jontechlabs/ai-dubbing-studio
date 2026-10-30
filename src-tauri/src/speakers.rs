@@ -264,7 +264,7 @@ pub fn enqueue_scope<R: tauri::Runtime>(
             project::ensure_directory(&request.root,"characters")?;
             std::fs::create_dir(&folder).map_err(io_error)?;
             let audio=folder.join("input.wav");
-            crate::audio_patch::snippet(&core,&app,&key,&snapshot,&request.root,crate::audio_patch::Snippet{track_id:&track_id,start_ms:start,end_ms:end,channels:1,rate:16000,fader:false},&audio,&flag).await?;
+            crate::audio_patch::snippet(&core,&app,&key,&snapshot,&request.root,crate::audio_patch::Snippet{track_id:&track_id,start_ms:start,end_ms:end,channels:1,rate:16000,levels:crate::audio_patch::SnippetLevels::Reference},&audio,&flag).await?;
             let input_lines=folder.join("lines.json");
             project::atomic_write(&input_lines,&serde_json::to_vec(&lines).map_err(io_error)?)?;
             let mut args=vec![separation::resources(&app).join("speaker_worker.py").to_string_lossy().into_owned(),"--runtime".into(),root(&core).to_string_lossy().into_owned(),"--input".into(),audio.to_string_lossy().into_owned(),"--lines".into(),input_lines.to_string_lossy().into_owned(),"--output".into(),folder.to_string_lossy().into_owned(),"--threshold".into(),threshold.to_string(),"--offset-ms".into(),start.to_string()];
@@ -454,7 +454,7 @@ pub async fn reference<R: tauri::Runtime>(
                     end_ms: start + duration,
                     channels: 1,
                     rate: 24000,
-                    fader: false,
+                    levels: crate::audio_patch::SnippetLevels::Reference,
                 },
                 &output,
                 &flag,

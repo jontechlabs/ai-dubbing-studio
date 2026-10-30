@@ -276,7 +276,7 @@ async fn run<R: tauri::Runtime>(
                 end_ms: slot.end_ms,
                 channels: 1,
                 rate: 16000,
-                fader: false,
+                levels: crate::audio_patch::SnippetLevels::Reference,
             },
             &wav,
             flag,

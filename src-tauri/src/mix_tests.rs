@@ -1455,7 +1455,11 @@ async fn snippet_level(
             end_ms: end,
             channels: 2,
             rate: 48000,
-            fader,
+            levels: if fader {
+                audio_patch::SnippetLevels::Mix
+            } else {
+                audio_patch::SnippetLevels::Regions
+            },
         },
         &output,
         &AtomicBool::new(false),
@@ -1468,6 +1472,225 @@ async fn snippet_level(
     // original calibration units while retaining stereo in every rendered file.
     data[data.len() / 2] / std::f32::consts::FRAC_1_SQRT_2
 }
+#[tokio::test]
+async fn muted_selections_remain_available_as_references_on_every_source_track() {
+    let (_temp, root, mut p) = fixture().await;
+    for (id, role) in [
+        ("speech", Some("speech")),
+        ("sfx", Some("sfx")),
+        ("custom", None),
+    ] {
+        let mut track = p.tracks[1].clone();
+        track.id = id.into();
+        track.role = role.map(str::to_owned);
+        p.tracks.push(track);
+    }
+    for track in p.tracks.iter_mut().filter(|t| t.kind != "dubbing") {
+        track.mute = true;
+        track.solo = true;
+        track.gain = 0.0;
+        track.regions_enabled = Some(true);
+        track.regions = serde_json::from_value(serde_json::json!([
+            {"id":"muted","startMs":500,"endMs":1500,"gain":1,"mute":true},
+            {"id":"zero","startMs":1500,"endMs":2500,"gain":0,"mute":false}
+        ]))
+        .unwrap();
+    }
+    p.validate().unwrap();
+    let before = serde_json::to_value(&p).unwrap();
+    let original = std::fs::read(root.join("media/source.mkv")).unwrap();
+    let stem = std::fs::read(root.join("stems/music.wav")).unwrap();
+    let app = tauri::test::mock_app();
+    let core = core(&root, p.clone());
+    for track in ["original", "speech", "music", "sfx", "custom"] {
+        let path = root.join("exports/reference.wav");
+        audio_patch::snippet(
+            &core,
+            app.handle(),
+            "",
+            &p,
+            &root,
+            Snippet {
+                track_id: track,
+                start_ms: 1000,
+                end_ms: 2000,
+                channels: 1,
+                rate: 24000,
+                levels: audio_patch::SnippetLevels::Reference,
+            },
+            &path,
+            &AtomicBool::new(false),
+        )
+        .await
+        .unwrap();
+        assert_eq!(
+            audio_files::pcm_frames(&path, 1, 24000, "bad").unwrap(),
+            24000
+        );
+        let data = pcm(&path, "0:a:0").await;
+        let expected = if track == "original" { 0.03 } else { 0.1 };
+        assert!(
+            data[960..data.len() - 960]
+                .iter()
+                .all(|s| (s / std::f32::consts::FRAC_1_SQRT_2 - expected).abs() < 0.001),
+            "{track}"
+        );
+        // Mix rendering and existing editing-tool semantics still honor the zones.
+        for fader in [false, true] {
+            assert!(
+                snippet_level(&core, app.handle(), &root, &p, track, 1000, 2000, fader)
+                    .await
+                    .abs()
+                    < 0.0001
+            );
+        }
+    }
+    assert_eq!(serde_json::to_value(&p).unwrap(), before);
+    assert_eq!(
+        serde_json::to_value(&core.session.lock().unwrap().as_ref().unwrap().project).unwrap(),
+        before
+    );
+    assert_eq!(
+        std::fs::read(root.join("media/source.mkv")).unwrap(),
+        original
+    );
+    assert_eq!(std::fs::read(root.join("stems/music.wav")).unwrap(), stem);
+}
+
+#[tokio::test]
+async fn reference_levels_keep_transfers_and_structural_silence_when_listening_levels_are_muted() {
+    for operation in ["copy", "move", "swap"] {
+        let (_temp, root, core, app, mut p) = transfer_fixture(operation).await;
+        let music = p.tracks.iter_mut().find(|t| t.id == "music").unwrap();
+        music.mute = true;
+        music.gain = 0.0;
+        music.regions = serde_json::from_value(serde_json::json!([
+            {"id":"quiet","startMs":1000,"endMs":2000,"gain":1,"mute":true}
+        ]))
+        .unwrap();
+        let before = serde_json::to_value(&p).unwrap();
+        for (track, expected) in [
+            ("music", if operation == "swap" { 0.03 } else { 0.13 }),
+            (
+                "original",
+                match operation {
+                    "move" => 0.0,
+                    "swap" => 0.1,
+                    _ => 0.03,
+                },
+            ),
+        ] {
+            let path = root.join("exports/reference.wav");
+            audio_patch::snippet(
+                &core,
+                app.handle(),
+                "",
+                &p,
+                &root,
+                Snippet {
+                    track_id: track,
+                    start_ms: 1100,
+                    end_ms: 1900,
+                    channels: 1,
+                    rate: 24000,
+                    levels: audio_patch::SnippetLevels::Reference,
+                },
+                &path,
+                &AtomicBool::new(false),
+            )
+            .await
+            .unwrap();
+            let data = pcm(&path, "0:a:0").await;
+            assert!(
+                (data[data.len() / 2] / std::f32::consts::FRAC_1_SQRT_2 - expected).abs() < 0.001,
+                "{operation} {track}"
+            );
+        }
+        assert!(
+            snippet_level(&core, app.handle(), &root, &p, "music", 1100, 1900, true)
+                .await
+                .abs()
+                < 0.0001
+        );
+        assert_eq!(serde_json::to_value(&p).unwrap(), before);
+    }
+}
+
+#[tokio::test]
+async fn reference_audition_reads_muted_dialogue_without_unmuting_the_exported_mix() {
+    let (_temp, root, mut p) = fixture().await;
+    for track in &mut p.tracks {
+        track.mute = track.kind != "dubbing";
+        track.gain = if track.kind == "dubbing" { 1.0 } else { 0.0 };
+        track.regions.clear();
+    }
+    p.tracks[0].regions = serde_json::from_value(serde_json::json!([
+        {"id":"silent-dialogue","startMs":1000,"endMs":3000,"gain":1,"mute":true}
+    ]))
+    .unwrap();
+    let before = serde_json::to_value(&p).unwrap();
+    let source = std::fs::read(root.join("media/source.mkv")).unwrap();
+    let take = std::fs::read(root.join("generations/voice.wav")).unwrap();
+    let app = tauri::test::mock_app();
+    let core = core(&root, p.clone());
+    let preview = crate::character_review::preview_sample(
+        core.clone(),
+        app.handle().clone(),
+        "line".into(),
+        Some("original".into()),
+    )
+    .await
+    .unwrap();
+    assert_eq!(
+        audio_files::pcm_frames(Path::new(&preview), 1, 24000, "bad").unwrap(),
+        48000
+    );
+    let data = pcm(Path::new(&preview), "0:a:0").await;
+    assert!((data[data.len() / 2] / std::f32::consts::FRAC_1_SQRT_2 - 0.03).abs() < 0.001);
+    let request = Request {
+        root: root.clone(),
+        project_id: p.id.clone(),
+        revision: p.revision,
+        output: root.join("exports/muted-source.mkv"),
+        options: Options {
+            include_retouched: true,
+            include_original: false,
+            source_subtitles: false,
+            target_subtitles: false,
+            codec: "flac".into(),
+            allow_incomplete: false,
+        },
+    };
+    let key = jobs::create(&core, app.handle(), "mkvExport", p.id.clone(), None);
+    export(
+        &core,
+        app.handle(),
+        &key,
+        &request,
+        &p,
+        &Arc::new(AtomicBool::new(false)),
+    )
+    .await
+    .unwrap();
+    let mix = pcm(&request.output, "0:a:0").await;
+    let average = |ms: usize| mix[ms * 96..(ms + 10) * 96].iter().sum::<f32>() / 960.0;
+    assert!(average(500).abs() < 0.001);
+    assert!((average(1200) / std::f32::consts::FRAC_1_SQRT_2 - 0.2).abs() < 0.001);
+    assert!(average(2800).abs() < 0.001);
+    assert_eq!(
+        serde_json::to_value(&core.session.lock().unwrap().as_ref().unwrap().project).unwrap(),
+        before
+    );
+    assert_eq!(
+        std::fs::read(root.join("media/source.mkv")).unwrap(),
+        source
+    );
+    assert_eq!(
+        std::fs::read(root.join("generations/voice.wav")).unwrap(),
+        take
+    );
+}
+
 #[tokio::test]
 async fn copy_and_move_ranges_match_playback_reference_and_export_envelopes() {
     for operation in ["copy", "move"] {
