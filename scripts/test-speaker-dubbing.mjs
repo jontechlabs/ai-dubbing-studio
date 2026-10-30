@@ -3,6 +3,7 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import assert from 'node:assert/strict';
+import {execFileSync} from 'node:child_process';
 import {createHash,randomUUID} from 'node:crypto';
 export async function verifySpeakerDubbing({call,context,job,args,projectRoot:previousRoot}) {
  const previous=await call('studio_get_project');
@@ -35,11 +36,17 @@ export async function verifySpeakerDubbing({call,context,job,args,projectRoot:pr
  const basis=created.generations.find((g)=>g.kind==='tts');assert(basis);
  const patches=[];for(const voice of group.voices){const g={...structuredClone(basis),id:randomUUID(),dialogueId:voice.lineId,startMs:line.startMs,endMs:line.endMs,language:created.languages.target,characterId:null,text:voice.translations[created.languages.target],sourcePath:created.media.path};delete g.prosodyTransfer;delete g.takeOrigin;delete g.dubbingPipeline;patches.push({op:'add',path:'/generations/-',value:g},{op:'add',path:`/dialogues/${created.dialogues.findIndex((l)=>l.id===voice.lineId)}/selectedGenerationIds/${created.languages.target}`,value:g.id});}
  await call('studio_project_patch',{context:await context(),patches});
+ // Like the user, explicitly enable the Dubbing mix bus (normally muted by
+ // default). This ensures export contains the child voices, not silence.
+ await call('studio_set_track',{context:await context(),id:'dubbing',changes:{mute:false,solo:false,gain:1}});
  const readyUntil=Date.now()+30000;while(!(await call('studio_get_state')).playback.ready){assert(Date.now()<readyUntil,'Group video did not become ready');await new Promise(r=>setTimeout(r,100));}
  await call('studio_playback',{action:'dub',lineId:line.id});let played=false;const playUntil=Date.now()+15000;
  while(Date.now()<playUntil){const s=(await call('studio_get_state')).playback;if(s.playing&&s.selection?.selection.trackId==='dubbing'){played=true;break;}await new Promise(r=>setTimeout(r,50));}
  assert(played,'Parent did not audition the active child mix');await call('studio_playback',{action:'pause'});
  const output=path.join(projectRoot,'exports','overlapping-voices.mkv');await job(await call('studio_export_mkv',{context:await context(),output,options:{includeOriginal:false,sourceSubtitles:true,targetSubtitles:true,codec:'flac',allowIncomplete:true}}));assert((await fs.stat(output)).size>1000);
+ const pcm=execFileSync(path.join(path.dirname(args.exe),'binaries','ffmpeg.exe'),['-v','error','-i',output,'-ss','2.1','-t','.2','-map','0:a:0','-ac','1','-ar','24000','-f','f32le','pipe:1']);let peak=0;
+ for(let offset=0;offset+4<=pcm.length;offset+=4)peak=Math.max(peak,Math.abs(pcm.readFloatLE(offset)));
+ assert(peak>.05,'Exported child mix must be audible');
  const saved=await call('studio_get_project');await call('studio_open_project',{path:projectRoot});const reopened=await call('studio_get_project');assert.deepEqual(reopened.speakerDubbings,saved.speakerDubbings);assert.deepEqual(reopened.generations,saved.generations);console.log('SPEAKER_DUBBING_STAGE concurrent MKV export and reopen passed');
  // Applying both outputs to one destination must replace once then add, keeping both.
  const id2=await call('studio_separate_dialogue_speakers',{context:await context(),options:result.options});await job(id2);
