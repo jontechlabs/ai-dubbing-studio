@@ -142,6 +142,9 @@ try {
     const voiceOptions={variantId:'cosy3-official',device:'cpu',referenceMode:'current',referenceId:null,mode:'crossLingual',speed:1,seed:0};
     const baseTake={id:baseId,kind:'tts',dialogueId:lineId,providerId:'cosyvoice3',modelId:'cosy3-official',path:basePath,createdAt:new Date().toISOString(),sourcePath:beforeProsody.media.path,startMs:line.startMs,endMs:line.endMs,text:'Une première traduction.',language:'fr',characterId:line.characterId,durationMs:2000,sampleRate:24000,options:voiceOptions,referenceTranscript:'',device:'cpu',deviceName:'CPU synthetic diagnostic',peakVramMb:0,inputHash:'synthetic-native-prosody-test'};
     await call('studio_project_patch',{context:await context(),patches:[{op:'replace',path:'/formatVersion',value:14},{op:'add',path:'/generations/-',value:baseTake}]});
+    // Run the new real-model flow before lengthy legacy ASR checks so a new
+    // integration regression fails promptly. The original project is restored.
+    proofs.speakerDubbing=await verifySpeakerDubbing({call,context,job,args,projectRoot});
     const withReference=await call('studio_import_dubbing_reference',{context:await context(),lineId:null,path:guideFile,range:null,options:voiceOptions});
     const guideId=withReference.voiceReferences.at(-1).id;
     assert((await call('studio_prosody_status')).available);
@@ -297,7 +300,6 @@ try {
     proofs.voiceLibrary={assembledOriginals:true,actualWavHash:true,explicitReview:true,transcriptRevokesDefault:true,undoAndReopenFormat21:true,takesAndWavsPreserved:true};
     proofs.sourceAndVolume=await verifySourceAndVolume({call,context,args,baseId,projectRoot});
     proofs.dubbingWorkbench=await verifyDubbingWorkbench({client,call,context});
-    proofs.speakerDubbing=await verifySpeakerDubbing({call,context,job,args,projectRoot});
     await fs.writeFile(args.proof,JSON.stringify(proofs,null,2)+'\n','utf8');
     console.log('MCP_NATIVE_PROOF '+JSON.stringify(proofs));
 } catch(error){if(stderr)console.error(stderr.slice(-2000));throw error;}
