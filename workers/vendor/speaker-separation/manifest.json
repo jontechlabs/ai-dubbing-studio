@@ -1,0 +1,19 @@
+{
+  "sourceRevision": "6b3774dc79c46ae8bed2a4fa5f706f0ac8c75c61",
+  "vendorSha256": "e1a9b0918bbcf76a6a34763b6cf945667ccb38e5a30b6e323823340cac1f4b41",
+  "vendorBytes": 23970,
+  "models": [
+    {
+      "id": "mossformer2-16k",
+      "revision": "407cb030cd66340918ebb6c8cc63b18f8592cdbe"
+    },
+    {
+      "id": "sepformer-2mix",
+      "revision": "eb43c5bfbb2aa654630adbf849373bcec0a20ed4"
+    },
+    {
+      "id": "sepformer-3mix",
+      "revision": "1f2d824e2333aec9e60d0030fb144885c1afc426"
+    }
+  ]
+}

@@ -2,6 +2,11 @@ name: Real selected audio separation models
 on:
   workflow_dispatch:
     inputs:
+      speaker_models_only:
+        description: 'Validate all three pinned overlapping-speaker separation models only.'
+        required: false
+        type: boolean
+        default: false
       stage_release_run:
         description: 'Optional successful package run to authenticate and stage as a draft. Empty runs model inference tests.'
         required: false
@@ -18,7 +23,7 @@ permissions:
   contents: read
 jobs:
   models:
-    if: inputs.stage_release_run == ''
+    if: inputs.stage_release_run == '' && !inputs.speaker_models_only
     runs-on: windows-latest
     timeout-minutes: 75
     env:
@@ -41,6 +46,32 @@ jobs:
           path: |
             artifacts/audio-toolbox-validation.json
             .cache/audio-toolbox-smoke/*.log
+          include-hidden-files: true
+          if-no-files-found: warn
+  speaker_models:
+    if: inputs.stage_release_run == '' && inputs.speaker_models_only
+    runs-on: windows-latest
+    timeout-minutes: 75
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+      PYTHONUTF8: '1'
+      PYTHONUNBUFFERED: '1'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12.10'
+      - name: Prepare pinned FFmpeg
+        run: ./scripts/prepare-ffmpeg.ps1
+      - name: Verify pinned runtime and full-weight two/three-speaker separation on CPU
+        run: python scripts/test-speaker-separation.py
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: speaker-separation-model-validation
+          path: |
+            artifacts/speaker-separation-validation.json
+            .cache/speaker-separation-smoke/**/*.log
           include-hidden-files: true
           if-no-files-found: warn
   stage:

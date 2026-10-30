@@ -1,0 +1,98 @@
+{
+  "version": 1,
+  "models": [
+    {
+      "id": "mossformer2-16k",
+      "name": "MossFormer2 · 2 voix · 16 kHz",
+      "family": "mossformer2",
+      "speakers": 2,
+      "sampleRate": 16000,
+      "windowMs": 2000,
+      "license": "Apache-2.0",
+      "source": "https://huggingface.co/alibabasglab/MossFormer2_SS_16K",
+      "revision": "407cb030cd66340918ebb6c8cc63b18f8592cdbe",
+      "files": [
+        {
+          "name": "last_best_checkpoint.pt",
+          "url": "https://huggingface.co/alibabasglab/MossFormer2_SS_16K/resolve/407cb030cd66340918ebb6c8cc63b18f8592cdbe/last_best_checkpoint.pt",
+          "sha256": "00a3a48bda492db1e829b85dd443f8f43a43039a3e90f1a24962ea9caf14a11a",
+          "size": 670353271
+        }
+      ]
+    },
+    {
+      "id": "sepformer-2mix",
+      "name": "SepFormer · 2 voix · 8 kHz",
+      "family": "sepformer",
+      "speakers": 2,
+      "sampleRate": 8000,
+      "windowMs": 2000,
+      "license": "Apache-2.0",
+      "source": "https://huggingface.co/speechbrain/sepformer-libri2mix",
+      "revision": "eb43c5bfbb2aa654630adbf849373bcec0a20ed4",
+      "files": [
+        {
+          "name": "encoder.ckpt",
+          "url": "https://huggingface.co/speechbrain/sepformer-libri2mix/resolve/eb43c5bfbb2aa654630adbf849373bcec0a20ed4/encoder.ckpt",
+          "sha256": "740d082e75b92370bc12f176d5b5554f6383cf8bc607da8ac8a550255987ed4a",
+          "size": 17272
+        },
+        {
+          "name": "masknet.ckpt",
+          "url": "https://huggingface.co/speechbrain/sepformer-libri2mix/resolve/eb43c5bfbb2aa654630adbf849373bcec0a20ed4/masknet.ckpt",
+          "sha256": "f54762647082a8fe75a1cacc6c3d463b967223fc77c836cc4fb8ca2a272d9a75",
+          "size": 113112646
+        },
+        {
+          "name": "decoder.ckpt",
+          "url": "https://huggingface.co/speechbrain/sepformer-libri2mix/resolve/eb43c5bfbb2aa654630adbf849373bcec0a20ed4/decoder.ckpt",
+          "sha256": "05340634088efb00ec448f548af107d5d932057ea214dd64497f34106247e184",
+          "size": 17272
+        },
+        {
+          "name": "hyperparams.yaml",
+          "url": "https://huggingface.co/speechbrain/sepformer-libri2mix/resolve/eb43c5bfbb2aa654630adbf849373bcec0a20ed4/hyperparams.yaml",
+          "sha256": "19b0c807be63a5767509c30adb5c0176688ff2d077fd9bb95d0cf188cbd4d4e5",
+          "size": 1471
+        }
+      ]
+    },
+    {
+      "id": "sepformer-3mix",
+      "name": "SepFormer · 3 voix · 8 kHz",
+      "family": "sepformer",
+      "speakers": 3,
+      "sampleRate": 8000,
+      "windowMs": 2000,
+      "license": "Apache-2.0",
+      "source": "https://huggingface.co/speechbrain/sepformer-libri3mix",
+      "revision": "1f2d824e2333aec9e60d0030fb144885c1afc426",
+      "files": [
+        {
+          "name": "encoder.ckpt",
+          "url": "https://huggingface.co/speechbrain/sepformer-libri3mix/resolve/1f2d824e2333aec9e60d0030fb144885c1afc426/encoder.ckpt",
+          "sha256": "e949e80c1a96965b723460209bb155eac1fdb2f6d2cf4e7b3e1d3152716f38d0",
+          "size": 17272
+        },
+        {
+          "name": "masknet.ckpt",
+          "url": "https://huggingface.co/speechbrain/sepformer-libri3mix/resolve/1f2d824e2333aec9e60d0030fb144885c1afc426/masknet.ckpt",
+          "sha256": "416af7b09d912c486261dd824788dd92d3b21373c8ec4d029209792522f4dbcb",
+          "size": 113375814
+        },
+        {
+          "name": "decoder.ckpt",
+          "url": "https://huggingface.co/speechbrain/sepformer-libri3mix/resolve/1f2d824e2333aec9e60d0030fb144885c1afc426/decoder.ckpt",
+          "sha256": "9afdda4e4ecb9eefb5d49329193c7a9215ae7443aab206f2fe4eb0f50988ca53",
+          "size": 17272
+        },
+        {
+          "name": "hyperparams.yaml",
+          "url": "https://huggingface.co/speechbrain/sepformer-libri3mix/resolve/1f2d824e2333aec9e60d0030fb144885c1afc426/hyperparams.yaml",
+          "sha256": "4f0ae05600c66d7f8cf1269f54fd32dad576d4d473ad7169ef6ab26190658233",
+          "size": 1473
+        }
+      ]
+    }
+  ]
+}
