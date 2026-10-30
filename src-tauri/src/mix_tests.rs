@@ -1478,7 +1478,7 @@ async fn muted_selections_remain_available_as_references_on_every_source_track()
     for (id, role) in [
         ("speech", Some("speech")),
         ("sfx", Some("sfx")),
-        ("custom", None),
+        ("custom", Some("speech")),
     ] {
         let mut track = p.tracks[1].clone();
         track.id = id.into();
