@@ -1,5 +1,6 @@
 import type { Dialogue, Project } from './types';
 import { dialogueText } from './subtitles';
+import { isolatedVoice, activeSpeakerGroup } from './speakerDubbing';
 import { selectedGeneration, staleGeneration } from './tts';
 import {
   jointReviewSnapshot,
@@ -27,6 +28,11 @@ function snapshot(
   sourceText = dialogueText(project, line, 'source'),
   targetText = dialogueText(project, line, 'target'),
 ): TranslationApproval {
+  const child = isolatedVoice(project, line.id)?.voice;
+  if (child) {
+    sourceText = child.sourceText;
+    targetText = child.translations[project.languages.target] ?? '';
+  }
   return {
     sourceLanguage: project.languages.source,
     targetLanguage: project.languages.target,
@@ -59,7 +65,19 @@ function matchesReview(
     sameReview(approval!.joint, jointReviewSnapshot(project, line, take ?? null, index))
   );
 }
-export function translationState(project: Project, line: Dialogue) {
+export function translationState(project: Project, line: Dialogue): TranslationState {
+  const group = activeSpeakerGroup(project, line);
+  if (group) {
+    const states = group.voices.flatMap((v) => {
+      const child = project.dialogues.find((l) => l.id === v.lineId && !l.excludedFromDubbing);
+      return child ? [translationState(project, child)] : [];
+    });
+    return states.length && states.every((s) => s === 'approved')
+      ? 'approved'
+      : states.some((s) => s !== 'untranslated')
+        ? 'translated'
+        : 'untranslated';
+  }
   if (!hasTranslation(project, line)) return 'untranslated';
   const approval = project.translationApprovals?.[line.id];
   const current = snapshot(project, line);
@@ -106,6 +124,10 @@ export function cleanTranslationApprovals(project: Project): Project {
   return project;
 }
 export function approveTranslation(project: Project, id: string, approved: boolean): Project {
+  const parent = project.dialogues.find((l) => l.id === id);
+  if (parent?.excludedFromDubbing) throw Error('DIALOGUE_EXCLUDED');
+  if (parent && activeSpeakerGroup(project, parent))
+    return approveTranslations(project, [id], approved);
   const next = structuredClone(project),
     line = next.dialogues.find((line) => line.id === id);
   if (!line || !hasTranslation(next, line)) throw Error('TRANSLATION_REQUIRED');
@@ -130,7 +152,14 @@ export function approveTranslation(project: Project, id: string, approved: boole
 export function approveTranslations(project: Project, ids: string[], approved: boolean): Project {
   const index = reviewIndex(project);
   const lines = new Map(project.dialogues.map((line) => [line.id, line]));
-  const selected = new Set(ids);
+  if (ids.some((id) => !lines.has(id))) throw Error('NO_DIALOGUES');
+  const selected = new Set(
+    ids.flatMap((id) =>
+      !lines.get(id)!.excludedFromDubbing
+        ? (activeSpeakerGroup(project, lines.get(id)!)?.voices.map((v) => v.lineId) ?? [id])
+        : [id],
+    ),
+  );
   if ([...selected].some((id) => !lines.has(id))) throw Error('NO_DIALOGUES');
   const source = new Map(project.sourceCues.map((cue) => [cue.id, cue.text]));
   const target = new Map(project.targetCues.map((cue) => [cue.id, cue.text]));
@@ -190,7 +219,7 @@ export function translationStates(project: Project): Map<string, TranslationStat
   const index = reviewIndex(project);
   const source = new Map(project.sourceCues.map((cue) => [cue.id, cue.text]));
   const target = new Map(project.targetCues.map((cue) => [cue.id, cue.text]));
-  return new Map(
+  const result = new Map(
     project.dialogues.map((line) => {
       const current = snapshot(
         project,
@@ -206,4 +235,7 @@ export function translationStates(project: Project): Map<string, TranslationStat
       return [line.id, state];
     }),
   );
+  for (const line of project.dialogues)
+    if (activeSpeakerGroup(project, line)) result.set(line.id, translationState(project, line));
+  return result;
 }

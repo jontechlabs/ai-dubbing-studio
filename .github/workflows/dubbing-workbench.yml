@@ -61,6 +61,11 @@ jobs:
             pnpm test:e2e
             if ($LASTEXITCODE) { exit $LASTEXITCODE }
           }
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: overlapping-voices-preview
+          path: docs/screenshots/overlapping-voices.png
+          if-no-files-found: error
       - name: Native tests with real FFmpeg, lints and formatting
         run: |
           git restore -- docs/screenshots

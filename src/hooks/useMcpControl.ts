@@ -255,6 +255,7 @@ export function useMcpControl(control: Control) {
                   )
                 : [];
               if (group && !clips.length) throw Error('TTS_AUDIO_MISSING');
+              if (group && !transport.ready) throw Error('MEDIA_LOADING');
               if (group && clips.length && project.media) {
                 c.playAudioSelection({
                   mediaId: project.media.id,

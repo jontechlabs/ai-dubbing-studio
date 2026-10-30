@@ -231,8 +231,8 @@ export default function App() {
         openDub(line);
         return;
       }
-      stopGeneration();
-      auditionAudioSelection({
+      select(line);
+      playAudioSelection({
         mediaId: studio.project.media.id,
         trackId: 'dubbing',
         startMs: Math.min(...clips.map((clip) => clip.startMs)),

@@ -1,5 +1,6 @@
 import type { Dialogue, Generation, Project, VoiceSettings } from './types';
 import { dialogueText } from './subtitles';
+import { activeSpeakerGroup } from './speakerDubbing';
 import { approveTranslation, hasTranslation } from './translation';
 import { voiceVariant, voiceSettingsFormat } from './voiceEngines';
 import { validAccent } from './voiceAccents';
@@ -141,6 +142,7 @@ export function reviewGeneration(project: Project, lineId: string, validated: bo
   const next = structuredClone(project),
     line = next.dialogues.find((line) => line.id === lineId);
   if (!line) throw Error('NO_DIALOGUES');
+  if (activeSpeakerGroup(next, line)) throw Error('SPEAKER_DUBBING_PARENT_ACTIVE');
   const generation = selectedGeneration(next, line);
   if (!generation || (validated && staleGeneration(next, line, generation)))
     throw Error('TTS_STALE_GENERATION');

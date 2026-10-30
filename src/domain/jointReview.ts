@@ -1,6 +1,6 @@
 import type { Dialogue, Generation, Project } from './types';
 import { selectedGeneration, staleGeneration } from './tts';
-import { isolatedVoice, type IsolatedVoice } from './speakerDubbing';
+import { activeSpeakerGroup, isolatedVoice, type IsolatedVoice } from './speakerDubbing';
 import { libraryReference } from './voiceLibrary';
 
 export interface JointReviewSnapshot {
@@ -134,8 +134,23 @@ export function sameReview(a: unknown, b: unknown): boolean {
     Object.keys(x).every((k) => Object.hasOwn(y, k) && sameReview(x[k], y[k]))
   );
 }
-export function canApproveJointReview(project: Project, line: Dialogue) {
+export function canApproveJointReview(project: Project, line: Dialogue): boolean {
   if (line.excludedFromDubbing) return false;
+  const group = activeSpeakerGroup(project, line);
+  if (group) {
+    const children = group.voices.flatMap((v) => {
+      const l = project.dialogues.find((l) => l.id === v.lineId && !l.excludedFromDubbing);
+      return l ? [l] : [];
+    });
+    return (
+      !!children.length &&
+      children.every(
+        (l) =>
+          !!isolatedVoice(project, l.id)?.voice.translations[project.languages.target]?.trim() &&
+          canApproveJointReview(project, l),
+      )
+    );
+  }
   const take = selectedGeneration(project, line);
   return !take || !staleGeneration(project, line, take);
 }

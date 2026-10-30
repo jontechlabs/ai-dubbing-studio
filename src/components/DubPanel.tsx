@@ -36,7 +36,7 @@ import { qualityPreset, resolvedQuality } from '../domain/voiceQuality';
 import { ProsodyTransfer } from './ProsodyTransfer';
 import { moodGroup, moodGroups, voiceMoods } from '../domain/voiceMoods';
 import { SpeakerSeparationPanel } from './SpeakerSeparationPanel';
-import { speakerDubbingState } from '../domain/speakerDubbing';
+import { isolatedVoice, speakerDubbingState } from '../domain/speakerDubbing';
 import { useDubbingTask } from '../hooks/useDubbingTask';
 
 export function CosyModel({
@@ -574,25 +574,28 @@ export function DubPanel({
           <option value="library">{t('library.referenceMode')}</option>
         </select>
       </label>
-      {settings.referenceMode === 'current' && (
-        <label className="field">
-          <span>{t('referenceTrack')}</span>
-          <select
-            value={settings.referenceTrackId ?? 'auto'}
-            disabled={busy}
-            onChange={(e) => edit({ referenceTrackId: e.target.value })}
-          >
-            <option value="auto">{t('referenceTrackProject')}</option>
-            {audioTracks(project)
-              .filter((t) => t.kind !== 'dubbing')
-              .map((track) => (
-                <option key={track.id} value={track.id}>
-                  {t(trackLabel(track))}
-                </option>
-              ))}
-          </select>
-        </label>
-      )}
+      {settings.referenceMode === 'current' &&
+        (isolatedVoice(project, line.id) ? (
+          <p className="panel-description">{t('overlap.isolatedReference')}</p>
+        ) : (
+          <label className="field">
+            <span>{t('referenceTrack')}</span>
+            <select
+              value={settings.referenceTrackId ?? 'auto'}
+              disabled={busy}
+              onChange={(e) => edit({ referenceTrackId: e.target.value })}
+            >
+              <option value="auto">{t('referenceTrackProject')}</option>
+              {audioTracks(project)
+                .filter((t) => t.kind !== 'dubbing')
+                .map((track) => (
+                  <option key={track.id} value={track.id}>
+                    {t(trackLabel(track))}
+                  </option>
+                ))}
+            </select>
+          </label>
+        ))}
       {(settings.referenceMode === 'custom' || fileReference || (libraryMode && !batch)) && (
         <label className="field">
           <span>{t('ttsReferenceChoice')}</span>
@@ -778,7 +781,13 @@ export function DubPanel({
           : (reference?.durationMs ?? 20000)) < 5000 && (
           <p className="warning">{t('library.shortContext')}</p>
         )}
-      <IntonationGuideControls project={project} settings={settings} busy={busy} onChange={edit} />
+      <IntonationGuideControls
+        project={project}
+        settings={settings}
+        busy={busy}
+        onChange={edit}
+        lineId={!batch ? line.id : undefined}
+      />
       <label className="field">
         <span>{t('ttsCloneMode')}</span>
         <select
@@ -1285,7 +1294,11 @@ export function DubPanel({
               <span>{t(takeLine.status)}</span>
               <button
                 className="button accent"
-                disabled={busy || staleGeneration(project, takeLine, chosen)}
+                disabled={
+                  busy ||
+                  speakerDubbingState(project).parents.has(takeLine.id) ||
+                  staleGeneration(project, takeLine, chosen)
+                }
                 onClick={() => onEdit((p) => reviewGeneration(p, takeLine.id, true))}
               >
                 <Check size={14} />
@@ -1293,7 +1306,7 @@ export function DubPanel({
               </button>
               <button
                 className="text-button"
-                disabled={busy}
+                disabled={busy || speakerDubbingState(project).parents.has(takeLine.id)}
                 onClick={() => onEdit((p) => reviewGeneration(p, takeLine.id, false))}
               >
                 {t('ttsReview')}

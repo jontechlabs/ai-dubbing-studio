@@ -127,6 +127,16 @@ pub(crate) fn fingerprint(p: &Project, root: &Path, o: &Options) -> Result<Strin
         return Err("ASR_LANGUAGE_UNSUPPORTED".into());
     }
     let basis = basis(p, &o.line_id)?;
+    if let Some((g, v)) = crate::speaker_dubbing::voice(p, &o.line_id) {
+        if p.media.as_ref().is_none_or(|m| m.path != g.source_path) {
+            return Err("STALE_REVISION".into());
+        }
+        let value = serde_json::json!({"basis":basis,"language":o.language,"isolatedVoice":crate::speaker_dubbing::identity(p,&o.line_id),"file":stamp(root,&v.audio_path)?});
+        return Ok(format!(
+            "{:x}",
+            Sha256::digest(serde_json::to_vec(&value).map_err(io_error)?)
+        ));
+    }
     let track = crate::audio_patch::source_track(p, o.track_id.as_deref())?;
     let input = if track.kind == "original" {
         &p.media.as_ref().unwrap().path
@@ -138,15 +148,12 @@ pub(crate) fn fingerprint(p: &Project, root: &Path, o: &Options) -> Result<Strin
     }
     let patches = crate::audio_patch::layers(p, &track.id);
     let mut files = vec![stamp(root, input)?];
-    if let Some((_, v)) = crate::speaker_dubbing::voice(p, &o.line_id) {
-        files.push(stamp(root, &v.audio_path)?);
-    }
     for patch in &patches {
         if let Some(path) = &patch.path {
             files.push(stamp(root, path)?);
         }
     }
-    let value = serde_json::json!({"basis":basis,"isolatedVoice":crate::speaker_dubbing::voice(p,&o.line_id),"language":o.language,"trackId":track.id,"trackPath":track.path,"regions":track.regions,"regionsEnabled":track.regions_enabled,"audioStream":p.media.as_ref().unwrap().audio_stream_index,"patches":patches,"files":files});
+    let value = serde_json::json!({"basis":basis,"isolatedVoice":crate::speaker_dubbing::identity(p,&o.line_id),"language":o.language,"trackId":track.id,"trackPath":track.path,"regions":track.regions,"regionsEnabled":track.regions_enabled,"audioStream":p.media.as_ref().unwrap().audio_stream_index,"patches":patches,"files":files});
     Ok(format!(
         "{:x}",
         Sha256::digest(serde_json::to_vec(&value).map_err(io_error)?)

@@ -54,6 +54,12 @@ pub fn text(p: &Project, line: &Dialogue, source: bool) -> String {
         .collect::<Vec<_>>()
         .join("\n")
 }
+pub fn identity(p: &Project, line_id: &str) -> Option<serde_json::Value> {
+    let (g, v) = voice(p, line_id)?;
+    Some(
+        serde_json::json!({"audioPath":v.audio_path,"sourcePath":g.source_path,"startMs":g.start_ms,"endMs":g.end_ms,"sourceText":v.source_text}),
+    )
+}
 pub fn retain_after_alignment(previous: &Project, next: &mut Project) {
     let retained: HashSet<_> = previous
         .speaker_dubbings
@@ -191,8 +197,10 @@ impl<'a> State<'a> {
                     && !self.excluded.contains(g.parent_id.as_str())
             })
     }
-    pub fn key<'b>(&'b self, id: &'b str) -> &'b str {
-        self.children.get(id).map_or(id, |g| g.id.as_str())
+    pub fn key(&self, id: &str) -> String {
+        self.children
+            .get(id)
+            .map_or_else(|| format!("line:{id}"), |g| format!("group:{}", g.id))
     }
 }
 /// The same primitive backs cloning, prosody, ASR and source preview.

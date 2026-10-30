@@ -94,7 +94,7 @@ pub fn fingerprint(
     if refs.is_empty() {
         return Err("SPEAKER_REFERENCES_REQUIRED".into());
     }
-    let value = serde_json::json!({"isolatedVoice":crate::speaker_dubbing::voice(p,&line.id),"media":p.media.as_ref().map(|m|&m.path),"line":[serde_json::json!(line.id),serde_json::json!(line.start_ms),serde_json::json!(line.end_ms),serde_json::json!(line.character_id)],"track":track,"audio":crate::character_review::audio_snapshot(p,None),"references":refs});
+    let value = serde_json::json!({"isolatedVoice":crate::speaker_dubbing::identity(p,&line.id),"media":p.media.as_ref().map(|m|&m.path),"line":[serde_json::json!(line.id),serde_json::json!(line.start_ms),serde_json::json!(line.end_ms),serde_json::json!(line.character_id)],"track":track,"audio":crate::character_review::audio_snapshot(p,None),"references":refs});
     Ok(format!(
         "{:x}",
         Sha256::digest(serde_json::to_vec(&value).map_err(io_error)?)

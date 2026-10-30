@@ -54,6 +54,22 @@ async fn overlapping_dubs_render_both_siblings_without_parent_and_preserve_every
     assert!(selected
         .iter()
         .all(|c| c.slot_ms == 2000 && c.duration_ms() == 1500));
+    let mut collided = p.clone();
+    let mut unrelated = p.dialogues[0].clone();
+    unrelated.id = "other-line".into();
+    unrelated
+        .selected_generation_ids
+        .insert("fr".into(), "other-take".into());
+    let mut take = p.generations[0].clone();
+    take["id"] = serde_json::json!("other-take");
+    take["dialogueId"] = serde_json::json!("other-line");
+    collided.generations.push(take);
+    collided.dialogues.insert(0, unrelated);
+    // A dialogue ID and a group ID are separate namespaces; neither ordering
+    // nor matching text IDs may accidentally permit unrelated simultaneous takes.
+    collided.speaker_dubbings[0].id = "other-line".into();
+    collided.validate().unwrap();
+    assert!(clips(&collided).iter().all(|c| c.slot_ms == 0));
     let app = tauri::test::mock_app();
     let core = core(&root, p.clone());
     let out = root.join("exports/overlap.wav");
@@ -70,8 +86,10 @@ async fn overlapping_dubs_render_both_siblings_without_parent_and_preserve_every
     .unwrap();
     let bytes = std::fs::read(&out).unwrap();
     let samples: Vec<_> = bytes
-        .chunks_exact(4)
-        .map(|b| f32::from_le_bytes(b.try_into().unwrap()))
+        .as_chunks::<4>()
+        .0
+        .iter()
+        .map(|b| f32::from_le_bytes(*b))
         .collect();
     let level = samples[1100 * 24..1120 * 24].iter().copied().sum::<f32>() / (20.0 * 24.0);
     // The pre-fader bus is raw mono FP32; both 0.2 PCM voices are summed at unity.
@@ -135,10 +153,40 @@ async fn isolated_reference_uses_its_own_audio_at_local_offsets_despite_muted_so
     let samples = pcm(&out, "0:a:0").await;
     let level = samples[1000..2000].iter().copied().sum::<f32>() / 1000.;
     assert!(
-        (level - 0.4 * std::f32::consts::FRAC_1_SQRT_2).abs() < 0.003,
+        // Track extraction and the stereo test decoder together apply 0.5.
+        // This is the isolated 0.4 signal, not the movie's quiet 0.03 signal.
+        (level - 0.4 * 0.5).abs() < 0.003,
         "{level}"
     );
     let b = crate::source_transcription::basis(&p, "child-1").unwrap();
+    let tts_before = crate::tts::fingerprint(&p, "child-1").unwrap();
+    let options = crate::source_transcription::Options {
+        line_id: "child-1".into(),
+        language: "ja".into(),
+        track_id: Some("original".into()),
+    };
+    let asr_before = crate::source_transcription::fingerprint(&p, &root, &options).unwrap();
+    let mut sibling = p.clone();
+    sibling.speaker_dubbings[0].voices[1]
+        .translations
+        .insert("fr".into(), "Autre personne".into());
+    assert_eq!(
+        crate::tts::fingerprint(&sibling, "child-1").unwrap(),
+        tts_before
+    );
+    assert_eq!(
+        crate::source_transcription::fingerprint(&sibling, &root, &options).unwrap(),
+        asr_before
+    );
+    sibling.speaker_dubbings[0].voices[0].source_text = "Corrigé".into();
+    assert_ne!(
+        crate::tts::fingerprint(&sibling, "child-1").unwrap(),
+        tts_before
+    );
+    assert_ne!(
+        crate::source_transcription::fingerprint(&sibling, &root, &options).unwrap(),
+        asr_before
+    );
     let edited = crate::source_transcription::applied(&p, &b, &["別の声".into()]).unwrap();
     assert_eq!(
         crate::speaker_dubbing::text(&edited, &edited.dialogues[1], true),

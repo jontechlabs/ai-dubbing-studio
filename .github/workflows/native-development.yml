@@ -33,6 +33,15 @@ jobs:
           ./scripts/prepare-prosody.ps1
       - name: Native tests, lints and formatting
         run: |
+          pnpm exec playwright test tests/e2e/speaker-dubbing.pw.ts --trace off
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: overlapping-voices-preview
+          path: docs/screenshots/overlapping-voices.png
+          if-no-files-found: error
+      - name: Native compilation and complete regression checks
+        run: |
           cargo clippy --locked --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
           cargo test --locked --manifest-path src-tauri/Cargo.toml

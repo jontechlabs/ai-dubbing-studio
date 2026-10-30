@@ -1677,6 +1677,11 @@
     "createDubs": "Créer les sous-doublages indépendants",
     "parentDisabled": "Ce groupe remplace le doublage principal. Choisis une voix ci-dessus pour la doubler, ou réactive l’essai principal.",
     "source": "Piste contenant les voix à isoler",
-    "translation": "Traduction"
+    "translation": "Traduction",
+    "usage": "Utiliser les voix pour",
+    "groupChildren": "{{count}} sous-doublages",
+    "manageDubs": "Configurer les sous-doublages",
+    "isolatedReference": "La référence courante utilise uniquement l’audio isolé de cette voix.",
+    "isolatedGuide": "Le guide d’intonation utilise l’audio isolé de ce sous-doublage."
   }
 }

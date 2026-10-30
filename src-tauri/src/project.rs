@@ -217,7 +217,7 @@ mod tests {
         save(&root, &project).unwrap();
         assert_eq!(load(&root).unwrap().format_version, 13);
         let mut future = serde_json::to_value(project).unwrap();
-        future["formatVersion"] = serde_json::json!(25);
+        future["formatVersion"] = serde_json::json!(26);
         atomic_write(
             &root.join("project.json"),
             &serde_json::to_vec(&future).unwrap(),

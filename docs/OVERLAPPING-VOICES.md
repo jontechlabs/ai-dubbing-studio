@@ -32,6 +32,8 @@ Le sélecteur **Doublage actif** permet de revenir à l’essai principal ou à 
 
 Les groupes utilisent le **format de projet 25**. Cette version ouvre les anciens projets ; une version antérieure ne peut pas ouvrir un projet enregistré avec des groupes. La sauvegarde, l’annulation et la réouverture conservent les groupes et toutes leurs prises.
 
+La validation de la réplique principale résume celle des sous-doublages actifs. Valider une sélection contenant cette réplique applique la validation aux voix du groupe ; une correction de leur texte ou de leur essai retire leur validation. Les validations et essais de la version principale précédente sont conservés pour un retour ultérieur.
+
 ## Pilotage MCP
 
 Les sept commandes supplémentaires sont `studio_speaker_separation_status`, `studio_install_speaker_separation_model`, `studio_separate_dialogue_speakers`, `studio_speaker_separation_result`, `studio_speaker_separation_path`, `studio_apply_speaker_separation_result` et `studio_create_speaker_dubbings`. Les mutations utilisent le contexte courant. L’installation et la séparation renvoient un identifiant de tâche à suivre avec `studio_list_jobs` et à annuler avec `studio_cancel_job`. L’édition des textes, l’affectation des personnages, les essais, le montage et l’export utilisent les commandes existantes.

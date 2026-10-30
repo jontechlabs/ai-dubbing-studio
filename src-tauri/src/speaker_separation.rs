@@ -243,7 +243,7 @@ fn snapshot(p: &Project, root: &Path, o: &Options) -> Result<Value, String> {
         }
     }
     Ok(
-        json!({"media":media.id,"source":media.path,"stream":media.audio_stream_index,"duration":media.info.duration_ms,"trackId":track.id,"path":path,"regions":track.regions,"enabled":track.regions_enabled,"patches":patches,"files":files,"line":p.dialogues.iter().find(|l|l.id==o.line_id)}),
+        json!({"media":media.id,"source":media.path,"stream":media.audio_stream_index,"duration":media.info.duration_ms,"trackId":track.id,"path":path,"patches":patches,"files":files,"line":p.dialogues.iter().find(|l|l.id==o.line_id).map(|l|json!({"id":l.id,"startMs":l.start_ms,"endMs":l.end_ms}))}),
     )
 }
 fn current(core: &Core, r: &Request) -> Result<Project, String> {
@@ -445,7 +445,29 @@ pub fn create_children<R: tauri::Runtime>(
         let destination = r.root.join(&relative);
         assets.paths.push(destination.clone());
         std::fs::copy(file, destination).map_err(io_error)?;
-        next.dialogues.push(serde_json::from_value(json!({"id":line_id,"startMs":r.options.start_ms,"endMs":r.options.end_ms,"sourceCueIds":[],"targetCueIds":[],"ttsText":null,"characterId":a.character_id,"status":"ungenerated","warnings":[],"selectedGenerationIds":{}})).map_err(io_error)?);
+        let parent = p
+            .dialogues
+            .iter()
+            .find(|l| l.id == r.options.line_id)
+            .ok_or("STALE_REVISION")?;
+        let mut settings=match &parent.voice_settings {Some(o)=>o.clone(),None=>serde_json::from_value(json!({"device":"auto","referenceMode":"current","referenceId":null,"mode":"crossLingual","speed":1,"seed":0,"variantId":p.model_preferences.as_ref().and_then(|v|v["voiceVariantId"].as_str())})).map_err(io_error)?};
+        let character_has_reference = a
+            .character_id
+            .as_ref()
+            .and_then(|id| p.characters.iter().find(|c| &c.id == id))
+            .is_some_and(|c| c.default_reference_id.is_some());
+        settings.reference_mode = if character_has_reference {
+            "character"
+        } else {
+            "current"
+        }
+        .into();
+        settings.reference_id = None;
+        settings.reference_track_id = None;
+        if !character_has_reference {
+            settings.intonation_guide = None;
+        }
+        next.dialogues.push(serde_json::from_value(json!({"id":line_id,"startMs":r.options.start_ms,"endMs":r.options.end_ms,"sourceCueIds":[],"targetCueIds":[],"ttsText":null,"characterId":a.character_id,"status":"ungenerated","warnings":[],"selectedGenerationIds":{},"voiceSettings":settings})).map_err(io_error)?);
         voices.push(crate::speaker_dubbing::Voice {
             line_id,
             output_id: a.output_id,

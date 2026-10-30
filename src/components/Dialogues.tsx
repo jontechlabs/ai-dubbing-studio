@@ -19,7 +19,7 @@ import {
   Trash2,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { isolatedVoice, speakerDubbingState } from '../domain/speakerDubbing';
+import { activeSpeakerGroup, isolatedVoice, speakerDubbingState } from '../domain/speakerDubbing';
 import { dialogueText } from '../domain/subtitles';
 import { formatTime } from '../domain/time';
 import type { Dialogue, Project } from '../domain/types';
@@ -106,9 +106,27 @@ function DialoguesPane({
   );
   const lines = useMemo(() => {
     if (!project) return [];
+    const family = speakerDubbingState(project);
+    const index = new Map(project.dialogues.map((l) => [l.id, l]));
+    const groups = new Map(
+      project.speakerDubbings
+        ?.filter((g) => g.active && family.parents.has(g.parentId))
+        .map((g) => [g.parentId, g]) ?? [],
+    );
+    const ordered = project.dialogues.flatMap((l) =>
+      family.child.has(l.id)
+        ? []
+        : [
+            l,
+            ...(groups.get(l.id)?.voices.flatMap((v) => {
+              const child = index.get(v.lineId);
+              return child ? [child] : [];
+            }) ?? []),
+          ],
+    );
     const source = new Map(project.sourceCues.map((cue) => [cue.id, cue.text]));
     const target = new Map(project.targetCues.map((cue) => [cue.id, cue.text]));
-    return project.dialogues.filter(
+    return ordered.filter(
       (d) =>
         (!d.excludedFromDubbing || showExcluded) &&
         (translationFilter === 'all' || states.get(d.id) === translationFilter) &&
@@ -478,20 +496,17 @@ function DialogueCard({
   const { t } = useTranslation();
   const translation = translationState(project, line);
   const generation = selectedGeneration(project, line);
-  const groupHasTake =
-    speakerDubbingState(project).parents.has(line.id) &&
-    project.speakerDubbings?.some(
-      (g) =>
-        g.active &&
-        g.parentId === line.id &&
-        g.sourcePath === project.media?.path &&
-        g.voices.some(
-          (v) =>
-            project.dialogues.find((l) => l.id === v.lineId)?.selectedGenerationIds[
-              project.languages.target
-            ],
-        ),
-    );
+  const activeGroup = useMemo(() => activeSpeakerGroup(project, line), [project, line]);
+  const groupHasTake = useMemo(
+    () =>
+      activeGroup?.voices.some(
+        (v) =>
+          project.dialogues.find((l) => l.id === v.lineId)?.selectedGenerationIds[
+            project.languages.target
+          ],
+      ),
+    [project, activeGroup],
+  );
   const stale = !!generation && staleGeneration(project, line, generation);
   return (
     <article
@@ -675,7 +690,9 @@ function DialogueCard({
           }}
         >
           <span className="status-dot" />
-          {t(stale ? 'review' : line.status)}
+          {activeGroup
+            ? t('overlap.groupChildren', { count: activeGroup.voices.length })
+            : t(stale ? 'review' : line.status)}
         </button>
         {line.warnings.length > 0 && (
           <span className="warning" title={t('alignment')}>
@@ -690,7 +707,7 @@ function DialogueCard({
           }}
         >
           <RefreshCw size={12} />
-          {t(generation ? 'regenerate' : 'ttsDubLine')}
+          {t(activeGroup ? 'overlap.manageDubs' : generation ? 'regenerate' : 'ttsDubLine')}
         </button>
       </div>
     </article>

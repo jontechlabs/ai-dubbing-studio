@@ -59,6 +59,16 @@ export function isolatedVoice(project: Project, lineId: string) {
     if (voice) return { group, voice };
   }
 }
+export function activeSpeakerGroup(project: Project, line: Dialogue) {
+  return project.speakerDubbings?.find(
+    (g) =>
+      g.parentId === line.id &&
+      g.active &&
+      g.sourcePath === project.media?.path &&
+      g.startMs === line.startMs &&
+      g.endMs === line.endMs,
+  );
+}
 /** Only explicitly related voices may overlap. Inactive variants remain saved. */
 export function speakerDubbingState(project: Project) {
   const child = new Map<
@@ -87,7 +97,12 @@ export function speakerDubbingState(project: Project) {
     const item = child.get(lineId);
     return !item || (currentGroups.has(item.group.id) && !excluded.has(item.group.parentId));
   };
-  return { child, parents, enabled, key: (id: string) => child.get(id)?.group.id ?? id };
+  return {
+    child,
+    parents,
+    enabled,
+    key: (id: string) => (child.has(id) ? 'group:' + child.get(id)!.group.id : 'line:' + id),
+  };
 }
 export function setSpeakerDubbingGroup(project: Project, parentId: string, groupId: string | null) {
   const next = structuredClone(project);

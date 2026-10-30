@@ -90,8 +90,7 @@ fn plain(text: &str) -> String {
         .to_owned()
 }
 pub(crate) fn translated(p: &Project, line: &Dialogue) -> bool {
-    crate::speaker_dubbing::State::new(p).enabled(&line.id)
-        && !plain(&crate::speaker_dubbing::text(p, line, false)).is_empty()
+    !plain(&crate::speaker_dubbing::text(p, line, false)).is_empty()
 }
 pub(crate) fn usable(p: &Project, root: &Path, line: &Dialogue) -> bool {
     let Some(key) = line.selected_generation_ids.get(&p.languages.target) else {

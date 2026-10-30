@@ -9,7 +9,13 @@ import {
   speakerDubbingState,
 } from './speakerDubbing';
 import { defaultVoiceSettings, selectGeneration, spokenText } from './tts';
-import { approveTranslation, translationState } from './translation';
+import {
+  approveTranslation,
+  approveTranslations,
+  cleanTranslationApprovals,
+  translationState,
+  translationStates,
+} from './translation';
 import { mergeDialogue, splitDialogue } from './timing';
 import type { Generation } from './types';
 export function overlapFixture() {
@@ -131,6 +137,20 @@ it('withdraws a child review when its text changes and preserves unrelated revie
   expect(translationState(approved, approved.dialogues.at(-2)!)).toBe('approved');
   const changed = editDialogue(approved, id, 'target', 'Changement');
   expect(translationState(changed, changed.dialogues.at(-2)!)).toBe('translated');
+  const groupApproved = cleanTranslationApprovals(
+    approveTranslations(p, [p.dialogues[0].id], true),
+  );
+  expect(translationState(groupApproved, groupApproved.dialogues[0])).toBe('approved');
+  expect(translationStates(groupApproved).get(id)).toBe('approved');
+  expect(Object.keys(groupApproved.translationApprovals ?? {}).sort()).toEqual([
+    'child-1',
+    'child-2',
+  ]);
+  const edited = cleanTranslationApprovals(editDialogue(groupApproved, id, 'target', 'Correction'));
+  expect(translationState(edited, edited.dialogues[0])).toBe('translated');
+  expect(translationState(edited, edited.dialogues.at(-1)!)).toBe('approved');
+  expect(edited.targetCues).toEqual(p.targetCues);
+  expect(edited.generations).toEqual(p.generations);
 });
 it('rejects malformed groups, duplicate identities, recursive parents and old format downgrade', () => {
   const p = overlapFixture();
@@ -187,5 +207,10 @@ it('keeps unrelated duplicate starts conflicting and deactivates saved children 
   g.dialogueId = unrelated.id;
   unrelated.selectedGenerationIds.fr = 'other';
   p.generations.push(g);
+  expect(dubbingClips(p).every((c) => c.slotMs === 0)).toBe(true);
+  p.dialogues = p.dialogues.filter((l) => l.id !== unrelated.id);
+  p.dialogues.unshift(unrelated);
+  expect(dubbingClips(p).every((c) => c.slotMs === 0)).toBe(true);
+  p.speakerDubbings![0].id = unrelated.id;
   expect(dubbingClips(p).every((c) => c.slotMs === 0)).toBe(true);
 });

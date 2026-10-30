@@ -1,3 +1,4 @@
+import { isolatedVoice } from '../domain/speakerDubbing';
 import { useTranslation } from 'react-i18next';
 import type { Project, VoiceSettings } from '../domain/types';
 import { audioTracks, trackLabel } from '../domain/audio';
@@ -7,8 +8,10 @@ export function IntonationGuideControls({
   settings,
   busy,
   onChange,
+  lineId,
 }: {
   project: Project;
+  lineId?: string;
   settings: VoiceSettings;
   busy: boolean;
   onChange: (changes: Partial<VoiceSettings>) => void;
@@ -48,24 +51,30 @@ export function IntonationGuideControls({
       </p>
       {guide && (
         <>
-          <label className="field">
-            <span>{t('library.guideTrack')}</span>
-            <select
-              aria-label={t('library.guideTrack')}
-              disabled={busy}
-              value={guide.trackId ?? 'auto'}
-              onChange={(e) => onChange({ intonationGuide: { ...guide, trackId: e.target.value } })}
-            >
-              <option value="auto">{t('referenceTrackDefault')}</option>
-              {audioTracks(project)
-                .filter((r) => r.kind !== 'dubbing')
-                .map((r) => (
-                  <option key={r.id} value={r.id}>
-                    {t(trackLabel(r))}
-                  </option>
-                ))}
-            </select>
-          </label>
+          {lineId && isolatedVoice(project, lineId) ? (
+            <p className="panel-description">{t('overlap.isolatedGuide')}</p>
+          ) : (
+            <label className="field">
+              <span>{t('library.guideTrack')}</span>
+              <select
+                aria-label={t('library.guideTrack')}
+                disabled={busy}
+                value={guide.trackId ?? 'auto'}
+                onChange={(e) =>
+                  onChange({ intonationGuide: { ...guide, trackId: e.target.value } })
+                }
+              >
+                <option value="auto">{t('referenceTrackDefault')}</option>
+                {audioTracks(project)
+                  .filter((r) => r.kind !== 'dubbing')
+                  .map((r) => (
+                    <option key={r.id} value={r.id}>
+                      {t(trackLabel(r))}
+                    </option>
+                  ))}
+              </select>
+            </label>
+          )}
           <p className={guide.mode === 'hybrid' ? 'warning' : 'panel-description'}>
             {t(guide.mode === 'hybrid' ? 'library.guideHybridHint' : 'library.guideStyleHint')}
           </p>

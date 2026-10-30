@@ -1677,6 +1677,11 @@
     "createDubs": "Create independent sub-dubbings",
     "parentDisabled": "This group replaces the main dub. Choose a voice above to dub it, or restore the main take.",
     "source": "Track containing overlapping voices",
-    "translation": "Translation"
+    "translation": "Translation",
+    "usage": "Use separated voices to",
+    "groupChildren": "{{count}} sub-dubbings",
+    "manageDubs": "Configure sub-dubbings",
+    "isolatedReference": "The current reference uses only this voice’s isolated audio.",
+    "isolatedGuide": "The intonation guide uses this sub-dubbing’s isolated audio."
   }
 }

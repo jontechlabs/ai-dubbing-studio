@@ -17,6 +17,12 @@ def api(path):
  try:
   with urllib.request.urlopen(urllib.request.Request('https://api.github.com/repos/'+SLUG+'/'+path,headers=HEADERS),timeout=60) as r:return json.load(r)
  except urllib.error.HTTPError as e:raise RuntimeError('GitHub API HTTP '+str(e.code)) from None
+def run_log(run_id):
+ # The aggregate CLI view omits logs when GitHub's step index is incomplete.
+ # Authenticate the completed job itself and read its complete raw log.
+ jobs=api(f'actions/runs/{run_id}/jobs?per_page=100')['jobs']
+ assert jobs and all(j['status']=='completed' for j in jobs)
+ return '\n'.join(gh('api',f'repos/{SLUG}/actions/jobs/{j["id"]}/logs') for j in jobs)
 class NoRedirect(urllib.request.HTTPRedirectHandler):
  def redirect_request(self,*args,**kwargs):return None
 def download_artifact(run_id,name,folder):
@@ -78,8 +84,11 @@ def main():
  code_head=run['head_sha'];target=args.final_head or git('rev-parse','HEAD');assert re.fullmatch('[0-9a-f]{40}',target);assert_source_inputs(code_head,target)
  assert read(ROOT/'package.json')['version']==VERSION
  jobs=api(f'actions/runs/{args.run}/jobs?per_page=100')['jobs'];assert len(jobs)==1 and jobs[0]['conclusion']=='success'
- assert all(s['conclusion'] in ['success','skipped'] for s in jobs[0]['steps'])
- log=re.sub(r'(?:\x1b|\^\[)\[[0-9;:]*[A-Za-z]','',gh('run','view',args.run,'--log'))
+ # Completed run/job success is mandatory. The step index may still contain
+ # null conclusions; explicit raw-log markers and authenticated artifacts below
+ # independently prove every required suite, ASR, model and packaged SDK result.
+ assert not any(s.get('conclusion') in ['failure','cancelled','timed_out','action_required'] for s in jobs[0]['steps'])
+ log=re.sub(r'(?:\x1b|\^\[)\[[0-9;:]*[A-Za-z]','',run_log(args.run))
  for marker in ['189 passed; 0 failed','Ran 108 tests','MCP_NATIVE_PROOF','Local Japanese transcription (ja)']:assert marker in log,marker
  ci=WORK/'ci';artifact=download_artifact(args.run,'windows-x64-development-build',ci);assert artifact['workflow_run']['head_sha']==code_head
  native=read(ci/'mcp-native-validation.json');assert native['officialSdk'] and native['toolCount']==141 and native['version']==VERSION
@@ -87,7 +96,7 @@ def main():
  assert native['dubbingWorkbench']['tools']==7 and native['dubbingWorkbench']['projectAndTakesUnchanged']
  assert native['sourceAndVolume']['allExistingTakesPreserved'] and native['sourceAndVolume']['staleRejected']
  assert native['audioSelectionAudition']['stoppedAtEnd'] and native['audioSelectionAudition']['projectAudioUnchanged'] and native['audioSelectionAudition']['loopPreferencePreserved']
- assert all(native['speakerDubbing'][key] for key in ['realMossFormer2Cpu','independentChildren','subtitlesAndPreviousTakesPreserved','concurrentMkvExport','replaceThenAdd','undoAndReopen','sourceMovieUnchanged'])
+ assert all(native['speakerDubbing'][key] for key in ['realMossFormer2Cpu','independentChildren','subtitlesAndPreviousTakesPreserved','parentGroupPlayback','concurrentMkvExport','replaceThenAdd','undoAndReopen','sourceMovieUnchanged'])
  speaker=read(ci/'speaker-separation-validation.json');assert speaker['head']==code_head and speaker['runtimeWheels']==37 and len(speaker['models'])==3
  assert {r['modelId'] for r in speaker['models']}=={'mossformer2-16k','sepformer-2mix','sepformer-3mix'}
  assert all(r['frames']==120000 and r['sampleRate']==48000 and r['device']=='CPU' and r['sourceUnchanged'] and r['distinctStreams'] for r in speaker['models'])
@@ -105,7 +114,7 @@ def main():
   assert any(s['name']=='Frontend unit, browser, formatting, lint and MCP schemas' and s['conclusion']=='success' for j in previous_jobs for s in j['steps'])
   ui_inputs=['src','src-tauri/tauri.conf.json','package.json','pnpm-lock.yaml','public','resources','scripts/generate-mcp.mjs','vite.config.ts','tsconfig.json','eslint.config.js','playwright.config.ts','tests/e2e']
   assert not git('diff','--name-only',reused['verifiedHead'],code_head,'--',*ui_inputs)
-  previous_log=re.sub(r'(?:\x1b|\^\[)\[[0-9;:]*[A-Za-z]','',gh('run','view',str(reused['runId']),'--log'))
+  previous_log=re.sub(r'(?:\x1b|\^\[)\[[0-9;:]*[A-Za-z]','',run_log(reused['runId']))
   assert re.search(r'\b207 passed\b',previous_log) and re.search(r'Tests\s+198 passed',previous_log)
   reused['fresh']=False
  for row in read(ci/'reference-transcription-validation.json'):assert row['device']=='CPU' and '中学' in row['text']

@@ -126,20 +126,21 @@ pub(crate) fn clips(p: &Project) -> Vec<Clip> {
     let starts: Vec<_> = clips.iter().map(|c| c.start).collect();
     let keys: Vec<_> = clips
         .iter()
-        .map(|c| {
-            family
-                .key(generations[c.id.as_str()]["dialogueId"].as_str().unwrap())
-                .to_owned()
-        })
+        .map(|c| family.key(generations[c.id.as_str()]["dialogueId"].as_str().unwrap()))
         .collect();
+    let mut conflicts = std::collections::HashSet::new();
+    for (index, start) in starts.iter().enumerate().skip(1) {
+        if *start == starts[index - 1] && keys[index] != keys[index - 1] {
+            conflicts.insert(*start);
+        }
+    }
     for (index, clip) in clips.iter_mut().enumerate() {
         let mut following = index + 1;
         while following < starts.len() && keys[following] == keys[index] {
             following += 1;
         }
         let next = starts.get(following).copied().unwrap_or(u64::MAX);
-        let duplicate =
-            index > 0 && starts[index - 1] == clip.start && keys[index - 1] != keys[index];
+        let duplicate = conflicts.contains(&clip.start);
         clip.slot_ms = if duplicate {
             0
         } else {

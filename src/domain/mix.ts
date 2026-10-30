@@ -198,7 +198,7 @@ export function recoverDubbing(project: Project, lineId: string): Project {
 export function dubbingClips(project: Project) {
   const family = speakerDubbingState(project);
   const generations = new Map(voiceGenerations(project).map((g) => [g.id, g]));
-  return project.dialogues
+  const ordered = project.dialogues
     .flatMap((line) => {
       const generation = generations.get(line.selectedGenerationIds[project.languages.target]);
       if (
@@ -221,7 +221,8 @@ export function dubbingClips(project: Project) {
         {
           line,
           lane: family.child.get(line.id)?.lane ?? 0,
-          groupKey: family.key(line.id),
+          groupKey: family.child.get(line.id)?.group.id ?? null,
+          overlapKey: family.key(line.id),
           generation,
           startMs,
           exactDuration: durationMs !== undefined,
@@ -233,40 +234,45 @@ export function dubbingClips(project: Project) {
         },
       ];
     })
-    .sort((a, b) => a.startMs - b.startMs)
-    .map((clip, index, clips) => {
-      let following = index + 1;
-      while (following < clips.length && clips[following].groupKey === clip.groupKey) following++;
-      const next = clips[following];
-      const duplicate =
-        clips[index - 1]?.startMs === clip.startMs && clips[index - 1]?.groupKey !== clip.groupKey;
-      const slotMs = duplicate
-        ? 0
-        : Math.max(
-            0,
-            Math.min(
-              MAX_VOICE_DURATION_MS + clip.startMs,
-              clip.slotEndMs,
-              next?.startMs ?? Infinity,
-              project.media!.durationMs,
-            ) - clip.startMs,
-          );
-      return {
-        ...clip,
-        slotMs,
-        endMs:
-          clip.startMs +
-          (clip.exactDuration
-            ? slotMs
-            : Math.min(
-                slotMs,
-                project.voiceEdits?.[clip.generation.id]
-                  ? editDuration(project.voiceEdits[clip.generation.id])
-                  : clip.generation.durationMs,
-              )),
-        cacheKey: `${project.id}:${clip.generation.id}:${clip.startMs}:${slotMs}:${clip.exactDuration}:${JSON.stringify(project.voiceEdits?.[clip.generation.id] ?? null)}`,
-      };
-    });
+    .sort((a, b) => a.startMs - b.startMs);
+  const conflicts = new Set<number>();
+  ordered.forEach((clip, index) => {
+    const previous = ordered[index - 1];
+    if (previous?.startMs === clip.startMs && previous.overlapKey !== clip.overlapKey)
+      conflicts.add(clip.startMs);
+  });
+  return ordered.map((clip, index, clips) => {
+    let following = index + 1;
+    while (following < clips.length && clips[following].overlapKey === clip.overlapKey) following++;
+    const next = clips[following];
+    const duplicate = conflicts.has(clip.startMs);
+    const slotMs = duplicate
+      ? 0
+      : Math.max(
+          0,
+          Math.min(
+            MAX_VOICE_DURATION_MS + clip.startMs,
+            clip.slotEndMs,
+            next?.startMs ?? Infinity,
+            project.media!.durationMs,
+          ) - clip.startMs,
+        );
+    return {
+      ...clip,
+      slotMs,
+      endMs:
+        clip.startMs +
+        (clip.exactDuration
+          ? slotMs
+          : Math.min(
+              slotMs,
+              project.voiceEdits?.[clip.generation.id]
+                ? editDuration(project.voiceEdits[clip.generation.id])
+                : clip.generation.durationMs,
+            )),
+      cacheKey: `${project.id}:${clip.generation.id}:${clip.startMs}:${slotMs}:${clip.exactDuration}:${JSON.stringify(project.voiceEdits?.[clip.generation.id] ?? null)}`,
+    };
+  });
 }
 export function mixReport(project: Project) {
   const family = speakerDubbingState(project);
