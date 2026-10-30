@@ -1,4 +1,4 @@
-"""Stage v0.32.3 packages as a draft, only after authenticated CI evidence.
+"""Stage v0.32.4 packages as a draft, only after authenticated CI evidence.
 
 Never publishes a release, changes its tag or pushes an updater feed. The final
 source archive is optional and must retain every compiled application input.
@@ -7,7 +7,7 @@ from pathlib import Path
 import argparse,ctypes,hashlib,json,os,re,subprocess,urllib.error,urllib.parse,urllib.request,zipfile
 ROOT=Path(__file__).resolve().parents[1];WORK=ROOT/'.cache/release-stage';WORK.mkdir(parents=True,exist_ok=True)
 PROOF=ROOT/'.cache/release-stage-proof';PROOF.mkdir(parents=True,exist_ok=True)
-SLUG='jontechlabs/ai-dubbing-studio';VERSION='0.32.3';TAG='v'+VERSION
+SLUG='jontechlabs/ai-dubbing-studio';VERSION='0.32.4';TAG='v'+VERSION
 TOKEN=os.environ['GH_TOKEN'];HEADERS={'Authorization':'Bearer '+TOKEN,'User-Agent':'Studio-v032-validated-stage'}
 def gh(*args):return subprocess.check_output(['gh',*map(str,args)],cwd=ROOT,text=True,encoding='utf-8',errors='replace').strip()
 def git(*args):return subprocess.check_output(['git',*map(str,args)],cwd=ROOT,text=True,encoding='utf-8').strip()
@@ -80,7 +80,7 @@ def main():
  jobs=api(f'actions/runs/{args.run}/jobs?per_page=100')['jobs'];assert len(jobs)==1 and jobs[0]['conclusion']=='success'
  assert all(s['conclusion'] in ['success','skipped'] for s in jobs[0]['steps'])
  log=re.sub(r'(?:\x1b|\^\[)\[[0-9;:]*[A-Za-z]','',gh('run','view',args.run,'--log'))
- for marker in ['196 passed','183 passed; 0 failed','Ran 103 tests','MCP_NATIVE_PROOF','Local Japanese transcription (ja)']:assert marker in log,marker
+ for marker in ['199 passed','183 passed; 0 failed','Ran 103 tests','MCP_NATIVE_PROOF','Local Japanese transcription (ja)']:assert marker in log,marker
  ci=WORK/'ci';artifact=download_artifact(args.run,'windows-x64-development-build',ci);assert artifact['workflow_run']['head_sha']==code_head
  native=read(ci/'mcp-native-validation.json');assert native['officialSdk'] and native['toolCount']==134 and native['version']==VERSION
  assert native['jointReview']['commonSnapshot'] and native['jointReview']['subtitlesAndEveryTakePreserved'] and native['jointReview']['exclusionSkippedByBatch']
@@ -88,7 +88,7 @@ def main():
  assert native['sourceAndVolume']['allExistingTakesPreserved'] and native['sourceAndVolume']['staleRejected']
  identity=read(ci/'workbench-validation.json');assert identity['head']==code_head and len(identity['existingWorkerIdentities'])==327
  assert '188 passed' in log and '183 passed; 0 failed' in log
- reused=dict(head=code_head,chrome=196,native=183,typescript=188,sourceIdentical=True,frontendStepPassed=True,fresh=True)
+ reused=dict(head=code_head,chrome=199,native=183,typescript=188,sourceIdentical=True,frontendStepPassed=True,fresh=True)
  for row in read(ci/'reference-transcription-validation.json'):assert row['device']=='CPU' and '中学' in row['text']
  model_run=api('actions/runs/'+args.models_run);assert model_run['status']=='completed' and model_run['conclusion']=='success' and model_run['path']=='.github/workflows/audio-toolbox-smoke.yml'
  model_dir=WORK/'models';model_artifact=download_artifact(args.models_run,'audio-toolbox-model-validation',model_dir)
@@ -101,7 +101,7 @@ def main():
  for line in (ci/'SHA256SUMS.txt').read_text(encoding='utf-8-sig').splitlines():
   digest,name=line.split('  ',1);assert Path(name).name==name and sha(ci/name)==digest;expected[name]=digest
  setup=ci/f'AI-Dubbing-Studio-{VERSION}-Setup.exe';signature=setup.with_suffix('.exe.sig');portable=ci/'AI-Dubbing-Studio-Windows-Portable.zip'
- assert version_of(setup)==(0,32,3,0)
+ assert version_of(setup)==(0,32,4,0)
  subprocess.run(['cargo','run','--quiet','--locked','--manifest-path','scripts/verify-update-signature/Cargo.toml','--','src-tauri/tauri.conf.json',str(setup),str(signature)],cwd=ROOT,check=True)
  with zipfile.ZipFile(portable) as z:
   no_private_entries(z);assert z.testzip() is None;prefix='AI-Dubbing-Studio-Windows/'
@@ -131,7 +131,7 @@ def main():
    no_private_entries(z);assert z.testzip() is None;assert read(ROOT/'package.json')['version']==json.loads(z.read('package.json'))['version']
    for p,digest in model['identities'].items():assert hashlib.sha256(z.read(p)).hexdigest()==digest
   assets.append(upload(source));sums=WORK/'SHA256SUMS.txt';sums.write_text(''.join(f'{a["sha256"]}  {a["name"]}\n' for a in assets),encoding='utf-8');assets.append(upload(sums))
- report=dict(version=VERSION,releaseId=release['id'],isDraft=True,runId=args.run,codeHead=code_head,sourceHead=args.final_head,modelsRun=args.models_run,modelHead=model['head'],artifactSha256=artifact['digest'],modelArtifactSha256=model_artifact['digest'],signatureVerified=True,tamperRejected=True,installerVersion=[0,32,3,0],assets=assets,signature=signature.read_text().strip(),toolCount=134,suiteCounts=dict(typescript=188,chrome=196,native=183,python=103),chromeProof=reused,neuralModels=model)
+ report=dict(version=VERSION,releaseId=release['id'],isDraft=True,runId=args.run,codeHead=code_head,sourceHead=args.final_head,modelsRun=args.models_run,modelHead=model['head'],artifactSha256=artifact['digest'],modelArtifactSha256=model_artifact['digest'],signatureVerified=True,tamperRejected=True,installerVersion=[0,32,4,0],assets=assets,signature=signature.read_text().strip(),toolCount=134,suiteCounts=dict(typescript=188,chrome=199,native=183,python=103),chromeProof=reused,neuralModels=model)
  (PROOF/'release-stage-validation.json').write_text(json.dumps(report,indent=2,ensure_ascii=False)+'\n',encoding='utf-8')
  for name in ['mcp-native-validation.json','workbench-validation.json','reference-transcription-validation.json']:(PROOF/name).write_bytes((ci/name).read_bytes())
  print('Draft packages staged and authenticated; no publication or updater push performed.',flush=True)

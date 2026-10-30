@@ -201,7 +201,67 @@ test('French fidelity and independent Japanese guide expose compatible engine co
   expect(o.accent).toBe('auto');
   expect(o.mood).toBe('default');
 });
-test('automatic voice candidates never assign until accepted and keep manual correction available', async ({
+const matchCalls = (page: Page) =>
+  page.evaluate(() =>
+    (window as any).__calls.filter((c: any) => c.command === 'suggest_dialogue_character'),
+  );
+
+for (const preference of [null, 'on', 'off']) {
+  test(`character matching only starts on request with legacy preference ${preference}`, async ({
+    page,
+  }) => {
+    await page.addInitScript((value) => {
+      if (value === null) localStorage.removeItem('studio.characterSuggestions');
+      else localStorage.setItem('studio.characterSuggestions', value);
+    }, preference);
+    await ready(page);
+    const before = await saved(page),
+      panel = await dub(page),
+      launch = panel.getByRole('button', { name: 'Proposer un personnage', exact: true });
+    await expect(launch).toBeEnabled();
+    expect(await matchCalls(page)).toHaveLength(0);
+    await expect(panel.getByRole('checkbox', { name: /automatiquement/ })).toHaveCount(0);
+    await panel.locator('.character-suggestion>details>summary').click();
+    await panel
+      .getByRole('combobox', { name: 'Piste à analyser pour le personnage' })
+      .selectOption('original');
+    await panel
+      .getByRole('combobox', { name: 'Choisir le personnage manuellement' })
+      .selectOption('c1');
+    await expect(page.locator('.save-indicator')).toHaveText('Sauvegardé');
+    expect(await matchCalls(page)).toHaveLength(0);
+    await launch.click();
+    await expect(panel.getByText('Comparaison locale des voix…', { exact: true })).toBeVisible();
+    await expect(launch).toBeDisabled();
+    expect(await matchCalls(page)).toHaveLength(1);
+    expect((await matchCalls(page))[0].args.options).toEqual({
+      lineId: before.dialogues[0].id,
+      trackId: 'original',
+    });
+    await page.evaluate(() => (window as any).__completeCharacterMatch());
+    await expect(panel.locator('.speaker-candidate')).toHaveCount(2);
+    await expect(panel.getByRole('button', { name: 'Actualiser la proposition' })).toBeEnabled();
+    expect(await matchCalls(page)).toHaveLength(1);
+    expect((await saved(page)).dialogues[0].characterId).toBe('c1');
+    expect((await saved(page)).generations).toEqual(before.generations);
+
+    // Returning to the panel or opening a different dialogue never relaunches.
+    await page.getByRole('button', { name: 'Fermer', exact: true }).click();
+    await dub(page);
+    await expect(launch).toBeEnabled();
+    expect(await matchCalls(page)).toHaveLength(1);
+    await page.getByRole('button', { name: 'Fermer', exact: true }).click();
+    await page
+      .locator('.dialogue-card')
+      .nth(1)
+      .getByRole('button', { name: 'Doubler', exact: true })
+      .click();
+    await expect(launch).toBeEnabled();
+    expect(await matchCalls(page)).toHaveLength(1);
+  });
+}
+
+test('requested voice candidates never assign until accepted and keep manual correction available', async ({
   page,
 }) => {
   await page.addInitScript(() => localStorage.setItem('studio.characterSuggestions', 'on'));
@@ -210,6 +270,7 @@ test('automatic voice candidates never assign until accepted and keep manual cor
   await nativeMock(page, false, p);
   await page.goto('/');
   const panel = await dub(page);
+  await panel.getByRole('button', { name: 'Proposer un personnage', exact: true }).click();
   await expect
     .poll(() => page.evaluate(() => (window as any).__pendingCharacterMatch?.lineId))
     .toBe(p.dialogues[0].id);
@@ -223,12 +284,14 @@ test('automatic voice candidates never assign until accepted and keep manual cor
     .getByRole('button', { name: 'Accepter', exact: true })
     .click();
   await expect.poll(async () => (await saved(page)).dialogues[0].characterId).toBe('c0');
+  expect(await matchCalls(page)).toHaveLength(1);
   await panel.locator('.character-suggestion>details>summary').click();
   await panel
     .getByRole('combobox', { name: 'Choisir le personnage manuellement' })
     .selectOption('c1');
   await expect(page.locator('.save-indicator')).toHaveText('Sauvegardé');
   expect((await saved(page)).dialogues[0].characterId).toBe('c1');
+  expect(await matchCalls(page)).toHaveLength(1);
 });
 
 test('Vox Ultimate Hi-Fi is optional, persists and Standard clears a hybrid continuation without changing takes', async ({
@@ -310,6 +373,7 @@ test('too little speech asks for manual selection and ambiguous candidates remai
   await page.addInitScript(() => localStorage.setItem('studio.characterSuggestions', 'on'));
   await ready(page);
   const panel = await dub(page);
+  await panel.getByRole('button', { name: 'Proposer un personnage', exact: true }).click();
   await expect
     .poll(() => page.evaluate(() => (window as any).__pendingCharacterMatch?.lineId))
     .toBeTruthy();

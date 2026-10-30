@@ -1500,7 +1500,7 @@
   },
   "speakerSuggest": {
     "title": "Personnage proposé par la voix",
-    "automatic": "Proposer automatiquement à l’ouverture",
+    "request": "Proposer un personnage",
     "manual": "Choisir le personnage manuellement",
     "unassigned": "Personnage non assigné",
     "install": "Installer ou réparer 3D-Speaker dans Modèles",
@@ -1516,7 +1516,7 @@
     "score": "Similarité : {{score}} · ce score n’est pas une probabilité",
     "alreadyAssigned": "Déjà assigné",
     "accept": "Accepter",
-    "hint": "Analyse CPU des références d’origine. Aucune assignation n’est changée sans validation ; les essais restent conservés.",
+    "hint": "Comparaison locale des voix uniquement à votre demande. Aucune assignation n’est changée sans validation ; les essais restent conservés.",
     "settings": "Réglages de la proposition"
   },
   "ttsQwenRecovered": "Qwen3 : reprise sans transcription de référence · {{device}} · graine {{seed}}. Paramètres demandés conservés ; ce mode effectif est enregistré pour cet essai.",

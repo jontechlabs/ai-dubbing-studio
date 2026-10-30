@@ -1,5 +1,7 @@
 # AI Dubbing Studio
 
+**v0.32.4 — Character matching on request.** Click **Suggest a character** in Dubbing to compare voices. Opening the panel, switching dialogues or changing settings no longer starts automatic analysis, including with an old enabled preference. Assignment still requires approval and every take is retained. [Guide](docs/CHARACTER-VOICE-LIBRARY.md#personnage-proposé-au-moment-du-doublage).
+
 **v0.32.3 — Inline dubbing operations.** Generation, timbre conversion, prosody transfer, reference transcription and batches keep their progress, elapsed time, cancellation and retry in the Dubbing panel. Completion focuses the newly selected take, retaining every earlier take. [Guide and screenshots](docs/DUBBING-INLINE-TASKS.md).
 
 **v0.32.2 — Compact subtitle-editor actions.** Add dubbing and Exclude from dubbing now sit together in the header as icon buttons with tooltips and accessible labels. The header wraps cleanly in a narrow inspector. [Preview](docs/JOINT-REVIEW-DIALOGUE-EDITING.md).

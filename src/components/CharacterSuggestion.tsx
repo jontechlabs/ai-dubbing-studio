@@ -26,23 +26,14 @@ export function CharacterSuggestion({
   onModels: () => void;
 }) {
   const { t } = useTranslation();
-  const [automatic, setAutomatic] = useState(() => {
-    try {
-      return localStorage.getItem('studio.characterSuggestions') !== 'off';
-    } catch {
-      return true;
-    }
-  });
   const [runtime, setRuntime] = useState<boolean | null>(null),
     [trackId, setTrackId] = useState('auto');
   const [pending, setPending] = useState<string | null>(null),
     [proposal, setProposal] = useState<bridge.CharacterSuggestion | null>(null);
   const [error, setError] = useState(''),
-    [refresh, setRefresh] = useState(0),
     [starting, setStarting] = useState(false);
-  const accepted = useRef(false);
-  const attempted = useRef(''),
-    handled = useRef(''),
+  const [requestedKey, setRequestedKey] = useState('');
+  const handled = useRef(''),
     alive = useRef(true),
     serial = useRef(0);
   useEffect(() => {
@@ -68,7 +59,6 @@ export function CharacterSuggestion({
         line.endMs,
         line.characterId,
         trackId,
-        refresh,
         project.characters.map((c) => [
           c.id,
           c.defaultReferenceId,
@@ -78,7 +68,7 @@ export function CharacterSuggestion({
         project.tracks,
         project.generations.filter((g) => g.kind === 'audioPatch' || g.kind === 'audioEffects'),
       ]),
-    [project, line, trackId, refresh],
+    [project, line, trackId],
   );
   useEffect(() => {
     let disposed = false;
@@ -95,35 +85,24 @@ export function CharacterSuggestion({
       disposed = true;
     };
   }, []);
-  useEffect(() => {
-    if (
-      accepted.current ||
-      !automatic ||
-      !bridge.native ||
-      !runtime ||
-      !available ||
-      busy ||
-      starting ||
-      attempted.current === key
-    )
-      return;
+  async function suggest() {
+    if (!bridge.native || !runtime || !available || busy || starting || pending) return;
     const request = ++serial.current;
-    attempted.current = key;
+    setRequestedKey(key);
     setStarting(true);
     setError('');
     setProposal(null);
-    void snapshot()
-      .then(() => bridge.suggestDialogueCharacter({ lineId: line.id, trackId }))
-      .then((id) => {
-        if (alive.current && request === serial.current) setPending(id);
-      })
-      .catch((e) => {
-        if (alive.current && request === serial.current) setError(String(e));
-      })
-      .finally(() => {
-        if (alive.current && request === serial.current) setStarting(false);
-      });
-  }, [automatic, runtime, available, busy, starting, key, line.id, trackId, snapshot]);
+    try {
+      await snapshot();
+      if (!alive.current || request !== serial.current) return;
+      const id = await bridge.suggestDialogueCharacter({ lineId: line.id, trackId });
+      if (alive.current && request === serial.current) setPending(id);
+    } catch (e) {
+      if (alive.current && request === serial.current) setError(String(e));
+    } finally {
+      if (alive.current && request === serial.current) setStarting(false);
+    }
+  }
   useEffect(() => {
     if (!pending) return;
     const job = jobs.find((j) => j.id === pending);
@@ -151,33 +130,26 @@ export function CharacterSuggestion({
       setPending(null);
     }
   }, [pending, jobs]);
-  const current = proposal?.lineId === line.id ? proposal : null;
+  const current =
+    proposal?.lineId === line.id
+      ? { ...proposal, stale: proposal.stale || requestedKey !== key }
+      : null;
   return (
     <section
       className="settings-section character-suggestion"
       aria-label={t('speakerSuggest.title')}
     >
       <h4>{t('speakerSuggest.title')}</h4>
+      <button
+        className="button subtle"
+        disabled={!bridge.native || !runtime || !available || busy || starting || !!pending}
+        onClick={() => void suggest()}
+      >
+        <RefreshCw size={13} />
+        {t(current ? 'speakerSuggest.refresh' : 'speakerSuggest.request')}
+      </button>
       <details>
         <summary>{t('speakerSuggest.settings')}</summary>
-        <label className="checkbox-field">
-          <input
-            type="checkbox"
-            checked={automatic}
-            onChange={(e) => {
-              setAutomatic(e.target.checked);
-              try {
-                localStorage.setItem(
-                  'studio.characterSuggestions',
-                  e.target.checked ? 'on' : 'off',
-                );
-              } catch {
-                /* Preference storage is optional. */
-              }
-            }}
-          />
-          {t('speakerSuggest.automatic')}
-        </label>
         <label className="field">
           <span>{t('character')}</span>
           <select
@@ -222,19 +194,6 @@ export function CharacterSuggestion({
                   ))}
               </select>
             </label>
-            <button
-              className="text-button"
-              disabled={!runtime || busy || starting}
-              onClick={() => {
-                setAutomatic(true);
-                accepted.current = false;
-                setRefresh((n) => n + 1);
-                setProposal(null);
-              }}
-            >
-              <RefreshCw size={13} />
-              {t('speakerSuggest.refresh')}
-            </button>
           </>
         )}
       </details>
@@ -285,7 +244,6 @@ export function CharacterSuggestion({
                     className="button subtle"
                     disabled={busy || current.stale || line.characterId === character.id}
                     onClick={() => {
-                      accepted.current = true;
                       void run(() => bridge.acceptCharacterSuggestion(current.id, character.id));
                     }}
                   >

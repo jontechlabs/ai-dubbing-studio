@@ -1,5 +1,9 @@
 # Validation
 
+## v0.32.4 — validation in progress
+
+Local checks cover explicit character matching and old missing/on/off automatic preferences. Full Windows checks and signed packages must pass before publication.
+
 ## v0.32.3 — 29 October 2026
 
 [Fresh Windows run 40914488928](https://github.com/jontechlabs/ai-dubbing-studio/actions/runs/40914488928) passes at `9989ba1e64732ea76edb7a626d0571fc23dc144e`: **670 fresh suite checks** (188 TypeScript, 196 Chrome, 183 Rust, 103 Python), lint, Clippy, formatting, shared schemas and signed packaging. Two explicitly opt-in Rust diagnostics remain ignored. The installer and portable executable are rebuilt from this tested commit.

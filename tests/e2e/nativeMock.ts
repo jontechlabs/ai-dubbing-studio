@@ -44,7 +44,6 @@ export async function nativeMock(page: Page, large = false, seededProject?: Proj
       project.revision++;localStorage.setItem('nativeMockProject',JSON.stringify(project));emit('project-changed',structuredClone(project));
       job={...job,status:'succeeded',stage:'done',progress:1,timing:{elapsedMs:1250,observedAtMs:Date.now()}};emit('job-changed',job);
     };
-    if(localStorage.getItem('studio.characterSuggestions')===null)localStorage.setItem('studio.characterSuggestions','off');
     host.__calls=[];host.__downloadError=false;host.__installed=false;
     host.__getMockProject=()=>structuredClone(project);
     let mcpEnabled=localStorage.getItem('mockMcpEnabled')==='true';const mcpRequests=new Map<string,any>(),mcpAudit:any[]=[];

@@ -1,5 +1,7 @@
 # AI Dubbing Studio
 
+**v0.32.4 — Identification des personnages à la demande.** Dans Doublage, cliquez sur **Proposer un personnage** pour comparer les voix. L’ouverture du panneau, le changement de réplique et les réglages ne lancent plus d’analyse automatique, même avec une ancienne préférence activée. L’assignation reste à confirmer ; tous les essais sont conservés. [Guide](docs/CHARACTER-VOICE-LIBRARY.md#personnage-proposé-au-moment-du-doublage).
+
 **v0.32.3 — Traitements intégrés au panneau Doublage.** Génération, changement de timbre, transfert d’intonation, transcription et lots gardent leur progression dans le panneau, avec durée, annulation et relance. Le nouvel essai sélectionné reçoit le focus à la fin ; les essais précédents restent conservés. [Guide et captures](docs/DUBBING-INLINE-TASKS.md).
 
 **v0.32.2 — Actions compactes dans l’éditeur.** « Ajouter un doublage » et « Exclure du doublage » sont regroupés dans l’en-tête sous forme d’icônes avec infobulles et libellés accessibles. Le panneau s’adapte aux petites largeurs. [Aperçu](docs/JOINT-REVIEW-DIALOGUE-EDITING.md).

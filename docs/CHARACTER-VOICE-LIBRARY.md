@@ -59,7 +59,9 @@ Une référence de deux secondes et une cible d'un seul mot offrent peu de conte
 
 Dans **Doublage**, le studio peut comparer la voix de la réplique aux références **d'origine** des personnages avec CAMPPlus et Silero VAD, sur CPU. Les phrases françaises synthétiques ne servent pas à cette identification. Les extraits originaux assemblés sont admissibles.
 
-Jusqu'à trois propositions sont affichées, avec une similarité qui **n'est pas une probabilité**. Une voix trop courte ou absente demande un choix manuel ; une faible marge entre candidats est signalée. **Accepter** est nécessaire pour assigner un personnage. Le choix manuel reste disponible, et les réglages permettent de désactiver les propositions automatiques ou de changer la piste.
+Depuis **v0.32.4**, cette comparaison démarre **uniquement au clic sur « Proposer un personnage »**. L'ouverture ou la réouverture du panneau, le changement de réplique, de piste ou de référence ne lance aucune identification, même si les propositions automatiques avaient été activées dans une ancienne version. **Actualiser la proposition** effectue une nouvelle comparaison à la demande.
+
+Jusqu'à trois propositions sont affichées, avec une similarité qui **n'est pas une probabilité**. Une voix trop courte ou absente demande un choix manuel ; une faible marge entre candidats est signalée. **Accepter** est nécessaire pour assigner un personnage. Le choix manuel et la sélection de piste restent disponibles dans les réglages.
 
 Une proposition est refusée si la réplique, les références, les montages audio ou l'assignation ont changé. Le cache des empreintes dépend du contenu audio et de la version du modèle. Les essais restent conservés lors d'une assignation ou d'une fusion.
 

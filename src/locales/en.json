@@ -1500,7 +1500,7 @@
   },
   "speakerSuggest": {
     "title": "Character suggested by voice",
-    "automatic": "Suggest automatically when opened",
+    "request": "Suggest a character",
     "manual": "Choose character manually",
     "unassigned": "Unassigned character",
     "install": "Install or repair 3D-Speaker in Models",
@@ -1516,7 +1516,7 @@
     "score": "Similarity: {{score}} · not a probability",
     "alreadyAssigned": "Already assigned",
     "accept": "Accept",
-    "hint": "CPU analysis of original voice references. No assignment changes without approval; takes are retained.",
+    "hint": "Local voice comparison only when requested. No assignment changes without approval; takes are retained.",
     "settings": "Suggestion settings"
   },
   "ttsQwenRecovered": "Qwen3: recovered with transcript-free reference conditioning · {{device}} · seed {{seed}}. Requested settings are retained; this take records the effective recovery.",
