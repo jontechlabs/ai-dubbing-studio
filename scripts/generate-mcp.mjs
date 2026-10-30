@@ -122,7 +122,7 @@ function rustSchema(type) {
   throw Error('Unknown native parameter type: ' + type);
 }
 const readOnly =
-  /^(environment|graphics_info|.*_status|.*_result|latest_.*|audio_effects_catalog|.*_path|.*_paths|list_jobs|model_storage_info|model_storage_size|voice_install_space|preview_.*|reference_audio_info|get_waveform)$/;
+  /^(?!apply_)(environment|graphics_info|.*_status|.*_result|latest_.*|audio_effects_catalog|.*_path|.*_paths|list_jobs|model_storage_info|model_storage_size|voice_install_space|preview_.*|reference_audio_info|get_waveform)$/;
 const notes = {
   transcribe_dialogue_source:
     'Transcribe each source subtitle of a dialogue from the chosen audio track using local Whisper CPU. Returns a job ID. Does not replace subtitles or takes. Read and explicitly review the proposal before applying.',

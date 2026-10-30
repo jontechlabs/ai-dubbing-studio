@@ -511,7 +511,7 @@
           }
         }
       },
-      "annotations": { "readOnlyHint": true, "destructiveHint": false, "openWorldHint": false }
+      "annotations": { "readOnlyHint": false, "destructiveHint": true, "openWorldHint": false }
     },
     {
       "name": "studio_create_speaker_dubbings",
@@ -710,7 +710,7 @@
           }
         }
       },
-      "annotations": { "readOnlyHint": true, "destructiveHint": false, "openWorldHint": false }
+      "annotations": { "readOnlyHint": false, "destructiveHint": true, "openWorldHint": false }
     },
     {
       "name": "studio_apply_source_transcription",
