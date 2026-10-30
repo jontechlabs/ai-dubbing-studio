@@ -1677,7 +1677,8 @@ async fn reference_audition_reads_muted_dialogue_without_unmuting_the_exported_m
     let mix = pcm(&request.output, "0:a:0").await;
     let average = |ms: usize| mix[ms * 96..(ms + 10) * 96].iter().sum::<f32>() / 960.0;
     assert!(average(500).abs() < 0.001);
-    assert!((average(1200) / std::f32::consts::FRAC_1_SQRT_2 - 0.2).abs() < 0.001);
+    // The dubbing bus explicitly duplicates mono to stereo at unity gain.
+    assert!((average(1200) - 0.2).abs() < 0.001);
     assert!(average(2800).abs() < 0.001);
     assert_eq!(
         serde_json::to_value(&core.session.lock().unwrap().as_ref().unwrap().project).unwrap(),

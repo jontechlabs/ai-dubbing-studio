@@ -80,7 +80,7 @@ def main():
  jobs=api(f'actions/runs/{args.run}/jobs?per_page=100')['jobs'];assert len(jobs)==1 and jobs[0]['conclusion']=='success'
  assert all(s['conclusion'] in ['success','skipped'] for s in jobs[0]['steps'])
  log=re.sub(r'(?:\x1b|\^\[)\[[0-9;:]*[A-Za-z]','',gh('run','view',args.run,'--log'))
- for marker in ['204 passed','186 passed; 0 failed','Ran 103 tests','MCP_NATIVE_PROOF','Local Japanese transcription (ja)']:assert marker in log,marker
+ for marker in ['186 passed; 0 failed','Ran 103 tests','MCP_NATIVE_PROOF','Local Japanese transcription (ja)']:assert marker in log,marker
  ci=WORK/'ci';artifact=download_artifact(args.run,'windows-x64-development-build',ci);assert artifact['workflow_run']['head_sha']==code_head
  native=read(ci/'mcp-native-validation.json');assert native['officialSdk'] and native['toolCount']==134 and native['version']==VERSION
  assert native['jointReview']['commonSnapshot'] and native['jointReview']['subtitlesAndEveryTakePreserved'] and native['jointReview']['exclusionSkippedByBatch']
@@ -90,6 +90,17 @@ def main():
  identity=read(ci/'workbench-validation.json');assert identity['head']==code_head and len(identity['existingWorkerIdentities'])==327
  assert '191 passed' in log and '186 passed; 0 failed' in log
  reused=dict(head=code_head,chrome=204,native=186,typescript=191,sourceIdentical=True,frontendStepPassed=True,fresh=True)
+ if '204 passed' not in log:
+  reused=read(ci/'reused-ui-native-validation.json')
+  assert reused['chrome']==204 and reused['typescript']==191 and reused['sourceIdentical'] and reused['frontendStepPassed'] and reused['head']==code_head
+  previous=api('actions/runs/'+str(reused['runId']));assert previous['status']=='completed' and previous['path']=='.github/workflows/dubbing-workbench.yml' and previous['head_sha']==reused['verifiedHead']
+  previous_jobs=api(f"actions/runs/{reused['runId']}/jobs?per_page=100")['jobs']
+  assert any(s['name']=='Frontend unit, browser, formatting, lint and MCP schemas' and s['conclusion']=='success' for j in previous_jobs for s in j['steps'])
+  ui_inputs=['src','src-tauri/tauri.conf.json','package.json','pnpm-lock.yaml','public','resources','scripts/generate-mcp.mjs','vite.config.ts','tsconfig.json','eslint.config.js','playwright.config.ts','tests/e2e']
+  assert not git('diff','--name-only',reused['verifiedHead'],code_head,'--',*ui_inputs)
+  previous_log=re.sub(r'(?:\x1b|\^\[)\[[0-9;:]*[A-Za-z]','',gh('run','view',str(reused['runId']),'--log'))
+  assert re.search(r'\b204 passed\b',previous_log) and re.search(r'Tests\s+191 passed',previous_log)
+  reused['fresh']=False
  for row in read(ci/'reference-transcription-validation.json'):assert row['device']=='CPU' and '中学' in row['text']
  model_run=api('actions/runs/'+args.models_run);assert model_run['status']=='completed' and model_run['conclusion']=='success' and model_run['path']=='.github/workflows/audio-toolbox-smoke.yml'
  model_dir=WORK/'models';model_artifact=download_artifact(args.models_run,'audio-toolbox-model-validation',model_dir)
