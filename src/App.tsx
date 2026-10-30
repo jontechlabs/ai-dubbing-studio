@@ -127,7 +127,13 @@ export default function App() {
     },
     [contextScope, studio.project],
   );
-  const transport = useTransport(studio.project, selected, padding, studio.setError);
+  const transport = useTransport(
+    studio.project,
+    selected,
+    padding,
+    studio.setError,
+    audioSelection,
+  );
   const { endOriginal } = transport;
   const { edit: editProject } = studio;
   const edit = useCallback(
@@ -145,7 +151,8 @@ export default function App() {
     studio.project?.voiceEdits,
   );
   const { stop: stopGeneration } = generationAudio;
-  const { seek: seekVideo } = transport;
+  const { seek: seekVideo, playAudioSelection: auditionAudioSelection } = transport;
+  const { setError: setStudioError } = studio;
   const close = useCallback(() => setPanel(null), []);
   const closeSubtitles = useCallback(
     () => setPanel((current) => (current === 'subtitles' ? null : current)),
@@ -211,6 +218,20 @@ export default function App() {
     if (generation) playGeneration(generation);
     else openDub(line);
   };
+  const playAudioSelection = useCallback(
+    (selection: AudioSelection, beforeLevels = false) => {
+      stopGeneration();
+      document.dispatchEvent(new Event('studio-voice-preview'));
+      document.querySelectorAll('audio').forEach((audio) => audio.pause());
+      try {
+        auditionAudioSelection(selection, beforeLevels);
+        selectAudio(selection);
+      } catch (error) {
+        setStudioError(String(error));
+      }
+    },
+    [stopGeneration, auditionAudioSelection, selectAudio, setStudioError],
+  );
   const mcpActive = useMcpControl({
     updater,
     studio,
@@ -220,6 +241,7 @@ export default function App() {
     select,
     checkBatch,
     playGeneration,
+    playAudioSelection,
     stopAudio: () => {
       stopGeneration();
       document.dispatchEvent(new Event('studio-voice-preview'));
@@ -512,6 +534,10 @@ export default function App() {
               onContextMenu={openContext}
               navigation={timelineNavigation}
               audioSelection={audioSelection}
+              onPlayAudioSelection={playAudioSelection}
+              onStopAudioSelection={transport.stopAudioSelection}
+              audioSelectionPlaying={!!transport.selectionAudition}
+              audioPlaybackReady={transport.ready}
               onAudioAdvanced={openAudioAdvanced}
               onAudioSelection={selectAudio}
               project={studio.project}

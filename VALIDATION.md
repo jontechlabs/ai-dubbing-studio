@@ -2,7 +2,7 @@
 
 ## v0.32.5 — validation in progress
 
-Three new native FFmpeg regressions cover references from muted selections on every source-track role, retained transfers and structural silence, and actual reference audition followed by an unchanged muted-source MKV mix. Full Windows checks and signed packages must pass before publication.
+Three new native FFmpeg regressions cover references from muted selections on every source-track role, retained transfers and structural silence, and actual reference audition followed by an unchanged muted-source MKV mix. Three unit tests and five Chrome scenarios cover transient isolation, before-level audition, exact range validation, end/stop/cancel behavior, restoring the saved mix and MCP playback. Full Windows checks and signed packages must pass before publication.
 
 ## v0.32.4 — 30 October 2026
 

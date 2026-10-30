@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Volume2, VolumeX, X } from 'lucide-react';
+import { Play, Square, Volume2, VolumeX, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { AudioSelection, Project } from '../domain/types';
 import {
@@ -21,9 +21,17 @@ export function TimelineAudioSelection({
   onAdvanced,
   onTransfer,
   onCharacters,
+  onPlay,
+  onStop,
+  playing,
+  ready,
 }: {
   onTransfer: (options: import('../domain/audioPatch').TransferOptions) => void;
   onCharacters: () => void;
+  onPlay: (selection: AudioSelection, beforeLevels?: boolean) => void;
+  onStop: () => void;
+  playing: boolean;
+  ready: boolean;
   project: Project;
   selection: AudioSelection;
   busy: boolean;
@@ -33,6 +41,7 @@ export function TimelineAudioSelection({
 }) {
   const { t } = useTranslation();
   const [target, setTarget] = useState('');
+  const [beforeLevels, setBeforeLevels] = useState(false);
   const [draft, setDraft] = useState({
     start: String(selection.startMs),
     end: String(selection.endMs),
@@ -103,6 +112,23 @@ export function TimelineAudioSelection({
       <span className="selection-timecodes">
         {formatTime(selection.startMs)} → {formatTime(selection.endMs)}
       </span>
+      <button
+        className="button subtle"
+        disabled={!ready}
+        onClick={() => (playing ? onStop() : onPlay(selection, beforeLevels))}
+      >
+        {playing ? <Square size={14} /> : <Play size={14} />}
+        {t(playing ? 'timelineSelectionStop' : 'timelineSelectionPlay')}
+      </button>
+      <label>
+        <input
+          type="checkbox"
+          checked={beforeLevels}
+          disabled={playing}
+          onChange={(e) => setBeforeLevels(e.target.checked)}
+        />
+        {t('timelineSelectionBeforeLevels')}
+      </label>
       {(['start', 'end'] as const).map((edge) => (
         <label key={edge}>
           {t(edge === 'start' ? 'audioSelectionStart' : 'audioSelectionEnd')}

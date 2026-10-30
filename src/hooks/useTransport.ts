@@ -1,15 +1,17 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { Dialogue, Project } from '../domain/types';
+import type { AudioSelection, Dialogue, Project } from '../domain/types';
 import { loopRange } from '../domain/time';
 import { mediaUrl } from '../services/bridge';
 import { useAudioMix } from './useAudioMix';
 import { audioTracks } from '../domain/audio';
+import { audioSelectionProject, validAudioSelection } from '../domain/audioAudition';
 
 export function useTransport(
   project: Project | null,
   selected: Dialogue | undefined,
   padding: number,
   onError: (message: string) => void,
+  selection: AudioSelection | null = null,
 ) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [resource, setResource] = useState<{ id: string; url: string } | null>(null);
@@ -22,6 +24,13 @@ export function useTransport(
   const [loop, setLoop] = useState(false);
   const [volume, setVolume] = useState(0.8);
   const [originalOnly, setOriginalOnly] = useState(false);
+  const [selectionAudition, setSelectionAudition] = useState<{
+    projectId: string;
+    selection: AudioSelection;
+    beforeLevels: boolean;
+  } | null>(null);
+  const selectionAuditionRef = useRef(selectionAudition);
+  selectionAuditionRef.current = selectionAudition;
   const playToken = useRef(0);
   const [preparingDub, setPreparingDub] = useState(false);
   const stopAt = useRef<{ start: number; end: number } | null>(null);
@@ -34,6 +43,40 @@ export function useTransport(
   const failed = !!mediaId && failedId === mediaId;
   const projectRef = useRef(project);
   projectRef.current = project;
+  const stopAudioSelection = useCallback(() => {
+    if (!selectionAuditionRef.current) return;
+    selectionAuditionRef.current = null;
+    ++playToken.current;
+    setPreparingDub(false);
+    videoRef.current?.pause();
+    stopAt.current = null;
+    setSelectionAudition(null);
+  }, []);
+  useEffect(() => {
+    document.addEventListener('studio-voice-preview', stopAudioSelection);
+    return () => document.removeEventListener('studio-voice-preview', stopAudioSelection);
+  }, [stopAudioSelection]);
+  const selectionScope = JSON.stringify([
+    project?.id,
+    selection?.mediaId,
+    selection?.trackId,
+    selection?.startMs,
+    selection?.endMs,
+  ]);
+  useEffect(() => {
+    const active = selectionAuditionRef.current;
+    if (
+      active &&
+      JSON.stringify([
+        active.projectId,
+        active.selection.mediaId,
+        active.selection.trackId,
+        active.selection.startMs,
+        active.selection.endMs,
+      ]) !== selectionScope
+    )
+      stopAudioSelection();
+  }, [selectionScope, stopAudioSelection]);
   useEffect(() => {
     let disposed = false;
     ++playToken.current;
@@ -43,6 +86,8 @@ export function useTransport(
     stopAt.current = null;
     setResource(null);
     setOriginalOnly(false);
+    selectionAuditionRef.current = null;
+    setSelectionAudition(null);
     setReadyId(null);
     setFailedId(null);
     setBuffering(false);
@@ -69,16 +114,26 @@ export function useTransport(
       disposed = true;
     };
   }, [mediaId, onError]);
-  const seek = useCallback((ms: number) => {
-    ++playToken.current;
-    setPreparingDub(false);
-    pendingSeek.current = Math.max(0, Math.min(ms, projectRef.current?.media?.durationMs || ms));
-    const video = videoRef.current;
-    if (video?.readyState) video.currentTime = pendingSeek.current / 1000;
-    timeRef.current = pendingSeek.current;
-    setTime(pendingSeek.current);
-  }, []);
+  const seek = useCallback(
+    (ms: number) => {
+      stopAudioSelection();
+      ++playToken.current;
+      setPreparingDub(false);
+      pendingSeek.current = Math.max(0, Math.min(ms, projectRef.current?.media?.durationMs || ms));
+      const video = videoRef.current;
+      if (video?.readyState) video.currentTime = pendingSeek.current / 1000;
+      timeRef.current = pendingSeek.current;
+      setTime(pendingSeek.current);
+    },
+    [stopAudioSelection],
+  );
   const monitoredProject = useMemo(() => {
+    if (selectionAudition && project && validAudioSelection(project, selectionAudition.selection))
+      return audioSelectionProject(
+        project,
+        selectionAudition.selection,
+        selectionAudition.beforeLevels,
+      );
     if (!originalOnly || !project) return project;
     return {
       ...project,
@@ -90,7 +145,7 @@ export function useTransport(
         { ...audioTracks(project)[0], mute: false, solo: true, gain: 1, regionsEnabled: false },
       ],
     };
-  }, [originalOnly, project]);
+  }, [originalOnly, project, selectionAudition]);
   const mix = useAudioMix(videoRef, monitoredProject, url, volume, onError);
   const prepareRef = useRef(mix.prepare);
   prepareRef.current = mix.prepare;
@@ -103,11 +158,14 @@ export function useTransport(
       await prepareRef.current(video.currentTime * 1000);
       if (token === playToken.current && video === videoRef.current) await video.play();
     } catch (error) {
-      onError(String(error));
+      if (token === playToken.current) {
+        stopAudioSelection();
+        onError(String(error));
+      }
     } finally {
       if (token === playToken.current) setPreparingDub(false);
     }
-  }, [onError]);
+  }, [onError, stopAudioSelection]);
   const queueStart = useCallback(() => {
     const token = ++playToken.current;
     let started = false;
@@ -125,6 +183,10 @@ export function useTransport(
     const timer = setTimeout(begin, 80);
   }, [startVideo]);
   const toggle = useCallback(() => {
+    if (selectionAuditionRef.current) {
+      stopAudioSelection();
+      return;
+    }
     setOriginalOnly(false);
     const video = videoRef.current;
     if (!video || !url || !ready) return;
@@ -133,9 +195,47 @@ export function useTransport(
       setPreparingDub(false);
     } else if (video.paused) queueStart();
     else video.pause();
-  }, [url, ready, preparingDub, queueStart]);
+  }, [url, ready, preparingDub, queueStart, stopAudioSelection]);
+  const playAudioSelection = useCallback(
+    (range: AudioSelection, beforeLevels = false) => {
+      if (!validAudioSelection(projectRef.current, range)) throw Error('INVALID_AUDIO_REGION');
+      if (!ready || !videoRef.current) throw Error('MEDIA_LOADING');
+      stopAudioSelection();
+      videoRef.current.pause();
+      setOriginalOnly(false);
+      seek(range.startMs);
+      stopAt.current = { start: range.startMs, end: range.endMs };
+      const audition = { projectId: projectRef.current!.id, selection: { ...range }, beforeLevels };
+      selectionAuditionRef.current = audition;
+      setSelectionAudition(audition);
+      queueStart();
+    },
+    [ready, stopAudioSelection, seek, queueStart],
+  );
+  useEffect(() => {
+    if (!selectionAudition) return;
+    const video = videoRef.current;
+    const finish = () => {
+      const active = selectionAuditionRef.current;
+      if (video && active && (video.ended || video.currentTime * 1000 >= active.selection.endMs)) {
+        const end = active.selection.endMs;
+        stopAudioSelection();
+        video.currentTime = end / 1000;
+      }
+    };
+    // Also bound playback when a hidden WebView suspends animation frames.
+    const timer = setInterval(finish, 40);
+    video?.addEventListener('timeupdate', finish);
+    video?.addEventListener('ended', finish);
+    return () => {
+      clearInterval(timer);
+      video?.removeEventListener('timeupdate', finish);
+      video?.removeEventListener('ended', finish);
+    };
+  }, [selectionAudition, stopAudioSelection]);
   const playLine = useCallback(
     (dialogue: Dialogue) => {
+      stopAudioSelection();
       setOriginalOnly(false);
       const range = loopRange(
         dialogue.startMs,
@@ -147,10 +247,11 @@ export function useTransport(
       seek(range.start);
       if (videoRef.current) queueStart();
     },
-    [padding, project?.media?.durationMs, seek, queueStart],
+    [padding, project?.media?.durationMs, seek, queueStart, stopAudioSelection],
   );
   const playOriginalLine = useCallback(
     (dialogue?: Dialogue) => {
+      stopAudioSelection();
       setOriginalOnly(true);
       stopAt.current = dialogue
         ? loopRange(
@@ -163,9 +264,12 @@ export function useTransport(
       if (stopAt.current) seek(stopAt.current.start);
       queueStart();
     },
-    [padding, project?.media?.durationMs, seek, queueStart],
+    [padding, project?.media?.durationMs, seek, queueStart, stopAudioSelection],
   );
-  const endOriginal = useCallback(() => setOriginalOnly(false), []);
+  const endOriginal = useCallback(() => {
+    stopAudioSelection();
+    setOriginalOnly(false);
+  }, [stopAudioSelection]);
   useEffect(() => {
     let frame = 0;
     let lastUpdate = 0;
@@ -184,7 +288,7 @@ export function useTransport(
               )
             : null);
         if (range && ms >= range.end) {
-          if (loop) video.currentTime = range.start / 1000;
+          if (loop && !selectionAuditionRef.current) video.currentTime = range.start / 1000;
           else {
             video.pause();
             stopAt.current = null;
@@ -217,9 +321,13 @@ export function useTransport(
     toggle,
     playLine,
     playOriginalLine,
+    playAudioSelection,
+    stopAudioSelection,
+    selectionAudition,
     originalOnly,
     endOriginal,
     pause: () => {
+      stopAudioSelection();
       ++playToken.current;
       setPreparingDub(false);
       videoRef.current?.pause();

@@ -3,7 +3,8 @@ import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
 import type { useProject } from './useProject';
 import type { Transport } from './useTransport';
-import type { Dialogue, Generation } from '../domain/types';
+import type { AudioSelection, Dialogue, Generation } from '../domain/types';
+import { validAudioSelection } from '../domain/audioAudition';
 import type { Panel } from '../components/Header';
 import { native, dubbingUrl } from '../services/bridge';
 import { checkContext, editProject, type Context } from '../mcp/actions';
@@ -34,6 +35,7 @@ interface Control {
   select: (line: Dialogue) => void;
   checkBatch: (ids: string[]) => void;
   playGeneration: (generation: Generation) => void;
+  playAudioSelection: (selection: AudioSelection, beforeLevels?: boolean) => void;
   stopAudio: () => void;
   panel: Panel;
   setPanel: (panel: Panel) => void;
@@ -160,6 +162,7 @@ export function useMcpControl(control: Control) {
               loop: transport.loop,
               rate: transport.videoRef.current?.playbackRate ?? 1,
               audition: readVoicePlayback().playback,
+              selection: transport.selectionAudition,
             },
             preferences: {
               language: c.language,
@@ -218,7 +221,22 @@ export function useMcpControl(control: Control) {
           result = { applied: true };
         } else if (tool === 'studio_playback') {
           const action = args.action;
-          if (['line', 'original', 'dub'].includes(String(action))) {
+          if (action === 'selection') {
+            if (!project?.media) throw Error('NO_PROJECT');
+            const selection: AudioSelection = {
+              mediaId: project.media.id,
+              trackId: args.trackId as string,
+              startMs: args.startMs as number,
+              endMs: args.endMs as number,
+            };
+            if (
+              !validAudioSelection(project, selection) ||
+              (args.beforeLevels !== undefined && typeof args.beforeLevels !== 'boolean')
+            )
+              throw Error('MCP_INVALID_ARGUMENTS');
+            if (!transport.ready) throw Error('MEDIA_LOADING');
+            c.playAudioSelection(selection, args.beforeLevels === true);
+          } else if (['line', 'original', 'dub'].includes(String(action))) {
             const line = project?.dialogues.find(
               (line) => line.id === (args.lineId ?? c.selectedId),
             );

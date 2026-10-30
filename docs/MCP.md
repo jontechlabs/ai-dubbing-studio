@@ -104,3 +104,7 @@ Consultez `studio_get_state` et utilisez son `context` récent pour chaque comma
 ## Validation commune et exclusion
 
 `studio_add_dialogue` crée une réplique avec ses horaires et textes. `studio_set_dialogue_exclusion` exclut ou réintègre des identifiants, sans supprimer les SRT, essais, montages ou calages. Les lots et le mix vocal ignorent les exclusions. Les deux commandes exigent le contexte courant et sont annulables. La validation texte/essai est commune, liée au contenu exact enregistré en format 24 ; modifier texte, prononciation, essai, montage ou calage la retire. Un nouvel essai demande une nouvelle validation. Voir [le guide](JOINT-REVIEW-DIALOGUE-EDITING.md).
+
+## Préécoute d’une sélection audio
+
+Depuis v0.32.5, `studio_playback` accepte `action: "selection"`, `trackId`, `startMs`, `endMs` et `beforeLevels` facultatif (faux par défaut). La piste est temporairement isolée ; ses volumes sont conservés ou contournés avec `beforeLevels: true`. La lecture s’arrête à la fin, même si la boucle générale est active. `pause`/`stop`, un déplacement du curseur ou une autre préécoute annulent cette écoute. Les réglages enregistrés du projet restent intacts. `studio_get_state.playback.selection` expose la sélection active, puis revient à `null`.

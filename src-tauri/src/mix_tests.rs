@@ -1529,10 +1529,12 @@ async fn muted_selections_remain_available_as_references_on_every_source_track()
         );
         let data = pcm(&path, "0:a:0").await;
         let expected = if track == "original" { 0.03 } else { 0.1 };
+        // The fixture was upmixed from mono, and pcm() upmixes this mono
+        // reference once more: the combined channel-matrix factor is 0.5.
         assert!(
             data[960..data.len() - 960]
                 .iter()
-                .all(|s| (s / std::f32::consts::FRAC_1_SQRT_2 - expected).abs() < 0.001),
+                .all(|s| (s / 0.5 - expected).abs() < 0.001),
             "{track}"
         );
         // Mix rendering and existing editing-tool semantics still honor the zones.
@@ -1602,7 +1604,7 @@ async fn reference_levels_keep_transfers_and_structural_silence_when_listening_l
             .unwrap();
             let data = pcm(&path, "0:a:0").await;
             assert!(
-                (data[data.len() / 2] / std::f32::consts::FRAC_1_SQRT_2 - expected).abs() < 0.001,
+                (data[data.len() / 2] / 0.5 - expected).abs() < 0.001,
                 "{operation} {track}"
             );
         }
@@ -1646,7 +1648,7 @@ async fn reference_audition_reads_muted_dialogue_without_unmuting_the_exported_m
         48000
     );
     let data = pcm(Path::new(&preview), "0:a:0").await;
-    assert!((data[data.len() / 2] / std::f32::consts::FRAC_1_SQRT_2 - 0.03).abs() < 0.001);
+    assert!((data[data.len() / 2] / 0.5 - 0.03).abs() < 0.001);
     let request = Request {
         root: root.clone(),
         project_id: p.id.clone(),

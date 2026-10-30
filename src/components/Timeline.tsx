@@ -59,6 +59,10 @@ export const Timeline = memo(function Timeline({
   busy,
   onAudioSelection,
   audioSelection,
+  onPlayAudioSelection,
+  onStopAudioSelection,
+  audioSelectionPlaying,
+  audioPlaybackReady,
   onAudioAdvanced,
   onAudioToolbox,
   onContextMenu,
@@ -77,6 +81,10 @@ export const Timeline = memo(function Timeline({
   busy: boolean;
   onAudioSelection: (selection: AudioSelection | null) => void;
   audioSelection: AudioSelection | null;
+  onPlayAudioSelection: (selection: AudioSelection, beforeLevels?: boolean) => void;
+  onStopAudioSelection: () => void;
+  audioSelectionPlaying: boolean;
+  audioPlaybackReady: boolean;
   onAudioAdvanced: () => void;
   onAudioToolbox: (model: string) => void;
   onContextMenu: OpenContextMenu;
@@ -430,6 +438,10 @@ export const Timeline = memo(function Timeline({
           key={`${project.id}:${audioSelection.mediaId}:${audioSelection.trackId}`}
           project={project}
           selection={audioSelection}
+          onPlay={onPlayAudioSelection}
+          onStop={onStopAudioSelection}
+          playing={audioSelectionPlaying}
+          ready={audioPlaybackReady}
           busy={busy}
           onEdit={onEdit}
           onSelection={onAudioSelection}
@@ -609,6 +621,19 @@ export const Timeline = memo(function Timeline({
                       : []),
                     ...(selection
                       ? [
+                          {
+                            label: t('timelineSelectionPlay'),
+                            disabled: !audioPlaybackReady,
+                            run: () => onPlayAudioSelection(selection),
+                          },
+                          {
+                            label: t('timelineSelectionPlaySource'),
+                            disabled: !audioPlaybackReady,
+                            run: () => onPlayAudioSelection(selection, true),
+                          },
+                          ...(audioSelectionPlaying
+                            ? [{ label: t('timelineSelectionStop'), run: onStopAudioSelection }]
+                            : []),
                           ...audioTracks(project)
                             .filter(
                               (target) =>

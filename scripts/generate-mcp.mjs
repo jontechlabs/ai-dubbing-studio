@@ -568,7 +568,7 @@ tool(
 );
 tool(
   'studio_playback',
-  'Control synchronized playback or audition an original/generated reply. Use pause/stop to end playback; seek uses milliseconds.',
+  'Control synchronized playback, original/generated replies or an isolated audio selection. action=selection requires trackId/startMs/endMs and optionally beforeLevels to bypass track and selection volume/mute without saving changes. Selection stops at its end; pause/stop cancels it. Times are milliseconds.',
   {
     action: choice(
       'play',
@@ -578,11 +578,16 @@ tool(
       'line',
       'original',
       'dub',
+      'selection',
       'volume',
       'rate',
       'loop',
     ),
     lineId: string,
+    trackId: { type: 'string', minLength: 1 },
+    startMs: integer,
+    endMs: { type: 'integer', minimum: 1 },
+    beforeLevels: bool,
     timeMs: integer,
     value: { type: 'number' },
     enabled: bool,

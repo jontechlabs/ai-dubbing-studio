@@ -110,6 +110,23 @@ try {
     await call('studio_playback',{action:'volume',value:.8});
     proofs.audioLevelMetering={stereo:true,beforeListeningVolume:true,reset:true};
     assert((await state()).playback.timeMs>2150);proofs.playback=true;
+    const selectionBefore=await call('studio_get_project');
+    await call('studio_playback',{action:'loop',enabled:true});
+    await call('studio_playback',{action:'selection',trackId:'original',startMs:2000,endMs:2800,beforeLevels:true});
+    const selectionDeadline=Date.now()+15000;
+    let selectionPlayed=false,selectionState;
+    while(true){
+        selectionState=(await state()).playback;
+        if(selectionState.playing&&selectionState.selection?.selection.trackId==='original')selectionPlayed=true;
+        if(selectionPlayed&&!selectionState.selection)break;
+        if(Date.now()>selectionDeadline)throw Error('Packaged selection audition did not play and stop at its end');
+        await new Promise(resolve=>setTimeout(resolve,50));
+    }
+    assert.equal(selectionState.playing,false);assert.equal(selectionState.loop,true);assert(Math.abs(selectionState.timeMs-2800)<120);
+    await call('studio_playback',{action:'loop',enabled:false});
+    const selectionAfter=await call('studio_get_project');
+    for(const key of ['tracks','generations','sourceCues','targetCues'])assert.deepEqual(selectionAfter[key],selectionBefore[key]);
+    proofs.audioSelectionAudition={isolatedTrack:'original',beforeLevels:true,stoppedAtEnd:true,projectAudioUnchanged:true,loopPreferencePreserved:true};
     // Actual CPU contour processing in the packaged app, with synthetic voiced
     // inputs; no TTS quality or Japanese-to-French prosody benchmark claim.
     const monoVoice=(rising=false)=>{

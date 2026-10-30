@@ -4674,7 +4674,7 @@
     },
     {
       "name": "studio_playback",
-      "description": "Control synchronized playback or audition an original/generated reply. Use pause/stop to end playback; seek uses milliseconds.",
+      "description": "Control synchronized playback, original/generated replies or an isolated audio selection. action=selection requires trackId/startMs/endMs and optionally beforeLevels to bypass track and selection volume/mute without saving changes. Selection stops at its end; pause/stop cancels it. Times are milliseconds.",
       "inputSchema": {
         "type": "object",
         "properties": {
@@ -4688,12 +4688,17 @@
               "line",
               "original",
               "dub",
+              "selection",
               "volume",
               "rate",
               "loop"
             ]
           },
           "lineId": { "type": "string" },
+          "trackId": { "type": "string", "minLength": 1 },
+          "startMs": { "type": "integer", "minimum": 0 },
+          "endMs": { "type": "integer", "minimum": 1 },
+          "beforeLevels": { "type": "boolean" },
           "timeMs": { "type": "integer", "minimum": 0 },
           "value": { "type": "number" },
           "enabled": { "type": "boolean" }
