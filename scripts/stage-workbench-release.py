@@ -22,9 +22,18 @@ def run_log(run_id):
  # Authenticate the completed job itself and read its complete raw log.
  jobs=api(f'actions/runs/{run_id}/jobs?per_page=100')['jobs']
  assert jobs and all(j['status']=='completed' for j in jobs)
- return '\n'.join(gh('api',f'repos/{SLUG}/actions/jobs/{j["id"]}/logs') for j in jobs)
+ return '\n'.join(job_log(j['id']) for j in jobs)
 class NoRedirect(urllib.request.HTTPRedirectHandler):
  def redirect_request(self,*args,**kwargs):return None
+def job_log(job_id):
+ request=urllib.request.Request(f'https://api.github.com/repos/{SLUG}/actions/jobs/{job_id}/logs',headers=HEADERS)
+ try:response=urllib.request.build_opener(NoRedirect).open(request,timeout=60)
+ except urllib.error.HTTPError as error:
+  if error.code!=302:raise RuntimeError('Raw job log HTTP '+str(error.code)) from None
+  response=urllib.request.urlopen(urllib.request.Request(error.headers['Location'],headers={'User-Agent':'Studio-CI-proof'}),timeout=60)
+ with response:body=response.read(32*1024**2+1)
+ assert len(body)<=32*1024**2
+ return body.decode('utf-8-sig',errors='replace')
 def download_artifact(run_id,name,folder):
  artifact=next(a for a in api(f'actions/runs/{run_id}/artifacts')['artifacts'] if a['name']==name)
  archive=WORK/(str(artifact['id'])+'.zip')

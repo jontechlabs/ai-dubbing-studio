@@ -5,7 +5,7 @@ Windows executable is rebuilt or separately authenticated as byte-identical,
 then actual ASR and packaged SDK tests run again.
 """
 from pathlib import Path
-import json,os,re,subprocess,sys
+import json,os,re,subprocess,sys,urllib.error,urllib.request
 ROOT=Path(__file__).resolve().parents[1]
 run_id=sys.argv[1];assert run_id.isdigit()
 def command(*args):return subprocess.check_output(args,cwd=ROOT,text=True,encoding='utf-8',errors='replace').strip()
@@ -19,7 +19,18 @@ head=command('git','rev-parse','HEAD');old=run['head_sha'];subprocess.run(['git'
 protected=['src','src-tauri/tauri.conf.json','package.json','pnpm-lock.yaml','public','resources','scripts/generate-mcp.mjs','vite.config.ts','tsconfig.json','eslint.config.js','playwright.config.ts','tests/e2e']
 changed=command('git','diff','--name-only',old,head,'--',*protected);assert not changed,changed
 assert jobs['jobs'] and all(j['status']=='completed' for j in jobs['jobs'])
-log='\n'.join(command('gh','api',f'repos/jontechlabs/ai-dubbing-studio/actions/jobs/{j["id"]}/logs') for j in jobs['jobs'])
+class NoRedirect(urllib.request.HTTPRedirectHandler):
+ def redirect_request(self,*args,**kwargs):return None
+def job_log(job_id):
+ request=urllib.request.Request(f'https://api.github.com/repos/jontechlabs/ai-dubbing-studio/actions/jobs/{job_id}/logs',headers={'Authorization':'Bearer '+os.environ['GH_TOKEN'],'User-Agent':'Studio-CI-proof'})
+ try:response=urllib.request.build_opener(NoRedirect).open(request,timeout=60)
+ except urllib.error.HTTPError as error:
+  if error.code!=302:raise RuntimeError('Raw job log HTTP '+str(error.code)) from None
+  response=urllib.request.urlopen(urllib.request.Request(error.headers['Location'],headers={'User-Agent':'Studio-CI-proof'}),timeout=60)
+ with response:body=response.read(32*1024**2+1)
+ assert len(body)<=32*1024**2
+ return body.decode('utf-8-sig',errors='replace')
+log='\n'.join(job_log(j['id']) for j in jobs['jobs'])
 log=re.sub(r'(?:\x1b|\^\[)\[[0-9;:]*[A-Za-z]','',log)
 assert re.search(r'\b207 passed\b',log),'207 Chrome checks required'
 assert re.search(r'Tests\s+198 passed',log),'198 TypeScript checks required'
