@@ -145,10 +145,23 @@ pub struct State<'a> {
     pub children: HashMap<&'a str, &'a Group>,
     active_parents: HashSet<&'a str>,
     excluded: HashSet<&'a str>,
-    source: Option<&'a str>,
+    current_groups: HashSet<&'a str>,
 }
 impl<'a> State<'a> {
     pub fn new(p: &'a Project) -> Self {
+        let lines: HashMap<_, _> = p.dialogues.iter().map(|l| (l.id.as_str(), l)).collect();
+        let current_groups: HashSet<_> = p
+            .speaker_dubbings
+            .iter()
+            .filter(|g| {
+                g.active
+                    && p.media.as_ref().is_some_and(|m| m.path == g.source_path)
+                    && lines
+                        .get(g.parent_id.as_str())
+                        .is_some_and(|l| l.start_ms == g.start_ms && l.end_ms == g.end_ms)
+            })
+            .map(|g| g.id.as_str())
+            .collect();
         Self {
             children: p
                 .speaker_dubbings
@@ -158,7 +171,7 @@ impl<'a> State<'a> {
             active_parents: p
                 .speaker_dubbings
                 .iter()
-                .filter(|g| g.active && p.media.as_ref().is_some_and(|m| m.path == g.source_path))
+                .filter(|g| current_groups.contains(g.id.as_str()))
                 .map(|g| g.parent_id.as_str())
                 .collect(),
             excluded: p
@@ -167,15 +180,14 @@ impl<'a> State<'a> {
                 .filter(|l| l.excluded_from_dubbing == Some(true))
                 .map(|l| l.id.as_str())
                 .collect(),
-            source: p.media.as_ref().map(|m| m.path.as_str()),
+            current_groups,
         }
     }
     pub fn enabled(&self, id: &str) -> bool {
         !self.excluded.contains(id)
             && !self.active_parents.contains(id)
             && self.children.get(id).is_none_or(|g| {
-                g.active
-                    && self.source == Some(g.source_path.as_str())
+                self.current_groups.contains(g.id.as_str())
                     && !self.excluded.contains(g.parent_id.as_str())
             })
     }
@@ -205,6 +217,10 @@ pub async fn snippet<R: tauri::Runtime>(
         }
         crate::project::asset(root, &v.audio_path)?;
         let mut temporary = p.clone();
+        temporary.tracks.retain(|t| t.id != "isolated-source");
+        temporary
+            .generations
+            .retain(|g| g["kind"] != "audioPatch" || g["trackId"] != "isolated-source");
         let track = crate::domain::Track {
             id: "isolated-source".into(),
             name: None,

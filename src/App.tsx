@@ -5,6 +5,8 @@ import { MicrophoneIndicator } from './components/VoiceCapture';
 import { JobDuration } from './components/JobDuration';
 import { JobNotifications } from './components/JobNotifications';
 import { readMicrophone } from './services/microphone';
+import { dubbingClips } from './domain/mix';
+import { speakerDubbingState } from './domain/speakerDubbing';
 import { Dialogues } from './components/Dialogues';
 import { DialogueManageModal, type DialogueAction } from './components/DialogueManageModal';
 import {
@@ -217,13 +219,24 @@ export default function App() {
     const group = studio.project?.speakerDubbings?.find(
       (g) => g.parentId === line.id && g.active && g.sourcePath === studio.project?.media?.path,
     );
-    if (group && studio.project?.media) {
+    if (
+      group &&
+      studio.project?.media &&
+      speakerDubbingState(studio.project).parents.has(line.id)
+    ) {
+      const clips = dubbingClips(studio.project).filter(
+        (clip) => clip.groupKey === group.id && clip.slotMs > 0,
+      );
+      if (!clips.length) {
+        openDub(line);
+        return;
+      }
       stopGeneration();
       auditionAudioSelection({
         mediaId: studio.project.media.id,
         trackId: 'dubbing',
-        startMs: group.startMs,
-        endMs: group.endMs,
+        startMs: Math.min(...clips.map((clip) => clip.startMs)),
+        endMs: Math.max(...clips.map((clip) => clip.endMs)),
       });
       return;
     }

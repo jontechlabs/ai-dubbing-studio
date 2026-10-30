@@ -19,7 +19,7 @@ import {
   Trash2,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { isolatedVoice } from '../domain/speakerDubbing';
+import { isolatedVoice, speakerDubbingState } from '../domain/speakerDubbing';
 import { dialogueText } from '../domain/subtitles';
 import { formatTime } from '../domain/time';
 import type { Dialogue, Project } from '../domain/types';
@@ -478,6 +478,20 @@ function DialogueCard({
   const { t } = useTranslation();
   const translation = translationState(project, line);
   const generation = selectedGeneration(project, line);
+  const groupHasTake =
+    speakerDubbingState(project).parents.has(line.id) &&
+    project.speakerDubbings?.some(
+      (g) =>
+        g.active &&
+        g.parentId === line.id &&
+        g.sourcePath === project.media?.path &&
+        g.voices.some(
+          (v) =>
+            project.dialogues.find((l) => l.id === v.lineId)?.selectedGenerationIds[
+              project.languages.target
+            ],
+        ),
+    );
   const stale = !!generation && staleGeneration(project, line, generation);
   return (
     <article
@@ -579,8 +593,8 @@ function DialogueCard({
       </div>
       <div className="cue-text target-text">
         <button
-          disabled={!generation}
-          title={t(generation ? 'ttsListenDub' : 'noDub')}
+          disabled={!generation && !groupHasTake}
+          title={t(generation || groupHasTake ? 'ttsListenDub' : 'noDub')}
           aria-label={t('translated')}
           onClick={(event) => {
             event.stopPropagation();

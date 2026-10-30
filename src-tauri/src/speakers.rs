@@ -398,13 +398,7 @@ pub async fn reference<R: tauri::Runtime>(
                 input,
                 line.start_ms,
                 (line.end_ms - line.start_ms).min(20000),
-                s.project
-                    .source_cues
-                    .iter()
-                    .filter(|cue| line.source_cue_ids.contains(&cue.id))
-                    .map(|cue| cue.text.as_str())
-                    .collect::<Vec<_>>()
-                    .join("\n"),
+                crate::speaker_dubbing::text(&s.project, line, true),
                 Some(s.project.clone()),
             )
         } else {
@@ -446,12 +440,13 @@ pub async fn reference<R: tauri::Runtime>(
         let flag = std::sync::atomic::AtomicBool::new(false);
         let result = tokio::time::timeout(
             Duration::from_secs(60),
-            crate::audio_patch::snippet(
+            crate::speaker_dubbing::snippet(
                 &core,
                 &app,
                 "",
                 &p,
                 &root,
+                line_id.as_deref().ok_or("NO_DIALOGUES")?,
                 crate::audio_patch::Snippet {
                     track_id: input.to_str().ok_or("INVALID_AUDIO_TRANSFER")?,
                     start_ms: start,

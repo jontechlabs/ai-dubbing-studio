@@ -19,12 +19,12 @@ protected=['src','src-tauri/tauri.conf.json','package.json','pnpm-lock.yaml','pu
 changed=command('git','diff','--name-only',old,head,'--',*protected);assert not changed,changed
 log=command('gh','run','view',run_id,'--log')
 log=re.sub(r'(?:\x1b|\^\[)\[[0-9;:]*[A-Za-z]','',log)
-assert re.search(r'\b204 passed\b',log),'204 Chrome checks required'
-assert re.search(r'Tests\s+191 passed',log),'191 TypeScript checks required'
+assert re.search(r'\b207 passed\b',log),'207 Chrome checks required'
+assert re.search(r'Tests\s+198 passed',log),'198 TypeScript checks required'
 native_unchanged=not command('git','diff','--name-only',old,head,'--','src-tauri','docs/MCP.md','resources')
 reuse_native=run['conclusion']=='success' and native_unchanged and any(s['name']=='Native tests with real FFmpeg, lints and formatting' and s['conclusion']=='success' for s in steps)
-if reuse_native:assert re.search(r'test result: ok\. 186 passed; 0 failed; 2 ignored',log)
-proof=dict(runId=run_id,runConclusion=run['conclusion'],frontendStepPassed=True,verifiedHead=old,head=head,native=186 if reuse_native else 0,chrome=204,typescript=191,protectedInputs=protected,sourceIdentical=True,freshChecks='Native tests/lints unless identical successful proof; rebuild, Python, shared schemas, Japanese ASR, packaged MCP SDK; separate full-weight audio toolbox workflow')
+if reuse_native:assert re.search(r'test result: ok\. 189 passed; 0 failed; 2 ignored',log)
+proof=dict(runId=run_id,runConclusion=run['conclusion'],frontendStepPassed=True,verifiedHead=old,head=head,native=189 if reuse_native else 0,chrome=207,typescript=198,protectedInputs=protected,sourceIdentical=True,freshChecks='Native tests/lints unless identical successful proof; rebuild, Python, shared schemas, Japanese ASR, packaged MCP SDK; separate full-weight audio toolbox workflow')
 out=ROOT/'artifacts';out.mkdir(exist_ok=True);(out/'reused-ui-native-validation.json').write_text(json.dumps(proof,indent=2)+'\n')
 with open(os.environ['GITHUB_ENV'],'a',encoding='utf-8') as f:
  f.write('STUDIO_REUSED_CHROME=1\n')

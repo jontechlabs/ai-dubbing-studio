@@ -500,11 +500,8 @@ pub(crate) fn validate_input(p: &Project, line_id: &str, options: &Options) -> R
     {
         return Err("DIALOGUE_EXCLUDED".into());
     }
-    if p.speaker_dubbings.iter().any(|g| {
-        g.parent_id == line_id
-            && g.active
-            && p.media.as_ref().is_some_and(|m| m.path == g.source_path)
-    }) {
+    let groups = crate::speaker_dubbing::State::new(p);
+    if !groups.children.contains_key(line_id) && !groups.enabled(line_id) {
         return Err("SPEAKER_DUBBING_PARENT_ACTIVE".into());
     }
     crate::voice_accent::validate(options, Some(&p.languages.target))?;

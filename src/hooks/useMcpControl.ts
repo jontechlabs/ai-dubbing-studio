@@ -14,6 +14,7 @@ import { dialogueText } from '../domain/subtitles';
 import { translationState } from '../domain/translation';
 import { validateProject } from '../domain/project';
 import { dubbingClips } from '../domain/mix';
+import { speakerDubbingState } from '../domain/speakerDubbing';
 import { APP_VERSION } from '../domain/project';
 import {
   readMicrophone,
@@ -245,13 +246,31 @@ export function useMcpControl(control: Control) {
             if (action === 'line') transport.playLine(line);
             else if (action === 'original') transport.playOriginalLine(line);
             else {
-              const take = project.generations.find(
-                (take) =>
-                  take.id === line.selectedGenerationIds[project.languages.target] &&
-                  take.kind === 'tts',
-              );
-              if (!take) throw Error('TTS_AUDIO_MISSING');
-              c.playGeneration(take as Generation);
+              const group = speakerDubbingState(project).parents.has(line.id)
+                ? project.speakerDubbings?.find((g) => g.parentId === line.id && g.active)
+                : undefined;
+              const clips = group
+                ? dubbingClips(project).filter(
+                    (clip) => clip.groupKey === group.id && clip.slotMs > 0,
+                  )
+                : [];
+              if (group && !clips.length) throw Error('TTS_AUDIO_MISSING');
+              if (group && clips.length && project.media) {
+                c.playAudioSelection({
+                  mediaId: project.media.id,
+                  trackId: 'dubbing',
+                  startMs: Math.min(...clips.map((clip) => clip.startMs)),
+                  endMs: Math.max(...clips.map((clip) => clip.endMs)),
+                });
+              } else {
+                const take = project.generations.find(
+                  (take) =>
+                    take.id === line.selectedGenerationIds[project.languages.target] &&
+                    take.kind === 'tts',
+                );
+                if (!take) throw Error('TTS_AUDIO_MISSING');
+                c.playGeneration(take as Generation);
+              }
             }
           } else if (action === 'seek') {
             if (

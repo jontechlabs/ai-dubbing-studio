@@ -66,25 +66,40 @@ export function speakerDubbingState(project: Project) {
     { group: SpeakerDubbingGroup; voice: IsolatedVoice; lane: number }
   >();
   const parents = new Set<string>();
+  const lines = new Map(project.dialogues.map((l) => [l.id, l]));
+  const currentGroups = new Set<string>();
   const excluded = new Set(project.dialogues.filter((l) => l.excludedFromDubbing).map((l) => l.id));
   for (const group of project.speakerDubbings ?? []) {
-    if (group.active && group.sourcePath === project.media?.path) parents.add(group.parentId);
+    const parent = lines.get(group.parentId);
+    if (
+      group.active &&
+      group.sourcePath === project.media?.path &&
+      parent?.startMs === group.startMs &&
+      parent.endMs === group.endMs
+    ) {
+      parents.add(group.parentId);
+      currentGroups.add(group.id);
+    }
     group.voices.forEach((voice, lane) => child.set(voice.lineId, { group, voice, lane }));
   }
   const enabled = (lineId: string) => {
     if (excluded.has(lineId) || parents.has(lineId)) return false;
     const item = child.get(lineId);
-    return (
-      !item ||
-      (item.group.active &&
-        item.group.sourcePath === project.media?.path &&
-        !excluded.has(item.group.parentId))
-    );
+    return !item || (currentGroups.has(item.group.id) && !excluded.has(item.group.parentId));
   };
   return { child, parents, enabled, key: (id: string) => child.get(id)?.group.id ?? id };
 }
 export function setSpeakerDubbingGroup(project: Project, parentId: string, groupId: string | null) {
   const next = structuredClone(project);
+  const chosen = next.speakerDubbings?.find((g) => g.id === groupId);
+  const parent = next.dialogues.find((l) => l.id === parentId);
+  if (
+    chosen &&
+    (chosen.sourcePath !== next.media?.path ||
+      chosen.startMs !== parent?.startMs ||
+      chosen.endMs !== parent?.endMs)
+  )
+    throw Error('STALE_REVISION');
   if (groupId && !next.speakerDubbings?.some((g) => g.id === groupId && g.parentId === parentId))
     throw Error('SPEAKER_SEPARATION_OPTIONS');
   for (const g of next.speakerDubbings ?? [])

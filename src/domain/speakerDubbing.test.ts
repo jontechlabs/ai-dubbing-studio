@@ -174,6 +174,12 @@ it('keeps unrelated duplicate starts conflicting and deactivates saved children 
   p.media!.path = 'media/another.mkv';
   expect(speakerDubbingState(p).enabled('child-1')).toBe(false);
   p.media!.path = p.speakerDubbings![0].sourcePath;
+  const retimed = structuredClone(p);
+  retimed.dialogues[0].startMs += 100;
+  expect(speakerDubbingState(retimed).enabled('child-1')).toBe(false);
+  expect(() => setSpeakerDubbingGroup(retimed, retimed.dialogues[0].id, 'group')).toThrow(
+    'STALE_REVISION',
+  );
   const unrelated = { ...structuredClone(p.dialogues.at(-1)!), id: 'unrelated' };
   p.dialogues.push(unrelated);
   const g = structuredClone(p.generations.at(-1)!);
