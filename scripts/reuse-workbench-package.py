@@ -5,7 +5,7 @@ Actions ZIP digest, every release-file checksum and the updater signature. No
 prior SDK failure is reused: models, ASR and the actual packaged SDK run freshly.
 """
 from pathlib import Path
-import hashlib,importlib.util,json,subprocess,sys
+import importlib.util,json,os,subprocess,sys,zipfile
 ROOT=Path(__file__).resolve().parents[1]
 spec=importlib.util.spec_from_file_location('stage_evidence',ROOT/'scripts/stage-workbench-release.py')
 e=importlib.util.module_from_spec(spec);spec.loader.exec_module(e)
@@ -37,6 +37,16 @@ assert all(e.sha(out/name)==digest for name,digest in sums.items())
 setup=out/f'AI-Dubbing-Studio-{version}-Setup.exe'
 assert e.version_of(setup)==(0,33,0,0)
 subprocess.run(['cargo','run','--quiet','--locked','--manifest-path','scripts/verify-update-signature/Cargo.toml','--','src-tauri/tauri.conf.json',str(setup),str(setup)+'.sig'],cwd=ROOT,check=True)
+asr=ROOT/'.cache/reused-asr'
+asr.mkdir(exist_ok=True)
+with zipfile.ZipFile(out/'AI-Dubbing-Studio-Windows-Portable.zip') as archive:
+ e.no_private_entries(archive)
+ assert archive.testzip() is None
+ assert all((asr/name).resolve().is_relative_to(asr.resolve()) for name in archive.namelist())
+ archive.extractall(asr)
+executable=asr/'AI-Dubbing-Studio-Windows/AI Dubbing Studio.exe'
+assert executable.is_file() and e.version_of(executable)==(0,33,0,0)
+with open(os.environ['GITHUB_ENV'],'a',encoding='utf-8') as stream:stream.write('STUDIO_REUSED_EXECUTABLE='+str(executable)+'\n')
 proof=dict(runId=run_id,verifiedHead=old,head=head,artifactId=artifact['id'],artifactSha256=artifact['digest'],protectedInputs=protected,sourceIdentical=True,buildStepPassed=True,packageStepPassed=True,signatureVerified=True,assets={name:e.sha(out/name) for name in names})
 (out/'reused-package-validation.json').write_text(json.dumps(proof,indent=2)+'\n',encoding='utf-8')
 print('Authenticated signed package reused; actual packaged SDK must pass freshly.',run_id,old,flush=True)
