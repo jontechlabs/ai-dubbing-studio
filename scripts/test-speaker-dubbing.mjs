@@ -47,7 +47,7 @@ export async function verifySpeakerDubbing({call,context,job,args,projectRoot:pr
  await call('studio_playback',{action:'dub',lineId:line.id});let played=false;const playUntil=Date.now()+15000;
  while(Date.now()<playUntil){const s=(await call('studio_get_state')).playback;if(s.playing&&s.selection?.selection.trackId==='dubbing'){played=true;break;}await new Promise(r=>setTimeout(r,50));}
  assert(played,'Parent did not audition the active child mix');await call('studio_playback',{action:'pause'});
- const output=path.join(projectRoot,'exports','overlapping-voices.mkv');await job(await call('studio_export_mkv',{context:await context(),output,options:{includeOriginal:false,sourceSubtitles:true,targetSubtitles:true,codec:'flac',allowIncomplete:true}}));assert((await fs.stat(output)).size>1000);
+ const output=path.join(projectRoot,'exports','overlapping-voices.mkv');await job(await call('studio_export_mkv',{context:await context(),path:output,options:{includeOriginal:false,sourceSubtitles:true,targetSubtitles:true,codec:'flac',allowIncomplete:true}}));assert((await fs.stat(output)).size>1000);
  const pcm=execFileSync(path.join(path.dirname(args.exe),'binaries','ffmpeg.exe'),['-v','error','-i',output,'-ss','2.1','-t','.2','-map','0:a:0','-ac','1','-ar','24000','-f','f32le','pipe:1']);let peak=0;
  for(let offset=0;offset+4<=pcm.length;offset+=4)peak=Math.max(peak,Math.abs(pcm.readFloatLE(offset)));
  assert(peak>.05,'Exported child mix must be audible');

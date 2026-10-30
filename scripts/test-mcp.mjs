@@ -3,6 +3,7 @@
 // TTS takes in the protocol fixtures are synthetic. No GPU qualification.
 import {Client} from '@modelcontextprotocol/sdk/client/index.js';
 import {StdioClientTransport} from '@modelcontextprotocol/sdk/client/stdio.js';
+import {AjvJsonSchemaValidator} from '@modelcontextprotocol/sdk/validation/ajv';
 import fs from 'node:fs/promises';
 import {createHash,randomUUID} from 'node:crypto';
 import path from 'node:path';
@@ -20,7 +21,12 @@ const client=new Client({name:'studio-native-validation',version:'1.0.0'},{capab
 const transport=new StdioClientTransport({command:args.exe,args:['--mcp','--endpoint',args.endpoint],stderr:'pipe'});
 let stderr='';transport.stderr?.on('data',bytes=>{stderr+=bytes.toString();});
 const proofs={};
+const protocolCatalog=JSON.parse(await fs.readFile(new URL('../src/mcp/catalog.json',import.meta.url),'utf8'));
+const schemaProvider=new AjvJsonSchemaValidator();
+const toolValidators=new Map([...protocolCatalog.commands,...protocolCatalog.builtins].map(t=>[t.name,schemaProvider.getValidator(t.inputSchema)]));
 const call=async(name,arguments_={})=>{
+    const validate=toolValidators.get(name);assert(validate,'Unknown fixture tool: '+name);
+    const checked=validate(arguments_);assert(checked.valid,name+': '+checked.errorMessage);
     const response=await client.callTool({name,arguments:arguments_});
     if(response.isError)throw Error(response.content.map(item=>item.text??'').join('\n'));
     return response.structuredContent.value;
