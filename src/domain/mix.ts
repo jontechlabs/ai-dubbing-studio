@@ -1,6 +1,7 @@
 import { editDuration } from './voiceEdit';
 import { MAX_VOICE_DURATION_MS, freeVoiceStart } from './voiceLimits';
 import type { Project } from './types';
+import { speakerDubbingState } from './speakerDubbing';
 import { voiceGenerations, staleGeneration, spokenText } from './tts';
 export function dubbingOffset(project: Project, lineId: string) {
   return project.dubbingTiming?.sourcePath === project.media?.path
@@ -31,7 +32,8 @@ export function dubbingBounds(project: Project, lineId: string) {
       0,
       Math.min(project.media.durationMs - 1, line.startMs + dubbingOffset(project, lineId)),
     );
-  const others = clips.filter((c) => c.line.id !== lineId);
+  const family = speakerDubbingState(project);
+  const others = clips.filter((c) => family.key(c.line.id) !== family.key(lineId));
   const next = others.reduce(
     (end, c) => (c.startMs >= startMs ? Math.min(end, c.startMs) : end),
     project.media.durationMs,
@@ -118,12 +120,13 @@ function placeDubbing(
           )),
   );
   if (wanted < dubbingBounds(project, lineId).min) throw Error('VOICE_EDIT_NO_ROOM');
+  const family = speakerDubbingState(project);
   const start = freeVoiceStart(
     line.startMs + offsetMs,
     wanted,
     project.media.durationMs,
     clips
-      .filter((c) => c.line.id !== lineId)
+      .filter((c) => family.key(c.line.id) !== family.key(lineId))
       .map((c) => ({
         startMs: c.startMs,
         endMs:
@@ -193,12 +196,13 @@ export function recoverDubbing(project: Project, lineId: string): Project {
   }
 }
 export function dubbingClips(project: Project) {
+  const family = speakerDubbingState(project);
   const generations = new Map(voiceGenerations(project).map((g) => [g.id, g]));
   return project.dialogues
     .flatMap((line) => {
       const generation = generations.get(line.selectedGenerationIds[project.languages.target]);
       if (
-        line.excludedFromDubbing ||
+        !family.enabled(line.id) ||
         !generation ||
         generation.dialogueId !== line.id ||
         generation.language !== project.languages.target ||
@@ -216,6 +220,8 @@ export function dubbingClips(project: Project) {
       return [
         {
           line,
+          lane: family.child.get(line.id)?.lane ?? 0,
+          groupKey: family.key(line.id),
           generation,
           startMs,
           exactDuration: durationMs !== undefined,
@@ -229,8 +235,11 @@ export function dubbingClips(project: Project) {
     })
     .sort((a, b) => a.startMs - b.startMs)
     .map((clip, index, clips) => {
-      const next = clips[index + 1];
-      const duplicate = clips[index - 1]?.startMs === clip.startMs;
+      let following = index + 1;
+      while (following < clips.length && clips[following].groupKey === clip.groupKey) following++;
+      const next = clips[following];
+      const duplicate =
+        clips[index - 1]?.startMs === clip.startMs && clips[index - 1]?.groupKey !== clip.groupKey;
       const slotMs = duplicate
         ? 0
         : Math.max(
@@ -260,10 +269,11 @@ export function dubbingClips(project: Project) {
     });
 }
 export function mixReport(project: Project) {
+  const family = speakerDubbingState(project);
   const clips = dubbingClips(project);
   const selected = new Set(clips.map((c) => c.line.id));
   const missing = project.dialogues.filter(
-    (line) => spokenText(project, line) && !selected.has(line.id),
+    (line) => family.enabled(line.id) && spokenText(project, line) && !selected.has(line.id),
   ).length;
   return {
     clips,

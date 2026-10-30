@@ -111,7 +111,13 @@ export function selectGeneration(project: Project, id: string): Project {
   if (!generation) throw Error('INVALID_GENERATION');
   const line = next.dialogues.find((line) => line.id === generation.dialogueId);
   if (!line || generation.language !== next.languages.target) throw Error('INVALID_GENERATION');
-  if (line.selectedGenerationIds[generation.language] === id) return project;
+  for (const group of next.speakerDubbings ?? [])
+    if (group.parentId === line.id) group.active = false;
+  if (
+    line.selectedGenerationIds[generation.language] === id &&
+    !project.speakerDubbings?.some((g) => g.parentId === line.id && g.active)
+  )
+    return project;
   line.selectedGenerationIds[generation.language] = id;
   line.status =
     staleGeneration(next, line, generation) || generation.durationMs > line.endMs - line.startMs

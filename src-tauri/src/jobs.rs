@@ -88,6 +88,10 @@ pub struct ImportRequest {
 #[derive(Clone, Serialize, Deserialize)]
 pub struct PersistedJob {
     #[serde(default)]
+    pub speaker_separation_request: Option<crate::speaker_separation::Request>,
+    #[serde(default)]
+    pub speaker_separation_install: Option<String>,
+    #[serde(default)]
     pub toolbox_request: Option<crate::audio_toolbox::Request>,
     #[serde(default)]
     pub toolbox_install: Option<String>,
@@ -267,6 +271,8 @@ pub fn create<R: tauri::Runtime>(
                     mix_request: None,
                     transcription: None,
                     source_transcription: None,
+                    speaker_separation_request: None,
+                    speaker_separation_install: None,
                     toolbox_request: None,
                     toolbox_install: None,
                     dubbing_pipeline: None,

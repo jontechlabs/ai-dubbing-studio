@@ -387,12 +387,13 @@ pub(crate) async fn execute<R: tauri::Runtime>(
         let track =
             crate::audio_patch::source_track(&p, request.options.reference_track_id.as_deref())?;
         let target = temporary.path().join("reference.wav");
-        crate::audio_patch::snippet(
+        crate::speaker_dubbing::snippet(
             core,
             app,
             key,
             &p,
             &request.root,
+            &l.id,
             crate::audio_patch::Snippet {
                 track_id: &track.id,
                 start_ms: l.start_ms,

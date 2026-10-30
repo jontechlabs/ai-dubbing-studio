@@ -1,5 +1,6 @@
 import type { Cue, Dialogue, Project } from './types';
 import { dialogueText } from './subtitles';
+import { isolatedVoice } from './speakerDubbing';
 
 export type SubtitleRole = 'source' | 'target';
 export type TimingRole = SubtitleRole | 'both';
@@ -107,6 +108,8 @@ function splitText(text: string, fraction: number): [string, string] {
   return [parts.slice(0, index).join('').trim(), parts.slice(index).join('').trim()];
 }
 export function splitDialogue(project: Project, id: string, atMs: number): Project {
+  if (isolatedVoice(project, id) || project.speakerDubbings?.some((g) => g.parentId === id))
+    throw Error('SPEAKER_DUBBING_GROUP_EDIT');
   atMs = Math.round(atMs);
   if (!Number.isSafeInteger(atMs)) throw new Error('INVALID_SPLIT');
   const next = structuredClone(project);
@@ -156,12 +159,19 @@ export function splitDialogue(project: Project, id: string, atMs: number): Proje
   return next;
 }
 export function mergeDialogue(project: Project, id: string): Project {
+  if (isolatedVoice(project, id) || project.speakerDubbings?.some((g) => g.parentId === id))
+    throw Error('SPEAKER_DUBBING_GROUP_EDIT');
   const next = structuredClone(project);
   const ordered = [...next.dialogues].sort((a, b) => a.startMs - b.startMs);
   const index = ordered.findIndex((d) => d.id === id);
   const first = ordered[index],
     second = ordered[index + 1];
   if (!first || !second) throw new Error('NO_NEXT_DIALOGUE');
+  if (
+    isolatedVoice(project, second.id) ||
+    project.speakerDubbings?.some((g) => g.parentId === second.id)
+  )
+    throw Error('SPEAKER_DUBBING_GROUP_EDIT');
   const merged: Dialogue = {
     ...first,
     excludedFromDubbing: first.excludedFromDubbing || second.excludedFromDubbing || undefined,

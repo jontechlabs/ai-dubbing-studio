@@ -328,12 +328,13 @@ pub async fn prepare<R: tauri::Runtime>(
             }
             let track = crate::audio_patch::source_track(&p, seg.track_id.as_deref())?;
             let output = temp.path().join(format!("part-{i}.wav"));
-            crate::audio_patch::snippet(
+            crate::speaker_dubbing::snippet(
                 &core,
                 &app,
                 "",
                 &p,
                 &root,
+                &line.id,
                 crate::audio_patch::Snippet {
                     track_id: &track.id,
                     start_ms: seg.start_ms,

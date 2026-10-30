@@ -684,12 +684,13 @@ pub async fn preview_sample<R: tauri::Runtime>(
     let folder = project::ensure_directory(&root, "cache")?;
     let output = folder.join(format!("character-preview-{}.wav", crate::domain::id()));
     let flag = std::sync::atomic::AtomicBool::new(false);
-    crate::audio_patch::snippet(
+    crate::speaker_dubbing::snippet(
         &core,
         &app,
         "",
         &p,
         &root,
+        &line.id,
         crate::audio_patch::Snippet {
             track_id: &track.id,
             start_ms: line.start_ms,

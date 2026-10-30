@@ -341,6 +341,220 @@
       "annotations": { "readOnlyHint": false, "destructiveHint": true, "openWorldHint": false }
     },
     {
+      "name": "studio_speaker_separation_status",
+      "command": "speaker_separation_status",
+      "description": "speaker separation status. Uses the current desktop session. Local file paths must be absolute; long operations return job IDs. Existing native validation applies.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "annotations": { "readOnlyHint": true, "destructiveHint": false, "openWorldHint": false }
+    },
+    {
+      "name": "studio_install_speaker_separation_model",
+      "command": "install_speaker_separation_model",
+      "description": "install speaker separation model. Uses the current desktop session. Local file paths must be absolute; long operations return job IDs. Existing native validation applies.",
+      "inputSchema": {
+        "type": "object",
+        "properties": { "modelId": { "type": "string" } },
+        "required": ["modelId"],
+        "additionalProperties": false
+      },
+      "annotations": { "readOnlyHint": false, "destructiveHint": true, "openWorldHint": false }
+    },
+    {
+      "name": "studio_separate_dialogue_speakers",
+      "command": "separate_dialogue_speakers",
+      "description": "separate dialogue speakers. Uses the current desktop session. Local file paths must be absolute; long operations return job IDs. Existing native validation applies.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "options": { "$ref": "#/$defs/options_SpeakerSeparationOptions_0" },
+          "context": {
+            "type": "object",
+            "properties": {
+              "projectId": { "type": "string" },
+              "expectedRevision": { "type": "integer", "minimum": 0 }
+            },
+            "required": ["projectId", "expectedRevision"],
+            "additionalProperties": false
+          }
+        },
+        "required": ["options", "context"],
+        "additionalProperties": false,
+        "$defs": {
+          "options_SpeakerSeparationOptions_0": {
+            "type": "object",
+            "properties": {
+              "lineId": { "type": "string" },
+              "modelId": { "type": "string" },
+              "sourceTrackId": { "type": "string" },
+              "device": { "type": "string" },
+              "windowSeconds": { "type": "number" },
+              "startMs": { "type": "number" },
+              "endMs": { "type": "number" },
+              "prompt": { "type": "string" }
+            },
+            "required": [
+              "lineId",
+              "modelId",
+              "sourceTrackId",
+              "device",
+              "windowSeconds",
+              "startMs",
+              "endMs",
+              "prompt"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "annotations": { "readOnlyHint": false, "destructiveHint": true, "openWorldHint": false }
+    },
+    {
+      "name": "studio_speaker_separation_result",
+      "command": "speaker_separation_result",
+      "description": "speaker separation result. Uses the current desktop session. Local file paths must be absolute; long operations return job IDs. Existing native validation applies.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "context": {
+            "type": "object",
+            "properties": {
+              "projectId": { "type": "string" },
+              "expectedRevision": { "type": "integer", "minimum": 0 }
+            },
+            "required": ["projectId", "expectedRevision"],
+            "additionalProperties": false
+          }
+        },
+        "required": ["id", "context"],
+        "additionalProperties": false
+      },
+      "annotations": { "readOnlyHint": true, "destructiveHint": false, "openWorldHint": false }
+    },
+    {
+      "name": "studio_speaker_separation_path",
+      "command": "speaker_separation_path",
+      "description": "speaker separation path. Uses the current desktop session. Local file paths must be absolute; long operations return job IDs. Existing native validation applies.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "outputId": { "type": "string" },
+          "context": {
+            "type": "object",
+            "properties": {
+              "projectId": { "type": "string" },
+              "expectedRevision": { "type": "integer", "minimum": 0 }
+            },
+            "required": ["projectId", "expectedRevision"],
+            "additionalProperties": false
+          }
+        },
+        "required": ["id", "outputId", "context"],
+        "additionalProperties": false
+      },
+      "annotations": { "readOnlyHint": true, "destructiveHint": false, "openWorldHint": false }
+    },
+    {
+      "name": "studio_apply_speaker_separation_result",
+      "command": "apply_speaker_separation_result",
+      "description": "apply speaker separation result. Uses the current desktop session. Local file paths must be absolute; long operations return job IDs. Existing native validation applies.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "destinations": {
+            "type": "array",
+            "items": { "$ref": "#/$defs/destinations_SpeakerSeparationDestination_0" }
+          },
+          "muteSource": { "type": "boolean" },
+          "context": {
+            "type": "object",
+            "properties": {
+              "projectId": { "type": "string" },
+              "expectedRevision": { "type": "integer", "minimum": 0 }
+            },
+            "required": ["projectId", "expectedRevision"],
+            "additionalProperties": false
+          }
+        },
+        "required": ["id", "destinations", "muteSource", "context"],
+        "additionalProperties": false,
+        "$defs": {
+          "destinations_SpeakerSeparationDestination_0": {
+            "type": "object",
+            "properties": {
+              "outputId": { "type": "string" },
+              "trackId": { "anyOf": [{ "type": "null" }, { "type": "string" }] },
+              "role": {
+                "anyOf": [
+                  { "type": "null" },
+                  { "type": "string", "const": "speech" },
+                  { "type": "string", "const": "music" },
+                  { "type": "string", "const": "sfx" }
+                ]
+              },
+              "mode": {
+                "anyOf": [
+                  { "type": "string", "const": "replace" },
+                  { "type": "string", "const": "add" }
+                ]
+              }
+            },
+            "required": ["outputId", "trackId", "role", "mode"],
+            "additionalProperties": false
+          }
+        }
+      },
+      "annotations": { "readOnlyHint": true, "destructiveHint": false, "openWorldHint": false }
+    },
+    {
+      "name": "studio_create_speaker_dubbings",
+      "command": "create_speaker_dubbings",
+      "description": "create speaker dubbings. Uses the current desktop session. Local file paths must be absolute; long operations return job IDs. Existing native validation applies.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "assignments": {
+            "type": "array",
+            "items": { "$ref": "#/$defs/assignments_SpeakerDubbingAssignment_0" }
+          },
+          "context": {
+            "type": "object",
+            "properties": {
+              "projectId": { "type": "string" },
+              "expectedRevision": { "type": "integer", "minimum": 0 }
+            },
+            "required": ["projectId", "expectedRevision"],
+            "additionalProperties": false
+          }
+        },
+        "required": ["id", "assignments", "context"],
+        "additionalProperties": false,
+        "$defs": {
+          "assignments_SpeakerDubbingAssignment_0": {
+            "type": "object",
+            "properties": {
+              "outputId": { "type": "string" },
+              "label": { "type": "string" },
+              "characterId": { "anyOf": [{ "type": "null" }, { "type": "string" }] },
+              "sourceText": { "type": "string" },
+              "targetText": { "type": "string" }
+            },
+            "required": ["outputId", "label", "characterId", "sourceText", "targetText"],
+            "additionalProperties": false
+          }
+        }
+      },
+      "annotations": { "readOnlyHint": false, "destructiveHint": true, "openWorldHint": false }
+    },
+    {
       "name": "studio_audio_toolbox_status",
       "command": "audio_toolbox_status",
       "description": "audio toolbox status. Uses the current desktop session. Local file paths must be absolute; long operations return job IDs. Existing native validation applies.",
@@ -4778,13 +4992,16 @@
         "Project_0": {
           "type": "object",
           "properties": {
+            "speakerDubbings": {
+              "anyOf": [{ "type": "array", "items": { "$ref": "#/$defs/SpeakerDubbingGroup_1" } }]
+            },
             "characterProfiles": {
               "anyOf": [
                 {
                   "type": "object",
                   "properties": {},
                   "required": [],
-                  "additionalProperties": { "$ref": "#/$defs/CharacterProfile_1" }
+                  "additionalProperties": { "$ref": "#/$defs/CharacterProfile_3" }
                 }
               ]
             },
@@ -4794,7 +5011,7 @@
                   "type": "object",
                   "properties": {},
                   "required": [],
-                  "additionalProperties": { "$ref": "#/$defs/VoiceEdit_12" }
+                  "additionalProperties": { "$ref": "#/$defs/VoiceEdit_14" }
                 }
               ]
             },
@@ -4804,7 +5021,7 @@
                   "type": "object",
                   "properties": {},
                   "required": [],
-                  "additionalProperties": { "$ref": "#/$defs/TranslationApproval_16" }
+                  "additionalProperties": { "$ref": "#/$defs/TranslationApproval_18" }
                 }
               ]
             },
@@ -4859,17 +5076,17 @@
               "required": ["source", "target"],
               "additionalProperties": false
             },
-            "media": { "anyOf": [{ "type": "null" }, { "$ref": "#/$defs/MediaAsset_26" }] },
-            "sourceCues": { "type": "array", "items": { "$ref": "#/$defs/Cue_18" } },
-            "targetCues": { "type": "array", "items": { "$ref": "#/$defs/Cue_18" } },
-            "dialogues": { "type": "array", "items": { "$ref": "#/$defs/Dialogue_28" } },
-            "tracks": { "type": "array", "items": { "$ref": "#/$defs/Track_29" } },
-            "characters": { "type": "array", "items": { "$ref": "#/$defs/Character_31" } },
+            "media": { "anyOf": [{ "type": "null" }, { "$ref": "#/$defs/MediaAsset_28" }] },
+            "sourceCues": { "type": "array", "items": { "$ref": "#/$defs/Cue_20" } },
+            "targetCues": { "type": "array", "items": { "$ref": "#/$defs/Cue_20" } },
+            "dialogues": { "type": "array", "items": { "$ref": "#/$defs/Dialogue_30" } },
+            "tracks": { "type": "array", "items": { "$ref": "#/$defs/Track_31" } },
+            "characters": { "type": "array", "items": { "$ref": "#/$defs/Character_33" } },
             "voiceReferences": {
-              "anyOf": [{ "type": "array", "items": { "$ref": "#/$defs/VoiceReference_4" } }]
+              "anyOf": [{ "type": "array", "items": { "$ref": "#/$defs/VoiceReference_6" } }]
             },
             "speakerAnalysis": {
-              "anyOf": [{ "type": "null" }, { "$ref": "#/$defs/SpeakerAnalysis_32" }]
+              "anyOf": [{ "type": "null" }, { "$ref": "#/$defs/SpeakerAnalysis_34" }]
             },
             "modelPreferences": {
               "anyOf": [
@@ -4898,7 +5115,7 @@
               "type": "array",
               "items": {
                 "anyOf": [
-                  { "$ref": "#/$defs/Generation_19" },
+                  { "$ref": "#/$defs/Generation_21" },
                   {
                     "type": "object",
                     "properties": {
@@ -4938,10 +5155,58 @@
           ],
           "additionalProperties": false
         },
-        "CharacterProfile_1": {
+        "SpeakerDubbingGroup_1": {
           "type": "object",
           "properties": {
-            "voiceLibrary": { "anyOf": [{ "$ref": "#/$defs/VoiceLibrary_2" }] },
+            "id": { "type": "string" },
+            "parentId": { "type": "string" },
+            "separationId": { "type": "string" },
+            "modelId": { "type": "string" },
+            "sourcePath": { "type": "string" },
+            "sourceTrackId": { "type": "string" },
+            "startMs": { "type": "number" },
+            "endMs": { "type": "number" },
+            "createdAt": { "type": "string" },
+            "active": { "type": "boolean" },
+            "voices": { "type": "array", "items": { "$ref": "#/$defs/IsolatedVoice_2" } }
+          },
+          "required": [
+            "id",
+            "parentId",
+            "separationId",
+            "modelId",
+            "sourcePath",
+            "sourceTrackId",
+            "startMs",
+            "endMs",
+            "createdAt",
+            "active",
+            "voices"
+          ],
+          "additionalProperties": false
+        },
+        "IsolatedVoice_2": {
+          "type": "object",
+          "properties": {
+            "lineId": { "type": "string" },
+            "outputId": { "type": "string" },
+            "label": { "type": "string" },
+            "audioPath": { "type": "string" },
+            "sourceText": { "type": "string" },
+            "translations": {
+              "type": "object",
+              "properties": {},
+              "required": [],
+              "additionalProperties": { "type": "string" }
+            }
+          },
+          "required": ["lineId", "outputId", "label", "audioPath", "sourceText", "translations"],
+          "additionalProperties": false
+        },
+        "CharacterProfile_3": {
+          "type": "object",
+          "properties": {
+            "voiceLibrary": { "anyOf": [{ "$ref": "#/$defs/VoiceLibrary_4" }] },
             "gender": {
               "anyOf": [
                 { "type": "string", "const": "unspecified" },
@@ -4956,35 +5221,35 @@
                 { "type": "boolean", "const": true }
               ]
             },
-            "portrait": { "anyOf": [{ "$ref": "#/$defs/CharacterPortrait_10" }] },
-            "vocalRegister": { "anyOf": [{ "$ref": "#/$defs/VocalRegister_11" }] }
+            "portrait": { "anyOf": [{ "$ref": "#/$defs/CharacterPortrait_12" }] },
+            "vocalRegister": { "anyOf": [{ "$ref": "#/$defs/VocalRegister_13" }] }
           },
           "required": [],
           "additionalProperties": false
         },
-        "VoiceLibrary_2": {
+        "VoiceLibrary_4": {
           "type": "object",
           "properties": {
-            "sources": { "type": "array", "items": { "$ref": "#/$defs/VoiceLibrarySource_3" } },
-            "samples": { "type": "array", "items": { "$ref": "#/$defs/VoiceLibrarySample_6" } },
+            "sources": { "type": "array", "items": { "$ref": "#/$defs/VoiceLibrarySource_5" } },
+            "samples": { "type": "array", "items": { "$ref": "#/$defs/VoiceLibrarySample_8" } },
             "defaultSampleId": { "anyOf": [{ "type": "null" }, { "type": "string" }] }
           },
           "required": ["sources", "samples", "defaultSampleId"],
           "additionalProperties": false
         },
-        "VoiceLibrarySource_3": {
+        "VoiceLibrarySource_5": {
           "type": "object",
           "properties": {
             "id": { "type": "string" },
-            "reference": { "$ref": "#/$defs/VoiceReference_4" },
-            "segments": { "type": "array", "items": { "$ref": "#/$defs/VoiceLibrarySegment_5" } },
+            "reference": { "$ref": "#/$defs/VoiceReference_6" },
+            "segments": { "type": "array", "items": { "$ref": "#/$defs/VoiceLibrarySegment_7" } },
             "sha256": { "type": "string" },
             "createdAt": { "type": "string" }
           },
           "required": ["id", "reference", "segments", "sha256", "createdAt"],
           "additionalProperties": false
         },
-        "VoiceReference_4": {
+        "VoiceReference_6": {
           "type": "object",
           "properties": {
             "id": { "type": "string" },
@@ -4997,7 +5262,7 @@
           "required": ["id", "label", "path", "durationMs", "transcript"],
           "additionalProperties": false
         },
-        "VoiceLibrarySegment_5": {
+        "VoiceLibrarySegment_7": {
           "type": "object",
           "properties": {
             "referenceId": { "anyOf": [{ "type": "null" }, { "type": "string" }] },
@@ -5009,12 +5274,12 @@
           "required": ["referenceId", "dialogueId", "startMs", "endMs"],
           "additionalProperties": false
         },
-        "VoiceLibrarySample_6": {
+        "VoiceLibrarySample_8": {
           "type": "object",
           "properties": {
             "id": { "type": "string" },
             "sourceId": { "type": "string" },
-            "reference": { "$ref": "#/$defs/VoiceReference_4" },
+            "reference": { "$ref": "#/$defs/VoiceReference_6" },
             "text": { "type": "string" },
             "mood": {
               "anyOf": [
@@ -5070,7 +5335,7 @@
                 { "type": "string", "const": "rejected" }
               ]
             },
-            "options": { "$ref": "#/$defs/VoiceSettings_7" },
+            "options": { "$ref": "#/$defs/VoiceSettings_9" },
             "sha256": { "type": "string" },
             "createdAt": { "type": "string" },
             "deviceName": { "type": "string" }
@@ -5089,11 +5354,11 @@
           ],
           "additionalProperties": false
         },
-        "VoiceSettings_7": {
+        "VoiceSettings_9": {
           "type": "object",
           "properties": {
             "outputGain": { "anyOf": [{ "type": "number" }] },
-            "quality": { "anyOf": [{ "$ref": "#/$defs/VoiceQuality_8" }] },
+            "quality": { "anyOf": [{ "$ref": "#/$defs/VoiceQuality_10" }] },
             "mood": {
               "anyOf": [
                 { "type": "string", "const": "happy" },
@@ -5161,7 +5426,7 @@
                 { "type": "string", "const": "library" }
               ]
             },
-            "intonationGuide": { "anyOf": [{ "$ref": "#/$defs/IntonationGuide_9" }] },
+            "intonationGuide": { "anyOf": [{ "$ref": "#/$defs/IntonationGuide_11" }] },
             "referenceTrackId": { "anyOf": [{ "type": "string" }] },
             "referenceId": { "anyOf": [{ "type": "null" }, { "type": "string" }] },
             "mode": {
@@ -5176,7 +5441,7 @@
           "required": ["device", "referenceMode", "referenceId", "mode", "speed", "seed"],
           "additionalProperties": false
         },
-        "VoiceQuality_8": {
+        "VoiceQuality_10": {
           "type": "object",
           "properties": {
             "inferenceSteps": { "anyOf": [{ "type": "number" }] },
@@ -5192,7 +5457,7 @@
           "required": [],
           "additionalProperties": false
         },
-        "IntonationGuide_9": {
+        "IntonationGuide_11": {
           "type": "object",
           "properties": {
             "mode": {
@@ -5206,7 +5471,7 @@
           "required": ["mode"],
           "additionalProperties": false
         },
-        "CharacterPortrait_10": {
+        "CharacterPortrait_12": {
           "type": "object",
           "properties": {
             "path": { "type": "string" },
@@ -5240,7 +5505,7 @@
           ],
           "additionalProperties": false
         },
-        "VocalRegister_11": {
+        "VocalRegister_13": {
           "type": "object",
           "properties": {
             "medianHz": { "type": "number" },
@@ -5250,33 +5515,33 @@
           "required": ["medianHz", "confidence", "analyzedMs"],
           "additionalProperties": false
         },
-        "VoiceEdit_12": {
+        "VoiceEdit_14": {
           "type": "object",
           "properties": {
             "outputGain": { "anyOf": [{ "type": "number" }] },
-            "pieces": { "type": "array", "items": { "$ref": "#/$defs/VoicePiece_13" } }
+            "pieces": { "type": "array", "items": { "$ref": "#/$defs/VoicePiece_15" } }
           },
           "required": ["pieces"],
           "additionalProperties": false
         },
-        "VoicePiece_13": {
+        "VoicePiece_15": {
           "type": "object",
           "properties": {
             "effects": {
-              "anyOf": [{ "type": "array", "items": { "$ref": "#/$defs/AudioEffect_14" } }]
+              "anyOf": [{ "type": "array", "items": { "$ref": "#/$defs/AudioEffect_16" } }]
             },
             "sourceStartMs": { "anyOf": [{ "type": "null" }, { "type": "number" }] },
             "sourceEndMs": { "anyOf": [{ "type": "null" }, { "type": "number" }] },
             "durationMs": { "type": "number" },
             "gain": { "type": "number" },
             "envelope": {
-              "anyOf": [{ "type": "array", "items": { "$ref": "#/$defs/VoicePoint_15" } }]
+              "anyOf": [{ "type": "array", "items": { "$ref": "#/$defs/VoicePoint_17" } }]
             }
           },
           "required": ["sourceStartMs", "sourceEndMs", "durationMs", "gain"],
           "additionalProperties": false
         },
-        "AudioEffect_14": {
+        "AudioEffect_16": {
           "type": "object",
           "properties": {
             "kind": {
@@ -5314,16 +5579,16 @@
           "required": ["kind", "enabled", "parameters"],
           "additionalProperties": false
         },
-        "VoicePoint_15": {
+        "VoicePoint_17": {
           "type": "object",
           "properties": { "atMs": { "type": "number" }, "level": { "type": "number" } },
           "required": ["atMs", "level"],
           "additionalProperties": false
         },
-        "TranslationApproval_16": {
+        "TranslationApproval_18": {
           "type": "object",
           "properties": {
-            "joint": { "anyOf": [{ "$ref": "#/$defs/JointReviewSnapshot_17" }] },
+            "joint": { "anyOf": [{ "$ref": "#/$defs/JointReviewSnapshot_19" }] },
             "sourceLanguage": { "type": "string" },
             "targetLanguage": { "type": "string" },
             "sourceText": { "type": "string" },
@@ -5332,11 +5597,12 @@
           "required": ["sourceLanguage", "targetLanguage", "sourceText", "targetText"],
           "additionalProperties": false
         },
-        "JointReviewSnapshot_17": {
+        "JointReviewSnapshot_19": {
           "type": "object",
           "properties": {
-            "sourceCues": { "type": "array", "items": { "$ref": "#/$defs/Cue_18" } },
-            "targetCues": { "type": "array", "items": { "$ref": "#/$defs/Cue_18" } },
+            "isolatedVoice": { "anyOf": [{ "$ref": "#/$defs/IsolatedVoice_2" }] },
+            "sourceCues": { "type": "array", "items": { "$ref": "#/$defs/Cue_20" } },
+            "targetCues": { "type": "array", "items": { "$ref": "#/$defs/Cue_20" } },
             "ttsText": { "anyOf": [{ "type": "null" }, { "type": "string" }] },
             "pronunciation": {
               "type": "object",
@@ -5348,7 +5614,7 @@
             "endMs": { "type": "number" },
             "characterId": { "anyOf": [{ "type": "null" }, { "type": "string" }] },
             "sourcePath": { "anyOf": [{ "type": "null" }, { "type": "string" }] },
-            "generation": { "anyOf": [{ "type": "null" }, { "$ref": "#/$defs/Generation_19" }] },
+            "generation": { "anyOf": [{ "type": "null" }, { "$ref": "#/$defs/Generation_21" }] },
             "reference": {
               "anyOf": [
                 { "type": "null" },
@@ -5383,11 +5649,11 @@
                           "gain": { "type": "number" },
                           "envelope": {
                             "type": "array",
-                            "items": { "$ref": "#/$defs/VoicePoint_15" }
+                            "items": { "$ref": "#/$defs/VoicePoint_17" }
                           },
                           "effects": {
                             "type": "array",
-                            "items": { "$ref": "#/$defs/AudioEffect_14" }
+                            "items": { "$ref": "#/$defs/AudioEffect_16" }
                           }
                         },
                         "required": [
@@ -5427,7 +5693,7 @@
           ],
           "additionalProperties": false
         },
-        "Cue_18": {
+        "Cue_20": {
           "type": "object",
           "properties": {
             "id": { "type": "string" },
@@ -5438,12 +5704,12 @@
           "required": ["id", "startMs", "endMs", "text"],
           "additionalProperties": false
         },
-        "Generation_19": {
+        "Generation_21": {
           "type": "object",
           "properties": {
-            "dubbingPipeline": { "anyOf": [{ "$ref": "#/$defs/DubbingPipelineRecord_20" }] },
-            "takeOrigin": { "anyOf": [{ "$ref": "#/$defs/TakeOrigin_23" }] },
-            "prosodyTransfer": { "anyOf": [{ "$ref": "#/$defs/ProsodyTransfer_24" }] },
+            "dubbingPipeline": { "anyOf": [{ "$ref": "#/$defs/DubbingPipelineRecord_22" }] },
+            "takeOrigin": { "anyOf": [{ "$ref": "#/$defs/TakeOrigin_25" }] },
+            "prosodyTransfer": { "anyOf": [{ "$ref": "#/$defs/ProsodyTransfer_26" }] },
             "kind": { "type": "string", "const": "tts" },
             "id": { "type": "string" },
             "dialogueId": { "type": "string" },
@@ -5459,7 +5725,7 @@
             "characterId": { "anyOf": [{ "type": "null" }, { "type": "string" }] },
             "durationMs": { "type": "number" },
             "sampleRate": { "type": "number" },
-            "options": { "$ref": "#/$defs/VoiceSettings_7" },
+            "options": { "$ref": "#/$defs/VoiceSettings_9" },
             "referenceTranscript": { "type": "string" },
             "referenceId": { "anyOf": [{ "type": "null" }, { "type": "string" }] },
             "device": { "type": "string" },
@@ -5526,28 +5792,28 @@
           ],
           "additionalProperties": false
         },
-        "DubbingPipelineRecord_20": {
+        "DubbingPipelineRecord_22": {
           "type": "object",
           "properties": {
             "stageIds": { "type": "array", "items": { "type": "string" } },
-            "settings": { "$ref": "#/$defs/DubbingPipelineOptions_21" },
+            "settings": { "$ref": "#/$defs/DubbingPipelineOptions_23" },
             "engine": { "type": "string", "const": "chatterbox-vc" }
           },
           "required": ["stageIds", "settings", "engine"],
           "additionalProperties": false
         },
-        "DubbingPipelineOptions_21": {
+        "DubbingPipelineOptions_23": {
           "type": "object",
           "properties": {
             "lineId": { "type": "string" },
-            "tts": { "$ref": "#/$defs/VoiceSettings_7" },
-            "conversion": { "$ref": "#/$defs/VoiceConversionOptions_22" },
+            "tts": { "$ref": "#/$defs/VoiceSettings_9" },
+            "conversion": { "$ref": "#/$defs/VoiceConversionOptions_24" },
             "guideStrength": { "type": "number" }
           },
           "required": ["lineId", "tts", "conversion", "guideStrength"],
           "additionalProperties": false
         },
-        "VoiceConversionOptions_22": {
+        "VoiceConversionOptions_24": {
           "type": "object",
           "properties": {
             "referenceMode": {
@@ -5565,7 +5831,7 @@
           "required": ["generationId", "referenceId", "characterId", "device"],
           "additionalProperties": false
         },
-        "TakeOrigin_23": {
+        "TakeOrigin_25": {
           "type": "object",
           "properties": {
             "type": {
@@ -5581,14 +5847,14 @@
           "required": ["type"],
           "additionalProperties": false
         },
-        "ProsodyTransfer_24": {
+        "ProsodyTransfer_26": {
           "type": "object",
           "properties": {
             "algorithm": { "type": "string", "const": "praat-psola-v1" },
             "sourceGenerationId": { "type": "string" },
             "sourceDurationMs": { "type": "number" },
             "guideDurationMs": { "type": "number" },
-            "options": { "$ref": "#/$defs/ProsodyOptions_25" }
+            "options": { "$ref": "#/$defs/ProsodyOptions_27" }
           },
           "required": [
             "algorithm",
@@ -5599,7 +5865,7 @@
           ],
           "additionalProperties": false
         },
-        "ProsodyOptions_25": {
+        "ProsodyOptions_27": {
           "type": "object",
           "properties": {
             "generationId": { "type": "string" },
@@ -5628,7 +5894,7 @@
           ],
           "additionalProperties": false
         },
-        "MediaAsset_26": {
+        "MediaAsset_28": {
           "type": "object",
           "properties": {
             "id": { "type": "string" },
@@ -5637,7 +5903,7 @@
             "audioStreamIndex": { "anyOf": [{ "type": "null" }, { "type": "number" }] },
             "originalName": { "type": "string" },
             "durationMs": { "type": "number" },
-            "streams": { "type": "array", "items": { "$ref": "#/$defs/MediaStream_27" } }
+            "streams": { "type": "array", "items": { "$ref": "#/$defs/MediaStream_29" } }
           },
           "required": [
             "id",
@@ -5650,7 +5916,7 @@
           ],
           "additionalProperties": false
         },
-        "MediaStream_27": {
+        "MediaStream_29": {
           "type": "object",
           "properties": {
             "index": { "type": "number" },
@@ -5676,7 +5942,7 @@
           ],
           "additionalProperties": false
         },
-        "Dialogue_28": {
+        "Dialogue_30": {
           "type": "object",
           "properties": {
             "excludedFromDubbing": {
@@ -5708,7 +5974,7 @@
               "required": [],
               "additionalProperties": { "type": "string" }
             },
-            "voiceSettings": { "anyOf": [{ "$ref": "#/$defs/VoiceSettings_7" }] }
+            "voiceSettings": { "anyOf": [{ "$ref": "#/$defs/VoiceSettings_9" }] }
           },
           "required": [
             "id",
@@ -5724,7 +5990,7 @@
           ],
           "additionalProperties": false
         },
-        "Track_29": {
+        "Track_31": {
           "type": "object",
           "properties": {
             "name": { "anyOf": [{ "type": "string" }] },
@@ -5754,7 +6020,7 @@
             "solo": { "type": "boolean" },
             "gain": { "type": "number" },
             "regions": {
-              "anyOf": [{ "type": "array", "items": { "$ref": "#/$defs/AudioRegion_30" } }]
+              "anyOf": [{ "type": "array", "items": { "$ref": "#/$defs/AudioRegion_32" } }]
             },
             "regionsEnabled": {
               "anyOf": [
@@ -5766,7 +6032,7 @@
           "required": ["id", "kind", "language", "mute", "solo", "gain"],
           "additionalProperties": false
         },
-        "AudioRegion_30": {
+        "AudioRegion_32": {
           "type": "object",
           "properties": {
             "id": { "type": "string" },
@@ -5778,22 +6044,22 @@
           "required": ["id", "startMs", "endMs", "gain", "mute"],
           "additionalProperties": false
         },
-        "Character_31": {
+        "Character_33": {
           "type": "object",
           "properties": {
             "id": { "type": "string" },
             "name": { "type": "string" },
             "color": { "type": "string" },
-            "references": { "type": "array", "items": { "$ref": "#/$defs/VoiceReference_4" } },
+            "references": { "type": "array", "items": { "$ref": "#/$defs/VoiceReference_6" } },
             "defaultReferenceId": { "anyOf": [{ "type": "null" }, { "type": "string" }] }
           },
           "required": ["id", "name", "color", "references", "defaultReferenceId"],
           "additionalProperties": false
         },
-        "SpeakerAnalysis_32": {
+        "SpeakerAnalysis_34": {
           "type": "object",
           "properties": {
-            "scope": { "anyOf": [{ "$ref": "#/$defs/SpeakerScope_33" }] },
+            "scope": { "anyOf": [{ "$ref": "#/$defs/SpeakerScope_35" }] },
             "audioSnapshot": {},
             "originalAssignments": {
               "anyOf": [
@@ -5840,8 +6106,8 @@
                 "type": "object",
                 "properties": {
                   "characterId": { "anyOf": [{ "type": "null" }, { "type": "string" }] },
-                  "portrait": { "anyOf": [{ "$ref": "#/$defs/CharacterPortrait_10" }] },
-                  "vocalRegister": { "anyOf": [{ "$ref": "#/$defs/VocalRegister_11" }] },
+                  "portrait": { "anyOf": [{ "$ref": "#/$defs/CharacterPortrait_12" }] },
+                  "vocalRegister": { "anyOf": [{ "$ref": "#/$defs/VocalRegister_13" }] },
                   "speaker": { "type": "number" },
                   "referencePath": { "type": "string" },
                   "durationMs": { "type": "number" },
@@ -5855,7 +6121,7 @@
           "required": ["id", "sourcePath", "lines", "assignments", "clusters"],
           "additionalProperties": false
         },
-        "SpeakerScope_33": {
+        "SpeakerScope_35": {
           "type": "object",
           "properties": {
             "startMs": { "anyOf": [{ "type": "number" }] },
@@ -5870,6 +6136,80 @@
             }
           },
           "required": [],
+          "additionalProperties": false
+        }
+      }
+    },
+    "SpeakerSeparationOptions": {
+      "$ref": "#/$defs/SpeakerSeparationOptions_0",
+      "$defs": {
+        "SpeakerSeparationOptions_0": {
+          "type": "object",
+          "properties": {
+            "lineId": { "type": "string" },
+            "modelId": { "type": "string" },
+            "sourceTrackId": { "type": "string" },
+            "device": { "type": "string" },
+            "windowSeconds": { "type": "number" },
+            "startMs": { "type": "number" },
+            "endMs": { "type": "number" },
+            "prompt": { "type": "string" }
+          },
+          "required": [
+            "lineId",
+            "modelId",
+            "sourceTrackId",
+            "device",
+            "windowSeconds",
+            "startMs",
+            "endMs",
+            "prompt"
+          ],
+          "additionalProperties": false
+        }
+      }
+    },
+    "SpeakerSeparationDestination": {
+      "$ref": "#/$defs/SpeakerSeparationDestination_0",
+      "$defs": {
+        "SpeakerSeparationDestination_0": {
+          "type": "object",
+          "properties": {
+            "outputId": { "type": "string" },
+            "trackId": { "anyOf": [{ "type": "null" }, { "type": "string" }] },
+            "role": {
+              "anyOf": [
+                { "type": "null" },
+                { "type": "string", "const": "speech" },
+                { "type": "string", "const": "music" },
+                { "type": "string", "const": "sfx" }
+              ]
+            },
+            "mode": {
+              "anyOf": [
+                { "type": "string", "const": "replace" },
+                { "type": "string", "const": "add" }
+              ]
+            }
+          },
+          "required": ["outputId", "trackId", "role", "mode"],
+          "additionalProperties": false
+        }
+      }
+    },
+    "SpeakerDubbingAssignment": {
+      "$ref": "#/$defs/SpeakerDubbingAssignment_0",
+      "$defs": {
+        "SpeakerDubbingAssignment_0": {
+          "type": "object",
+          "properties": {
+            "outputId": { "type": "string" },
+            "label": { "type": "string" },
+            "characterId": { "anyOf": [{ "type": "null" }, { "type": "string" }] },
+            "sourceText": { "type": "string" },
+            "targetText": { "type": "string" }
+          },
+          "required": ["outputId", "label", "characterId", "sourceText", "targetText"],
           "additionalProperties": false
         }
       }

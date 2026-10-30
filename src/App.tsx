@@ -214,6 +214,20 @@ export default function App() {
     generationAudio.play(generation);
   };
   const playDub = (line: Dialogue) => {
+    const group = studio.project?.speakerDubbings?.find(
+      (g) => g.parentId === line.id && g.active && g.sourcePath === studio.project?.media?.path,
+    );
+    if (group && studio.project?.media) {
+      stopGeneration();
+      auditionAudioSelection({
+        mediaId: studio.project.media.id,
+        trackId: 'dubbing',
+        startMs: group.startMs,
+        endMs: group.endMs,
+      });
+      return;
+    }
+
     const generation = studio.project && selectedGeneration(studio.project, line);
     if (generation) playGeneration(generation);
     else openDub(line);

@@ -95,6 +95,7 @@ export const Timeline = memo(function Timeline({
   const [audioTool, setAudioTool] = useState(false);
   const [voiceEditor, setVoiceEditor] = useState<string | null>(null);
   const clips = useMemo(() => (project ? dubbingClips(project) : []), [project]);
+  const hasSeparatedLanes = clips.some((c) => c.lane > 0);
   const selectedVoice = clips.find((c) => c.line.id === selected?.id);
   const editingVoice = clips.find((c) => c.generation.id === voiceEditor);
   const [audioDrag, setAudioDrag] = useState<{
@@ -467,7 +468,12 @@ export const Timeline = memo(function Timeline({
                 <div
                   className={`track-label ${style}`}
                   key={track?.id ?? key}
-                  style={{ height: rowHeight }}
+                  style={{
+                    height:
+                      track?.kind === 'dubbing' && hasSeparatedLanes
+                        ? Math.max(rowHeight, 84)
+                        : rowHeight,
+                  }}
                 >
                   <Icon size={13} />
                   <span>{t(key)}</span>
@@ -566,7 +572,12 @@ export const Timeline = memo(function Timeline({
                 key={track?.id ?? key}
                 className={`timeline-track ${style} ${audioTool && track ? 'audio-selection-tool' : ''}`}
                 data-track-id={track?.id}
-                style={{ height: rowHeight }}
+                style={{
+                  height:
+                    track?.kind === 'dubbing' && hasSeparatedLanes
+                      ? Math.max(rowHeight, 84)
+                      : rowHeight,
+                }}
                 onContextMenu={(event) => {
                   if (!track || !project?.media) return;
                   const point = xToTime(
@@ -780,6 +791,8 @@ export const Timeline = memo(function Timeline({
                         key={clip.generation.id}
                         className={`subtitle-block dubbing-block ${selected?.id === clip.line.id ? 'selected' : ''} ${dubbingDrag?.lineId === clip.line.id ? 'moving' : ''}`}
                         style={{
+                          top: hasSeparatedLanes ? 3 + clip.lane * 26 : undefined,
+                          height: hasSeparatedLanes ? 23 : undefined,
                           left: clip.startMs * scale,
                           width: Math.max(3, (clip.endMs - clip.startMs) * scale),
                         }}

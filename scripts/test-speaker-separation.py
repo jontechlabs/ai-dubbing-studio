@@ -26,7 +26,9 @@ def extract(source,target):
  with zipfile.ZipFile(source) as archive:
   assert all((target/name).resolve().is_relative_to(target.resolve()) for name in archive.namelist())
   archive.extractall(target)
-python_root=WORK/'runtime/python';python=python_root/'python.exe'
+store=WORK/'model-store';engines=store/'voice-engines'
+runtime=engines/'speaker-separation-runtime'
+python_root=runtime/'python';python=python_root/'python.exe'
 extract(fetch(dict(url='https://www.python.org/ftp/python/3.12.10/python-3.12.10-embed-amd64.zip',size=11133606,sha256='4acbed6dd1c744b0376e3b1cf57ce906f9dc9e95e68824584c8099a63025a3c3'),WORK/'python.zip'),python_root)
 (python_root/'python312._pth').write_text('python312.zip\n.\nLib/site-packages\nimport site\n',encoding='utf-8')
 manifest=json.loads((ROOT/'workers/speaker-separation-runtime.json').read_text())
@@ -40,7 +42,7 @@ audio=[fetch(row,WORK/'source'/row['name']) for row in sources]
 source_hashes=[digest(p) for p in audio]
 models=json.loads((ROOT/'workers/speaker-separation-models.json').read_text())['models'];proof=[]
 for model in models:
- folder=WORK/'models'/model['id']
+ folder=engines/'speaker-separation'/model['id']
  for row in model['files']:fetch(row,folder/row['name'])
  mixture=WORK/(model['id']+'-input.wav');output=WORK/model['id'];request=WORK/(model['id']+'-request.json')
  count=model['speakers'];frames=120000
@@ -63,6 +65,8 @@ for model in models:
  assert digest(mixture)==before and [digest(p) for p in audio]==source_hashes
  proof.append(dict(modelId=model['id'],speakers=count,frames=frames,sampleRate=48000,device='CPU',seconds=round(time.monotonic()-started,2),sourceUnchanged=True,distinctStreams=True,rmsDb=[r['rmsDb'] for r in result['outputs']]))
  print('SPEAKER_SEPARATION_MODEL_PROOF',json.dumps(proof[-1]),flush=True)
+(runtime/'ready.json').write_text(json.dumps(dict(profile=manifest['profile'])),encoding='utf-8')
+(runtime/'devices.json').write_text(json.dumps(dict(devices=[dict(id='cpu',name='CPU')])),encoding='utf-8')
 paths=['workers/speaker_separation_worker.py','workers/speaker-separation-models.json','workers/speaker-separation-runtime.json','workers/vendor/speaker-separation/mossformer2-source.zip']
 report=dict(head=subprocess.check_output(['git','rev-parse','HEAD'],cwd=ROOT,text=True).strip(),models=proof,profile=manifest['profile'],runtimeWheels=len(manifest['files']),identities={p:digest(ROOT/p) for p in paths},gpuBenchmark=False,languageQualityBenchmark=False)
 (ROOT/'artifacts').mkdir(exist_ok=True);(ROOT/'artifacts/speaker-separation-validation.json').write_text(json.dumps(report,indent=2)+'\n',encoding='utf-8')

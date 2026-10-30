@@ -94,7 +94,7 @@ pub fn fingerprint(
     if refs.is_empty() {
         return Err("SPEAKER_REFERENCES_REQUIRED".into());
     }
-    let value = serde_json::json!({"media":p.media.as_ref().map(|m|&m.path),"line":[serde_json::json!(line.id),serde_json::json!(line.start_ms),serde_json::json!(line.end_ms),serde_json::json!(line.character_id)],"track":track,"audio":crate::character_review::audio_snapshot(p,None),"references":refs});
+    let value = serde_json::json!({"isolatedVoice":crate::speaker_dubbing::voice(p,&line.id),"media":p.media.as_ref().map(|m|&m.path),"line":[serde_json::json!(line.id),serde_json::json!(line.start_ms),serde_json::json!(line.end_ms),serde_json::json!(line.character_id)],"track":track,"audio":crate::character_review::audio_snapshot(p,None),"references":refs});
     Ok(format!(
         "{:x}",
         Sha256::digest(serde_json::to_vec(&value).map_err(io_error)?)
@@ -205,12 +205,13 @@ async fn run<R: tauri::Runtime>(
     let input = folder.join("query.wav");
     let output = folder.join("result.json");
     let track = crate::audio_patch::source_track(&p, r.options.track_id.as_deref())?;
-    crate::audio_patch::snippet(
+    crate::speaker_dubbing::snippet(
         core,
         app,
         key,
         &p,
         &r.root,
+        &line.id,
         crate::audio_patch::Snippet {
             track_id: &track.id,
             start_ms: line.start_ms,

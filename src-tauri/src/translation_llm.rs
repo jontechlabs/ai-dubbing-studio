@@ -299,8 +299,8 @@ fn basis(p: &Project, line_id: &str) -> Result<Basis, String> {
         line_id: line.id.clone(),
         source_language: p.languages.source.clone(),
         target_language: p.languages.target.clone(),
-        source_text: text(p, &line.source_cue_ids, true),
-        target_text: text(p, &line.target_cue_ids, false),
+        source_text: crate::speaker_dubbing::text(p, line, true),
+        target_text: crate::speaker_dubbing::text(p, line, false),
         source_cue_ids: line.source_cue_ids.clone(),
         target_cue_ids: line.target_cue_ids.clone(),
         timing: Some(Timing {
@@ -353,7 +353,12 @@ fn prepare(
         .into_iter()
         .flatten()
         .filter_map(|i| p.dialogues.get(i))
-        .map(|l| text(p, &l.source_cue_ids, true).chars().take(400).collect())
+        .map(|l| {
+            crate::speaker_dubbing::text(p, l, true)
+                .chars()
+                .take(400)
+                .collect()
+        })
         .collect();
     let line = &p.dialogues[index];
     let slots = if line.target_cue_ids.is_empty() {

@@ -30,6 +30,8 @@ mod qwen_safety;
 mod separation;
 mod smoke;
 mod source_transcription;
+mod speaker_dubbing;
+mod speaker_separation;
 mod speakers;
 mod subtitles;
 mod transcription;
@@ -214,6 +216,65 @@ fn generate_dubbing_pipeline(
     options: dubbing_pipeline::Options,
 ) -> Result<String, String> {
     dubbing_pipeline::start(core.inner().clone(), app, options)
+}
+#[tauri::command]
+async fn speaker_separation_status(
+    app: tauri::AppHandle,
+    core: State<'_, Shared>,
+) -> Result<serde_json::Value, String> {
+    speaker_separation::status(core.inner().clone(), app).await
+}
+#[tauri::command]
+fn install_speaker_separation_model(
+    app: tauri::AppHandle,
+    core: State<'_, Shared>,
+    model_id: String,
+) -> Result<String, String> {
+    speaker_separation::install(core.inner().clone(), app, model_id)
+}
+#[tauri::command]
+fn separate_dialogue_speakers(
+    app: tauri::AppHandle,
+    core: State<'_, Shared>,
+    options: speaker_separation::Options,
+) -> Result<String, String> {
+    speaker_separation::start(core.inner().clone(), app, options)
+}
+#[tauri::command]
+fn speaker_separation_result(
+    app: tauri::AppHandle,
+    core: State<'_, Shared>,
+    id: String,
+) -> Result<serde_json::Value, String> {
+    speaker_separation::result(&core, &app, &id)
+}
+#[tauri::command]
+fn speaker_separation_path(
+    app: tauri::AppHandle,
+    core: State<'_, Shared>,
+    id: String,
+    output_id: String,
+) -> Result<String, String> {
+    speaker_separation::path(&core, &app, &id, &output_id)
+}
+#[tauri::command]
+async fn apply_speaker_separation_result(
+    app: tauri::AppHandle,
+    core: State<'_, Shared>,
+    id: String,
+    destinations: Vec<speaker_separation::Destination>,
+    mute_source: bool,
+) -> Result<Project, String> {
+    speaker_separation::apply(core.inner().clone(), app, id, destinations, mute_source).await
+}
+#[tauri::command]
+fn create_speaker_dubbings(
+    app: tauri::AppHandle,
+    core: State<'_, Shared>,
+    id: String,
+    assignments: Vec<speaker_separation::Assignment>,
+) -> Result<Project, String> {
+    speaker_separation::create_children(&core, &app, id, assignments)
 }
 #[tauri::command]
 async fn audio_toolbox_status(
@@ -1572,6 +1633,12 @@ fn retry_job(app: tauri::AppHandle, core: State<'_, Shared>, id: String) -> Resu
     if let Some(request) = record.source_transcription {
         return source_transcription::resume(core.inner().clone(), app, request);
     }
+    if let Some(request) = record.speaker_separation_request {
+        return speaker_separation::enqueue(core.inner().clone(), app, request);
+    }
+    if let Some(id) = record.speaker_separation_install {
+        return speaker_separation::install(core.inner().clone(), app, id);
+    }
     if let Some(request) = record.toolbox_request {
         return audio_toolbox::enqueue(core.inner().clone(), app, request);
     }
@@ -1832,6 +1899,13 @@ pub fn run() {
             apply_source_transcription,
             set_voice_output_gain,
             generate_dubbing_pipeline,
+            speaker_separation_status,
+            install_speaker_separation_model,
+            separate_dialogue_speakers,
+            speaker_separation_result,
+            speaker_separation_path,
+            apply_speaker_separation_result,
+            create_speaker_dubbings,
             audio_toolbox_status,
             install_audio_toolbox_model,
             separate_audio_selection,

@@ -73,6 +73,9 @@ function makeSchema(name) {
   return { ...root, ...(Object.keys(definitions).length ? { $defs: definitions } : {}) };
 }
 const mapping = {
+ 'speaker_separation::Options':'SpeakerSeparationOptions',
+ 'speaker_separation::Destination':'SpeakerSeparationDestination',
+ 'speaker_separation::Assignment':'SpeakerDubbingAssignment',
  'audio_toolbox::Options':'AudioToolboxOptions',
  'audio_toolbox::Destination':'AudioToolboxDestination',
   'dubbing_pipeline::Options':'DubbingPipelineOptions',
@@ -201,6 +204,7 @@ const projectCommands = new Set(
 for (const command of [
   'transcribe_dialogue_source',
   'apply_source_transcription',
+  'separate_dialogue_speakers','speaker_separation_result','speaker_separation_path','apply_speaker_separation_result','create_speaker_dubbings',
   'set_voice_output_gain',
   'generate_dubbing_pipeline', 'separate_audio_selection', 'audio_toolbox_result', 'audio_toolbox_path', 'apply_audio_toolbox_result',
 ])

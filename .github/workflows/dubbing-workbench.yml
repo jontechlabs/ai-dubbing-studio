@@ -83,6 +83,8 @@ jobs:
         run: pnpm desktop:build
       - name: Real Japanese reference transcription
         run: ./scripts/test-reference-transcription.ps1
+      - name: Full-weight two and three voice separation on Windows CPU
+        run: python scripts/test-speaker-separation.py
       - name: Package installer and portable build
         run: ./scripts/package-windows.ps1
       - name: Packaged desktop, workbench, source ASR and gain through official MCP SDK

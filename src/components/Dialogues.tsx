@@ -19,6 +19,7 @@ import {
   Trash2,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { isolatedVoice } from '../domain/speakerDubbing';
 import { dialogueText } from '../domain/subtitles';
 import { formatTime } from '../domain/time';
 import type { Dialogue, Project } from '../domain/types';
@@ -117,6 +118,13 @@ function DialoguesPane({
           (selectedGeneration(project, d) &&
             staleGeneration(project, d, selectedGeneration(project, d)!))) &&
         [
+          ...(isolatedVoice(project, d.id)
+            ? [
+                dialogueText(project, d, 'source'),
+                dialogueText(project, d, 'target'),
+                isolatedVoice(project, d.id)!.voice.label,
+              ]
+            : []),
           ...d.sourceCueIds.map((id) => source.get(id)),
           ...d.targetCueIds.map((id) => target.get(id)),
         ]
@@ -502,6 +510,11 @@ function DialogueCard({
         </span>
         <span>{((line.endMs - line.startMs) / 1000).toFixed(2)} s</span>
       </div>
+      {isolatedVoice(project, line.id) && (
+        <small className="isolated-voice-label">
+          ↳ {isolatedVoice(project, line.id)!.voice.label}
+        </small>
+      )}
       <div className="character-label">
         <span
           className="character-avatar"

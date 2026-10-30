@@ -201,7 +201,9 @@
     "toolboxVerify": "Vérification des modèles audio",
     "toolboxSeparate": "Séparation de la sélection",
     "toolboxPrepare": "Préparation de la sélection",
-    "toolboxLoad": "Chargement du modèle de séparation"
+    "toolboxLoad": "Chargement du modèle de séparation",
+    "speakerSeparationLoad": "Chargement du séparateur de voix",
+    "speakerSeparationRun": "Isolation des voix"
   },
   "shortcuts": "Espace : lecture · J/K/L : transport · O : original · Ctrl+S : sauvegarde · Ctrl+Z/Y : annuler/rétablir",
   "errors": {
@@ -408,7 +410,17 @@
     "AUDIO_TOOLBOX_ALREADY_APPLIED": "Ce résultat a déjà été appliqué.",
     "AUDIO_TOOLBOX_NOT_READY": "Le résultat n’est pas encore disponible.",
     "INVALID_DUBBING_PIPELINE": "Les informations du doublage en deux étapes sont invalides.",
-    "DIALOGUE_EXCLUDED": "Cette réplique est exclue du doublage. Ses sous-titres et ses essais sont conservés. Réintégrez-la depuis la liste pour générer de nouveaux essais."
+    "DIALOGUE_EXCLUDED": "Cette réplique est exclue du doublage. Ses sous-titres et ses essais sont conservés. Réintégrez-la depuis la liste pour générer de nouveaux essais.",
+    "SPEAKER_SEPARATION_OPTIONS": "Configuration de séparation de voix invalide.",
+    "SPEAKER_SEPARATION_DISK_REQUIRED": "Espace libre insuffisant. Aucune dépendance ne sera téléchargée.",
+    "SPEAKER_DUBBING_PARENT_ACTIVE": "Ce groupe remplace le doublage principal. Choisis une voix ci-dessus pour la doubler, ou réactive l’essai principal.",
+    "SPEAKER_DUBBING_GROUP_EDIT": "Réactive le doublage principal avant de diviser ou fusionner cette réplique.",
+    "SPEAKER_SEPARATION_MODEL_REQUIRED": "Installe le séparateur de voix choisi.",
+    "SPEAKER_SEPARATION_FAILED": "Le séparateur a échoué. Consulte le journal de cette tâche.",
+    "SPEAKER_SEPARATION_OUT_OF_MEMORY": "Mémoire insuffisante pour le séparateur. Libère la mémoire du GPU ou sélectionne le CPU.",
+    "SPEAKER_SEPARATION_ALREADY_APPLIED": "Ce résultat a déjà été appliqué. Ses sous-doublages sont conservés dans le groupe.",
+    "SPEAKER_SEPARATION_INVALID_AUDIO": "Le résultat audio du séparateur est invalide.",
+    "SPEAKER_SEPARATION_NOT_READY": "La séparation de voix n’est pas terminée."
   },
   "preparingVideo": "Préparation de la vidéo…",
   "loadingVideo": "Chargement de la vidéo…",
@@ -1254,7 +1266,9 @@
     "sourceTranscription": "Transcription du dialogue source",
     "ttsPipeline": "Doublage en 2 étapes",
     "toolboxInstall": "Installation de l’outil audio",
-    "audioToolbox": "Séparation de la sélection"
+    "audioToolbox": "Séparation de la sélection",
+    "speakerSeparation": "Séparation des voix superposées",
+    "speakerSeparationInstall": "Installation du séparateur de voix"
   },
   "fxRemoveTrack": "Retirer la copie avec effets · {{name}}",
   "transferEffects": "Effets audio",
@@ -1630,5 +1644,39 @@
   "dialogueShowExcluded": "Afficher les répliques exclues ({{count}})",
   "dialogueRestore": "Réintégrer au doublage",
   "dialogueExcluded": "Exclue du doublage",
-  "dialogueExcludedHint": "Cette réplique est exclue du doublage. Ses sous-titres et ses essais sont conservés. Réintégrez-la depuis la liste pour générer de nouveaux essais."
+  "dialogueExcludedHint": "Cette réplique est exclue du doublage. Ses sous-titres et ses essais sont conservés. Réintégrez-la depuis la liste pour générer de nouveaux essais.",
+  "overlap": {
+    "title": "Isoler plusieurs voix",
+    "hint": "Sépare les personnes qui parlent en même temps dans cette réplique (60 s maximum). Écoute et vérifie chaque voix avant de l’utiliser.",
+    "voice": "Voix {{number}}",
+    "variant": "Doublage actif",
+    "parentTake": "Essai de la réplique principale",
+    "group": "Groupe {{number}}",
+    "parent": "Réplique principale",
+    "preserved": "Les sous-doublages, essais et sous-titres existants sont conservés.",
+    "model": "Séparateur de voix",
+    "defaultSource": "Voix par défaut, sinon audio original",
+    "disk": "Espace nécessaire : {{required}} Gio · disponible : {{available}} Gio",
+    "separate": "Isoler les voix de cette réplique",
+    "install": "Installer le séparateur",
+    "noSpace": "Espace libre insuffisant. Aucune dépendance ne sera téléchargée.",
+    "review": "Vérifie les voix à l’écoute. Renseigne un texte distinct par personne, ou crée les sous-doublages puis utilise leur aide à la transcription. Les numéros de voix ne sont pas des identités.",
+    "label": "Nom de la voix",
+    "destination": "Piste de destination",
+    "skipTrack": "Ne pas affecter à une piste",
+    "role": {
+      "speech": "Piste Voix (créer si nécessaire)",
+      "music": "Piste Musique (créer si nécessaire)",
+      "sfx": "Piste Effets (créer si nécessaire)"
+    },
+    "routing": "Affectation sur la même période",
+    "replace": "Remplacer la portion",
+    "add": "Ajouter aux sons existants",
+    "muteSource": "Retirer la portion de la piste source",
+    "applyTracks": "Affecter les voix aux pistes",
+    "createDubs": "Créer les sous-doublages indépendants",
+    "parentDisabled": "Ce groupe remplace le doublage principal. Choisis une voix ci-dessus pour la doubler, ou réactive l’essai principal.",
+    "source": "Piste contenant les voix à isoler",
+    "translation": "Traduction"
+  }
 }

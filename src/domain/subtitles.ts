@@ -1,4 +1,5 @@
 import type { Cue, Dialogue, Project } from './types';
+import { isolatedVoice } from './speakerDubbing';
 import { formatTime, parseTime } from './time';
 
 export function parseSrt(text: string): Cue[] {
@@ -96,6 +97,11 @@ export function dialogueText(
   dialogue: Dialogue,
   role: 'source' | 'target',
 ): string {
+  const isolated = isolatedVoice(project, dialogue.id);
+  if (isolated)
+    return role === 'source'
+      ? isolated.voice.sourceText
+      : (isolated.voice.translations[project.languages.target] ?? '');
   const cues = role === 'source' ? project.sourceCues : project.targetCues;
   const ids = role === 'source' ? dialogue.sourceCueIds : dialogue.targetCueIds;
   return ids.map((id) => cues.find((cue) => cue.id === id)?.text ?? '').join('\n');
@@ -111,6 +117,14 @@ export function editDialogue(
   if (!dialogue) return project;
   if (role === 'tts') {
     dialogue.ttsText = text || null;
+    if (dialogue.status === 'validated' || dialogue.status === 'generated')
+      dialogue.status = 'review';
+    return next;
+  }
+  const isolated = isolatedVoice(next, id);
+  if (isolated) {
+    if (role === 'source') isolated.voice.sourceText = text;
+    else isolated.voice.translations[next.languages.target] = text;
     if (dialogue.status === 'validated' || dialogue.status === 'generated')
       dialogue.status = 'review';
     return next;

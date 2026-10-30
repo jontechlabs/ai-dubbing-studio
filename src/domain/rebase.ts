@@ -17,6 +17,7 @@ export function rebaseProject(base: Project, local: Project, incoming: Project):
     'dubbingTiming',
     'translationApprovals',
     'voiceEdits',
+    'speakerDubbings',
   ] as const)
     if (changed(base[key], local[key])) Object.assign(next, { [key]: structuredClone(local[key]) });
   for (const id of new Set([

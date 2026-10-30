@@ -257,7 +257,10 @@ pub(crate) async fn install_python_profile<R: tauri::Runtime>(
     let drama = profile == "drama3";
     let multilingual = profile == "multilingual";
     let toolbox = profile == "audio-toolbox";
-    let folder = root(core).join(if toolbox {
+    let speaker = profile == "speaker-separation";
+    let folder = root(core).join(if speaker {
+        "speaker-separation-runtime"
+    } else if toolbox {
         "audio-toolbox-runtime"
     } else if multilingual {
         "multilingual-runtime"
@@ -291,7 +294,9 @@ pub(crate) async fn install_python_profile<R: tauri::Runtime>(
         b"python312.zip\n.\nLib/site-packages\nimport site\n",
     )?;
     let runtime: serde_json::Value = serde_json::from_slice(
-        &std::fs::read(separation::resources(app).join(if toolbox {
+        &std::fs::read(separation::resources(app).join(if speaker {
+            "speaker-separation-runtime.json"
+        } else if toolbox {
             "audio-toolbox-runtime.json"
         } else if multilingual {
             "multilingual-runtime.json"
@@ -323,6 +328,7 @@ pub(crate) async fn install_python_profile<R: tauri::Runtime>(
                     "fish-runtime",
                     "drama-runtime",
                     "audio-toolbox-runtime",
+                    "speaker-separation-runtime",
                 ] {
                     let candidate = root(core).join(profile).join("wheels").join(name);
                     if crate::downloads::cached(&candidate, &spec, flag).await? {
@@ -393,6 +399,27 @@ pub(crate) async fn install_python_profile<R: tauri::Runtime>(
         tauri::async_runtime::spawn_blocking(move || tts::extract(&archive, &destination, &f))
             .await
             .map_err(io_error)??;
+    }
+    if speaker {
+        let info = separation::probe(
+            &separation::python(&folder),
+            &[
+                separation::resources(app)
+                    .join("speaker_separation_worker.py")
+                    .to_string_lossy()
+                    .into_owned(),
+                "--info".into(),
+            ],
+            flag,
+            Duration::from_secs(90),
+        )
+        .await?
+        .ok_or("TTS_RUNTIME_FAILED")?;
+        project::atomic_write(
+            &folder.join("devices.json"),
+            &serde_json::to_vec(&info).map_err(io_error)?,
+        )?;
+        return Ok(());
     }
     if separation::probe(
         &separation::python(&folder),

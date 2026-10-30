@@ -60,6 +60,7 @@ impl Clip {
 }
 
 pub(crate) fn clips(p: &Project) -> Vec<Clip> {
+    let family = crate::speaker_dubbing::State::new(p);
     let Some(media) = &p.media else {
         return vec![];
     };
@@ -72,7 +73,7 @@ pub(crate) fn clips(p: &Project) -> Vec<Clip> {
     let mut clips: Vec<_> = p
         .dialogues
         .iter()
-        .filter(|l| l.excluded_from_dubbing != Some(true))
+        .filter(|l| family.enabled(&l.id))
         .filter_map(|line| {
             let id = line.selected_generation_ids.get(&p.languages.target)?;
             let g = *generations.get(id.as_str())?;
@@ -123,9 +124,22 @@ pub(crate) fn clips(p: &Project) -> Vec<Clip> {
         .collect();
     clips.sort_by_key(|c| c.start);
     let starts: Vec<_> = clips.iter().map(|c| c.start).collect();
+    let keys: Vec<_> = clips
+        .iter()
+        .map(|c| {
+            family
+                .key(generations[c.id.as_str()]["dialogueId"].as_str().unwrap())
+                .to_owned()
+        })
+        .collect();
     for (index, clip) in clips.iter_mut().enumerate() {
-        let next = starts.get(index + 1).copied().unwrap_or(u64::MAX);
-        let duplicate = index > 0 && starts[index - 1] == clip.start;
+        let mut following = index + 1;
+        while following < starts.len() && keys[following] == keys[index] {
+            following += 1;
+        }
+        let next = starts.get(following).copied().unwrap_or(u64::MAX);
+        let duplicate =
+            index > 0 && starts[index - 1] == clip.start && keys[index - 1] != keys[index];
         clip.slot_ms = if duplicate {
             0
         } else {
@@ -335,8 +349,9 @@ fn validate(p: &Project, options: &Options) -> Result<(), String> {
     }
     if !options.allow_incomplete {
         let selected = clips(p);
+        let family = crate::speaker_dubbing::State::new(p);
         for line in &p.dialogues {
-            if line.excluded_from_dubbing == Some(true) {
+            if !family.enabled(&line.id) {
                 continue;
             }
             if tts::text(p, line).is_empty() {

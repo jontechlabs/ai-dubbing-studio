@@ -1,7 +1,7 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "AI Dubbing Studio",
-  "version": "0.32.5",
+  "version": "0.33.0",
   "identifier": "studio.local.dubbing",
   "build": {
     "beforeDevCommand": "pnpm dev",
@@ -99,7 +99,13 @@
       "../workers/audio_toolbox_worker.py": "workers/audio_toolbox_worker.py",
       "../workers/audio-toolbox-models.json": "workers/audio-toolbox-models.json",
       "../workers/audio-toolbox-runtime.json": "workers/audio-toolbox-runtime.json",
-      "../workers/vendor/audio-toolbox/": "workers/vendor/audio-toolbox/"
+      "../workers/vendor/audio-toolbox/": "workers/vendor/audio-toolbox/",
+      "../workers/speaker_separation_worker.py": "workers/speaker_separation_worker.py",
+      "../workers/speaker-separation-models.json": "workers/speaker-separation-models.json",
+      "../workers/speaker-separation-runtime.json": "workers/speaker-separation-runtime.json",
+      "../workers/vendor/speaker-separation/mossformer2-source.zip": "workers/vendor/speaker-separation/mossformer2-source.zip",
+      "../workers/vendor/speaker-separation/manifest.json": "workers/vendor/speaker-separation/manifest.json",
+      "../workers/vendor/speaker-separation/README.md": "workers/vendor/speaker-separation/README.md"
     },
     "icon": [
       "icons/icon.ico",

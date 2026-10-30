@@ -1,6 +1,7 @@
 import { convertFileSrc, invoke as invokeNative, isTauri } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
 import { open, save } from '@tauri-apps/plugin-dialog';
+import { retainSpeakerDialogues } from '../domain/speakerDubbing';
 import { blankProject, demoProject, validateProject } from '../domain/project';
 import { alignCues, exportSrt, parseSrt, reconcileDialogues } from '../domain/subtitles';
 import type { EnvironmentInfo, Job, MediaInfo, Project, Track } from '../domain/types';
@@ -8,6 +9,40 @@ import { browserStore, downloadText, pickBrowserFile } from './browserStore';
 import { audioPeaks, type Waveform } from '../domain/waveform';
 
 export const native = isTauri();
+export function speakerSeparationStatus() {
+  return invoke<import('../domain/audioToolbox').AudioToolboxStatus>('speaker_separation_status');
+}
+export function installSpeakerSeparationModel(modelId: string) {
+  return invoke<string>('install_speaker_separation_model', { modelId });
+}
+export function separateDialogueSpeakers(
+  options: import('../domain/speakerDubbing').SpeakerSeparationOptions,
+) {
+  return invoke<string>('separate_dialogue_speakers', { options });
+}
+export function speakerSeparationResult(id: string) {
+  return invoke<import('../domain/speakerDubbing').SpeakerSeparationResult>(
+    'speaker_separation_result',
+    { id },
+  );
+}
+export async function speakerSeparationUrl(id: string, outputId: string) {
+  return convertFileSrc(await invoke<string>('speaker_separation_path', { id, outputId }));
+}
+export function applySpeakerSeparationResult(
+  id: string,
+  destinations: import('../domain/speakerDubbing').SpeakerSeparationDestination[],
+  muteSource: boolean,
+) {
+  return invoke<Project>('apply_speaker_separation_result', { id, destinations, muteSource });
+}
+export function createSpeakerDubbings(
+  id: string,
+  assignments: import('../domain/speakerDubbing').SpeakerDubbingAssignment[],
+) {
+  return invoke<Project>('create_speaker_dubbings', { id, assignments });
+}
+
 export function audioToolboxStatus() {
   return invoke<import('../domain/audioToolbox').AudioToolboxStatus>('audio_toolbox_status');
 }
@@ -713,6 +748,7 @@ export async function importSubtitles(role: 'source' | 'target'): Promise<Projec
     project.dialogues,
     alignCues(project.sourceCues, project.targetCues),
   );
+  retainSpeakerDialogues(browserProject, project);
   return replaceProject(project, browserProject.revision);
 }
 export async function mediaUrl(project: Project): Promise<string | null> {

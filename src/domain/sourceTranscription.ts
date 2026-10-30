@@ -1,3 +1,4 @@
+import { dialogueText } from './subtitles';
 import type { Project } from './types';
 export interface SourceTranscriptionOptions {
   lineId: string;
@@ -41,7 +42,12 @@ export function sourceProposalCurrent(project: Project, p: SourceTranscriptionPr
     l.endMs !== b.endMs
   )
     return false;
-  if (!l.sourceCueIds.length) return b.slots.length === 1 && b.slots[0].cueId === null;
+  if (!l.sourceCueIds.length)
+    return (
+      b.slots.length === 1 &&
+      b.slots[0].cueId === null &&
+      b.slots[0].text === dialogueText(project, l, 'source')
+    );
   return (
     l.sourceCueIds.length === b.slots.length &&
     b.slots.every((s, i) => {

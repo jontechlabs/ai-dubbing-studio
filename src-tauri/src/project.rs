@@ -50,7 +50,7 @@ pub fn load(root: &Path) -> Result<Project, String> {
         let value: serde_json::Value =
             serde_json::from_slice(&std::fs::read(path).map_err(io_error)?)
                 .map_err(|_| "INVALID_PROJECT".to_string())?;
-        if !matches!(value["formatVersion"].as_u64(), Some(1..=24)) {
+        if !matches!(value["formatVersion"].as_u64(), Some(1..=25)) {
             return Err("UNSUPPORTED_PROJECT_VERSION".into());
         }
         let mut p: Project =
@@ -151,6 +151,7 @@ impl Session {
             &next.dialogues,
             crate::subtitles::align(&next.source_cues, &next.target_cues),
         );
+        crate::speaker_dubbing::retain_after_alignment(&self.project, &mut next);
         ensure_directory(&self.root, "subtitles")?;
         let name = format!("subtitles/{role}_{}.srt", crate::domain::id());
         atomic_write(&self.root.join(name), text.as_bytes())?;

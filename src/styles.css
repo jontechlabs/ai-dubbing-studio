@@ -3866,3 +3866,38 @@ pre {
   padding: 6px 14px;
   font-size: 11px;
 }
+
+.speaker-separation {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 10px;
+  margin: 8px 0;
+}
+.speaker-separation > summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+.speaker-separation fieldset {
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  margin: 10px 0;
+  padding: 8px;
+}
+.speaker-separation audio {
+  width: 100%;
+  max-height: 36px;
+}
+.speaker-separation .field {
+  margin: 8px 0;
+}
+.speaker-separation .reference-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+.isolated-voice-label {
+  display: block;
+  color: var(--accent);
+  margin-bottom: 5px;
+}

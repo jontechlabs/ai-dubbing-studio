@@ -6,9 +6,15 @@ if(-not $PortablePath){$PortablePath=Join-Path $repoRoot 'artifacts/AI-Dubbing-S
 $testRoot=Join-Path $repoRoot ".cache/mcp-native/$([guid]::NewGuid().ToString('N'))/Contrôle 日本語"
 $dataRoot=Join-Path $testRoot 'session'
 New-Item -ItemType Directory -Force $dataRoot | Out-Null
+$speakerStore=Join-Path $repoRoot '.cache/speaker-separation-smoke/Référence 日本語/model-store'
+$modelsRoot=$dataRoot
+if(Test-Path -LiteralPath (Join-Path $speakerStore 'voice-engines/speaker-separation-runtime/ready.json')) {
+    $modelsRoot=$speakerStore
+    [IO.File]::WriteAllText((Join-Path $dataRoot 'model-storage.json'),(@{version=1;path=$speakerStore}|ConvertTo-Json -Compress))
+}
 $asrSource=Join-Path $repoRoot '.cache/reference-transcription/Référence 日本語/ggml-small-q5_1.bin'
 if(Test-Path -LiteralPath $asrSource){
-    $asrDirectory=Join-Path $dataRoot 'whisper-reference'
+    $asrDirectory=Join-Path $modelsRoot 'whisper-reference'
     New-Item -ItemType Directory -Force $asrDirectory | Out-Null
     Copy-Item -LiteralPath $asrSource -Destination (Join-Path $asrDirectory 'ggml-small-q5_1.bin')
 }

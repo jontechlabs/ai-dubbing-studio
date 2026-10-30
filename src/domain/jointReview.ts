@@ -1,8 +1,10 @@
 import type { Dialogue, Generation, Project } from './types';
 import { selectedGeneration, staleGeneration } from './tts';
+import { isolatedVoice, type IsolatedVoice } from './speakerDubbing';
 import { libraryReference } from './voiceLibrary';
 
 export interface JointReviewSnapshot {
+  isolatedVoice?: IsolatedVoice;
   sourceCues: import('./types').Cue[];
   targetCues: import('./types').Cue[];
   ttsText: string | null;
@@ -71,6 +73,9 @@ export function jointReviewSnapshot(
   const timing =
     project.dubbingTiming?.sourcePath === project.media?.path ? project.dubbingTiming : undefined;
   return {
+    ...(isolatedVoice(project, line.id)
+      ? { isolatedVoice: structuredClone(isolatedVoice(project, line.id)!.voice) }
+      : {}),
     sourceCues: line.sourceCueIds.flatMap((id) => {
       const c = index ? index.source.get(id) : project.sourceCues.find((c) => c.id === id);
       return c ? [{ ...c }] : [];

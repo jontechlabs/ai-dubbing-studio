@@ -1,4 +1,5 @@
 import type { Project } from './types';
+import { validateSpeakerDubbings } from './speakerDubbing';
 import { alignCues } from './subtitles';
 import { validVoiceVariant } from './modelVariants';
 import { validVoiceSettings } from './tts';
@@ -111,7 +112,7 @@ export function validateProject(value: unknown): Project {
   if (
     !Number.isInteger(project.formatVersion) ||
     project.formatVersion < 1 ||
-    project.formatVersion > 24
+    project.formatVersion > 25
   )
     throw new Error('UNSUPPORTED_PROJECT_VERSION');
   if (project.voiceEdits !== undefined) {
@@ -408,6 +409,7 @@ export function validateProject(value: unknown): Project {
   validateDubbingPipelines(project);
   validateCharacterProfiles(project);
   validateVoiceLibraries(project);
+  validateSpeakerDubbings(project);
   validateProsody(project);
   validateLipVideos(project);
   validateAudioPatches(project);

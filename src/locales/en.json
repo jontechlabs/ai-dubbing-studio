@@ -201,7 +201,9 @@
     "toolboxVerify": "Verifying audio models",
     "toolboxSeparate": "Separating selected audio",
     "toolboxPrepare": "Preparing selected audio",
-    "toolboxLoad": "Loading separation model"
+    "toolboxLoad": "Loading separation model",
+    "speakerSeparationLoad": "Loading voice separator",
+    "speakerSeparationRun": "Separating voices"
   },
   "shortcuts": "Space: play · J/K/L: transport · O: original · Ctrl+S: save · Ctrl+Z/Y: undo/redo",
   "errors": {
@@ -408,7 +410,17 @@
     "AUDIO_TOOLBOX_ALREADY_APPLIED": "This result was already applied.",
     "AUDIO_TOOLBOX_NOT_READY": "The result is not available yet.",
     "INVALID_DUBBING_PIPELINE": "The two-stage dubbing information is invalid.",
-    "DIALOGUE_EXCLUDED": "This dialogue is excluded from dubbing. Its subtitles and takes are retained. Restore it from the dialogue list before generating new takes."
+    "DIALOGUE_EXCLUDED": "This dialogue is excluded from dubbing. Its subtitles and takes are retained. Restore it from the dialogue list before generating new takes.",
+    "SPEAKER_SEPARATION_OPTIONS": "Invalid voice-separation configuration.",
+    "SPEAKER_SEPARATION_DISK_REQUIRED": "Not enough free space. Dependencies will not be downloaded.",
+    "SPEAKER_DUBBING_PARENT_ACTIVE": "This group replaces the main dub. Choose a voice above to dub it, or restore the main take.",
+    "SPEAKER_DUBBING_GROUP_EDIT": "Restore the main dubbing before splitting or merging this dialogue.",
+    "SPEAKER_SEPARATION_MODEL_REQUIRED": "Install the selected voice separator.",
+    "SPEAKER_SEPARATION_FAILED": "Voice separation failed. See this task’s log.",
+    "SPEAKER_SEPARATION_OUT_OF_MEMORY": "Insufficient separator memory. Free GPU memory or select CPU.",
+    "SPEAKER_SEPARATION_ALREADY_APPLIED": "This result was already applied. Its sub-dubbings remain in the group.",
+    "SPEAKER_SEPARATION_INVALID_AUDIO": "Invalid separator audio output.",
+    "SPEAKER_SEPARATION_NOT_READY": "Voice separation is not finished."
   },
   "preparingVideo": "Preparing video…",
   "loadingVideo": "Loading video…",
@@ -1254,7 +1266,9 @@
     "sourceTranscription": "Source dialogue transcription",
     "ttsPipeline": "Two-stage dubbing",
     "toolboxInstall": "Audio tool installation",
-    "audioToolbox": "Selected audio separation"
+    "audioToolbox": "Selected audio separation",
+    "speakerSeparation": "Overlapping voice separation",
+    "speakerSeparationInstall": "Voice separator installation"
   },
   "fxRemoveTrack": "Remove processed copy · {{name}}",
   "transferEffects": "Audio effects",
@@ -1630,5 +1644,39 @@
   "dialogueShowExcluded": "Show excluded dialogues ({{count}})",
   "dialogueRestore": "Restore to dubbing",
   "dialogueExcluded": "Excluded from dubbing",
-  "dialogueExcludedHint": "This dialogue is excluded from dubbing. Its subtitles and takes are retained. Restore it from the dialogue list before generating new takes."
+  "dialogueExcludedHint": "This dialogue is excluded from dubbing. Its subtitles and takes are retained. Restore it from the dialogue list before generating new takes.",
+  "overlap": {
+    "title": "Separate overlapping voices",
+    "hint": "Separate people speaking at the same time in this dialogue (up to 60 s). Listen and review each voice before using it.",
+    "voice": "Voice {{number}}",
+    "variant": "Active dubbing",
+    "parentTake": "Main dialogue take",
+    "group": "Group {{number}}",
+    "parent": "Main dialogue",
+    "preserved": "Existing sub-dubbings, takes and subtitles are preserved.",
+    "model": "Voice separator",
+    "defaultSource": "Default speech track, otherwise original audio",
+    "disk": "Required: {{required}} GiB · available: {{available}} GiB",
+    "separate": "Separate this dialogue’s voices",
+    "install": "Install separator",
+    "noSpace": "Not enough free space. Dependencies will not be downloaded.",
+    "review": "Review the separated voices. Enter distinct texts for each person, or create sub-dubbings and use their transcription helper. Voice numbers are not character identities.",
+    "label": "Voice name",
+    "destination": "Destination track",
+    "skipTrack": "Do not route to a track",
+    "role": {
+      "speech": "Speech track (create if needed)",
+      "music": "Music track (create if needed)",
+      "sfx": "Effects track (create if needed)"
+    },
+    "routing": "Routing at the same timestamps",
+    "replace": "Replace region",
+    "add": "Add to existing audio",
+    "muteSource": "Remove the source track’s region",
+    "applyTracks": "Route voices to tracks",
+    "createDubs": "Create independent sub-dubbings",
+    "parentDisabled": "This group replaces the main dub. Choose a voice above to dub it, or restore the main take.",
+    "source": "Track containing overlapping voices",
+    "translation": "Translation"
+  }
 }

@@ -1,6 +1,186 @@
 use super::*;
 use crate::audio_patch::{self, Snippet};
 use std::sync::Mutex;
+fn overlap_project(mut p: Project) -> Project {
+    p.format_version = 25;
+    let parent = p.dialogues[0].clone();
+    let mut voices = vec![];
+    for n in 1..=2 {
+        let mut line = parent.clone();
+        line.id = format!("child-{n}");
+        line.source_cue_ids.clear();
+        line.target_cue_ids.clear();
+        line.selected_generation_ids
+            .insert("fr".into(), format!("child-take-{n}"));
+        let mut generation = p.generations[0].clone();
+        generation["id"] = serde_json::json!(format!("child-take-{n}"));
+        generation["dialogueId"] = serde_json::json!(line.id);
+        generation["text"] = serde_json::json!(format!("Voix {n}"));
+        p.generations.push(generation);
+        voices.push(crate::speaker_dubbing::Voice {
+            line_id: line.id.clone(),
+            output_id: format!("voice-{n}"),
+            label: format!("Personne {n}"),
+            audio_path: format!("stems/isolated-{}.wav", crate::domain::id()),
+            source_text: format!("日本語 {n}"),
+            translations: std::collections::HashMap::from([("fr".into(), format!("Voix {n}"))]),
+        });
+        p.dialogues.push(line);
+    }
+    p.speaker_dubbings = vec![crate::speaker_dubbing::Group {
+        id: crate::domain::id(),
+        parent_id: parent.id,
+        separation_id: crate::domain::id(),
+        model_id: "mossformer2-16k".into(),
+        source_path: p.media.as_ref().unwrap().path.clone(),
+        source_track_id: "original".into(),
+        start_ms: parent.start_ms,
+        end_ms: parent.end_ms,
+        created_at: crate::domain::now(),
+        active: true,
+        voices,
+    }];
+    p.validate().unwrap();
+    p
+}
+#[tokio::test]
+async fn overlapping_dubs_render_both_siblings_without_parent_and_preserve_every_original_asset() {
+    let (_temp, root, p) = fixture().await;
+    let p = overlap_project(p);
+    let movie = std::fs::read(root.join("media/source.mkv")).unwrap();
+    let voice = std::fs::read(root.join("generations/voice.wav")).unwrap();
+    let selected = clips(&p);
+    assert_eq!(selected.len(), 2);
+    assert!(selected
+        .iter()
+        .all(|c| c.slot_ms == 2000 && c.duration_ms() == 1500));
+    let app = tauri::test::mock_app();
+    let core = core(&root, p.clone());
+    let out = root.join("exports/overlap.wav");
+    render_dubbing_raw(
+        &core,
+        app.handle(),
+        "",
+        &p,
+        &root,
+        &out,
+        &Arc::new(AtomicBool::new(false)),
+    )
+    .await
+    .unwrap();
+    let bytes = std::fs::read(&out).unwrap();
+    let samples: Vec<_> = bytes
+        .chunks_exact(4)
+        .map(|b| f32::from_le_bytes(b.try_into().unwrap()))
+        .collect();
+    let level = samples[1100 * 24..1120 * 24].iter().copied().sum::<f32>() / (20.0 * 24.0);
+    // The pre-fader bus is raw mono FP32; both 0.2 PCM voices are summed at unity.
+    assert!((level - 0.4).abs() < 0.003, "{level}");
+    assert_eq!(std::fs::read(root.join("media/source.mkv")).unwrap(), movie);
+    assert_eq!(
+        std::fs::read(root.join("generations/voice.wav")).unwrap(),
+        voice
+    );
+    assert_eq!(p.generations.len(), 3);
+    assert_eq!(p.source_cues.len(), 1);
+    assert_eq!(p.target_cues.len(), 1);
+}
+#[tokio::test]
+async fn isolated_reference_uses_its_own_audio_at_local_offsets_despite_muted_source_and_keeps_source_srt(
+) {
+    let (_temp, root, p) = fixture().await;
+    let p = overlap_project(p);
+    let asset = &p.speaker_dubbings[0].voices[0].audio_path;
+    ffmpeg(
+        &[
+            "-f",
+            "lavfi",
+            "-i",
+            "aevalsrc=0.4:s=48000:d=2",
+            "-ac",
+            "1",
+            "-c:a",
+            "pcm_s16le",
+        ],
+        &root.join(asset),
+    )
+    .await;
+    let app = tauri::test::mock_app();
+    let core = core(&root, p.clone());
+    let out = root.join("exports/isolated-reference.wav");
+    crate::speaker_dubbing::snippet(
+        &core,
+        app.handle(),
+        "",
+        &p,
+        &root,
+        "child-1",
+        Snippet {
+            track_id: "original",
+            start_ms: 1200,
+            end_ms: 1800,
+            channels: 1,
+            rate: 24000,
+            levels: audio_patch::SnippetLevels::Reference,
+        },
+        &out,
+        &AtomicBool::new(false),
+    )
+    .await
+    .unwrap();
+    assert_eq!(
+        audio_files::pcm_frames(&out, 1, 24000, "bad").unwrap(),
+        600 * 24
+    );
+    let samples = pcm(&out, "0:a:0").await;
+    let level = samples[1000..2000].iter().copied().sum::<f32>() / 1000.;
+    assert!(
+        (level - 0.4 * std::f32::consts::FRAC_1_SQRT_2).abs() < 0.003,
+        "{level}"
+    );
+    let b = crate::source_transcription::basis(&p, "child-1").unwrap();
+    let edited = crate::source_transcription::applied(&p, &b, &["別の声".into()]).unwrap();
+    assert_eq!(
+        crate::speaker_dubbing::text(&edited, &edited.dialogues[1], true),
+        "別の声"
+    );
+    assert_eq!(
+        crate::subtitles::export_srt(&edited.source_cues),
+        crate::subtitles::export_srt(&p.source_cues)
+    );
+    assert_eq!(edited.generations, p.generations);
+}
+#[tokio::test]
+async fn child_group_persistence_exclusion_restore_and_validation_are_consistent() {
+    let (_temp, root, p) = fixture().await;
+    let mut p = overlap_project(p);
+    for l in p.dialogues.iter_mut().skip(1) {
+        l.excluded_from_dubbing = Some(true);
+    }
+    assert!(clips(&p).is_empty());
+    p.speaker_dubbings[0].active = false;
+    assert_eq!(clips(&p).len(), 1);
+    assert_eq!(clips(&p)[0].id, "voice");
+    project::save(&root, &p).unwrap();
+    let loaded = project::load(&root).unwrap();
+    assert_eq!(
+        serde_json::to_value(&loaded.speaker_dubbings).unwrap(),
+        serde_json::to_value(&p.speaker_dubbings).unwrap()
+    );
+    let mut invalid = p.clone();
+    invalid.speaker_dubbings[0].voices[1].line_id = "child-1".into();
+    assert!(invalid.validate().is_err());
+    let mut invalid = p.clone();
+    invalid.format_version = 24;
+    assert!(invalid.validate().is_err());
+    let mut realigned = p.clone();
+    realigned.dialogues.clear();
+    realigned.source_cues.clear();
+    realigned.target_cues.clear();
+    crate::speaker_dubbing::retain_after_alignment(&p, &mut realigned);
+    realigned.validate().unwrap();
+    assert_eq!(realigned.dialogues.len(), 3);
+}
 #[tokio::test]
 async fn tiny_repeated_stretches_rebuild_sample_timestamps_and_keep_original_playable() {
     let (_temporary, root, _p) = fixture().await;

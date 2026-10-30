@@ -38,9 +38,13 @@ pub fn snapshot(p: &Project, line: &Dialogue) -> Value {
         .dubbing_timing
         .as_ref()
         .filter(|t| Some(&t.source_path) == p.media.as_ref().map(|m| &m.path));
-    json!({"sourceCues":line.source_cue_ids.iter().filter_map(|id|p.source_cues.iter().find(|c|&c.id==id)).collect::<Vec<_>>(),"targetCues":line.target_cue_ids.iter().filter_map(|id|p.target_cues.iter().find(|c|&c.id==id)).collect::<Vec<_>>(),"ttsText":line.tts_text,"pronunciation":p.pronunciation,"startMs":line.start_ms,"endMs":line.end_ms,"characterId":line.character_id,"sourcePath":p.media.as_ref().map(|m|&m.path),"generation":g,"reference":reference,"edit":edit,
+    let mut result = json!({"sourceCues":line.source_cue_ids.iter().filter_map(|id|p.source_cues.iter().find(|c|&c.id==id)).collect::<Vec<_>>(),"targetCues":line.target_cue_ids.iter().filter_map(|id|p.target_cues.iter().find(|c|&c.id==id)).collect::<Vec<_>>(),"ttsText":line.tts_text,"pronunciation":p.pronunciation,"startMs":line.start_ms,"endMs":line.end_ms,"characterId":line.character_id,"sourcePath":p.media.as_ref().map(|m|&m.path),"generation":g,"reference":reference,"edit":edit,
       "offsetMs":timing.and_then(|t|t.offsets_ms.get(&line.id)).and_then(|v|v.get(&p.languages.target)).copied().unwrap_or(0),
-      "durationMs":timing.and_then(|t|t.durations_ms.get(&line.id)).and_then(|v|v.get(&p.languages.target))})
+      "durationMs":timing.and_then(|t|t.durations_ms.get(&line.id)).and_then(|v|v.get(&p.languages.target))});
+    if let Some((_, voice)) = crate::speaker_dubbing::voice(p, &line.id) {
+        result["isolatedVoice"] = json!(voice);
+    }
+    result
 }
 // JS serializes integral floats as integers. Ignore JSON numeric representation,
 // while preserving exact keys, array order and every audible parameter.
@@ -57,17 +61,7 @@ pub fn same(a: &Value, b: &Value) -> bool {
     }
 }
 pub fn clean(p: &mut Project) {
-    let source: std::collections::HashMap<_, _> =
-        p.source_cues.iter().map(|c| (&c.id, &c.text)).collect();
-    let target: std::collections::HashMap<_, _> =
-        p.target_cues.iter().map(|c| (&c.id, &c.text)).collect();
     let lines: std::collections::HashMap<_, _> = p.dialogues.iter().map(|l| (&l.id, l)).collect();
-    let text = |ids: &[String], cues: &std::collections::HashMap<&String, &String>| {
-        ids.iter()
-            .map(|id| cues.get(id).map_or("", |s| s.as_str()))
-            .collect::<Vec<_>>()
-            .join("\n")
-    };
     let approvals = p
         .translation_approvals
         .iter()
@@ -78,9 +72,9 @@ pub fn clean(p: &mut Project) {
             }
             if a.source_language != p.languages.source
                 || a.target_language != p.languages.target
-                || a.source_text != text(&line.source_cue_ids, &source)
+                || a.source_text != crate::speaker_dubbing::text(p, line, true)
                 || a.target_text.trim().is_empty()
-                || a.target_text != text(&line.target_cue_ids, &target)
+                || a.target_text != crate::speaker_dubbing::text(p, line, false)
             {
                 return None;
             }

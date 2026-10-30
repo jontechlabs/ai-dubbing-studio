@@ -90,9 +90,8 @@ fn plain(text: &str) -> String {
         .to_owned()
 }
 pub(crate) fn translated(p: &Project, line: &Dialogue) -> bool {
-    p.target_cues
-        .iter()
-        .any(|c| line.target_cue_ids.contains(&c.id) && !plain(&c.text).is_empty())
+    crate::speaker_dubbing::State::new(p).enabled(&line.id)
+        && !plain(&crate::speaker_dubbing::text(p, line, false)).is_empty()
 }
 pub(crate) fn usable(p: &Project, root: &Path, line: &Dialogue) -> bool {
     let Some(key) = line.selected_generation_ids.get(&p.languages.target) else {
@@ -150,13 +149,7 @@ pub(crate) fn usable(p: &Project, root: &Path, line: &Dialogue) -> bool {
             return false;
         }
     } else if options.reference_mode == "current" && options.mode == "zeroShot" {
-        let original = p
-            .source_cues
-            .iter()
-            .filter(|c| line.source_cue_ids.contains(&c.id))
-            .map(|c| c.text.as_str())
-            .collect::<Vec<_>>()
-            .join("\n");
+        let original = crate::speaker_dubbing::text(p, line, true);
         if g["referenceTranscript"] != original {
             return false;
         }
@@ -174,7 +167,20 @@ pub fn plan(
     {
         return Err("INVALID_TTS_BATCH".into());
     }
-    let ids: HashSet<_> = selection.line_ids.iter().collect();
+    let expanded: Vec<String> = selection
+        .line_ids
+        .iter()
+        .flat_map(|id| {
+            let group = p
+                .speaker_dubbings
+                .iter()
+                .find(|g| g.parent_id == *id && g.active);
+            group
+                .map(|g| g.voices.iter().map(|v| v.line_id.clone()).collect())
+                .unwrap_or_else(|| vec![id.clone()])
+        })
+        .collect();
+    let ids: HashSet<_> = expanded.iter().collect();
     if selection.scope == "selected"
         && (ids.is_empty()
             || ids
@@ -195,8 +201,9 @@ pub fn plan(
     let mut items = vec![];
     let mut approved = p.clone();
     approved.clean_translation_approvals();
+    let family = crate::speaker_dubbing::State::new(p);
     for line in &p.dialogues {
-        if line.excluded_from_dubbing == Some(true) {
+        if !family.enabled(&line.id) {
             continue;
         }
         if selection.scope == "selected" && !ids.contains(&line.id) {

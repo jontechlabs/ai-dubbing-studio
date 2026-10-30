@@ -1,0 +1,23 @@
+import {test,expect,type Page} from '@playwright/test';
+import {nativeMock} from './nativeMock';
+async function open(page:Page){await page.setViewportSize({width:1600,height:1100});await nativeMock(page);await page.goto('/');await page.evaluate(()=>(window as any).__seedDubbing());await page.locator('.dialogue-card').first().locator('.line-select').click();await page.getByRole('button',{name:'Ajouter un doublage',exact:true}).click();const panel=page.getByRole('dialog',{name:'Doublage',exact:true});const section=panel.locator('.speaker-separation');await section.locator('summary').click();return {panel,section};}
+test('separates on demand in the dubbing panel, previews two voices and creates independent child texts without losing any prior take or SRT',async({page})=>{
+ const {panel,section}=await open(page);const before=await page.evaluate(()=>(window as any).__getMockProject());
+ expect(await page.evaluate(()=>(window as any).__calls.filter((c:any)=>c.command==='separate_dialogue_speakers'))).toEqual([]);
+ await section.getByRole('button',{name:'Isoler les voix de cette réplique',exact:true}).click();await expect(panel.locator('.current-job-progress')).toBeVisible();await expect(page.getByRole('dialog',{name:'Traitements',exact:true})).toHaveCount(0);
+ await page.evaluate(()=>(window as any).__completeSpeakerSeparation());await expect(section.locator('audio')).toHaveCount(2);
+ const rows=section.locator('fieldset');await rows.nth(0).getByRole('textbox',{name:'Original',exact:true}).fill('最初の声');await rows.nth(0).getByRole('textbox',{name:'Traduction',exact:true}).fill('Première personne.');await rows.nth(1).getByRole('textbox',{name:'Traduction',exact:true}).fill('Seconde personne.');
+ await section.getByRole('button',{name:'Créer les sous-doublages indépendants',exact:true}).click();await expect(section.getByRole('combobox',{name:'Doublage actif',exact:true})).toBeVisible();
+ const after=await page.evaluate(()=>(window as any).__getMockProject());expect(after.generations).toEqual(before.generations);expect(after.sourceCues).toEqual(before.sourceCues);expect(after.targetCues).toEqual(before.targetCues);expect(after.speakerDubbings[0].voices.map((v:any)=>v.translations.fr)).toEqual(['Première personne.','Seconde personne.']);
+ await section.getByRole('button',{name:'Voix 1',exact:true}).click();await expect(panel.getByRole('textbox',{name:'Texte qui sera prononcé',exact:true})).toHaveValue('Première personne.');
+});
+test('routes multiple isolated voices to one destination with an explicit merge choice and keeps the panel open',async({page})=>{
+ const {panel,section}=await open(page);await section.getByRole('combobox',{name:'Séparateur de voix',exact:true}).selectOption('sepformer-3mix');await section.getByRole('button',{name:'Isoler les voix de cette réplique',exact:true}).click();await page.evaluate(()=>(window as any).__completeSpeakerSeparation());await expect(section.locator('audio')).toHaveCount(3);
+ for(const row of await section.locator('fieldset').all())await row.getByRole('combobox',{name:'Piste de destination',exact:true}).selectOption('role:speech');
+ await section.getByRole('combobox',{name:'Affectation sur la même période',exact:true}).selectOption('add');await section.getByRole('button',{name:'Affecter les voix aux pistes',exact:true}).click();
+ await expect(panel).toBeVisible();await expect.poll(()=>page.evaluate(()=>(window as any).__speakerDestinations?.destinations.length)).toBe(3);expect(await page.evaluate(()=>(window as any).__speakerDestinations.destinations.every((d:any)=>d.mode==='add'))).toBe(true);
+});
+test('checks disk space before downloading separator dependencies',async({page})=>{
+ await page.addInitScript(()=>{(window as any).__speakerFree=1;(window as any).__speakerInstalled=false;});const {section}=await open(page);
+ await expect(section.getByRole('button',{name:'Installer le séparateur',exact:true})).toBeDisabled();await expect(section.getByText('Espace libre insuffisant. Aucune dépendance ne sera téléchargée.',{exact:true})).toBeVisible();expect(await page.evaluate(()=>(window as any).__calls.filter((c:any)=>c.command==='install_speaker_separation_model'))).toEqual([]);
+});

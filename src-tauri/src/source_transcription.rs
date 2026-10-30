@@ -78,7 +78,7 @@ pub(crate) fn basis(p: &Project, line_id: &str) -> Result<Basis, String> {
             cue_id: None,
             start_ms: line.start_ms,
             end_ms: line.end_ms,
-            text: String::new(),
+            text: crate::speaker_dubbing::text(p, line, true),
         }]
     } else {
         line.source_cue_ids
@@ -138,12 +138,15 @@ pub(crate) fn fingerprint(p: &Project, root: &Path, o: &Options) -> Result<Strin
     }
     let patches = crate::audio_patch::layers(p, &track.id);
     let mut files = vec![stamp(root, input)?];
+    if let Some((_, v)) = crate::speaker_dubbing::voice(p, &o.line_id) {
+        files.push(stamp(root, &v.audio_path)?);
+    }
     for patch in &patches {
         if let Some(path) = &patch.path {
             files.push(stamp(root, path)?);
         }
     }
-    let value = serde_json::json!({"basis":basis,"language":o.language,"trackId":track.id,"trackPath":track.path,"regions":track.regions,"regionsEnabled":track.regions_enabled,"audioStream":p.media.as_ref().unwrap().audio_stream_index,"patches":patches,"files":files});
+    let value = serde_json::json!({"basis":basis,"isolatedVoice":crate::speaker_dubbing::voice(p,&o.line_id),"language":o.language,"trackId":track.id,"trackPath":track.path,"regions":track.regions,"regionsEnabled":track.regions_enabled,"audioStream":p.media.as_ref().unwrap().audio_stream_index,"patches":patches,"files":files});
     Ok(format!(
         "{:x}",
         Sha256::digest(serde_json::to_vec(&value).map_err(io_error)?)
@@ -264,12 +267,13 @@ async fn run<R: tauri::Runtime>(
         let wav = temporary.path().join("source.wav");
         let pcm = temporary.path().join(format!("source-{i}.f32"));
         let result = temporary.path().join(format!("result-{i}.json"));
-        crate::audio_patch::snippet(
+        crate::speaker_dubbing::snippet(
             core,
             app,
             key,
             &p,
             &r.root,
+            &r.options.line_id,
             crate::audio_patch::Snippet {
                 track_id: &track.id,
                 start_ms: slot.start_ms,
@@ -419,6 +423,23 @@ pub(crate) fn applied(p: &Project, b: &Basis, texts: &[String]) -> Result<Projec
         return Err("ASR_OUTPUT_INVALID".into());
     }
     let mut next = p.clone();
+    if crate::speaker_dubbing::voice(p, &b.line_id).is_some() {
+        for g in &mut next.speaker_dubbings {
+            for v in &mut g.voices {
+                if v.line_id == b.line_id {
+                    v.source_text = texts.join("\n");
+                }
+            }
+        }
+        next.translation_approvals.remove(&b.line_id);
+        if let Some(l) = next.dialogues.iter_mut().find(|l| l.id == b.line_id) {
+            if ["generated", "validated"].contains(&l.status.as_str()) {
+                l.status = "review".into();
+            }
+        }
+        next.validate()?;
+        return Ok(next);
+    }
     let mut changed = vec![];
     for (slot, text) in b.slots.iter().zip(texts) {
         let text = text.trim();

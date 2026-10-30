@@ -342,14 +342,10 @@ pub fn install<R: tauri::Runtime>(
 }
 
 pub fn text(p: &Project, line: &crate::domain::Dialogue) -> String {
-    let mut text = line.tts_text.clone().unwrap_or_else(|| {
-        p.target_cues
-            .iter()
-            .filter(|cue| line.target_cue_ids.contains(&cue.id))
-            .map(|cue| cue.text.as_str())
-            .collect::<Vec<_>>()
-            .join("\n")
-    });
+    let mut text = line
+        .tts_text
+        .clone()
+        .unwrap_or_else(|| crate::speaker_dubbing::text(p, line, false));
     let mut dictionary: Vec<_> = p.pronunciation.iter().collect();
     dictionary.sort_by_key(|(key, _)| std::cmp::Reverse(key.len()));
     for (key, value) in dictionary {
@@ -377,7 +373,7 @@ pub fn fingerprint(p: &Project, line_id: &str) -> Result<String, String> {
         .iter()
         .find(|line| line.id == line_id)
         .ok_or("NO_DIALOGUES")?;
-    let value = serde_json::json!({"text":text(p,line),"start":line.start_ms,"end":line.end_ms,"character":line.character_id,"characterData":p.characters.iter().find(|character|Some(&character.id)==line.character_id.as_ref()),"voiceSettings":line.voice_settings,"sourceCues":p.source_cues.iter().filter(|c|line.source_cue_ids.contains(&c.id)).collect::<Vec<_>>(),"fileReference":line.voice_settings.as_ref().filter(|o|o.reference_mode=="file").and_then(|o|o.reference_id.as_deref()).and_then(|id|p.voice_reference(None,id)),"referenceTrack":p.model_preferences.as_ref().map(|v|&v["referenceTrackId"]),"audioPatches":crate::audio_patch::all(p)?,"source":p.media.as_ref().map(|m|&m.path),"language":p.languages.target,"pronunciation":p.pronunciation});
+    let value = serde_json::json!({"text":text(p,line),"start":line.start_ms,"end":line.end_ms,"character":line.character_id,"characterData":p.characters.iter().find(|character|Some(&character.id)==line.character_id.as_ref()),"voiceSettings":line.voice_settings,"isolatedVoice":crate::speaker_dubbing::voice(p,&line.id),"sourceCues":p.source_cues.iter().filter(|c|line.source_cue_ids.contains(&c.id)).collect::<Vec<_>>(),"fileReference":line.voice_settings.as_ref().filter(|o|o.reference_mode=="file").and_then(|o|o.reference_id.as_deref()).and_then(|id|p.voice_reference(None,id)),"referenceTrack":p.model_preferences.as_ref().map(|v|&v["referenceTrackId"]),"audioPatches":crate::audio_patch::all(p)?,"source":p.media.as_ref().map(|m|&m.path),"language":p.languages.target,"pronunciation":p.pronunciation});
     Ok(format!(
         "{:x}",
         Sha256::digest(serde_json::to_vec(&value).map_err(io_error)?)
@@ -504,6 +500,13 @@ pub(crate) fn validate_input(p: &Project, line_id: &str, options: &Options) -> R
     {
         return Err("DIALOGUE_EXCLUDED".into());
     }
+    if p.speaker_dubbings.iter().any(|g| {
+        g.parent_id == line_id
+            && g.active
+            && p.media.as_ref().is_some_and(|m| m.path == g.source_path)
+    }) {
+        return Err("SPEAKER_DUBBING_PARENT_ACTIVE".into());
+    }
     crate::voice_accent::validate(options, Some(&p.languages.target))?;
     let line = p
         .dialogues
@@ -516,10 +519,9 @@ pub(crate) fn validate_input(p: &Project, line_id: &str, options: &Options) -> R
         }
         crate::audio_patch::source_track(p, guide.track_id.as_deref())?;
         if guide.mode == "hybrid"
-            && !p
-                .source_cues
-                .iter()
-                .any(|c| line.source_cue_ids.contains(&c.id) && !c.text.trim().is_empty())
+            && crate::speaker_dubbing::text(p, line, true)
+                .trim()
+                .is_empty()
         {
             return Err("TTS_GUIDE_TRANSCRIPT_REQUIRED".into());
         }
@@ -552,10 +554,9 @@ pub(crate) fn validate_input(p: &Project, line_id: &str, options: &Options) -> R
     if options.reference_mode == "current" {
         crate::audio_patch::source_track(p, options.reference_track_id.as_deref())?;
         if options.mode == "zeroShot"
-            && !p
-                .source_cues
-                .iter()
-                .any(|c| line.source_cue_ids.contains(&c.id) && !c.text.trim().is_empty())
+            && crate::speaker_dubbing::text(p, line, true)
+                .trim()
+                .is_empty()
         {
             return Err("TTS_TRANSCRIPT_REQUIRED".into());
         }
@@ -692,12 +693,13 @@ pub(crate) async fn execute_with_session<R: tauri::Runtime>(
     let (reference_audio, transcript) = if request.options.reference_mode == "current" {
         let track =
             crate::audio_patch::source_track(&p, request.options.reference_track_id.as_deref())?;
-        crate::audio_patch::snippet(
+        crate::speaker_dubbing::snippet(
             core,
             app,
             key,
             &p,
             &request.root,
+            &line.id,
             crate::audio_patch::Snippet {
                 track_id: &track.id,
                 start_ms: line.start_ms,
@@ -710,13 +712,7 @@ pub(crate) async fn execute_with_session<R: tauri::Runtime>(
             flag,
         )
         .await?;
-        let transcript = p
-            .source_cues
-            .iter()
-            .filter(|cue| line.source_cue_ids.contains(&cue.id))
-            .map(|cue| cue.text.as_str())
-            .collect::<Vec<_>>()
-            .join("\n");
+        let transcript = crate::speaker_dubbing::text(&p, line, true);
         (ref_temp.clone(), transcript)
     } else {
         let reference = reference(&p, line, &request.options)?;
@@ -731,21 +727,16 @@ pub(crate) async fn execute_with_session<R: tauri::Runtime>(
     }
     let guide_temp = directory.join(format!("{generation_id}-guide.wav"));
     let guide_prepared = directory.join(format!("{generation_id}-guide-normalized.wav"));
-    let guide_transcript = p
-        .source_cues
-        .iter()
-        .filter(|c| line.source_cue_ids.contains(&c.id))
-        .map(|c| c.text.as_str())
-        .collect::<Vec<_>>()
-        .join("\n");
+    let guide_transcript = crate::speaker_dubbing::text(&p, line, true);
     if let Some(guide) = &request.options.intonation_guide {
         let track = crate::audio_patch::source_track(&p, guide.track_id.as_deref())?;
-        if let Err(error) = crate::audio_patch::snippet(
+        if let Err(error) = crate::speaker_dubbing::snippet(
             core,
             app,
             key,
             &p,
             &request.root,
+            &line.id,
             crate::audio_patch::Snippet {
                 track_id: &track.id,
                 start_ms: line.start_ms,

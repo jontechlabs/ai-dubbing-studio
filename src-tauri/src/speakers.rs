@@ -197,7 +197,11 @@ pub fn validate_scope(
     let lines = p
         .dialogues
         .iter()
-        .filter(|l| l.start_ms < end && l.end_ms > start)
+        .filter(|l| {
+            l.start_ms < end
+                && l.end_ms > start
+                && crate::speaker_dubbing::voice(p, &l.id).is_none()
+        })
         .map(|l| SpeakerLine {
             id: l.id.clone(),
             start_ms: l.start_ms,

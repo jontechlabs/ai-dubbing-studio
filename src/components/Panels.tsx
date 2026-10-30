@@ -134,6 +134,7 @@ export function Panels({
         )}
         {(panel === 'dub' || panel === 'batchDub') && project && (
           <DubPanel
+            onChooseLine={onSelectDialogue}
             onReferencePlay={() => {
               videoRef.current?.pause();
               document.dispatchEvent(new Event('studio-voice-preview'));

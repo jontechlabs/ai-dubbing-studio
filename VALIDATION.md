@@ -1,8 +1,10 @@
 # Validation
 
-## v0.32.5 — validation in progress
+## v0.33.0 — validation in progress
 
-Three new native FFmpeg regressions cover references from muted selections on every source-track role, retained transfers and structural silence, and actual reference audition followed by an unchanged muted-source MKV mix. Three unit tests and five Chrome scenarios cover transient isolation, before-level audition, exact range validation, end/stop/cancel behavior, restoring the saved mix and MCP playback. Full Windows checks and signed packages must pass before publication.
+Includes the unpublished reference-before-mute and bounded selection-audition corrections originally prepared as v0.32.5. Three full-weight separators passed Windows CPU inference in run [41102320665](https://github.com/jontechlabs/ai-dubbing-studio/actions/runs/41102320665): MossFormer2 2 voices, SepFormer 2 and 3 voices. Tests preserve exact 120000-frame outputs and source hashes; this is not a GPU speed, VRAM, Japanese or anime quality benchmark.
+
+198 TypeScript unit checks pass locally, including seven new group/text/take/persistence/concurrent-mix checks. Fresh Windows native, browser, worker, full-model and actual packaged MCP checks remain required before publishing signed binaries. Existing TTS workers, requests and GGUF inference remain byte-identical to the established baseline.
 
 ## v0.32.4 — 30 October 2026
 

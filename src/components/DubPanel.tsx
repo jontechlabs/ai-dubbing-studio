@@ -35,6 +35,8 @@ import { CharacterSuggestion } from './CharacterSuggestion';
 import { qualityPreset, resolvedQuality } from '../domain/voiceQuality';
 import { ProsodyTransfer } from './ProsodyTransfer';
 import { moodGroup, moodGroups, voiceMoods } from '../domain/voiceMoods';
+import { SpeakerSeparationPanel } from './SpeakerSeparationPanel';
+import { speakerDubbingState } from '../domain/speakerDubbing';
 import { useDubbingTask } from '../hooks/useDubbingTask';
 
 export function CosyModel({
@@ -195,6 +197,7 @@ export function DubPanel({
   onReferencePlay,
   onPlay,
   activeGenerationId,
+  onChooseLine,
 }: {
   batch?: { selectedIds: string[] };
   run: (operation: () => Promise<Project | null>) => Promise<void>;
@@ -212,6 +215,7 @@ export function DubPanel({
   onReferencePlay: () => void;
   onPlay: (generation: Generation) => void;
   activeGenerationId: string | null;
+  onChooseLine: (line: Dialogue) => void;
 }) {
   const { t } = useTranslation();
   const [batchSettings, setBatchSettings] = useState<VoiceSettings>(() => {
@@ -369,18 +373,20 @@ export function DubPanel({
       task.pending ||
       working ||
       jobs.some((j) => ['queued', 'running', 'paused'].includes(j.status));
-  const inputText = spokenText(project, line);
+  const inputText = speakerDubbingState(project).parents.has(line.id)
+    ? ''
+    : spokenText(project, line);
   const referenceMissing = settings.referenceMode !== 'current' && !reference;
   const transcriptMissing =
     mode === 'zeroShot' &&
     (settings.referenceMode === 'current'
-      ? !project.sourceCues.some((c) => line.sourceCueIds.includes(c.id) && c.text.trim())
+      ? !dialogueText(project, line, 'source').trim()
       : !reference?.transcript.trim());
   const guideIssue =
     !!settings.intonationGuide &&
     (line.endMs - line.startMs < 1000 ||
       (settings.intonationGuide.mode === 'hybrid' &&
-        !project.sourceCues.some((c) => line.sourceCueIds.includes(c.id) && c.text.trim())));
+        !dialogueText(project, line, 'source').trim()));
   const shortReference =
     settings.referenceMode === 'current'
       ? line.endMs - line.startMs < 1000
@@ -410,6 +416,25 @@ export function DubPanel({
       )}
       {line.excludedFromDubbing && !batch && (
         <p className="panel-description">{t('dialogueExcludedHint')}</p>
+      )}
+      {!batch && (
+        <SpeakerSeparationPanel
+          key={line.id}
+          project={project}
+          line={line}
+          jobs={jobs}
+          busy={busy}
+          startTask={task.start}
+          snapshot={snapshot}
+          run={run}
+          onEdit={onEdit}
+          onChoose={onChooseLine}
+          onError={onError}
+          onAudition={onReferencePlay}
+        />
+      )}
+      {!batch && speakerDubbingState(project).parents.has(line.id) && (
+        <p className="panel-description">{t('overlap.parentDisabled')}</p>
       )}
       <h3>{variant.name}</h3>
       {!batch && (
@@ -953,7 +978,7 @@ export function DubPanel({
             <summary>{t('workbench.originalText')}</summary>
             {(line.sourceCueIds.length
               ? line.sourceCueIds.map((id) => project.sourceCues.find((c) => c.id === id)!)
-              : [{ id: '', text: '' }]
+              : [{ id: '', text: dialogueText(project, line, 'source') }]
             ).map((cue, index, cues) => (
               <label className="field" key={cue.id || 'missing'}>
                 <span>
