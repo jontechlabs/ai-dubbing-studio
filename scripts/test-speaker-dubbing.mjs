@@ -20,7 +20,10 @@ export async function verifySpeakerDubbing({call,context,job,args,projectRoot:pr
  const parentTake={id:seedId,kind:'tts',dialogueId:seedLine.id,providerId:'cosyvoice3',modelId:'cosy3-official',path:seedPath,createdAt:new Date().toISOString(),sourcePath:seed.media.path,startMs:seedLine.startMs,endMs:seedLine.endMs,text:'Une phrase du parent.',language:'fr',characterId:null,durationMs:2000,sampleRate:24000,options:{variantId:'cosy3-official',device:'cpu',referenceMode:'current',referenceId:null,mode:'crossLingual',speed:1,seed:0},referenceTranscript:'機械テスト。',device:'cpu',deviceName:'Synthetic protocol fixture',peakVramMb:0,inputHash:createHash('sha256').update(wave).digest('hex')};
  // Real generation upgrades the project automatically; a directly injected
  // synthetic take must explicitly declare its supported project format too.
- await call('studio_project_patch',{context:await context(),patches:[{op:'replace',path:'/formatVersion',value:Math.max(5,seed.formatVersion)},{op:'add',path:'/generations/-',value:parentTake},{op:'add',path:'/dialogues/0/selectedGenerationIds/fr',value:seedId},{op:'replace',path:'/dialogues/0/status',value:'generated'}]});
+ await call('studio_project_patch',{context:await context(),patches:[{op:'replace',path:'/formatVersion',value:Math.max(5,seed.formatVersion)},{op:'add',path:'/generations/-',value:parentTake}]});
+ // The MCP selection preflight renders an already registered native take.
+ // Register synthetic takes first, then select them in a second transaction.
+ await call('studio_project_patch',{context:await context(),patches:[{op:'add',path:'/dialogues/0/selectedGenerationIds/fr',value:seedId},{op:'replace',path:'/dialogues/0/status',value:'generated'}]});
  console.log('SPEAKER_DUBBING_STAGE synthetic parent prepared');
  const before=await call('studio_get_project'),line=before.dialogues.find((l)=>l.endMs-l.startMs>=1000&&l.endMs-l.startMs<=60000);
  assert(line);const hash=b=>createHash('sha256').update(b).digest('hex');
@@ -34,8 +37,9 @@ export async function verifySpeakerDubbing({call,context,job,args,projectRoot:pr
  assert.deepEqual(created.generations,before.generations);assert.deepEqual(created.sourceCues,before.sourceCues);assert.deepEqual(created.targetCues,before.targetCues);
  for(const voice of group.voices){const l=created.dialogues.find((l)=>l.id===voice.lineId);assert.deepEqual(l.sourceCueIds,[]);assert.deepEqual(l.targetCueIds,[]);assert.equal(l.voiceSettings.referenceMode,'current');assert((await fs.stat(path.join(projectRoot,voice.audioPath))).size>44);}
  const basis=created.generations.find((g)=>g.kind==='tts');assert(basis);
- const patches=[];for(const voice of group.voices){const g={...structuredClone(basis),id:randomUUID(),dialogueId:voice.lineId,startMs:line.startMs,endMs:line.endMs,language:created.languages.target,characterId:null,text:voice.translations[created.languages.target],sourcePath:created.media.path};delete g.prosodyTransfer;delete g.takeOrigin;delete g.dubbingPipeline;patches.push({op:'add',path:'/generations/-',value:g},{op:'add',path:`/dialogues/${created.dialogues.findIndex((l)=>l.id===voice.lineId)}/selectedGenerationIds/${created.languages.target}`,value:g.id});}
- await call('studio_project_patch',{context:await context(),patches});
+ const additions=[],selections=[];for(const voice of group.voices){const g={...structuredClone(basis),id:randomUUID(),dialogueId:voice.lineId,startMs:line.startMs,endMs:line.endMs,language:created.languages.target,characterId:null,text:voice.translations[created.languages.target],sourcePath:created.media.path};delete g.prosodyTransfer;delete g.takeOrigin;delete g.dubbingPipeline;additions.push({op:'add',path:'/generations/-',value:g});selections.push({op:'add',path:`/dialogues/${created.dialogues.findIndex((l)=>l.id===voice.lineId)}/selectedGenerationIds/${created.languages.target}`,value:g.id});}
+ await call('studio_project_patch',{context:await context(),patches:additions});
+ await call('studio_project_patch',{context:await context(),patches:selections});
  // Like the user, explicitly enable the Dubbing mix bus (normally muted by
  // default). This ensures export contains the child voices, not silence.
  await call('studio_set_track',{context:await context(),id:'dubbing',changes:{mute:false,solo:false,gain:1}});
