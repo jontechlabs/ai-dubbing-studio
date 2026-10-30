@@ -48,7 +48,7 @@ export async function verifySpeakerDubbing({call,context,job,args,projectRoot:pr
  while(Date.now()<playUntil){const s=(await call('studio_get_state')).playback;if(s.playing&&s.selection?.selection.trackId==='dubbing'){played=true;break;}await new Promise(r=>setTimeout(r,50));}
  assert(played,'Parent did not audition the active child mix');await call('studio_playback',{action:'pause'});
  const output=path.join(projectRoot,'exports','overlapping-voices.mkv');await job(await call('studio_export_mkv',{context:await context(),path:output,options:{includeOriginal:false,sourceSubtitles:true,targetSubtitles:true,codec:'flac',allowIncomplete:true}}));assert((await fs.stat(output)).size>1000);
- const pcm=execFileSync(path.join(path.dirname(args.exe),'binaries','ffmpeg.exe'),['-v','error','-i',output,'-ss','2.1','-t','.2','-map','0:a:0','-ac','1','-ar','24000','-f','f32le','pipe:1']);let peak=0;
+ const pcm=execFileSync(path.join(path.dirname(args.exe),'binaries','ffmpeg.exe'),['-v','error','-i',output,'-ss','2.1','-t','0.2','-map','0:a:0','-ac','1','-ar','24000','-f','f32le','pipe:1']);let peak=0;
  for(let offset=0;offset+4<=pcm.length;offset+=4)peak=Math.max(peak,Math.abs(pcm.readFloatLE(offset)));
  assert(peak>.05,'Exported child mix must be audible');
  const saved=await call('studio_get_project');await call('studio_open_project',{path:projectRoot});const reopened=await call('studio_get_project');assert.deepEqual(reopened.speakerDubbings,saved.speakerDubbings);assert.deepEqual(reopened.generations,saved.generations);console.log('SPEAKER_DUBBING_STAGE concurrent MKV export and reopen passed');
