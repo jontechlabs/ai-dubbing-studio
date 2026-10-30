@@ -36,7 +36,8 @@ child.stdout.pipe(process.stdout);child.stderr.pipe(process.stderr);
   let diagnostics = ''; transport.stderr?.on('data', data => { diagnostics = (diagnostics + data.toString()).slice(-2000); });
   try {
     await client.connect(transport);
-    assert.equal((await client.listTools()).tools.length, 134);
+    const catalog = JSON.parse(await fs.readFile(new URL('../src/mcp/catalog.json', import.meta.url), 'utf8'));
+    assert.equal((await client.listTools()).tools.length, catalog.commands.length + catalog.builtins.length);
     await client.ping();
     for (let i = 0; i < 2; i++) {
       const value = await client.callTool({ name: 'studio_get_state', arguments: {} });

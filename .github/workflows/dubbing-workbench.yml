@@ -6,6 +6,10 @@ on:
         description: 'Optional workbench run with a successful frontend step and identical inputs. Native checks run unless the complete native proof also passed unchanged.'
         required: false
         type: string
+      package_run:
+        description: 'Optional authenticated signed package with successful build/package steps and identical compiled/resources/documentation inputs. SDK, ASR and models always run freshly.'
+        required: false
+        type: string
 permissions:
   contents: read
   actions: read
@@ -62,6 +66,7 @@ jobs:
             if ($LASTEXITCODE) { exit $LASTEXITCODE }
           }
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: env.STUDIO_REUSED_CHROME != '1'
         with:
           name: overlapping-voices-preview
           path: docs/screenshots/overlapping-voices.png
@@ -82,15 +87,22 @@ jobs:
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
           python -m unittest discover -s workers -p "test_*.py"
       - name: Build Windows installer with updater signature
+        if: inputs.package_run == ''
         env:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ''
         run: pnpm desktop:build
+      - name: Authenticate identical previously signed installer and portable package
+        if: inputs.package_run != ''
+        env:
+          STUDIO_PACKAGE_RUN: ${{ inputs.package_run }}
+        run: python scripts/reuse-workbench-package.py $env:STUDIO_PACKAGE_RUN
       - name: Real Japanese reference transcription
         run: ./scripts/test-reference-transcription.ps1
       - name: Full-weight two and three voice separation on Windows CPU
         run: python scripts/test-speaker-separation.py
       - name: Package installer and portable build
+        if: inputs.package_run == ''
         run: ./scripts/package-windows.ps1
       - name: Packaged desktop, workbench, source ASR and gain through official MCP SDK
         run: ./scripts/test-mcp.ps1

@@ -1,5 +1,6 @@
 // Actual packaged executable + WebView + native filesystem/FFmpeg, driven by
-// the pinned official SDK. No model weights or GPU inference are involved.
+// the pinned official SDK. Source ASR and speaker separation use real CPU weights;
+// TTS takes in the protocol fixtures are synthetic. No GPU qualification.
 import {Client} from '@modelcontextprotocol/sdk/client/index.js';
 import {StdioClientTransport} from '@modelcontextprotocol/sdk/client/stdio.js';
 import fs from 'node:fs/promises';

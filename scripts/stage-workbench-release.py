@@ -89,7 +89,7 @@ def main():
  # independently prove every required suite, ASR, model and packaged SDK result.
  assert not any(s.get('conclusion') in ['failure','cancelled','timed_out','action_required'] for s in jobs[0]['steps'])
  log=re.sub(r'(?:\x1b|\^\[)\[[0-9;:]*[A-Za-z]','',run_log(args.run))
- for marker in ['189 passed; 0 failed','Ran 108 tests','MCP_NATIVE_PROOF','Local Japanese transcription (ja)']:assert marker in log,marker
+ for marker in ['Ran 108 tests','MCP_NATIVE_PROOF','Local Japanese transcription (ja)']:assert marker in log,marker
  ci=WORK/'ci';artifact=download_artifact(args.run,'windows-x64-development-build',ci);assert artifact['workflow_run']['head_sha']==code_head
  native=read(ci/'mcp-native-validation.json');assert native['officialSdk'] and native['toolCount']==141 and native['version']==VERSION
  assert native['jointReview']['commonSnapshot'] and native['jointReview']['subtitlesAndEveryTakePreserved'] and native['jointReview']['exclusionSkippedByBatch']
@@ -104,7 +104,7 @@ def main():
  assert set(speaker['identities'])=={'workers/speaker_separation_worker.py','workers/speaker-separation-models.json','workers/speaker-separation-runtime.json','workers/vendor/speaker-separation/mossformer2-source.zip'}
  assert all(sha(ROOT/p)==digest for p,digest in speaker['identities'].items())
  identity=read(ci/'workbench-validation.json');assert identity['head']==code_head and len(identity['existingWorkerIdentities'])==327
- assert '198 passed' in log and '189 passed; 0 failed' in log
+ assert '198 passed' in log
  reused=dict(head=code_head,chrome=207,native=189,typescript=198,sourceIdentical=True,frontendStepPassed=True,fresh=True)
  if '207 passed' not in log:
   reused=read(ci/'reused-ui-native-validation.json')
@@ -117,6 +117,13 @@ def main():
   previous_log=re.sub(r'(?:\x1b|\^\[)\[[0-9;:]*[A-Za-z]','',run_log(reused['runId']))
   assert re.search(r'\b207 passed\b',previous_log) and re.search(r'Tests\s+198 passed',previous_log)
   reused['fresh']=False
+ if '189 passed; 0 failed' not in log:
+  assert reused.get('native')==189 and reused.get('nativeStepPassed') is True
+  assert not git('diff','--name-only',reused['verifiedHead'],code_head,'--','src-tauri','workers','docs/MCP.md','resources','scripts/prepare-ffmpeg.ps1','scripts/prepare-prosody.ps1')
+  assert any(s['name']=='Native tests with real FFmpeg, lints and formatting' and s['conclusion']=='success' for j in previous_jobs for s in j['steps'])
+  assert re.search(r'test result: ok\. 189 passed; 0 failed; 2 ignored',previous_log)
+  reused['nativeFresh']=False
+ else:reused['nativeFresh']=True
  for row in read(ci/'reference-transcription-validation.json'):assert row['device']=='CPU' and '中学' in row['text']
  model_run=api('actions/runs/'+args.models_run);assert model_run['status']=='completed' and model_run['conclusion']=='success' and model_run['path']=='.github/workflows/audio-toolbox-smoke.yml'
  model_dir=WORK/'models';model_artifact=download_artifact(args.models_run,'audio-toolbox-model-validation',model_dir)
@@ -129,6 +136,22 @@ def main():
  for line in (ci/'SHA256SUMS.txt').read_text(encoding='utf-8-sig').splitlines():
   digest,name=line.split('  ',1);assert Path(name).name==name and sha(ci/name)==digest;expected[name]=digest
  setup=ci/f'AI-Dubbing-Studio-{VERSION}-Setup.exe';signature=setup.with_suffix('.exe.sig');portable=ci/'AI-Dubbing-Studio-Windows-Portable.zip'
+ package_proof=None
+ if (ci/'reused-package-validation.json').is_file():
+  package_proof=read(ci/'reused-package-validation.json')
+  assert package_proof['head']==code_head and package_proof['sourceIdentical'] and package_proof['buildStepPassed'] and package_proof['packageStepPassed'] and package_proof['signatureVerified']
+  package_run=api('actions/runs/'+package_proof['runId'])
+  assert package_run['status']=='completed' and package_run['path']=='.github/workflows/dubbing-workbench.yml' and package_run['head_sha']==package_proof['verifiedHead']
+  package_inputs=['src','src-tauri','workers','public','resources','package.json','pnpm-lock.yaml','vite.config.ts','tsconfig.json','eslint.config.js','playwright.config.ts','README.md','README.fr.md','VALIDATION.md','THIRD-PARTY-NOTICES.txt','docs','scripts/generate-mcp.mjs','scripts/prepare-ffmpeg.ps1','scripts/prepare-prosody.ps1','scripts/package-windows.ps1']
+  assert package_proof['protectedInputs']==package_inputs
+  assert not git('diff','--name-only',package_proof['verifiedHead'],code_head,'--',*package_inputs)
+  old_package_jobs=api(f"actions/runs/{package_proof['runId']}/jobs?per_page=100")['jobs']
+  for name in ['Build Windows installer with updater signature','Package installer and portable build']:
+   assert any(s['name']==name and s['conclusion']=='success' for j in old_package_jobs for s in j['steps'])
+  old_artifact=next(a for a in api(f"actions/runs/{package_proof['runId']}/artifacts")['artifacts'] if a['id']==package_proof['artifactId'])
+  assert old_artifact['digest']==package_proof['artifactSha256'] and old_artifact['workflow_run']['head_sha']==package_proof['verifiedHead']
+  assert set(package_proof['assets'])==set(expected)|{'SHA256SUMS.txt'}
+  assert all(sha(ci/name)==digest for name,digest in package_proof['assets'].items())
  assert version_of(setup)==(0,33,0,0)
  subprocess.run(['cargo','run','--quiet','--locked','--manifest-path','scripts/verify-update-signature/Cargo.toml','--','src-tauri/tauri.conf.json',str(setup),str(signature)],cwd=ROOT,check=True)
  with zipfile.ZipFile(portable) as z:
@@ -159,7 +182,7 @@ def main():
    no_private_entries(z);assert z.testzip() is None;assert read(ROOT/'package.json')['version']==json.loads(z.read('package.json'))['version']
    for p,digest in {**model['identities'],**speaker['identities']}.items():assert hashlib.sha256(z.read(p)).hexdigest()==digest
   assets.append(upload(source));sums=WORK/'SHA256SUMS.txt';sums.write_text(''.join(f'{a["sha256"]}  {a["name"]}\n' for a in assets),encoding='utf-8');assets.append(upload(sums))
- report=dict(version=VERSION,releaseId=release['id'],isDraft=True,runId=args.run,codeHead=code_head,sourceHead=args.final_head,modelsRun=args.models_run,modelHead=model['head'],artifactSha256=artifact['digest'],modelArtifactSha256=model_artifact['digest'],signatureVerified=True,tamperRejected=True,installerVersion=[0,33,0,0],assets=assets,signature=signature.read_text().strip(),toolCount=141,suiteCounts=dict(typescript=198,chrome=207,native=189,python=108),chromeProof=reused,neuralModels=model,speakerModels=speaker)
+ report=dict(version=VERSION,releaseId=release['id'],isDraft=True,runId=args.run,codeHead=code_head,sourceHead=args.final_head,modelsRun=args.models_run,modelHead=model['head'],artifactSha256=artifact['digest'],modelArtifactSha256=model_artifact['digest'],signatureVerified=True,tamperRejected=True,installerVersion=[0,33,0,0],assets=assets,signature=signature.read_text().strip(),toolCount=141,suiteCounts=dict(typescript=198,chrome=207,native=189,python=108),chromeProof=reused,packageProof=package_proof,neuralModels=model,speakerModels=speaker)
  (PROOF/'release-stage-validation.json').write_text(json.dumps(report,indent=2,ensure_ascii=False)+'\n',encoding='utf-8')
  for name in ['mcp-native-validation.json','workbench-validation.json','reference-transcription-validation.json','speaker-separation-validation.json']:(PROOF/name).write_bytes((ci/name).read_bytes())
  print('Draft packages staged and authenticated; no publication or updater push performed.',flush=True)
