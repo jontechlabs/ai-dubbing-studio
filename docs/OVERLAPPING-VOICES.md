@@ -1,6 +1,10 @@
 # Voix simultanées et sous-doublages
 
-Dans **Doublage → Isoler plusieurs voix**, choisissez la piste contenant les voix, le séparateur et le périphérique. L’installation affiche l’espace nécessaire et disponible avant de télécharger les dépendances. Les modèles restent dans le dossier configuré dans les paramètres.
+Dans **Doublage → Séparation des voix superposées**, choisissez la piste contenant les voix et le séparateur. Installez le modèle si nécessaire, puis sélectionnez le CPU ou votre GPU CUDA. L’installation affiche l’espace nécessaire et disponible avant de télécharger les dépendances. Les modèles restent dans le dossier configuré dans les paramètres.
+
+![Séparation de deux voix dans le panneau Doublage](screenshots/overlapping-voices.png)
+
+Aperçu de l’interface avec un jeu de test.
 
 Les modèles intégrés sont :
 
@@ -27,6 +31,8 @@ Renseignez un nom, un personnage et les textes propres à chaque voix, puis cliq
 Les boutons du groupe permettent d’ouvrir chaque voix dans le même panneau. La génération utilise son audio isolé comme référence courante, et les références françaises de personnage ou de fichier restent disponibles. Les exigences habituelles du moteur s’appliquent : durée minimale de référence et transcription exacte pour les modes qui la demandent. Le texte japonais ou français du dialogue principal n’est pas dupliqué automatiquement sur chaque personne.
 
 Chaque sous-doublage possède ses textes, personnage, réglages, essais, validation, montage, volume, décalage et durée. Les essais précédents de la réplique principale sont conservés. Les voix actives du même groupe sont mixées simultanément à la lecture et dans l’export MKV ; la réplique principale n’est pas superposée au groupe. La piste Doublage présente jusqu’à trois rangées pour les manipuler séparément. Les chevauchements de répliques sans lien continuent d’être signalés.
+
+Pour les entendre pendant la lecture vidéo et à l’export, activez la piste **Doublage**, muette par défaut. Le mix suit les volumes, portions silencieuses et solos habituels. Vous pouvez couper l’audio d’origine ou les portions à remplacer avec les commandes de mix.
 
 Le sélecteur **Doublage actif** permet de revenir à l’essai principal ou à un groupe conservé. Exclure toutes les voix d’un groupe rend celui-ci silencieux ; cela ne réactive pas accidentellement l’ancienne voix. Sélectionner explicitement un ancien essai principal restaure ce doublage. Le doublage par lot peut traiter les voix actives ; sélectionner leur réplique principale développe sa sélection vers ces voix. Les SRT source et traduit restent inchangés.
 

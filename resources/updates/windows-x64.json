@@ -1,11 +1,11 @@
 {
-  "version": "0.32.4",
-  "notes": "Doublage : identification des personnages uniquement au clic sur Proposer un personnage ou Actualiser la proposition. Ouvrir le panneau, changer de réplique, de référence ou de piste ne lance aucune analyse. Anciennes préférences automatiques ignorées. Confirmation et choix manuel conservés, sans modification des essais existants. Format 24, 134 outils MCP.",
-  "pub_date": "2026-10-30T14:44:25Z",
+  "version": "0.33.0",
+  "notes": "Voix simultanées : MossFormer2 (2 voix) et SepFormer (2 ou 3), préécoute, affectation aux pistes par remplacement/ajout et sous-doublages indépendants. Lecture et export simultanés, essais, SRT et vidéo conservés. Inclut la préécoute bornée des sélections et les références avant volumes/muets. Calcul local CPU/CUDA ; qualification technique Windows CPU, sorties à vérifier à l’écoute. Format 25, 141 outils MCP.",
+  "pub_date": "2026-10-30T22:53:59Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSdFFyMUJGTFp3Nk1qcnA0UnViTEtQSXlONFlSVkF3L0FOeURYNVFWaWpNZGFQMHBFNmVkY2Nield1RXltQWNkbWJkYVc2M0c2YzdYNkxHSmYydkZwcGNSNkhkZEw5OGc4PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkzMzcwNjMwCWZpbGU6QUkgRHViYmluZyBTdHVkaW9fMC4zMi40X3g2NC1zZXR1cC5leGUJdmVyc2lvbjowLjMyLjQKeGd3cGVkZUJhZkhwOHdvWndRRG9EMWVlNFhBTGJFbVkzeHlPbys0dUcvV3lkNEpLUWt6LzVRRTNkejBtR2pGTFI1eERqMlFPOHdRYU1YWDVpZkFnQmc9PQo=",
-      "url": "https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.32.4/AI-Dubbing-Studio-0.32.4-Setup.exe"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSdFFyMUJGTFp3NkgyRlU2WnR3OWd1eERYbld5SThzd0UvRTZibG1OZUFTRitwQ0VvVkxHbXJPNzh0c29sQ0Ivc2FmVllEV3REUEJZUGxwajBjL1p3TUxyRHU2MnBFNGcwPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkzMzk4NzI3CWZpbGU6QUkgRHViYmluZyBTdHVkaW9fMC4zMy4wX3g2NC1zZXR1cC5leGUJdmVyc2lvbjowLjMzLjAKaGUzaUpNdmZnZmgxc3E4aVF2aEhRNVZ1c21hcnJIcjlDa2tuWHRrd05jaGc5OGtrZW9EZFhEUFZVY1JpdmNKS3lVckZaaWFEY1VHTWlzbzBLSkJPRFE9PQo=",
+      "url": "https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.33.0/AI-Dubbing-Studio-0.33.0-Setup.exe"
     }
   }
 }
