@@ -1,8 +1,16 @@
 # Validation
 
-## v0.32.4 — validation in progress
+## v0.32.4 — 30 October 2026
 
-Local checks cover explicit character matching and old missing/on/off automatic preferences. Full Windows checks and signed packages must pass before publication.
+[Fresh Windows run 41068875459](https://github.com/jontechlabs/ai-dubbing-studio/actions/runs/41068875459) passes at `a4096900ca53113a39339e0e3a59994ee424c8f7`: **673 fresh suite checks** (188 TypeScript, 199 Chrome, 183 Rust, 103 Python), lint, Clippy, formatting, shared schemas and signed packaging. Two explicitly opt-in Rust diagnostics remain ignored. Installer and portable executable are rebuilt from this tested commit.
+
+Three new Chrome regressions cover a missing legacy automatic preference and old enabled/disabled values. With installed speaker runtime and character references, opening the panel, changing track, assigning manually, reopening it and opening another dialogue do not dispatch voice matching. One explicit click starts exactly one job, displays local progress, disables repeat clicks while pending, retains every previous take and leaves candidates unassigned until approval. Existing acceptance, manual correction, short-speech and uncertain-result tests now launch matching explicitly. The native mock no longer disables automatic matching behind the scenes. All 11 voice-library browser scenarios also pass locally, along with TypeScript, lint, formatting and shared MCP schema checks.
+
+The actual packaged desktop passes the pinned official SDK suite with **134 MCP tools**, including native source ASR, output gain, common review, reversible addition/exclusion, media export and relay lifecycle. Japanese CPU recognition passes again in automatic and explicit Japanese modes. Packaged native diagnostics are distinct from Chrome tests using simulated matching results; no new speaker-identification or neural/GPU quality benchmark is claimed.
+
+Native application logic, inference workers, runtime/model manifests, vendored sources and the MCP catalog remain byte-identical to v0.32.3. Project format remains 24. The five-separator complete-weight CPU proof [40749955489](https://github.com/jontechlabs/ai-dubbing-studio/actions/runs/40749955489) is authenticated against the four exact worker/model/runtime/vendor SHA-256 identities in the rebuilt packages. Model inference quality tests are not repeated for this frontend trigger change.
+
+Release staging authenticates complete Actions artifact digests, installer PE version 0.32.4.0, the standard updater signature and rejection of a modified installer, portable ZIP CRC and every declared worker resource. Final source/tag preserve the compiled application inputs; final validation and updater metadata are added after successful CI. All five public downloads are streamed and SHA-256 checked after publication. No real user project or open studio is modified during these diagnostics.
 
 ## v0.32.3 — 29 October 2026
 
