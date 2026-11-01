@@ -1,6 +1,8 @@
 name: Audio8 Realistic Windows qualification and packages
 on:
   workflow_dispatch:
+  push:
+    branches: [codex/audio8-realistic]
 permissions:
   contents: read
   actions: read
