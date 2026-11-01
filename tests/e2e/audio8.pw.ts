@@ -41,3 +41,24 @@ test('Audio8 shows its disk budget and checks free space before installation', a
   expect(calls.some((c: any) => c.command === 'voice_install_space' && c.args.variantId === 'audio8-realistic-06b-gguf-q8')).toBe(true);
   expect(calls.some((c: any) => c.command === 'install_voice_runtime')).toBe(false);
 });
+
+test('Audio8 preference does not inherit unsupported legacy Cosy mood or diffusion controls', async ({ page }) => {
+  await nativeMock(page); await page.goto('/');
+  await expect(page.locator('.dialogue-card').first()).toBeVisible();
+  await page.evaluate(() => (window as any).__seedDubbing());
+  await page.evaluate(() => {
+    const p = JSON.parse(localStorage.getItem('nativeMockProject')!);
+    p.formatVersion = 26;
+    p.modelPreferences = { ttsProviderId: 'audio8-tts', voiceVariantId: 'audio8-realistic-06b-gguf-q8' };
+    p.dialogues[0].voiceSettings = { device: 'auto', referenceMode: 'current', referenceId: null, mode: 'crossLingual', speed: 1, seed: 7, mood: 'angry', accent: 'fr-FR', quality: { inferenceSteps: 20 } };
+    localStorage.setItem('nativeMockProject', JSON.stringify(p));
+  });
+  await page.reload();
+  await page.locator('.dialogue-card').first().getByRole('button', { name: 'Régénérer', exact: true }).click();
+  const panel = page.getByRole('dialog', { name: 'Doublage', exact: true });
+  await expect(panel.getByRole('combobox', { name: 'Moteur et variante de voix' })).toHaveValue('audio8-realistic-06b-gguf-q8');
+  await panel.getByRole('button', { name: 'Générer un nouvel essai', exact: true }).click();
+  const pending = await page.evaluate(() => (window as any).__pendingTts);
+  expect(pending.options).toMatchObject({ mode: 'zeroShot', mood: 'default', accent: 'auto' });
+  expect(pending.options.quality).toBeUndefined();
+});

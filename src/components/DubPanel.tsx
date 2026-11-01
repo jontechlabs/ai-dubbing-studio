@@ -32,7 +32,7 @@ import { VoiceQualityControls } from './VoiceQualityControls';
 import { libraryOf, libraryReference } from '../domain/voiceLibrary';
 import { IntonationGuideControls } from './IntonationGuideControls';
 import { CharacterSuggestion } from './CharacterSuggestion';
-import { qualityPreset, resolvedQuality } from '../domain/voiceQuality';
+import { qualityPreset, resolvedQuality, validQuality } from '../domain/voiceQuality';
 import { ProsodyTransfer } from './ProsodyTransfer';
 import { moodGroup, moodGroups, voiceMoods } from '../domain/voiceMoods';
 import { SpeakerSeparationPanel } from './SpeakerSeparationPanel';
@@ -316,12 +316,21 @@ export function DubPanel({
       };
   const voxContinuation =
     rawSettings.variantId === 'voxcpm2-bf16' && rawSettings.mode === 'zeroShot';
-  const settings = voxContinuation
-    ? { ...rawSettings, accent: 'auto' as const, mood: 'default' as const }
-    : rawSettings;
+  const audio8 = rawSettings.variantId === 'audio8-realistic-06b-gguf-q8';
+  const settings = audio8
+    ? {
+        ...rawSettings,
+        accent: 'auto' as const,
+        mood: 'default' as const,
+        quality: validQuality(rawSettings.quality, rawSettings.variantId)
+          ? rawSettings.quality
+          : undefined,
+      }
+    : voxContinuation
+      ? { ...rawSettings, accent: 'auto' as const, mood: 'default' as const }
+      : rawSettings;
   const variant = voiceVariant(settings.variantId)!;
   const chatterbox = variant.providerId === 'chatterbox';
-  const audio8 = variant.providerId === 'audio8-tts';
   const multilingual = chatterbox || variant.providerId === 'voxcpm2';
   const mood = settings.mood ?? 'default';
   const accent = accentSupported(variant.id, project.languages.target)
