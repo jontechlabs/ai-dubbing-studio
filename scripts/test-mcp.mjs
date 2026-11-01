@@ -237,13 +237,13 @@ try {
     assert.equal(createHash('sha256').update(await fs.readFile(args.movie)).digest('hex'),originalHash);
     proofs.audioEffectsCatalog=20;proofs.voiceEffectsRendered=true;proofs.trackEffectsAndDryBaseline=true;proofs.selectionEffects=true;proofs.globalGain400=true;proofs.reopenFormat18=true;
     const qualityCatalog=await call('studio_voice_quality_catalog');
-    assert.equal(Object.keys(qualityCatalog.variants).length,8);
+    assert.deepEqual(qualityCatalog,JSON.parse(await fs.readFile(new URL('../workers/voice-quality.json',import.meta.url),'utf8')));
     assert.deepEqual(qualityCatalog.variants['voxcpm2-bf16'].presets.natural,{inferenceSteps:20,cfgStrength:1.6});
     const beforeQuality=await call('studio_get_project');
     await call('studio_project_patch',{context:await context(),patches:[{op:'replace',path:'/formatVersion',value:19},{op:'replace',path:`/dialogues/${lineIndex}/voiceSettings`,value:{...voiceOptions,variantId:'voxcpm2-bf16',mood:'default',mode:'crossLingual',quality:{inferenceSteps:20,cfgStrength:1.6}}}]});
     await call('studio_open_project',{path:projectRoot});
     const qualityProject=await call('studio_get_project');assert.equal(qualityProject.formatVersion,19);assert.deepEqual(qualityProject.dialogues[lineIndex].voiceSettings.quality,{inferenceSteps:20,cfgStrength:1.6});assert.deepEqual(qualityProject.generations,beforeQuality.generations);
-    proofs.qualityCatalog=8;proofs.reopenFormat19=true;proofs.qualityOldTakesPreserved=true;
+    proofs.qualityCatalog=Object.keys(qualityCatalog.variants).length;proofs.reopenFormat19=true;proofs.qualityOldTakesPreserved=true;
     // One persisted bulk edit, including all existing generated/recorded takes.
     const reviewIds=qualityProject.dialogues.map(line=>line.id),reviewContext=await context();
     await call('studio_set_selection',{ids:reviewIds});

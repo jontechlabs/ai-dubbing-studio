@@ -267,7 +267,7 @@ impl Project {
         references.iter().find(|r| r.id == id)
     }
     pub fn validate(&self) -> Result<(), String> {
-        if !(1..=25).contains(&self.format_version) {
+        if !(1..=26).contains(&self.format_version) {
             return Err("UNSUPPORTED_PROJECT_VERSION".into());
         }
         crate::speaker_dubbing::validate(self)?;
@@ -330,6 +330,9 @@ impl Project {
             }
         }
         if let Some(preferences) = &self.model_preferences {
+            if preferences["ttsProviderId"] == "audio8-tts" && self.format_version < 26 {
+                return Err("UNSUPPORTED_PROJECT_VERSION".into());
+            }
             if self.format_version < 16
                 && preferences["ttsProviderId"]
                     .as_str()
@@ -352,6 +355,9 @@ impl Project {
                     Some("fish-drama3") => ["drama3-comfy-fp8"]
                         .contains(&preferences["voiceVariantId"].as_str().unwrap_or("")),
                     Some("voxcpm2") => preferences["voiceVariantId"] == "voxcpm2-bf16",
+                    Some("audio8-tts") => {
+                        preferences["voiceVariantId"] == "audio8-realistic-06b-gguf-q8"
+                    }
                     Some("chatterbox") => {
                         preferences["voiceVariantId"] == "chatterbox-multilingual-v3"
                     }
@@ -378,6 +384,7 @@ impl Project {
                         "qwen3-tts",
                         "voxcpm2",
                         "chatterbox",
+                        "audio8-tts",
                     ]
                     .contains(&id)
                 })

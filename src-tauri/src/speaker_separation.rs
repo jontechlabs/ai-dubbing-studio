@@ -414,7 +414,7 @@ pub fn create_children<R: tauri::Runtime>(
         return Err("SPEAKER_SEPARATION_OPTIONS".into());
     }
     let mut next = p.clone();
-    next.format_version = 25;
+    next.format_version = next.format_version.max(25);
     let mut seen = HashSet::new();
     let mut assets = NewAssets::default();
     let mut voices = vec![];

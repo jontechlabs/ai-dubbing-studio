@@ -56,8 +56,11 @@ export const voiceVariants: VoiceVariant[] = [
       format: 'GGUF Q8_0',
       origin: 'community' as const,
       engine: 'audio.cpp 0.9.1 · Vulkan / CPU',
-      source: 'https://huggingface.co/audio-cpp/audio.cpp-gguf',
-      detailKey: 'phase6Gguf',
+      source:
+        v.providerId === 'audio8-tts'
+          ? 'https://huggingface.co/audio-cpp/Audio8-TTS-Realistic-0.6b-GGUF'
+          : 'https://huggingface.co/audio-cpp/audio.cpp-gguf',
+      detailKey: v.providerId === 'audio8-tts' ? 'audio8Profile' : 'phase6Gguf',
       suggested16Gb: true,
     })),
   {

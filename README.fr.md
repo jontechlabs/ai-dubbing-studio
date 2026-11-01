@@ -1,5 +1,7 @@
 # AI Dubbing Studio
 
+**v0.34.0 — Audio8-TTS Realistic 0.6B.** Installation locale de la conversion GGUF Q8_0 (modèle et codec : 1,33 Gio), contrôle d’espace disque, CPU ou GPU Vulkan sélectionné. Clonage depuis les références existantes ou un fichier importé avec transcription exacte, qualité réglable et lot conservant le modèle chargé. Les essais précédents sont conservés. Pas de commande d’accent régional ou d’humeur pour ce moteur ; privilégier une référence française expressive. **141 outils MCP, format 26.** [Installation et limites](docs/AUDIO8-TTS.md).
+
 **v0.33.0 — Voix simultanées et sous-doublages.** MossFormer2 (2 voix) et SepFormer (2 ou 3 voix), installation et séparation locales depuis Doublage, préécoute des sorties, affectation aux pistes par remplacement ou ajout, et sous-doublages indépendants par personnage. Lecture et export simultanés avec conservation des SRT, de la vidéo et de tous les essais. Inclut la préécoute des sélections et les références avant volumes/muets. **141 outils MCP, format 25.** [Guide](docs/OVERLAPPING-VOICES.md).
 
 **v0.32.4 — Identification des personnages à la demande.** Dans Doublage, cliquez sur **Proposer un personnage** pour comparer les voix. L’ouverture du panneau, le changement de réplique et les réglages ne lancent plus d’analyse automatique, même avec une ancienne préférence activée. L’assignation reste à confirmer ; tous les essais sont conservés. [Guide](docs/CHARACTER-VOICE-LIBRARY.md#personnage-proposé-au-moment-du-doublage).

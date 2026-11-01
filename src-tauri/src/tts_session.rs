@@ -304,11 +304,11 @@ impl Session {
             });
         }
         let server = self.gguf.as_ref().ok_or("PROCESS_FAILED")?;
-        let language =
-            crate::voice_engines::qwen_language(input["language"].as_str().unwrap_or("fr"))?;
         let mut body = serde_json::json!({"model":server.id,"input":input["promptText"],"voice_ref":input["referenceAudio"],"seed":input["seed"].to_string(),"max_tokens":crate::qwen_safety::max_tokens(input),"response_format":"wav"});
         if family == "qwen3_tts" {
-            body["language"] = language.into();
+            body["language"] =
+                crate::voice_engines::qwen_language(input["language"].as_str().unwrap_or("fr"))?
+                    .into();
             body["options"] =
                 serde_json::json!({"x_vector_only_mode":input["mode"]=="crossLingual"});
         }

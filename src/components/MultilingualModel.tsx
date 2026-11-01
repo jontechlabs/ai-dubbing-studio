@@ -60,12 +60,16 @@ export function MultilingualModel({
         {t(
           id === 'chatterbox-vc'
             ? 'capture.vcModelHint'
-            : id === 'voxcpm2-bf16'
-              ? 'voxcpmGenerationHint'
-              : 'chatterboxGenerationHint',
+            : id.startsWith('audio8-')
+              ? 'audio8Profile'
+              : id === 'voxcpm2-bf16'
+                ? 'voxcpmGenerationHint'
+                : 'chatterboxGenerationHint',
         )}
       </p>
-      <p className="panel-description">{t('multilingualHardwareHint')}</p>
+      <p className="panel-description">
+        {t(id.startsWith('audio8-') ? 'audio8HardwareHint' : 'multilingualHardwareHint')}
+      </p>
       {size !== undefined && (
         <small>
           {(size / 1024 ** 3).toFixed(2)} GiB · {t('phase6ModelSize')}
@@ -112,7 +116,9 @@ export function MultilingualModel({
         >
           {t(checking ? 'dramaSpaceChecking' : 'dramaSpaceRefresh')}
         </button>
-        <p className="panel-description">{t('multilingualRuntimeHint')}</p>
+        {!id.startsWith('audio8-') && (
+          <p className="panel-description">{t('multilingualRuntimeHint')}</p>
+        )}
       </div>
       <button
         className="button accent wide"

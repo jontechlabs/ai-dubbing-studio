@@ -2,6 +2,12 @@ import { moodFormatVersion } from './voiceMoods';
 export const installedVoiceVariants = [
   { id: 'cosy3-official', providerId: 'cosyvoice3', name: 'CosyVoice3 0.5B RL', backend: 'cuda' },
   {
+    id: 'audio8-realistic-06b-gguf-q8',
+    providerId: 'audio8-tts',
+    name: 'Audio8-TTS Realistic 0.6B · GGUF Q8_0',
+    backend: 'vulkan',
+  },
+  {
     id: 'qwen3-06b-gguf-q8',
     providerId: 'qwen3-tts',
     name: 'Qwen3-TTS Base 0.6B · GGUF Q8_0',
@@ -34,6 +40,9 @@ export const installedVoiceVariants = [
     backend: 'cuda',
   },
 ] as const;
+export function audio8Variant(id?: string | null) {
+  return id === 'audio8-realistic-06b-gguf-q8';
+}
 export function multilingualVariant(id?: string | null) {
   return id === 'voxcpm2-bf16' || id === 'chatterbox-multilingual-v3';
 }
@@ -47,6 +56,7 @@ export function voiceSettingsFormat(settings: {
   intonationGuide?: unknown;
 }) {
   return Math.max(
+    audio8Variant(settings.variantId) ? 26 : 5,
     settings.outputGain !== undefined && settings.outputGain !== 1 ? 22 : 5,
     settings.intonationGuide !== undefined || settings.referenceMode === 'library' ? 21 : 5,
     settings.quality !== undefined ? 19 : 5,

@@ -62,6 +62,7 @@ export const futureVoiceProviders = [
   { id: 'qwen3-tts', name: 'Qwen3-TTS', phase: 6 },
   { id: 'voxcpm2', name: 'VoxCPM2', phase: 22 },
   { id: 'chatterbox', name: 'Chatterbox Multilingual', phase: 22 },
+  { id: 'audio8-tts', name: 'Audio8-TTS Realistic', phase: 34 },
 ] as const;
 export interface SpeakerIdentificationProvider {
   id: string;

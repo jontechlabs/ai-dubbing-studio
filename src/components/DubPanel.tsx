@@ -321,6 +321,7 @@ export function DubPanel({
     : rawSettings;
   const variant = voiceVariant(settings.variantId)!;
   const chatterbox = variant.providerId === 'chatterbox';
+  const audio8 = variant.providerId === 'audio8-tts';
   const multilingual = chatterbox || variant.providerId === 'voxcpm2';
   const mood = settings.mood ?? 'default';
   const accent = accentSupported(variant.id, project.languages.target)
@@ -328,11 +329,12 @@ export function DubPanel({
     : 'auto';
   const instructedMood =
     variant.providerId === 'cosyvoice3' && (mood !== 'default' || accent !== 'auto');
-  const mode = variant.providerId.startsWith('fish')
-    ? 'zeroShot'
-    : instructedMood || chatterbox
-      ? 'crossLingual'
-      : settings.mode;
+  const mode =
+    variant.providerId.startsWith('fish') || audio8
+      ? 'zeroShot'
+      : instructedMood || chatterbox
+        ? 'crossLingual'
+        : settings.mode;
   const ready =
     variant.id === 'cosy3-official'
       ? status?.installed
@@ -494,13 +496,16 @@ export function DubPanel({
               intonationGuide: undefined,
               quality: undefined,
               device: 'auto',
-              mood: ['qwen3-tts', 'chatterbox'].includes(next.providerId) ? 'default' : mood,
+              mood: ['qwen3-tts', 'chatterbox', 'audio8-tts'].includes(next.providerId)
+                ? 'default'
+                : mood,
               accent: accentSupported(next.id, project.languages.target) ? accent : 'auto',
-              mode: next.providerId.startsWith('fish')
-                ? 'zeroShot'
-                : next.providerId === 'chatterbox'
-                  ? 'crossLingual'
-                  : settings.mode,
+              mode:
+                next.providerId.startsWith('fish') || next.providerId === 'audio8-tts'
+                  ? 'zeroShot'
+                  : next.providerId === 'chatterbox'
+                    ? 'crossLingual'
+                    : settings.mode,
             });
           }}
         >
@@ -514,17 +519,19 @@ export function DubPanel({
       {variant.id !== 'cosy3-official' && (
         <p className="panel-description">
           {t(
-            variant.id === 'drama3-comfy-fp8'
-              ? 'dramaGenerationHint'
-              : multilingual
-                ? chatterbox
-                  ? 'chatterboxGenerationHint'
-                  : 'voxcpmGenerationHint'
-                : variant.backend === 'vulkan'
-                  ? 'phase6Gguf'
-                  : variant.id === 'fish-s2-fp8'
-                    ? 'phase6Fp8'
-                    : 'ttsLocalHint',
+            audio8
+              ? 'audio8Profile'
+              : variant.id === 'drama3-comfy-fp8'
+                ? 'dramaGenerationHint'
+                : multilingual
+                  ? chatterbox
+                    ? 'chatterboxGenerationHint'
+                    : 'voxcpmGenerationHint'
+                  : variant.backend === 'vulkan'
+                    ? 'phase6Gguf'
+                    : variant.id === 'fish-s2-fp8'
+                      ? 'phase6Fp8'
+                      : 'ttsLocalHint',
           )}
         </p>
       )}
@@ -799,6 +806,7 @@ export function DubPanel({
           disabled={
             busy ||
             instructedMood ||
+            audio8 ||
             chatterbox ||
             (variant.id !== 'voxcpm2-bf16' && !!settings.intonationGuide)
           }
@@ -816,7 +824,7 @@ export function DubPanel({
             )
           }
         >
-          <option value="crossLingual" disabled={variant.providerId.startsWith('fish')}>
+          <option value="crossLingual" disabled={variant.providerId.startsWith('fish') || audio8}>
             {t(variant.id === 'voxcpm2-bf16' ? 'library.voxStandardOption' : 'ttsCrossLingual')}
           </option>
           <option value="zeroShot">
@@ -831,31 +839,34 @@ export function DubPanel({
       </label>
       <p className="panel-description">
         {t(
-          variant.id === 'voxcpm2-bf16'
-            ? settings.intonationGuide?.mode === 'hybrid'
-              ? 'library.voxHybridHint'
-              : mode === 'zeroShot'
-                ? 'library.voxHiFiHint'
-                : 'library.voxStandardHint'
-            : chatterbox
-              ? 'chatterboxCloneHint'
-              : instructedMood
-                ? 'ttsCosyMoodHint'
-                : variant.providerId.startsWith('fish')
-                  ? 'ttsFishHint'
-                  : mode === 'crossLingual'
-                    ? 'ttsCrossHint'
-                    : 'ttsZeroHint',
+          audio8
+            ? 'audio8CloneHint'
+            : variant.id === 'voxcpm2-bf16'
+              ? settings.intonationGuide?.mode === 'hybrid'
+                ? 'library.voxHybridHint'
+                : mode === 'zeroShot'
+                  ? 'library.voxHiFiHint'
+                  : 'library.voxStandardHint'
+              : chatterbox
+                ? 'chatterboxCloneHint'
+                : instructedMood
+                  ? 'ttsCosyMoodHint'
+                  : variant.providerId.startsWith('fish')
+                    ? 'ttsFishHint'
+                    : mode === 'crossLingual'
+                      ? 'ttsCrossHint'
+                      : 'ttsZeroHint',
         )}
       </p>
       <label className="field">
         <span>{t('ttsMood')}</span>
         <select
-          value={variant.providerId === 'qwen3-tts' || chatterbox ? 'default' : mood}
+          value={variant.providerId === 'qwen3-tts' || chatterbox || audio8 ? 'default' : mood}
           disabled={
             busy ||
             variant.providerId === 'qwen3-tts' ||
             chatterbox ||
+            audio8 ||
             voxContinuation ||
             settings.intonationGuide?.mode === 'hybrid'
           }
@@ -877,11 +888,13 @@ export function DubPanel({
       </label>
       <p className="panel-description">
         {t(
-          chatterbox
-            ? 'chatterboxMoodHint'
-            : variant.providerId === 'qwen3-tts'
-              ? 'ttsMoodUnsupported'
-              : 'ttsMoodHint',
+          audio8
+            ? 'audio8StyleHint'
+            : chatterbox
+              ? 'chatterboxMoodHint'
+              : variant.providerId === 'qwen3-tts'
+                ? 'ttsMoodUnsupported'
+                : 'ttsMoodHint',
         )}
       </p>
       {variant.providerId === 'cosyvoice3' && (

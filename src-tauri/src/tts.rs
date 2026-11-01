@@ -78,10 +78,15 @@ impl Options {
         crate::voice_accent::validate(self, None)?;
         let mood = self.mood.as_deref().unwrap_or("default");
         if crate::voice_mood::spec(Some(mood)).is_none()
-            || ((self.variant().starts_with("qwen3") || self.variant().starts_with("chatterbox"))
+            || ((self.variant().starts_with("qwen3")
+                || self.variant().starts_with("chatterbox")
+                || crate::voice_engines::audio8(self.variant()))
                 && mood != "default")
         {
             return Err("TTS_STYLE_UNSUPPORTED".into());
+        }
+        if crate::voice_engines::audio8(self.variant()) && self.mode != "zeroShot" {
+            return Err("TTS_TRANSCRIPT_REQUIRED".into());
         }
         if self.variant() == "chatterbox-vc" {
             return Err("INVALID_TTS_REQUEST".into());
@@ -118,6 +123,9 @@ impl Options {
         Ok(())
     }
     pub fn required_format(&self) -> u32 {
+        if crate::voice_engines::audio8(self.variant()) {
+            return 26;
+        }
         if self.output_gain.is_some_and(|g| g != 1.0) {
             return 22;
         }
@@ -852,7 +860,7 @@ pub(crate) async fn execute_with_session<R: tauri::Runtime>(
         }
         .into());
     }
-    let generation = serde_json::json!({"id":generation_id,"kind":"tts","dialogueId":line.id,"providerId":if request.options.variant()=="cosy3-official"{"cosyvoice3"}else if request.options.variant()=="voxcpm2-bf16"{"voxcpm2"}else if request.options.variant()=="chatterbox-multilingual-v3"{"chatterbox"}else if request.options.variant()=="drama3-comfy-fp8"{"fish-drama3"}else if request.options.variant().starts_with("fish"){"fish-s2"}else{"qwen3-tts"},"modelId":request.options.variant(),"path":format!("generations/{generation_id}.wav"),"createdAt":now(),"sourcePath":p.media.as_ref().map(|m|&m.path),"startMs":line.start_ms,"endMs":line.end_ms,"text":text(&p,line),"language":p.languages.target,"characterId":line.character_id,"durationMs":duration,"sampleRate":24000,"options":request.options,"referenceTranscript":transcript,"qwenRecovery":metadata["qwenRecovery"],"guideAnalysis":metadata["guideAnalysis"],"guideTranscript":if request.options.intonation_guide.is_some(){Some(&guide_transcript)}else{None},"referenceId":if request.options.reference_mode=="current"{None}else{reference(&p,line,&request.options).ok().map(|r|&r.id)},"device":metadata["device"],"deviceName":metadata["deviceName"],"peakVramMb":metadata["peakVramMb"],"expertsInRam":metadata["expertsInRam"],"expertCacheGiB":metadata["expertCacheGiB"],"expertMemoryMode":metadata["expertMemoryMode"],"compatibilityMode":metadata["compatibilityMode"].as_bool().unwrap_or(false),"batchItemId":request.batch_item_id,"inputHash":request.fingerprint});
+    let generation = serde_json::json!({"id":generation_id,"kind":"tts","dialogueId":line.id,"providerId":if request.options.variant()=="cosy3-official"{"cosyvoice3"}else if request.options.variant()=="voxcpm2-bf16"{"voxcpm2"}else if request.options.variant()=="chatterbox-multilingual-v3"{"chatterbox"}else if request.options.variant()=="drama3-comfy-fp8"{"fish-drama3"}else if crate::voice_engines::audio8(request.options.variant()){"audio8-tts"}else if request.options.variant().starts_with("fish"){"fish-s2"}else{"qwen3-tts"},"modelId":request.options.variant(),"path":format!("generations/{generation_id}.wav"),"createdAt":now(),"sourcePath":p.media.as_ref().map(|m|&m.path),"startMs":line.start_ms,"endMs":line.end_ms,"text":text(&p,line),"language":p.languages.target,"characterId":line.character_id,"durationMs":duration,"sampleRate":24000,"options":request.options,"referenceTranscript":transcript,"qwenRecovery":metadata["qwenRecovery"],"guideAnalysis":metadata["guideAnalysis"],"guideTranscript":if request.options.intonation_guide.is_some(){Some(&guide_transcript)}else{None},"referenceId":if request.options.reference_mode=="current"{None}else{reference(&p,line,&request.options).ok().map(|r|&r.id)},"device":metadata["device"],"deviceName":metadata["deviceName"],"peakVramMb":metadata["peakVramMb"],"expertsInRam":metadata["expertsInRam"],"expertCacheGiB":metadata["expertCacheGiB"],"expertMemoryMode":metadata["expertMemoryMode"],"compatibilityMode":metadata["compatibilityMode"].as_bool().unwrap_or(false),"batchItemId":request.batch_item_id,"inputHash":request.fingerprint});
     let output_edit = request
         .options
         .output_gain

@@ -615,7 +615,8 @@
     "phase6Gguf": "Moteur audio.cpp 0.9.1 : poids GGUF Q8_0, calcul Vulkan sur le GPU sélectionné ou CPU. En automatique, priorité au GPU dédié. Les fichiers incluent aussi le codec vocal.",
     "dramaGenerationHint": "Drama 3 FP8 : experts en mémoire mappée, sans copie complète en RAM verrouillée ; cache GPU plafonné à 4 Gio, couches BF16 et codec FP32. Profil conseillé : NVIDIA 16 Go + 64 Go de RAM. Contrôle : 48 Gio utilisables, 24 Gio de RAM et 12 Gio de VRAM libres. Un SSD est conseillé ; les accès disque peuvent ralentir la génération. Environ 40,1 Go de modèles, prévoir 60 Go libres pour la première installation. Premier chargement long, calcul plus lent que S2. Aucun repli CPU.",
     "voxcpmProfile": "VoxCPM2 2B · BF16 sur NVIDIA CUDA 12.8, FP32 sur CPU. Français et japonais pris en charge. Référence sans transcription en mode interlangue ; transcription exacte en mode continuation. Humeurs et accents transmis comme consignes, sans garantie de résultat.",
-    "chatterboxProfile": "Chatterbox Multilingual V3 · 500M · français explicite, même avec une référence japonaise. Référence sans transcription, CFG à 0 pour limiter le transfert de langue. Filigrane audio Perth conservé. NVIDIA CUDA 12.8 ou CPU."
+    "chatterboxProfile": "Chatterbox Multilingual V3 · 500M · français explicite, même avec une référence japonaise. Référence sans transcription, CFG à 0 pour limiter le transfert de langue. Filigrane audio Perth conservé. NVIDIA CUDA 12.8 ou CPU.",
+    "audio8Profile": "Audio8-TTS Realistic 0.6B · GGUF Q8_0 · clonage multilingue local, français compris. Modèle + codec : 1,33 Gio. Licence Apache 2.0 ; conversion GGUF communautaire. La qualité et l’accent dépendent de la référence. CPU ou GPU Vulkan sélectionné, sans repli silencieux."
   },
   "allAudioSilent": "Tout rendre silencieux",
   "allAudioAudible": "Tout rendre audible",
@@ -1683,5 +1684,9 @@
     "manageDubs": "Configurer les sous-doublages",
     "isolatedReference": "La référence courante utilise uniquement l’audio isolé de cette voix.",
     "isolatedGuide": "Le guide d’intonation utilise l’audio isolé de ce sous-doublage."
-  }
+  },
+  "audio8Profile": "Audio8-TTS Realistic 0.6B · GGUF Q8_0 · clonage multilingue local, français compris. Modèle + codec : 1,33 Gio. Licence Apache 2.0 ; conversion GGUF communautaire. La qualité et l’accent dépendent de la référence. CPU ou GPU Vulkan sélectionné, sans repli silencieux.",
+  "audio8HardwareHint": "Profil léger pour 16 Go de VRAM ; sélectionnez la RTX 5060 Ti dans les périphériques Vulkan. Aucune dépendance Python supplémentaire. La taille des fichiers n’est pas une mesure de VRAM ; performances sur votre GPU non mesurées.",
+  "audio8CloneHint": "Audio8 exige l’audio de référence et sa transcription exacte, dans la langue de cet audio. Utilisez « Transcrire la référence » si nécessaire. Pour un doublage français avec moins de transfert d’accent, privilégiez une référence française propre et expressive.",
+  "audio8StyleHint": "Les commandes d’humeur, d’accent régional et de transfert d’intonation ne sont pas disponibles pour ce moteur. Le texte détermine la langue ; le jeu et le timbre viennent de la référence. Les réglages de qualité contrôlent l’échantillonnage, sans garantir un accent."
 }

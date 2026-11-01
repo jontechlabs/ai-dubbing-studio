@@ -32,6 +32,7 @@ struct Manifest {
     variants: Vec<Variant>,
 }
 pub const IDS: &[&str] = &[
+    "audio8-realistic-06b-gguf-q8",
     "fish-s2-gguf-q8",
     "qwen3-06b-gguf-q8",
     "qwen3-17b-gguf-q8",
@@ -41,6 +42,17 @@ pub const IDS: &[&str] = &[
     "voxcpm2-bf16",
     "chatterbox-multilingual-v3",
 ];
+pub(crate) fn audio8(id: &str) -> bool {
+    id == "audio8-realistic-06b-gguf-q8"
+}
+pub(crate) fn gguf_family(provider: &str) -> Result<&'static str, String> {
+    match provider {
+        "audio8-tts" => Ok("audio8_tts"),
+        "fish-s2" => Ok("fish_audio"),
+        "qwen3-tts" => Ok("qwen3_tts"),
+        _ => Err("INVALID_TTS_REQUEST".into()),
+    }
+}
 pub(crate) fn multilingual(id: &str) -> bool {
     [
         "voxcpm2-bf16",
@@ -206,7 +218,7 @@ pub fn install<R: tauri::Runtime>(
                 jobs::update(&core,&app,&key,|j|j.logs.push(format!("Drama 3 before downloads: {}; available {:.2} GiB; estimated required {:.2} GiB (models, dependency archives, expansion and margin)",space.path,space.available_bytes as f64/1073741824.0,space.required_bytes as f64/1073741824.0)));
                 if !space.enough {return Err("TTS_DRAMA_DISK_REQUIRED".into());}
             }
-            if selected.engine=="multilingual" {
+            if selected.engine=="multilingual" || audio8(&id) {
               let c=core.clone();let a=app.clone();let v=id.clone();
               let space=tauri::async_runtime::spawn_blocking(move||crate::voice_space::check_variant(&c,&a,&v)).await.map_err(io_error)??;
               jobs::update(&core,&app,&key,|j|j.logs.push(format!("{}: available {:.2} GiB; estimated required {:.2} GiB before dependency downloads",selected.name,space.available_bytes as f64/1073741824.0,space.required_bytes as f64/1073741824.0)));
@@ -560,11 +572,7 @@ async fn generate_gguf_attempt<R: tauri::Runtime>(
             "--task".into(),
             "tts".into(),
             "--family".into(),
-            if selected.provider_id == "fish-s2" {
-                "fish_audio".into()
-            } else {
-                "qwen3_tts".into()
-            },
+            gguf_family(&selected.provider_id)?.into(),
             "--model".into(),
             model.to_string_lossy().into_owned(),
             "--backend".into(),
@@ -627,11 +635,7 @@ async fn generate_gguf_attempt<R: tauri::Runtime>(
                     key,
                     &root(core).join("audiocpp/audiocpp_server.exe"),
                     &model,
-                    if selected.provider_id == "fish-s2" {
-                        "fish_audio"
-                    } else {
-                        "qwen3_tts"
-                    },
+                    gguf_family(&selected.provider_id)?,
                     device,
                     input,
                     &raw,
@@ -705,6 +709,13 @@ pub(crate) fn qwen_language(code: &str) -> Result<&'static str, String> {
 }
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn audio8_is_not_misrouted_to_qwen_or_fish() {
+        assert_eq!(super::gguf_family("audio8-tts").unwrap(), "audio8_tts");
+        assert_eq!(super::gguf_family("qwen3-tts").unwrap(), "qwen3_tts");
+        assert_eq!(super::gguf_family("fish-s2").unwrap(), "fish_audio");
+        assert!(super::gguf_family("unknown").is_err());
+    }
     #[test]
     fn maps_language_codes_to_native_qwen_language_names() {
         assert_eq!(super::qwen_language("fr").unwrap(), "French");

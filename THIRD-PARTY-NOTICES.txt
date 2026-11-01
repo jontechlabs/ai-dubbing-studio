@@ -115,3 +115,12 @@ uses image appearance descriptors for manual review. No face-identity or gender
 classifier is included. Acoustic register uses a bounded autocorrelation estimate.
 
 Audio toolbox (v0.32): audio-separator 0.47.1 (MIT) provides RoFormer and Demucs architectures; Julius 0.2.7 is bundled as a pure-Python wheel built from a SHA-256-pinned PyPI sdist (MIT; license inside wheel). AudioSep official source revision 944583f18b84589dc965de3ad77525c945334252 (MIT) is bundled in workers/vendor/audio-toolbox with license, source hash and offline-loading patches. Weights are downloaded only on request and verified against workers/audio-toolbox-models.json. Kim Mel-Band model distribution: MIT. Demucs: MIT. Viperx community weights: no explicit weight license supplied by the distributor; do not infer commercial rights from the MIT loader. CLAP/RoBERTa configuration/tokenizer files follow their upstream distribution licenses. Sources, exact revisions and file digests are retained in the manifest and vendor provenance. XTTS-v2, ChatTTS, F5-TTS and Seed-VC are assessed in documentation, not bundled or installed by this release.
+
+Audio8-TTS Realistic 0.6B (v0.34): Edge0-AI, Apache License 2.0.
+Official model: https://huggingface.co/Edge0/Audio8-TTS-Realistic-0.6b
+Revision 925bbd4c2d8360af85f2594bf0205173fda853ba.
+Community Q8_0 conversion: https://huggingface.co/audio-cpp/Audio8-TTS-Realistic-0.6b-GGUF
+Revision b57015b9e916ede150f4b168b4b882be37ad723f, Apache 2.0.
+Uses the existing pinned audio.cpp 0.9.1 runtime (see its license above).
+Weights and full model license are downloaded only on request, with exact
+SHA-256/size verification. Provenance: docs/AUDIO8-TTS.md and workers/voice-engines.json.

@@ -708,6 +708,40 @@ fn phase6_variants_survive_project_validation_and_fish_requires_transcript_mode(
     assert!(settings.validate().is_err());
 }
 
+#[test]
+fn audio8_requires_exact_reference_text_and_rejects_unimplemented_style_controls() {
+    let mut p = fixture();
+    let mut o = options();
+    o.variant_id = Some("audio8-realistic-06b-gguf-q8".into());
+    o.mode = "zeroShot".into();
+    o.device = "vulkan:1".into();
+    p.format_version = 26;
+    p.model_preferences =
+        Some(serde_json::json!({"ttsProviderId":"audio8-tts","voiceVariantId":o.variant()}));
+    p.dialogues[0].voice_settings = Some(o.clone());
+    assert_eq!(o.required_format(), 26);
+    assert!(o.validate().is_ok());
+    assert!(p.validate().is_ok());
+    p.format_version = 25;
+    assert!(p.validate().is_err());
+    p.format_version = 26;
+    p.characters[0].references[0].transcript.clear();
+    assert_eq!(
+        validate_input(&p, &p.dialogues[0].id, &o).unwrap_err(),
+        "TTS_TRANSCRIPT_REQUIRED"
+    );
+    p.characters[0].references[0].transcript = "Hello".into();
+    assert!(validate_input(&p, &p.dialogues[0].id, &o).is_ok());
+    o.mode = "crossLingual".into();
+    assert!(o.validate().is_err());
+    o.mode = "zeroShot".into();
+    o.mood = Some("stressed".into());
+    assert_eq!(o.validate().unwrap_err(), "TTS_STYLE_UNSUPPORTED");
+    o.mood = Some("default".into());
+    o.accent = Some("fr-FR".into());
+    assert_eq!(o.validate().unwrap_err(), "TTS_ACCENT_UNSUPPORTED");
+}
+
 #[tokio::test]
 async fn tts_refuses_missing_runtime_without_job_or_project_changes() {
     let temp = tempfile::tempdir().unwrap();

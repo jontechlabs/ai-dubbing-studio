@@ -15,7 +15,9 @@ pub(crate) fn validate(options: &Options, language: Option<&str>) -> Result<(), 
         return Ok(());
     }
     let value = spec(id).ok_or("TTS_ACCENT_UNSUPPORTED")?;
-    if (options.variant().starts_with("qwen3") || options.variant().starts_with("chatterbox"))
+    if (options.variant().starts_with("qwen3")
+        || options.variant().starts_with("chatterbox")
+        || crate::voice_engines::audio8(options.variant()))
         || language.is_some_and(|l| value["language"] != l)
     {
         return Err("TTS_ACCENT_UNSUPPORTED".into());

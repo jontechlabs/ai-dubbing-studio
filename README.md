@@ -1,5 +1,7 @@
 # AI Dubbing Studio
 
+**v0.34.0 — Audio8-TTS Realistic 0.6B.** Local GGUF Q8_0 installation (model and codec: 1.33 GiB), disk preflight, CPU or selected Vulkan GPU. Clone existing or imported references with an exact transcript, adjust sampling, and keep the model loaded during batches. Earlier takes are retained. Regional-accent and named-mood controls are unavailable for this engine; prefer an expressive French reference for French dubbing. **141 MCP tools, project format 26.** [Installation and limits](docs/AUDIO8-TTS.md).
+
 **v0.33.0 — Overlapping voices and independent sub-dubbings.** Local MossFormer2 (2 voices) and SepFormer (2 or 3 voices) installation, separation and output preview in the Dubbing panel. Replace/add track routing and independent per-character dubbing, mixed concurrently in playback and MKV export. Source video, SRTs and every earlier take remain intact. Includes selection audition and references before listening levels/mutes. **141 MCP tools, project format 25.** [Guide](docs/OVERLAPPING-VOICES.md).
 
 **v0.32.4 — Character matching on request.** Click **Suggest a character** in Dubbing to compare voices. Opening the panel, switching dialogues or changing settings no longer starts automatic analysis, including with an old enabled preference. Assignment still requires approval and every take is retained. [Guide](docs/CHARACTER-VOICE-LIBRARY.md#personnage-proposé-au-moment-du-doublage).

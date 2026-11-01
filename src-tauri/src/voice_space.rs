@@ -29,6 +29,9 @@ pub fn check_variant<R: tauri::Runtime>(
     id: &str,
 ) -> Result<Space, String> {
     let multilingual = voice_engines::multilingual(id);
+    if voice_engines::audio8(id) {
+        return check_gguf(core, app, id);
+    }
     if !multilingual && id != "drama3-comfy-fp8" {
         return Err("INVALID_TTS_REQUEST".into());
     }
@@ -100,6 +103,49 @@ pub fn check_variant<R: tauri::Runtime>(
         download_bytes,
         present,
     ))
+}
+fn check_gguf<R: tauri::Runtime>(
+    core: &Core,
+    app: &tauri::AppHandle<R>,
+    id: &str,
+) -> Result<Space, String> {
+    let folder = voice_engines::root(core);
+    let variant = voice_engines::variant(app, id)?;
+    let model_bytes = variant
+        .files
+        .iter()
+        .filter(|f| !complete(&folder.join(id).join(&f.name), f.size))
+        .map(|f| f.size)
+        .sum();
+    let manifest: serde_json::Value = serde_json::from_slice(
+        &std::fs::read(separation::resources(app).join("voice-engines.json")).map_err(io_error)?,
+    )
+    .map_err(io_error)?;
+    let engine = &manifest["engine"];
+    let size = engine["size"].as_u64().ok_or("TTS_RUNTIME_FAILED")?;
+    let name = engine["name"].as_str().ok_or("TTS_RUNTIME_FAILED")?;
+    crate::domain::valid_relative(name)?;
+    let download_bytes = if complete(&folder.join(name), size) {
+        0
+    } else {
+        size
+    };
+    // The portable engine is 0.26 GiB expanded. Installation always extracts
+    // its verified archive, so reserve that temporary growth even on repair.
+    let runtime_bytes = 512 * 1024 * 1024;
+    let margin_bytes = GIB;
+    let available_bytes = available(&folder)?;
+    let required_bytes = model_bytes + download_bytes + runtime_bytes + margin_bytes;
+    Ok(Space {
+        path: folder.to_string_lossy().into_owned(),
+        available_bytes,
+        required_bytes,
+        model_bytes,
+        download_bytes,
+        runtime_bytes,
+        margin_bytes,
+        enough: available_bytes >= required_bytes,
+    })
 }
 fn budget(
     path: String,
