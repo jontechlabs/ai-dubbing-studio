@@ -11,6 +11,7 @@ jobs:
     runs-on: windows-latest
     timeout-minutes: 90
     env:
+      GH_TOKEN: ${{ github.token }}
       LIBCLANG_PATH: 'C:\Program Files\LLVM\bin'
       PYTHONDONTWRITEBYTECODE: '1'
       PYTHONUTF8: '1'
@@ -28,6 +29,8 @@ jobs:
           python-version: '3.12.10'
       - name: Verify every established inference worker and model is preserved
         run: python scripts/verify-audio8.py
+      - name: Authenticate successful identical Chrome and native checks
+        run: python scripts/verify-audio8-proof.py
       - name: Prepare pinned build and media tools
         run: |
           npm install --global pnpm@11.25.0
@@ -48,15 +51,19 @@ jobs:
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
           pnpm format:check
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
-          pnpm test:e2e
-          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          if (-not $env:STUDIO_AUDIO8_CHECKS_REUSED) {
+            pnpm test:e2e
+            if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          }
       - name: Native regression tests, lints and formatting
         run: |
           git restore -- docs/screenshots
-          cargo test --locked --manifest-path src-tauri/Cargo.toml
-          if ($LASTEXITCODE) { exit $LASTEXITCODE }
-          cargo clippy --locked --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings
-          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          if (-not $env:STUDIO_AUDIO8_CHECKS_REUSED) {
+            cargo test --locked --manifest-path src-tauri/Cargo.toml
+            if ($LASTEXITCODE) { exit $LASTEXITCODE }
+            cargo clippy --locked --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings
+            if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          }
           cargo fmt --manifest-path src-tauri/Cargo.toml --check
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
       - name: Worker regression tests

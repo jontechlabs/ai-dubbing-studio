@@ -7,13 +7,15 @@ import subprocess
 ROOT = Path(__file__).resolve().parents[1]
 BASE = '6617440e2b5d1ed60780be6fd76c4786ad2a12b2'
 def git(*args): return subprocess.check_output(['git',*args],cwd=ROOT,text=True,encoding='utf8').strip()
-changed = {'workers/voice-engines.json','workers/voice-quality.json'}
+changed = {'workers/voice-engines.json','workers/voice-quality.json','workers/test_fish.py'}
 preserved = {}
 for row in git('ls-tree','-r','--format=%(objectname) %(path)',BASE,'workers').splitlines():
     sha,path = row.split(' ',1)
     if path in changed: continue
     assert git('rev-parse',f'HEAD:{path}') == sha,path
     preserved[path] = sha
+old_test=git('show',f'{BASE}:workers/test_fish.py')
+assert (ROOT/'workers/test_fish.py').read_text(encoding='utf8').strip()==old_test.replace("len(manifest['variants']),8)","len(manifest['variants']),9)")
 for path,key in [('workers/voice-engines.json','variants'),('workers/voice-quality.json','variants')]:
     old = json.loads(git('show',f'{BASE}:{path}'))
     new = json.loads((ROOT/path).read_text(encoding='utf8'))
