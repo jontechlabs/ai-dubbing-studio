@@ -1,11 +1,11 @@
 {
-  "version": "0.34.1",
-  "notes": "Correction du choix d’accent VoxCPM2 : sélection du moteur en Standard sans hériter du mode imposé par Fish ou Audio8 ; bouton de retour au Standard depuis Hi-Fi / guide hybride. Aide par moteur pour Audio8, Qwen3-TTS Base et Chatterbox, dont l’accent est guidé par la référence. Essais conservés, format 26 et 141 outils MCP inchangés.",
-  "pub_date": "2026-11-02T14:52:16Z",
+  "version": "0.35.0",
+  "notes": "Choisissez de 1 à 4 nouveaux essais par réplique, avec graines successives, progression et annulation dans le panneau Doublage. En TTS simple, le modèle reste chargé pendant la série et est libéré à la fin ; les essais terminés sont conservés et le dernier est sélectionné. Disponible aussi pour la chaîne en deux étapes, avec déchargement entre les étapes, et via le paramètre MCP count. 141 outils, format 26.",
+  "pub_date": "2026-11-02T18:51:05Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSdFFyMUJGTFp3Nk1OKzN5Qkd6NytEVmhjK1p3bHMreTdIVUZDRnFPTEhSMEx5MGFsaGpiYzRkcENieGo3RERTN2F0KzAvSmt5NnZsbGwzZ3UwdCs5MW1oRWd1bTVEdlFnPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkzNjI5OTk1CWZpbGU6QUkgRHViYmluZyBTdHVkaW9fMC4zNC4xX3g2NC1zZXR1cC5leGUJdmVyc2lvbjowLjM0LjEKc0xCcDZOam80dm5FNkdFcUpzY1JiUjlhamtKSVVnV0FTYmN3VkFwRmtkRlJvTU0xSHpRK1NGV2dmVlN1S3lrc1dsNGphQ1NoYmtSdGdTVFkya1RsQVE9PQo=",
-      "url": "https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.34.1/AI-Dubbing-Studio-0.34.1-Setup.exe"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSdFFyMUJGTFp3NkYrR3lUNUNkOXpyMDNuckVmT29aTlQ5eVVEMzZUQkhqTjhFOGw0ckswRHpybjNjWGZ1eElISXUxdFBoMVBqSXlhR2ZtcGxMeVU4U1JsdjlPSFVMY2dVPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkzNjQxNTM0CWZpbGU6QUkgRHViYmluZyBTdHVkaW9fMC4zNS4wX3g2NC1zZXR1cC5leGUJdmVyc2lvbjowLjM1LjAKcHI0dnpTS1JVZS9FU1hlT3EzZnVYYUp6TWg4M0pCNTBNc0J4ZjNDWDNJUjJwVUV0cC8xTGlqbjZQT0tPaDIyMXBGRitkeUsrSFlrd0ZWZS90UjlIQlE9PQo=",
+      "url": "https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.35.0/AI-Dubbing-Studio-0.35.0-Setup.exe"
     }
   }
 }
