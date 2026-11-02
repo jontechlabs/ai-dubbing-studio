@@ -1,0 +1,57 @@
+name: Complete authenticated multiple-take package qualification
+on:
+  workflow_dispatch:
+  push:
+    branches: [codex/multiple-takes]
+permissions:
+  contents: read
+  actions: read
+jobs:
+  windows:
+    runs-on: windows-latest
+    timeout-minutes: 40
+    env:
+      GH_TOKEN: ${{ github.token }}
+      PYTHONDONTWRITEBYTECODE: '1'
+      PYTHONUTF8: '1'
+      PYTHONIOENCODING: utf-8
+      PYTHONUNBUFFERED: '1'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
+        with:
+          node-version: '24'
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12.10'
+      - name: Authenticate unchanged compiled packages and retain original strict ASR failure
+        run: python scripts/resume-trials-checks.py
+      - name: Verify unchanged inference workers, models and dependencies
+        run: python scripts/verify-tts-trials.py
+      - name: Prepare tools and public reference without repeating successful ASR
+        run: |
+          npm install --global pnpm@11.25.0
+          pnpm install --frozen-lockfile
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          ./scripts/prepare-ffmpeg.ps1
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          $dir='.cache/reference-transcription/Référence 日本語'
+          New-Item -ItemType Directory -Force $dir | Out-Null
+          Invoke-WebRequest 'https://huggingface.co/ggerganov/whisper.cpp/resolve/5359861c739e955e79d9a303bcbc70fb988958b1/ggml-small-q5_1.bin' -OutFile "$dir/ggml-small-q5_1.bin"
+          if ((Get-FileHash "$dir/ggml-small-q5_1.bin").Hash.ToLowerInvariant() -ne 'ae85e4a935d7a567bd102fe55afc16bb595bdb618e11b2fc7591bc08120411bb') { throw 'Whisper hash mismatch' }
+          Invoke-WebRequest 'https://huggingface.co/csukuangfj/sherpa-onnx-sense-voice-zh-en-ja-ko-yue-2024-07-17/resolve/2365baeacb507f821a0c8120fcee3d484dba7a07/test_wavs/ja.wav' -OutFile "$dir/ja.wav"
+          if ((Get-FileHash "$dir/ja.wav").Hash.ToLowerInvariant() -ne '460bd8dccb0d2a5f4e29c628f837be4082d13defc64c3fc21dd1b6bb0e119095') { throw 'Reference hash mismatch' }
+      - name: Reproduce seed 14 quality failure through the old cold single-take path
+        run: ./scripts/test-trials-cold.ps1
+      - name: Prepare real local separators required by packaged MCP regression
+        run: python scripts/test-speaker-separation.py
+      - name: Actual packaged studio controlled by official MCP SDK
+        run: ./scripts/test-mcp.ps1
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: multiple-takes-windows-packages-and-validation
+          path: artifacts/*
+          if-no-files-found: error

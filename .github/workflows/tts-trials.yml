@@ -2,7 +2,7 @@ name: Multiple takes Windows checks and packages
 on:
   workflow_dispatch:
   push:
-    branches: [codex/multiple-takes]
+    branches: [codex/full-trials-checks]
 permissions:
   contents: read
   actions: read
