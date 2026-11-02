@@ -76,6 +76,8 @@ jobs:
         run: ./scripts/test-reference-transcription.ps1
       - name: Package installer and portable version
         run: ./scripts/package-windows.ps1
+      - name: Prepare real local separators required by the packaged MCP regression
+        run: python scripts/test-speaker-separation.py
       - name: Actual packaged studio controlled by official MCP SDK
         run: ./scripts/test-mcp.ps1
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
