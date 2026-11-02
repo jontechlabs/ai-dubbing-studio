@@ -29,6 +29,8 @@ jobs:
           python-version: '3.12.10'
       - name: Verify unchanged inference workers, models and dependencies
         run: python scripts/verify-tts-trials.py
+      - name: Authenticate completed Chrome checks for unchanged UI inputs
+        run: python scripts/verify-trials-chrome.py
       - name: Prepare pinned tools and dependencies
         run: |
           npm install --global pnpm@11.25.0
@@ -66,7 +68,7 @@ jobs:
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
           pnpm exec prettier --check tests/e2e/tts-trials.pw.ts
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
-          pnpm test:e2e
+          pnpm exec playwright test tests/e2e/tts-trials.pw.ts
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
       - name: Build signed updater installer
         env:

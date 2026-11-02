@@ -40,6 +40,47 @@ fn count_bounds_and_distinct_wrapping_seeds() {
     );
 }
 #[tokio::test]
+async fn series_blocks_model_migration_and_conflicting_separation_and_classifies_worker_crashes() {
+    let tmp = tempfile::tempdir().unwrap();
+    let root = tmp.path().canonicalize().unwrap();
+    let p = fixture(&root, &["Bonjour"]);
+    let core = core(&root, p);
+    let app = tauri::test::mock_app();
+    let key = jobs::create(&core, app.handle(), "ttsTrials", "project".into(), None);
+    assert_eq!(
+        crate::model_storage::change(
+            core.clone(),
+            app.handle().clone(),
+            root.join("other-models")
+        )
+        .unwrap_err(),
+        "BUSY"
+    );
+    assert_eq!(
+        crate::separation::enqueue(core.clone(), app.handle().clone(), "cpu".into()).unwrap_err(),
+        "BUSY"
+    );
+    #[cfg(windows)]
+    assert_eq!(
+        crate::separation::install(core.clone(), app.handle().clone(), false).unwrap_err(),
+        "BUSY"
+    );
+    let launch = worker(&root);
+    let flag = std::sync::atomic::AtomicBool::new(false);
+    let error = crate::separation::process(
+        &core,
+        app.handle(),
+        &key,
+        &launch.python,
+        &["-c".into(), "raise SystemExit(1)".into()],
+        &flag,
+    )
+    .await
+    .unwrap_err();
+    assert_eq!(error, "TTS_ENGINE_FAILED");
+    assert!(!root.join("other-models").exists());
+}
+#[tokio::test]
 async fn four_takes_share_one_worker_keep_settings_and_sources_and_release_it() {
     let tmp = tempfile::tempdir().unwrap();
     let root = tmp.path().canonicalize().unwrap();

@@ -396,6 +396,7 @@ pub fn change<R: tauri::Runtime>(
                 "ttsInstall",
                 "tts",
                 "ttsBatch",
+                "ttsTrials",
                 "translationInstall",
                 "translationSuggest",
                 "speakers",
