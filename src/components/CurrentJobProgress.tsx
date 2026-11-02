@@ -71,7 +71,11 @@ export function CurrentJobProgress({
         <progress max={1} value={job.progress ?? undefined} aria-label={t('workbench.progress')} />
       )}
       <JobDuration job={job} />
-      {job.batch && <span>{t('batchJobSummary', job.batch)}</span>}
+      {job.batch && (
+        <span>
+          {t(job.kind === 'ttsTrials' ? 'ttsTrialsProgress' : 'batchJobSummary', job.batch)}
+        </span>
+      )}
       {job.error && (
         <p role="alert">{t(`errors.${job.error.split(':')[0]}`, { defaultValue: job.error })}</p>
       )}

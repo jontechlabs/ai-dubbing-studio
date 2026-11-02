@@ -92,7 +92,9 @@ export function useDubbingTask(
   const terminal = job && ['succeeded', 'failed', 'cancelled', 'interrupted'].includes(job.status);
   const makesTake =
     job &&
-    ['tts', 'ttsPipeline', 'voiceConversion', 'prosodyTransfer', 'ttsBatch'].includes(job.kind);
+    ['tts', 'ttsTrials', 'ttsPipeline', 'voiceConversion', 'prosodyTransfer', 'ttsBatch'].includes(
+      job.kind,
+    );
   const result =
     terminal && makesTake && current
       ? [...voiceGenerations(project)].reverse().find((g) => {

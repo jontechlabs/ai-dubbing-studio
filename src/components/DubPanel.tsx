@@ -235,6 +235,7 @@ export function DubPanel({
     };
   });
   const [referencePending, setReferencePending] = useState(false);
+  const [takeCount, setTakeCount] = useState<1 | 2 | 3 | 4>(1);
   const [pipeline, setPipeline] = useState(false),
     [pipelineReady, setPipelineReady] = useState(false),
     [guideStrength, setGuideStrength] = useState(0);
@@ -1045,6 +1046,25 @@ export function DubPanel({
             onModels={onModels}
             onReady={setPipelineReady}
           />
+          <label className="field">
+            <span>{t('ttsTakeCount')}</span>
+            <select
+              value={takeCount}
+              disabled={busy}
+              onChange={(event) => setTakeCount(Number(event.target.value) as typeof takeCount)}
+            >
+              {([1, 2, 3, 4] as const).map((count) => (
+                <option value={count} key={count}>
+                  {count}
+                </option>
+              ))}
+            </select>
+          </label>
+          {takeCount > 1 && (
+            <p className="panel-description">
+              {t(pipeline ? 'ttsTrialsPipelineHint' : 'ttsTrialsHint')}
+            </p>
+          )}
           <button
             className="button accent wide"
             disabled={
@@ -1075,17 +1095,24 @@ export function DubPanel({
                 .start(() =>
                   snapshot().then(() =>
                     pipeline
-                      ? bridge.generateDubbingPipeline({
-                          lineId: line.id,
-                          tts: { ...settings, mode, accent },
-                          conversion,
-                          guideStrength,
-                        })
-                      : bridge.generateLine(line.id, {
-                          ...settings,
-                          mode,
-                          accent,
-                        }),
+                      ? bridge.generateDubbingPipeline(
+                          {
+                            lineId: line.id,
+                            tts: { ...settings, mode, accent },
+                            conversion,
+                            guideStrength,
+                          },
+                          takeCount,
+                        )
+                      : bridge.generateLine(
+                          line.id,
+                          {
+                            ...settings,
+                            mode,
+                            accent,
+                          },
+                          takeCount,
+                        ),
                   ),
                 )
                 .catch((e) => onError(String(e)))
@@ -1093,7 +1120,7 @@ export function DubPanel({
             }}
           >
             <Mic2 size={15} />
-            {t('ttsGenerateNew')}
+            {takeCount === 1 ? t('ttsGenerateNew') : t('ttsGenerateMultiple', { count: takeCount })}
           </button>
         </>
       )}

@@ -1,5 +1,7 @@
 # AI Dubbing Studio
 
+**v0.35.0 — 1–4 takes per dialogue.** Choose the number of takes in Dubbing; sequential generation with distinct seeds, a loaded TTS model reused across the series, inline progress and cancellation. Completed takes survive interruption and the latest is selected. Also supports the two-stage pipeline and MCP (`count`). [Guide](docs/MULTIPLE-TAKES.md).
+
 **v0.34.1 — Clear accent controls.** Enable VoxCPM2 accent instructions with an explicit switch from Ultimate / Hi-Fi or hybrid guidance to Standard. Engine-specific guidance explains reference-driven accents for Audio8, Qwen3-TTS Base and Chatterbox. Existing takes are preserved. [Supported modes and guidance](docs/VOICE-ACCENTS.md).
 
 **v0.34.0 — Audio8-TTS Realistic 0.6B.** Local GGUF Q8_0 installation (model and codec: 1.33 GiB), disk preflight, CPU or selected Vulkan GPU. Clone existing or imported references with an exact transcript, adjust sampling, and keep the model loaded during batches. Earlier takes are retained. Regional-accent and named-mood controls are unavailable for this engine; prefer an expressive French reference for French dubbing. **141 MCP tools, project format 26.** [Installation and limits](docs/AUDIO8-TTS.md).
@@ -163,7 +165,7 @@ CosyVoice3, Fish S2 FP8/GGUF and Qwen3-TTS GGUF remain available. [Models and GP
 
 *Actual React browser UI with a simulated reference and transcription result. Separate native checks transcribe real Japanese speech. These are not RTX performance measurements.*
 
-[Windows downloads](https://github.com/jontechlabs/ai-dubbing-studio/releases/tag/v0.34.1) · [User guide](docs/GETTING-STARTED.md) · [Build instructions](docs/BUILDING.md) · [Français](README.fr.md)
+[Windows downloads](https://github.com/jontechlabs/ai-dubbing-studio/releases/tag/v0.35.0) · [User guide](docs/GETTING-STARTED.md) · [Build instructions](docs/BUILDING.md) · [Français](README.fr.md)
 
 ![Studio with bilingual dialogue, video preview, text editor and timeline](docs/screenshots/studio.png)
 
@@ -177,9 +179,9 @@ Audio regions with independent silence and volume, timeline range selection, fas
 
 | Package | Purpose |
 | --- | --- |
-| [Windows x64 setup](https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.34.1/AI-Dubbing-Studio-0.34.1-Setup.exe) | NSIS installer for the current user, with English/French installer interface |
-| [Portable ZIP](https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.34.1/AI-Dubbing-Studio-Windows-Portable.zip) | Extract the whole folder and launch `AI Dubbing Studio.exe` |
-| [SHA-256 checksums](https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.34.1/SHA256SUMS.txt) | Verify the setup and ZIP downloads |
+| [Windows x64 setup](https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.35.0/AI-Dubbing-Studio-0.35.0-Setup.exe) | NSIS installer for the current user, with English/French installer interface |
+| [Portable ZIP](https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.35.0/AI-Dubbing-Studio-Windows-Portable.zip) | Extract the whole folder and launch `AI Dubbing Studio.exe` |
+| [SHA-256 checksums](https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.35.0/SHA256SUMS.txt) | Verify the setup and ZIP downloads |
 
 Target: **Windows 10/11 x64**, with **Microsoft Edge WebView2 Runtime**. FFmpeg and FFprobe are included. Python, CUDA and AI model downloads are not required for editing and playback. Installation may need Internet access if WebView2 is missing; local project editing does not require a cloud account.
 

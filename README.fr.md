@@ -1,5 +1,7 @@
 # AI Dubbing Studio
 
+**v0.35.0 — 1 à 4 essais par réplique.** Choisir le nombre d’essais dans Doublage ; générations successives avec graines différentes, modèle TTS conservé en mémoire pendant la série, compteur et annulation dans le panneau. Les essais terminés restent disponibles après interruption et le dernier est sélectionné. Compatible avec la chaîne en deux étapes et pilotable par MCP (`count`). [Guide](docs/MULTIPLE-TAKES.md).
+
 **v0.34.1 — Choix d’accent clarifié.** Bouton pour activer les consignes d’accent de VoxCPM2 en passant explicitement en Standard depuis Ultimate / Hi-Fi ou le guide hybride. Aide adaptée à Audio8, Qwen3-TTS Base et Chatterbox lorsque l’accent dépend de la référence. Les essais sont conservés. [Modes compatibles et conseils](docs/VOICE-ACCENTS.md).
 
 **v0.34.0 — Audio8-TTS Realistic 0.6B.** Installation locale de la conversion GGUF Q8_0 (modèle et codec : 1,33 Gio), contrôle d’espace disque, CPU ou GPU Vulkan sélectionné. Clonage depuis les références existantes ou un fichier importé avec transcription exacte, qualité réglable et lot conservant le modèle chargé. Les essais précédents sont conservés. Pas de commande d’accent régional ou d’humeur pour ce moteur ; privilégier une référence française expressive. **141 outils MCP, format 26.** [Installation et limites](docs/AUDIO8-TTS.md).
@@ -139,7 +141,7 @@ Barres RMS, crêtes et voyants de saturation mémorisés pour chaque piste et le
 
 *Interface React réelle avec audio de démonstration synthétique et inventaire natif simulé.*
 
-[Version anglaise et captures de l’interface](README.md) · [Téléchargements Windows](https://github.com/jontechlabs/ai-dubbing-studio/releases/tag/v0.34.1)
+[Version anglaise et captures de l’interface](README.md) · [Téléchargements Windows](https://github.com/jontechlabs/ai-dubbing-studio/releases/tag/v0.35.0)
 
 Studio desktop local de travail texte, voix et vidéo. Tauri 2, React, TypeScript strict et Rust.
 

@@ -5,7 +5,7 @@ use crate::{
 use serde::{Deserialize, Serialize};
 #[cfg(test)]
 #[path = "tts_batch_tests.rs"]
-mod tests;
+pub(crate) mod tests;
 use std::{
     collections::HashSet,
     io::Write,

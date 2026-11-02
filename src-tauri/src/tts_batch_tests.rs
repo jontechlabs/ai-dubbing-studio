@@ -2,10 +2,10 @@ use super::*;
 use crate::domain::{Cue, VoiceReference};
 use std::{collections::HashMap, sync::Mutex, time::Duration};
 
-fn options() -> tts::Options {
+pub(crate) fn options() -> tts::Options {
     serde_json::from_value(serde_json::json!({"variantId":"cosy3-official","device":"cpu","referenceMode":"file","referenceId":"ref","mode":"crossLingual","speed":1.2,"seed":7,"mood":"stressed","accent":"fr-FR"})).unwrap()
 }
-fn fixture(root: &Path, texts: &[&str]) -> Project {
+pub(crate) fn fixture(root: &Path, texts: &[&str]) -> Project {
     std::fs::create_dir_all(root.join("characters")).unwrap();
     let mut p = Project::new("Batch".into(), "ja".into(), "fr".into());
     p.format_version = 9;
@@ -35,7 +35,7 @@ fn fixture(root: &Path, texts: &[&str]) -> Project {
     .unwrap();
     p
 }
-fn core(root: &Path, p: Project) -> Arc<Core> {
+pub(crate) fn core(root: &Path, p: Project) -> Arc<Core> {
     Arc::new(Core {
         session: Mutex::new(Some(project::Session::new(root.into(), p))),
         jobs: Mutex::new(HashMap::new()),
@@ -54,7 +54,7 @@ fn selection() -> Selection {
         options: options(),
     }
 }
-fn worker(root: &Path) -> tts::WorkerLaunch {
+pub(crate) fn worker(root: &Path) -> tts::WorkerLaunch {
     let script = root.join("batch-worker.py");
     std::fs::write(&script,r#"import json,sys,wave,struct,time,os
 from pathlib import Path
@@ -90,7 +90,7 @@ else:
         model: root.join("model"),
     }
 }
-async fn finished(core: &Core, key: &str) -> jobs::Job {
+pub(crate) async fn finished(core: &Core, key: &str) -> jobs::Job {
     for _ in 0..300 {
         let job = core
             .jobs
@@ -121,7 +121,7 @@ fn request(p: &Project, root: &Path) -> Request {
     }
 }
 
-fn assert_worker_exited(pid: u64) {
+pub(crate) fn assert_worker_exited(pid: u64) {
     let script = r#"import os,sys,ctypes
 pid=int(sys.argv[1])
 if os.name=='nt':

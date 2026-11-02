@@ -71,8 +71,12 @@ export function applyAudioToolboxResult(
 }
 export function generateDubbingPipeline(
   options: import('../domain/voiceCapture').DubbingPipelineOptions,
+  count?: 1 | 2 | 3 | 4,
 ) {
-  return invoke<string>('generate_dubbing_pipeline', { options });
+  return invoke<string>('generate_dubbing_pipeline', {
+    options,
+    ...(count && count > 1 ? { count } : {}),
+  });
 }
 export interface CharacterMatchOptions {
   lineId: string;
@@ -237,8 +241,16 @@ export function ttsStatus() {
 export function installTtsRuntime(cuda: boolean) {
   return invoke<string>('install_tts_runtime', { cuda });
 }
-export function generateLine(lineId: string, options: import('../domain/types').VoiceSettings) {
-  return invoke<string>('generate_line', { lineId, options });
+export function generateLine(
+  lineId: string,
+  options: import('../domain/types').VoiceSettings,
+  count?: 1 | 2 | 3 | 4,
+) {
+  return invoke<string>('generate_line', {
+    lineId,
+    options,
+    ...(count && count > 1 ? { count } : {}),
+  });
 }
 export function storeMicrophoneTake(
   projectId: string,

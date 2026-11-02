@@ -39,6 +39,7 @@ mod translation_llm;
 mod tts;
 mod tts_batch;
 mod tts_session;
+mod tts_trials;
 mod voice_accent;
 mod voice_capture;
 mod voice_edit;
@@ -214,7 +215,17 @@ fn generate_dubbing_pipeline(
     app: tauri::AppHandle,
     core: State<'_, Shared>,
     options: dubbing_pipeline::Options,
+    count: Option<u32>,
 ) -> Result<String, String> {
+    let count = tts_trials::count(count)?;
+    if count > 1 {
+        return tts_trials::start(
+            core.inner().clone(),
+            app,
+            tts_trials::Plan::Pipeline { options },
+            count,
+        );
+    }
     dubbing_pipeline::start(core.inner().clone(), app, options)
 }
 #[tauri::command]
@@ -569,7 +580,17 @@ fn generate_line(
     core: State<'_, Shared>,
     line_id: String,
     options: tts::Options,
+    count: Option<u32>,
 ) -> Result<String, String> {
+    let count = tts_trials::count(count)?;
+    if count > 1 {
+        return tts_trials::start(
+            core.inner().clone(),
+            app,
+            tts_trials::Plan::Voice { line_id, options },
+            count,
+        );
+    }
     tts::enqueue(core.inner().clone(), app, line_id, options)
 }
 #[tauri::command]
@@ -1562,6 +1583,9 @@ fn retry_job(app: tauri::AppHandle, core: State<'_, Shared>, id: String) -> Resu
             request.device,
             request.direction,
         );
+    }
+    if let Some(request) = record.tts_trials {
+        return tts_trials::resume(core.inner().clone(), app, request);
     }
     if let Some(key) = record.tts_batch {
         return tts_batch::resume(core.inner().clone(), app, tts_batch::load(&core, &key)?);

@@ -175,7 +175,9 @@ const notes = {
   import_media:
     'Import a local movie into the current project. Returns a background job ID. Poll studio_list_jobs.',
   generate_line:
-    'Generate another immutable voice take. Returns a job ID; poll jobs. Does not overwrite previous takes.',
+    'Generate 1–4 immutable voice takes of one dialogue. Optional count defaults to 1. Seeds increment from options.seed, wrapping at uint32. Multiple takes run sequentially in one cancellable job and share a loaded TTS model; completed takes survive cancellation/failure. Returns a job ID; poll jobs. Does not overwrite previous takes.',
+  generate_dubbing_pipeline:
+    'Generate 1–4 two-stage dubbing alternatives. Optional count defaults to 1. Seeds increment from options.tts.seed. Each alternative completes TTS, optional prosody and local timbre conversion sequentially; models are released between stages. Completed stages and earlier takes survive failure/cancellation. Returns a job ID.',
   generate_dubbing_batch:
     'Generate translated lines in all/selected scope with one shared configuration. Optional approvedOnly or unapprovedOnly filters translation approval; they are mutually exclusive. Untranslated lines are always excluded; force creates new takes without removing existing ones. Returns a job ID.',
   preview_dubbing_batch:
@@ -238,7 +240,9 @@ for (const match of text.matchAll(
     const optional = type.startsWith('Option<');
     if (optional) type = type.slice(7, -1);
     const property = name.replace(/_([a-z])/g, (_, c) => c.toUpperCase());
-    const value = rustSchema(type);
+    const value = property === 'count' && ['generate_line', 'generate_dubbing_pipeline'].includes(command)
+      ? { type: 'integer', enum: [1, 2, 3, 4], default: 1 }
+      : rustSchema(type);
     properties[property] = optional ? { anyOf: [value, { type: 'null' }] } : value;
     if (!optional) required.push(property);
   }

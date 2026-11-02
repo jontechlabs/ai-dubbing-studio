@@ -44,7 +44,15 @@ try {
  const plan=await call('studio_preview_dubbing_batch',{selection});assert.equal(plan.ready.length,2);
  const batch=await job(await call('studio_generate_dubbing_batch',{context:await context(),selection}));
  assert.equal(batch.batch.succeeded,2);assert(batch.logs.some(l=>l.includes('reusing the private batch server and loaded model')));assert(batch.logs.some(l=>l.includes('releasing its GPU context')));proof.hotBatch=true;
- const after=await call('studio_get_project');assert.equal(after.generations.length,3);assert.deepEqual(after.generations[0],first);assert.equal(sha(await fs.readFile(path.join(root,first.path))),firstHash);
+ const beforeTrials=await call('studio_get_project');assert.equal(beforeTrials.generations.length,3);
+ const trials=await job(await call('studio_generate_line',{context:await context(),lineId,options:{...options,seed:11},count:4}));
+ assert.equal(trials.kind,'ttsTrials');assert.equal(trials.batch.completed,4);assert.equal(trials.batch.succeeded,4);
+ assert(trials.logs.some(l=>l.includes('reusing the private batch server and loaded model')));assert(trials.logs.some(l=>l.includes('releasing its GPU context')));
+ const after=await call('studio_get_project');assert.equal(after.generations.length,7);assert.deepEqual(after.generations.slice(0,3),beforeTrials.generations);
+ assert.deepEqual(after.generations.slice(3).map(g=>g.options.seed),[11,12,13,14]);assert.equal(new Set(after.generations.map(g=>g.path)).size,7);
+ assert.equal(after.dialogues.find(l=>l.id===lineId).selectedGenerationIds.fr,after.generations.at(-1).id);
+ proof.multipleTakes={count:4,seeds:[11,12,13,14],modelReused:true,released:true,previousTakesPreserved:true,lastTakeSelected:true,seconds:trials.timing.elapsedMs/1000};
+ assert.deepEqual(after.generations[0],first);assert.equal(sha(await fs.readFile(path.join(root,first.path))),firstHash);
  assert.deepEqual(after.sourceCues,before.sourceCues);assert.deepEqual(after.targetCues,before.targetCues);assert.equal(sha(await fs.readFile(path.join(root,before.media.path))),mediaHash);
  const ffmpeg=path.join(path.dirname(args.exe),'binaries/ffmpeg.exe');
  for(const [i,g] of after.generations.entries()){

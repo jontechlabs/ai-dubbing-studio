@@ -172,11 +172,14 @@
     {
       "name": "studio_generate_dubbing_pipeline",
       "command": "generate_dubbing_pipeline",
-      "description": "generate dubbing pipeline. Uses the current desktop session. Local file paths must be absolute; long operations return job IDs. Existing native validation applies.",
+      "description": "Generate 1–4 two-stage dubbing alternatives. Optional count defaults to 1. Seeds increment from options.tts.seed. Each alternative completes TTS, optional prosody and local timbre conversion sequentially; models are released between stages. Completed stages and earlier takes survive failure/cancellation. Returns a job ID.",
       "inputSchema": {
         "type": "object",
         "properties": {
           "options": { "$ref": "#/$defs/options_DubbingPipelineOptions_0" },
+          "count": {
+            "anyOf": [{ "type": "integer", "enum": [1, 2, 3, 4], "default": 1 }, { "type": "null" }]
+          },
           "context": {
             "type": "object",
             "properties": {
@@ -1571,12 +1574,15 @@
     {
       "name": "studio_generate_line",
       "command": "generate_line",
-      "description": "Generate another immutable voice take. Returns a job ID; poll jobs. Does not overwrite previous takes.",
+      "description": "Generate 1–4 immutable voice takes of one dialogue. Optional count defaults to 1. Seeds increment from options.seed, wrapping at uint32. Multiple takes run sequentially in one cancellable job and share a loaded TTS model; completed takes survive cancellation/failure. Returns a job ID; poll jobs. Does not overwrite previous takes.",
       "inputSchema": {
         "type": "object",
         "properties": {
           "lineId": { "type": "string" },
           "options": { "$ref": "#/$defs/options_VoiceSettings_0" },
+          "count": {
+            "anyOf": [{ "type": "integer", "enum": [1, 2, 3, 4], "default": 1 }, { "type": "null" }]
+          },
           "context": {
             "type": "object",
             "properties": {

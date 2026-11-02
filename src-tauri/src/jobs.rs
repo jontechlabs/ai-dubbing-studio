@@ -88,6 +88,8 @@ pub struct ImportRequest {
 #[derive(Clone, Serialize, Deserialize)]
 pub struct PersistedJob {
     #[serde(default)]
+    pub tts_trials: Option<crate::tts_trials::Request>,
+    #[serde(default)]
     pub speaker_separation_request: Option<crate::speaker_separation::Request>,
     #[serde(default)]
     pub speaker_separation_install: Option<String>,
@@ -276,6 +278,7 @@ pub fn create<R: tauri::Runtime>(
                     toolbox_request: None,
                     toolbox_install: None,
                     dubbing_pipeline: None,
+                    tts_trials: None,
                 },
                 cancel: Arc::new(AtomicBool::new(false)),
                 paused: Arc::new(AtomicBool::new(false)),

@@ -63,7 +63,7 @@ pub fn validate_project(p: &Project) -> Result<(), String> {
     }
     Ok(())
 }
-fn validate(p: &Project, o: &Options) -> Result<(), String> {
+pub(crate) fn validate(p: &Project, o: &Options) -> Result<(), String> {
     tts::validate_input(p, &o.line_id, &o.tts)?;
     voice_capture::validate_reference(p, &o.conversion, &o.line_id)?;
     if !o.guide_strength.is_finite() || !(0.0..=1.0).contains(&o.guide_strength) {
@@ -178,7 +178,7 @@ fn advance<R: tauri::Runtime>(
     });
     Ok(())
 }
-async fn run<R: tauri::Runtime>(
+pub(crate) async fn run<R: tauri::Runtime>(
     core: &Arc<Core>,
     app: &tauri::AppHandle<R>,
     key: &str,
