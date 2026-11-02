@@ -20,7 +20,7 @@ test('VoxCPM2 and Chatterbox dispatch supported settings and keep existing takes
     } else {
       await expect(mode).toBeDisabled(); await expect(mood).toBeDisabled(); await expect(mood).toHaveValue('default');
       await expect(panel.getByRole('combobox', { name: 'Accent souhaité (consigne)' })).toBeDisabled();
-      await expect(panel.getByText(/la langue cible du projet/)).toBeVisible();
+      await expect(panel.getByText(/^Ce moteur utilise la référence audio sans transcription/)).toBeVisible();
     }
     await panel.getByRole('combobox', { name: 'Périphérique de génération' }).selectOption('cuda:0');
     await panel.getByRole('button', { name: 'Générer un nouvel essai', exact: true }).click();

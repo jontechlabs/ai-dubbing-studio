@@ -11,6 +11,7 @@ jobs:
     runs-on: windows-latest
     timeout-minutes: 75
     env:
+      GH_TOKEN: ${{ github.token }}
       LIBCLANG_PATH: 'C:\Program Files\LLVM\bin'
       PYTHONDONTWRITEBYTECODE: '1'
       PYTHONUTF8: '1'
@@ -28,6 +29,8 @@ jobs:
           python-version: '3.12.10'
       - name: Verify exact unchanged engines and bounded accent UI changes
         run: python scripts/verify-accent-ui.py
+      - name: Authenticate successful Chrome checks for identical application inputs
+        run: python scripts/verify-accent-checks.py
       - name: Prepare pinned tools and dependencies
         run: |
           npm install --global pnpm@11.25.0
@@ -52,7 +55,11 @@ jobs:
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
           pnpm exec prettier --check tests/e2e/voice-accents.pw.ts
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
-          pnpm test:e2e
+          if ($env:STUDIO_ACCENT_CHROME_REUSED) {
+            pnpm exec playwright test tests/e2e/multilingual.pw.ts tests/e2e/voice-accents.pw.ts
+          } else {
+            pnpm test:e2e
+          }
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
       - name: Fresh native and worker regression checks
         run: |

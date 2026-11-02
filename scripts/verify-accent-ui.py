@@ -12,6 +12,7 @@ ALLOWED = {
     'package.json', 'src-tauri/Cargo.toml', 'src-tauri/Cargo.lock',
     'src-tauri/tauri.conf.json', '.github/workflows/voice-accents.yml',
     'scripts/verify-accent-ui.py', 'resources/updates/windows-x64.json',
+    'scripts/verify-accent-checks.py', 'tests/e2e/multilingual.pw.ts',
 }
 
 
