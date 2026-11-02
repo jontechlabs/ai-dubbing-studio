@@ -29,6 +29,7 @@ import { BatchDubbingAction } from './BatchDubbingAction';
 import { DubbingTimingControls } from './DubbingTimingControls';
 import { VoiceCapture } from './VoiceCapture';
 import { VoiceQualityControls } from './VoiceQualityControls';
+import { VoiceAccentControl } from './VoiceAccentControl';
 import { libraryOf, libraryReference } from '../domain/voiceLibrary';
 import { IntonationGuideControls } from './IntonationGuideControls';
 import { CharacterSuggestion } from './CharacterSuggestion';
@@ -512,7 +513,7 @@ export function DubPanel({
               mode:
                 next.providerId.startsWith('fish') || next.providerId === 'audio8-tts'
                   ? 'zeroShot'
-                  : next.providerId === 'chatterbox'
+                  : ['chatterbox', 'voxcpm2'].includes(next.providerId)
                     ? 'crossLingual'
                     : settings.mode,
             });
@@ -909,35 +910,12 @@ export function DubPanel({
       {variant.providerId === 'cosyvoice3' && (
         <p className="panel-description">{t('ttsCosyReferenceActingHint')}</p>
       )}
-      <label className="field">
-        <span>{t('ttsAccent')}</span>
-        <select
-          value={accent}
-          disabled={
-            busy ||
-            !accentSupported(variant.id, project.languages.target) ||
-            voxContinuation ||
-            settings.intonationGuide?.mode === 'hybrid'
-          }
-          onChange={(event) => edit({ accent: event.target.value as typeof settings.accent })}
-        >
-          <option value="auto">{t('accents.auto')}</option>
-          {voiceAccents
-            .filter((a) => a.language === project.languages.target)
-            .map((a) => (
-              <option key={a.id} value={a.id}>
-                {t(`accents.${a.labelKey}`)}
-              </option>
-            ))}
-        </select>
-      </label>
-      <p className="panel-description">
-        {t(
-          accentSupported(variant.id, project.languages.target)
-            ? 'ttsAccentHint'
-            : 'ttsAccentUnsupported',
-        )}
-      </p>
+      <VoiceAccentControl
+        settings={settings}
+        language={project.languages.target}
+        busy={busy}
+        onChange={edit}
+      />
       <OutputGainControl
         value={settings.outputGain ?? 1}
         disabled={busy}
