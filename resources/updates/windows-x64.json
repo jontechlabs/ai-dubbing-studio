@@ -1,11 +1,11 @@
 {
-  "version": "0.34.0",
-  "notes": "Audio8-TTS Realistic 0.6B GGUF Q8_0 : installation locale avec contrôle d’espace disque, clonage avec transcription exacte, CPU ou GPU Vulkan sélectionné, qualité réglable et modèle conservé pendant les lots. Essais, SRT et vidéo conservés. Pour le français, préférer une référence française expressive ; commandes d’accent régional et d’humeur non disponibles pour ce moteur. Format 26, 141 outils MCP.",
-  "pub_date": "2026-11-01T18:01:32Z",
+  "version": "0.34.1",
+  "notes": "Correction du choix d’accent VoxCPM2 : sélection du moteur en Standard sans hériter du mode imposé par Fish ou Audio8 ; bouton de retour au Standard depuis Hi-Fi / guide hybride. Aide par moteur pour Audio8, Qwen3-TTS Base et Chatterbox, dont l’accent est guidé par la référence. Essais conservés, format 26 et 141 outils MCP inchangés.",
+  "pub_date": "2026-11-02T14:52:16Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSdFFyMUJGTFp3NkUvVHVJaVd0ZWNZOWM3bjQ3S3V3bWVESnVxRzhrQTZ4Tm9sRUhaQzZXempGelVLMGIwWVU5VW5hVzF2VFB0YjNtMlNpYmdLeEtxanM4WVBaVWI2c1FZPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkzNTUzNzg1CWZpbGU6QUkgRHViYmluZyBTdHVkaW9fMC4zNC4wX3g2NC1zZXR1cC5leGUJdmVyc2lvbjowLjM0LjAKZWlubnAzV2dFSi9veC93SjFUSWo5cFhzRjVZZmlaSUk1bXViK21RRjN5alkxVzBtZW9hWW5KcUxQQnNmNzl1a0lleGZBRlFvdVcwSjNtMmI2Rmh5Qmc9PQo=",
-      "url": "https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.34.0/AI-Dubbing-Studio-0.34.0-Setup.exe"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSdFFyMUJGTFp3Nk1OKzN5Qkd6NytEVmhjK1p3bHMreTdIVUZDRnFPTEhSMEx5MGFsaGpiYzRkcENieGo3RERTN2F0KzAvSmt5NnZsbGwzZ3UwdCs5MW1oRWd1bTVEdlFnPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkzNjI5OTk1CWZpbGU6QUkgRHViYmluZyBTdHVkaW9fMC4zNC4xX3g2NC1zZXR1cC5leGUJdmVyc2lvbjowLjM0LjEKc0xCcDZOam80dm5FNkdFcUpzY1JiUjlhamtKSVVnV0FTYmN3VkFwRmtkRlJvTU0xSHpRK1NGV2dmVlN1S3lrc1dsNGphQ1NoYmtSdGdTVFkya1RsQVE9PQo=",
+      "url": "https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.34.1/AI-Dubbing-Studio-0.34.1-Setup.exe"
     }
   }
 }
