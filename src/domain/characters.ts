@@ -1,5 +1,25 @@
 import type { Character, Project } from './types';
 import { sameSnapshot, speakerAudioSnapshot } from './characterReview';
+import { cleanTranslationApprovals } from './translation';
+export type SpeakerResetMode = 'assignments' | 'characters';
+export function resetSpeakers(project: Project, mode: SpeakerResetMode): Project {
+  if (mode !== 'assignments' && mode !== 'characters') throw Error('INVALID_CHARACTER');
+  const next = structuredClone(project);
+  next.speakerAnalysis = null;
+  for (const line of next.dialogues) line.characterId = null;
+  if (mode === 'characters') {
+    next.characters = [];
+    delete next.characterProfiles;
+    for (const line of next.dialogues) {
+      if (
+        line.voiceSettings &&
+        ['character', 'custom', 'library'].includes(line.voiceSettings.referenceMode)
+      )
+        line.voiceSettings.referenceId = null;
+    }
+  }
+  return cleanTranslationApprovals(next);
+}
 const colors = ['#a48bd4', '#82bda0', '#dc9b72', '#79a9cf', '#d18db2', '#c3bd73'];
 export function addCharacter(project: Project, name: string): Project {
   const value = name.trim();

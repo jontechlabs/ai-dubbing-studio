@@ -2,6 +2,24 @@ import { expect, it } from 'vitest';
 import { demoProject } from '../domain/project';
 import { checkContext, editProject, patchProject } from './actions';
 import { translationState } from '../domain/translation';
+import { addCharacter } from '../domain/characters';
+
+it('MCP resets speakers in either explicit mode and rejects missing or ambiguous modes', () => {
+  const p = addCharacter(demoProject(), 'Speaker');
+  p.dialogues[0].characterId = p.characters[0].id;
+  const before = structuredClone(p);
+  for (const mode of ['assignments', 'characters']) {
+    const next = editProject(p, 'studio_reset_speakers', { mode });
+    expect(next.dialogues.every((line) => !line.characterId)).toBe(true);
+    expect(next.characters).toEqual(mode === 'assignments' ? before.characters : []);
+    expect(next.generations).toEqual(before.generations);
+  }
+  for (const mode of [undefined, null, true, 'all'])
+    expect(() => editProject(p, 'studio_reset_speakers', { mode })).toThrow(
+      'MCP_INVALID_ARGUMENTS',
+    );
+  expect(p).toEqual(before);
+});
 
 it('bulk approval validates all IDs before changing any translation and uses one project snapshot', () => {
   const p = demoProject(),

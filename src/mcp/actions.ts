@@ -17,7 +17,7 @@ import {
   type CharacterProfile,
   type CharacterMerge,
 } from '../domain/characterReview';
-import { applySpeakers } from '../domain/characters';
+import { applySpeakers, resetSpeakers } from '../domain/characters';
 import { retimeDialogue, splitDialogue, mergeDialogue } from '../domain/timing';
 import { moveDubbing, resizeDubbing } from '../domain/mix';
 import { editVoice, type VoiceOperation } from '../domain/voiceEdit';
@@ -149,6 +149,11 @@ export function editProject(
         String(args.referenceLabel ?? 'Voice sample'),
         String(args.temporaryPrefix ?? 'Character'),
       );
+      break;
+    case 'studio_reset_speakers':
+      if (args.mode !== 'assignments' && args.mode !== 'characters')
+        throw Error('MCP_INVALID_ARGUMENTS');
+      next = resetSpeakers(project, args.mode);
       break;
     case 'studio_approve_translations': {
       if (

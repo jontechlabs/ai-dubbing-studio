@@ -445,6 +445,13 @@ tool(
   [],
   true,
 );
+tool(
+  'studio_reset_speakers',
+  'Clear voice-identification analysis and all dialogue speaker assignments, including isolated voices. mode=assignments retains every character profile, thumbnail, reference and voice library; mode=characters also removes those character records from the project. Subtitles, tracks, all takes and global file references are retained. Files remain for history/undo. Joint approvals affected by the old speaker require review. Requires explicit mode, current context and no active processing job.',
+  { mode: choice('assignments', 'characters') },
+  ['mode'],
+  true,
+);
 
 tool(
   'studio_retime_dialogue',

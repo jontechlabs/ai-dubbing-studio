@@ -16,6 +16,7 @@ import {verifySourceAndVolume} from './test-source-and-volume.mjs';
 import {verifyDubbingWorkbench} from './test-dubbing-workbench.mjs';
 import {verifyJointReview} from './test-joint-review.mjs';
 import {verifySpeakerDubbing} from './test-speaker-dubbing.mjs';
+import {verifySpeakerReset} from './test-speaker-reset.mjs';
 const args=Object.fromEntries(process.argv.slice(2).reduce((rows,value,index,all)=>index%2===0?[...rows,[value.slice(2),all[index+1]]]:rows,[]));
 const client=new Client({name:'studio-native-validation',version:'1.0.0'},{capabilities:{}});
 const transport=new StdioClientTransport({command:args.exe,args:['--mcp','--endpoint',args.endpoint],stderr:'pipe'});
@@ -306,6 +307,7 @@ try {
     proofs.voiceLibrary={assembledOriginals:true,actualWavHash:true,explicitReview:true,transcriptRevokesDefault:true,undoAndReopenFormat21:true,takesAndWavsPreserved:true};
     proofs.sourceAndVolume=await verifySourceAndVolume({call,context,args,baseId,projectRoot});
     proofs.dubbingWorkbench=await verifyDubbingWorkbench({client,call,context});
+    proofs.speakerReset=await verifySpeakerReset({call,context,client,projectRoot});
     await fs.writeFile(args.proof,JSON.stringify(proofs,null,2)+'\n','utf8');
     console.log('MCP_NATIVE_PROOF '+JSON.stringify(proofs));
 } catch(error){if(stderr)console.error(stderr.slice(-2000));throw error;}

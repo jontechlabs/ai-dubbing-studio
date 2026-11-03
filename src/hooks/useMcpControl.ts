@@ -341,6 +341,13 @@ export function useMcpControl(control: Control) {
             document.dispatchEvent(new CustomEvent('studio-timeline-zoom', { detail: args.zoom }));
           result = { applied: true };
         } else {
+          if (
+            tool === 'studio_reset_speakers' &&
+            (await invoke<{ status: string }[]>('list_jobs')).some((job) =>
+              ['queued', 'running', 'paused'].includes(job.status),
+            )
+          )
+            throw Error('BUSY');
           const before = checkContext(project, args.context as Context);
           const next = editProject(before, tool, args);
           // The same private render preflight as the visible voice editor.

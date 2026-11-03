@@ -1,5 +1,7 @@
 # AI Dubbing Studio
 
+**v0.36.0 — Vignettes et remise à zéro des locuteurs.** La capture choisit une réplique du personnage affiché. Remettez les attributions à zéro en conservant les fiches et références, ou retirez explicitement les fiches du projet. Les sous-titres et tous les essais restent disponibles, avec annulation. **142 outils MCP, format 26.** [Guide](docs/SPEAKER-RESET.md).
+
 **v0.35.0 — 1 à 4 essais par réplique.** Choisir le nombre d’essais dans Doublage ; générations successives avec graines différentes, modèle TTS conservé en mémoire pendant la série, compteur et annulation dans le panneau. Les essais terminés restent disponibles après interruption et le dernier est sélectionné. Compatible avec la chaîne en deux étapes et pilotable par MCP (`count`). [Guide](docs/MULTIPLE-TAKES.md).
 
 **v0.34.1 — Choix d’accent clarifié.** Bouton pour activer les consignes d’accent de VoxCPM2 en passant explicitement en Standard depuis Ultimate / Hi-Fi ou le guide hybride. Aide adaptée à Audio8, Qwen3-TTS Base et Chatterbox lorsque l’accent dépend de la référence. Les essais sont conservés. [Modes compatibles et conseils](docs/VOICE-ACCENTS.md).
@@ -141,7 +143,7 @@ Barres RMS, crêtes et voyants de saturation mémorisés pour chaque piste et le
 
 *Interface React réelle avec audio de démonstration synthétique et inventaire natif simulé.*
 
-[Version anglaise et captures de l’interface](README.md) · [Téléchargements Windows](https://github.com/jontechlabs/ai-dubbing-studio/releases/tag/v0.35.0)
+[Version anglaise et captures de l’interface](README.md) · [Téléchargements Windows](https://github.com/jontechlabs/ai-dubbing-studio/releases/tag/v0.36.0)
 
 Studio desktop local de travail texte, voix et vidéo. Tauri 2, React, TypeScript strict et Rust.
 

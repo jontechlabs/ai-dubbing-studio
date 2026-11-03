@@ -195,9 +195,10 @@ export function CharacterMetadata({
 }) {
   const { t } = useTranslation();
   const profile = project.characterProfiles?.[character.id];
-  const [lineId, setLineId] = useState(
-    selectedId ?? project.dialogues.find((l) => l.characterId === character.id)?.id ?? '',
-  );
+  const [lineId, setLineId] = useState(() => {
+    const lines = project.dialogues.filter((line) => line.characterId === character.id);
+    return lines.find((line) => line.id === selectedId)?.id ?? lines[0]?.id ?? '';
+  });
   const [time, setTime] = useState(''),
     [automatic, setAutomatic] = useState(true),
     [crop, setCrop] = useState({ x: 0, y: 0, width: 100, height: 100 }),
@@ -266,7 +267,10 @@ export function CharacterMetadata({
           <select
             aria-label={t('characterPortraitLine')}
             value={validLineId}
-            onChange={(e) => setLineId(e.target.value)}
+            onChange={(e) => {
+              setLineId(e.target.value);
+              setTime('');
+            }}
           >
             <option value="">{t('characterChooseLine')}</option>
             {project.dialogues

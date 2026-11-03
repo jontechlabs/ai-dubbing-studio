@@ -4442,6 +4442,28 @@
       "annotations": { "readOnlyHint": false, "destructiveHint": true, "openWorldHint": false }
     },
     {
+      "name": "studio_reset_speakers",
+      "description": "Clear voice-identification analysis and all dialogue speaker assignments, including isolated voices. mode=assignments retains every character profile, thumbnail, reference and voice library; mode=characters also removes those character records from the project. Subtitles, tracks, all takes and global file references are retained. Files remain for history/undo. Joint approvals affected by the old speaker require review. Requires explicit mode, current context and no active processing job.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "mode": { "type": "string", "enum": ["assignments", "characters"] },
+          "context": {
+            "type": "object",
+            "properties": {
+              "projectId": { "type": "string" },
+              "expectedRevision": { "type": "integer", "minimum": 0 }
+            },
+            "required": ["projectId", "expectedRevision"],
+            "additionalProperties": false
+          }
+        },
+        "required": ["mode", "context"],
+        "additionalProperties": false
+      },
+      "annotations": { "readOnlyHint": false, "destructiveHint": true, "openWorldHint": false }
+    },
+    {
       "name": "studio_retime_dialogue",
       "description": "Set subtitle timing for source, target or both without moving other lines.",
       "inputSchema": {

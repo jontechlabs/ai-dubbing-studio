@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Plus, Users, ScanLine, Download, Trash2, LoaderCircle } from 'lucide-react';
+import { Plus, Users, ScanLine, Download, Trash2, LoaderCircle, RotateCcw } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { AudioSelection, Dialogue, Job, Project, VoiceReference } from '../domain/types';
 import {
@@ -17,11 +17,14 @@ import {
   assignCharacter,
   applySpeakers,
   analysisCurrent,
+  resetSpeakers,
+  type SpeakerResetMode,
 } from '../domain/characters';
 import * as bridge from '../services/bridge';
 import { VoiceLibraryPanel } from './VoiceLibraryPanel';
 import { ReferenceTranscription } from './ReferenceTranscription';
 import { ReferenceFileImport } from './ReferenceFileImport';
+import { Modal } from './Modal';
 
 export function CharactersPanel({
   project,
@@ -57,6 +60,8 @@ export function CharactersPanel({
     [activeId, setActiveId] = useState(project.characters[0]?.id ?? '');
   const [runtime, setRuntime] = useState<{ installed: boolean } | null>(null),
     [working, setWorking] = useState(false);
+  const [resetOpen, setResetOpen] = useState(false),
+    [resetMode, setResetMode] = useState<SpeakerResetMode>('assignments');
   const [from, setFrom] = useState(1),
     [to, setTo] = useState(1),
     [threshold, setThreshold] = useState(0.75),
@@ -98,6 +103,65 @@ export function CharactersPanel({
       }}
     >
       <p className="panel-description">{t('charactersHint')}</p>
+      <button
+        className="button subtle"
+        disabled={
+          active ||
+          working ||
+          (!analysis &&
+            !project.characters.length &&
+            !project.dialogues.some((line) => line.characterId))
+        }
+        onClick={() => {
+          setResetMode('assignments');
+          setResetOpen(true);
+        }}
+      >
+        <RotateCcw size={14} /> {t('speakerReset')}
+      </button>
+      {resetOpen && (
+        <Modal title={t('speakerReset')} onClose={() => setResetOpen(false)}>
+          <p>{t('speakerResetDescription')}</p>
+          <label className="checkbox">
+            <input
+              type="radio"
+              name="speaker-reset-mode"
+              value="assignments"
+              checked={resetMode === 'assignments'}
+              onChange={() => setResetMode('assignments')}
+            />
+            {t('speakerResetKeepCharacters')}
+          </label>
+          <label className="checkbox">
+            <input
+              type="radio"
+              name="speaker-reset-mode"
+              value="characters"
+              checked={resetMode === 'characters'}
+              onChange={() => setResetMode('characters')}
+            />
+            {t('speakerResetRemoveCharacters')}
+          </label>
+          <p className="panel-description">{t('speakerResetPreserve')}</p>
+          <div className="dialogue-manage-actions">
+            <button className="button subtle" onClick={() => setResetOpen(false)}>
+              {t('cancel')}
+            </button>
+            <button
+              className="button danger"
+              disabled={active || working}
+              onClick={() => {
+                onEdit((p) => resetSpeakers(p, resetMode));
+                if (resetMode === 'characters') setActiveId('');
+                setReferenceCharacter('');
+                setResetOpen(false);
+              }}
+            >
+              {t('speakerResetConfirm')}
+            </button>
+          </div>
+        </Modal>
+      )}
       <div className="settings-section">
         <h3>
           <ScanLine size={16} />
@@ -339,7 +403,7 @@ export function CharactersPanel({
             </select>
           </label>
           {character && (
-            <div className="character-details" key={character.id}>
+            <div className="character-details" key={`${project.id}:${character.id}`}>
               <CharacterMetadata
                 project={project}
                 character={character}
