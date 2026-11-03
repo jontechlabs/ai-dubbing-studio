@@ -23,7 +23,7 @@ async function open(page: Page, batch = false) {
     .getByRole('button', { name: batch ? /Doublage par lot/ : 'Régénérer', exact: !batch })
     .first()
     .click();
-  return page.getByRole('dialog', { name: batch ? 'Doublage par lot' : 'Doublage', exact: true });
+  return page.getByRole('region', { name: batch ? 'Doublage par lot' : 'Doublage', exact: true });
 }
 
 for (const variant of installedVoiceVariants) {
