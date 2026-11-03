@@ -1,5 +1,15 @@
 # Validation
 
+## v0.39.1 — 3 November 2026
+
+[Windows qualification 41679244124](https://github.com/jontechlabs/ai-dubbing-studio/actions/runs/41679244124) at `0a9fb5dab72a4e33cf077bb3c8b4fe062c51577a` freshly passes **234 checks**: 208 TypeScript and 26 targeted Chrome cases, plus types, lint, formatting and shared MCP schemas. The complete Chrome suite is not rerun for this two-line containment fix. The two new regression cases first reproduced document overflow of more than 2,000 px with the previous CSS. They now verify no document overflow on either axis across four window sizes, working internal scroll/navigation, retained accessibility labels, generation completion/focus, expanded logs, retained single/batch forms and switching back to text. Existing inspector, panel tasks, output volume and UI refinement scenarios also pass.
+
+The scope guard verifies the exact addition of a positioned containing block to `.inspector-dubbing .dub-panel`, with unchanged components, hooks, domain, services, MCP, inference workers, models and native audio source. **315 unchanged checks** (204 Rust and 111 Python, plus two ignored opt-in diagnostics) and Clippy are authenticated from successful [v0.39.0 run 41666135257](https://github.com/jontechlabs/ai-dubbing-studio/actions/runs/41666135257), using the baseline run/head, successful native step, exact source identities and raw log SHA-256. These are reused checks, not fresh results. Total: **549 qualified suite checks**, including 234 fresh and 315 reused.
+
+The freshly compiled **v0.39.1 desktop** also passes the official SDK regression across **145 MCP tools**, including real CPU separators, free audio selections, model inventory/removal on test-owned files, source ASR, portrait/reset, preserved project/take hashes, playback/export and relay lifecycle checks. No live user project or model is changed. Project format remains **26**.
+
+Package authentication verifies the exact Actions artifact SHA-256, ZIP CRC, setup and executable PE version **0.39.1.0**, updater signature and tamper rejection, and all **322 worker resources** against canonical Git bytes. Final source/tag add this validation and the signed updater feed around unchanged compiled application inputs. Portable root documents are refreshed after qualification; all other uncompressed entries preserve their authenticated CI bytes. [Inspector guide and screenshot](docs/DUBBING-INSPECTOR.md#correctif-v0391--défilement-de-la-fenêtre).
+
 ## v0.39.0 — 3 November 2026
 
 [Fresh Windows qualification 41666135257](https://github.com/jontechlabs/ai-dubbing-studio/actions/runs/41666135257) at `5974fe5d59ee2789c2878ecf4a3e24319937eedf` passes **794 fresh suite checks**: 208 TypeScript, the complete 271-case Chrome suite, 204 Rust and 111 Python. Two opt-in native diagnostics remain ignored. Types, lint, source and native formatting, generated MCP schemas and Clippy also pass. No previous suite results are substituted for this run. Final source/tag add validation and the signed updater feed around unchanged compiled application inputs.

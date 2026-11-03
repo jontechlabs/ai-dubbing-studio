@@ -1,11 +1,11 @@
 {
-  "version": "0.39.0",
-  "notes": "Commandes de répliques compactes avec pictogrammes, statut commun À revoir, boutons de vignette alignés. Chargement des modèles affiché, résultats effacés lors d’une nouvelle sélection. Séparation de deux ou trois voix depuis une portion de piste, choix des sorties et affectation par ajout ou remplacement. Suivi des installations MossFormer2 corrigé et suppression des poids de modèles avec confirmation. Vidéo, SRT et essais conservés.",
-  "pub_date": "2026-11-03T16:15:18Z",
+  "version": "0.39.1",
+  "notes": "Correction du défilement parasite de la fenêtre principale dans l’onglet Doublage. Les libellés masqués restent dans le panneau ; défilement interne, réglages, modes réplique/lot, logs et essais conservés.",
+  "pub_date": "2026-11-03T17:27:42Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSdFFyMUJGTFp3NkczZERXYnRjaGxjMGxpYVYrZk1IRFZlc2FBOXh5dWRvZFViY0RqTFpTL291SzdCdXd2cWo3d2o5RDZKVVJzdS9FYUo2YWE2UndVS29tS2R4Z3hpVWdnPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkzNzIxNjkxCWZpbGU6QUkgRHViYmluZyBTdHVkaW9fMC4zOS4wX3g2NC1zZXR1cC5leGUJdmVyc2lvbjowLjM5LjAKblgva2h3Q3dybi9lRWRWOTd2UERTV294Q1NYSThmOXRJZWF2UTZXanNVNEFaRmpURE1yVzdvMTN3TFE4Zk9mRWxuZ1VvTkx6ZE9KMTJVd3NCU1BhQ0E9PQo=",
-      "url": "https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.39.0/AI-Dubbing-Studio-0.39.0-Setup.exe"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSdFFyMUJGTFp3NlBEN3NaZE9wMXFDU1RlVHBhSlZ0N3dzaVNNZkhNTW9qa2g2aFE3TnJSa3RHQ1Z2QkozZ3g0cU9YZVpZWE5kZXRLakpzWER2dWxBTEx6YklKK0Z0U1FVPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkzNzI2MDM4CWZpbGU6QUkgRHViYmluZyBTdHVkaW9fMC4zOS4xX3g2NC1zZXR1cC5leGUJdmVyc2lvbjowLjM5LjEKSzFHTUltTi93VWdFdVozUDJpNmRSVWwrQ3lJcFdvNlBOOGNVblFhbVZzK0hubDk3d2trRVA0dEZYTlYrZDRIMEgwOUpDNVlSNTE0ZStsMGFJeWZRQlE9PQo=",
+      "url": "https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.39.1/AI-Dubbing-Studio-0.39.1-Setup.exe"
     }
   }
 }
