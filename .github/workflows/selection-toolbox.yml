@@ -6,6 +6,48 @@ on:
 permissions:
   contents: read
 jobs:
+  frontend:
+    runs-on: windows-latest
+    timeout-minutes: 35
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
+        with:
+          node-version: '24'
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12.10'
+      - name: Install pinned frontend dependencies
+        run: |
+          npm install --global pnpm@11.25.0
+          pnpm install --frozen-lockfile
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+      - name: Fresh frontend unit, complete Chrome, lint and schema checks
+        run: |
+          pnpm mcp:check
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          pnpm build
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          pnpm test
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          pnpm lint
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          pnpm format:check
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          pnpm exec prettier --check tests/e2e/selection-toolbox-ui.pw.ts
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          pnpm test:e2e
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: failure()
+        with:
+          name: selection-toolbox-chrome-failure
+          path: test-results/
+          if-no-files-found: ignore
   windows:
     runs-on: windows-latest
     timeout-minutes: 75
@@ -37,22 +79,6 @@ jobs:
           ./scripts/prepare-prosody.ps1
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
           rustup update stable --no-self-update
-      - name: Fresh frontend unit, complete Chrome, lint and schema checks
-        run: |
-          pnpm mcp:check
-          if ($LASTEXITCODE) { exit $LASTEXITCODE }
-          pnpm build
-          if ($LASTEXITCODE) { exit $LASTEXITCODE }
-          pnpm test
-          if ($LASTEXITCODE) { exit $LASTEXITCODE }
-          pnpm lint
-          if ($LASTEXITCODE) { exit $LASTEXITCODE }
-          pnpm format:check
-          if ($LASTEXITCODE) { exit $LASTEXITCODE }
-          pnpm exec prettier --check tests/e2e/selection-toolbox-ui.pw.ts
-          if ($LASTEXITCODE) { exit $LASTEXITCODE }
-          pnpm test:e2e
-          if ($LASTEXITCODE) { exit $LASTEXITCODE }
       - name: Fresh native and worker regression checks
         run: |
           git restore -- docs/screenshots
