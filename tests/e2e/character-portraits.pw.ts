@@ -32,6 +32,7 @@ async function openPortraits(page: Page) {
     .click();
 }
 async function capture(page: Page) {
+  await page.locator('.character-metadata input[type="checkbox"]').uncheck();
   await page.getByRole('button', { name: 'Capturer la vignette', exact: true }).click();
   await expect(page.locator('.save-indicator')).toHaveText('Sauvegardé');
 }
@@ -65,7 +66,7 @@ test('switching speaker captures its own dialogue while the editor selection sta
       .filter((c: any) => c.command === 'capture_character_portrait')
       .map((c: any) => c.args.options),
   );
-  expect(requests).toEqual([
+  expect(requests).toMatchObject([
     { characterId: 'character-0', lineId: p.dialogues[0].id },
     { characterId: 'character-1', lineId: p.dialogues[1].id },
   ]);
@@ -88,7 +89,8 @@ test('a custom video time is cleared when changing the portrait dialogue', async
       (window as any).__calls.filter((c: any) => c.command === 'capture_character_portrait').at(-1)
         .args.options,
   );
-  expect(request).toEqual({ characterId: 'character-0', lineId: p.dialogues[2].id });
+  expect(request).toMatchObject({ characterId: 'character-0', lineId: p.dialogues[2].id });
+  expect(request).not.toHaveProperty('atMs');
 });
 
 test('an unassigned speaker requires an explicit dialogue choice instead of copying the editor selection', async ({

@@ -47,6 +47,7 @@ export async function nativeMock(page: Page, large = false, seededProject?: Proj
     };
     host.__calls=[];host.__downloadError=false;host.__installed=false;
     host.__getMockProject=()=>structuredClone(project);
+    host.__loadMockProject=(next:any)=>{project=structuredClone(next);undoStack.length=0;redoStack.length=0;localStorage.setItem('nativeMockProject',JSON.stringify(project));emit('project-changed',structuredClone(project));};
     let mcpEnabled=localStorage.getItem('mockMcpEnabled')==='true';const mcpRequests=new Map<string,any>(),mcpAudit:any[]=[];
     host.__mcpReady=false;host.__mcpIds=[];
     host.__mcp=(tool:string,args:any={})=>new Promise(resolve=>{
@@ -299,10 +300,16 @@ export async function nativeMock(page: Page, large = false, seededProject?: Proj
         if(host.__characterBasis!==project.revision)throw Error('STALE_REVISION');undoStack.push(structuredClone(project));project.dialogues.find((l:any)=>l.id===host.__pendingCharacterMatch.lineId).characterId=args.characterId;project.revision++;localStorage.setItem('nativeMockProject',JSON.stringify(project));emit('project-changed',structuredClone(project));return structuredClone(project);
       }
       if(command==='speaker_status')return structuredClone(host.__speakerStatus);
+      if(command==='capture_character_portrait'&&host.__capturePortraitError)throw Error(host.__capturePortraitError);
       if(command==='character_asset_path')return args.path;
       if(command==='preview_character_sample')return `characters/preview-${args.lineId}.wav`;
       if(command==='prepare_character_reference'){const selected=args.segments.map((s:any)=>({s,r:project.characters.find((c:any)=>c.id===s.characterId).references.find((r:any)=>r.id===s.referenceId)}));return {id:'combined-'+crypto.randomUUID(),label:args.label,path:'characters/combined.wav',durationMs:selected.reduce((n:number,v:any)=>n+v.s.endMs-v.s.startMs,0),transcript:selected.every((v:any)=>v.s.startMs===0&&v.s.endMs===v.r.durationMs)?selected.map((v:any)=>v.r.transcript).join(' '):''};}
       if(command==='capture_character_portrait'){undoStack.push(structuredClone(project));project.formatVersion=Math.max(20,project.formatVersion);project.characterProfiles??={};const o=args.options;project.characterProfiles[o.characterId]={...project.characterProfiles[o.characterId],portrait:{path:`characters/portrait-${o.characterId}.png`,sourcePath:project.media.path,lineId:o.lineId,atMs:o.atMs??project.dialogues.find((l:any)=>l.id===o.lineId).startMs,crop:o.crop??{x:0,y:0,width:1,height:1},differenceHash:'0000ffff0000ffff',colors:Array(48).fill(1/16),confirmed:!!o.crop}};project.revision++;localStorage.setItem('nativeMockProject',JSON.stringify(project));emit('project-changed',structuredClone(project));return structuredClone(project);}
+      if(command==='preview_character_portrait'){
+        const o=args.options,line=project.dialogues.find((l:any)=>l.id===o.lineId);
+        const result={projectId:project.id,revision:project.revision,sourcePath:project.media.path,characterId:o.characterId,lineId:o.lineId,atMs:o.atMs??line.startMs+(line.endMs-line.startMs)/2,imagePath:`portrait-preview-${o.atMs??0}.png`,width:640,height:360,faces:structuredClone(host.__portraitFaces??[{x:.12,y:.16,width:.2,height:.48},{x:.6,y:.2,width:.25,height:.5}])};
+        if(host.__deferPortraitPreview)return new Promise(resolve=>{host.__resolvePortraitPreview=()=>resolve(result);});return result;
+      }
       if(command==='separate_audio_region'){const id='local-'+crypto.randomUUID();localResults.set(id,{options:structuredClone(args.options),snapshot:JSON.stringify({tracks:project.tracks,patches:project.generations.filter((g:any)=>['audioPatch','audioEffects'].includes(g.kind))})});job={id,projectId:project.id,kind:'separation',status:'running',stage:'localSeparation',progress:.3,logs:[],error:null};emit('job-changed',job);return id;}
       if(command==='local_separation_result'){const r=localResults.get(args.id);if(!r)throw Error('INVALID_JOB');return {id:args.id,options:r.options,roles:['speech','music','sfx'],applied:project.generations.some((g:any)=>g.operationId===args.id),stale:r.snapshot!==JSON.stringify({tracks:project.tracks,patches:project.generations.filter((g:any)=>['audioPatch','audioEffects'].includes(g.kind))})};}
       if(command==='local_separation_path')return `stems/local-${args.id}/${args.role}.wav`;

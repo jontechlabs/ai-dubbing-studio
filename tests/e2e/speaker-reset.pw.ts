@@ -133,6 +133,33 @@ test('a running identification disables an already-open reset confirmation', asy
   expect(await data(page)).toEqual(before);
 });
 
+test('switching projects dismisses an open destructive confirmation and restores the safe default', async ({
+  page,
+}) => {
+  await ready(page);
+  const modal = await openReset(page),
+    before = await data(page);
+  await modal
+    .getByRole('radio', {
+      name: 'Retirer aussi les fiches, vignettes et références des personnages du projet',
+      exact: true,
+    })
+    .check();
+  const other = { ...before, id: 'another-project', name: 'Autre projet', revision: 0 };
+  await page.evaluate((p) => (window as any).__loadMockProject(p), other);
+  await expect(
+    page.getByRole('dialog', { name: 'Remettre les locuteurs à zéro', exact: true }),
+  ).toHaveCount(0);
+  expect((await data(page)).characters).toEqual(before.characters);
+  await page.getByRole('button', { name: 'Remettre les locuteurs à zéro', exact: true }).click();
+  await expect(
+    page.getByRole('radio', {
+      name: 'Conserver les fiches, vignettes et références vocales',
+      exact: true,
+    }),
+  ).toBeChecked();
+});
+
 test('MCP speaker reset rejects active work and stale context, then supports both modes with undo', async ({
   page,
 }) => {
