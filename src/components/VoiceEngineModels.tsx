@@ -1,3 +1,4 @@
+import { useModelRevision } from '../hooks/useModelRevision';
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Job } from '../domain/types';
@@ -36,10 +37,14 @@ export function VoiceEngineModels({
       setSpaceChecking(false);
     }
   }, []);
-  const completion = jobs
-    .filter((j) => ['ttsInstall', 'modelMove'].includes(j.kind))
-    .map((j) => j.id + j.status)
-    .join('|');
+  const modelRevision = useModelRevision();
+  const completion =
+    jobs
+      .filter((j) => ['ttsInstall', 'modelMove'].includes(j.kind))
+      .map((j) => j.id + j.status)
+      .join('|') +
+    ':' +
+    modelRevision;
   const busy = working || jobs.some((j) => ['queued', 'running', 'paused'].includes(j.status));
   useEffect(() => {
     if (bridge.native) void checkSpace();

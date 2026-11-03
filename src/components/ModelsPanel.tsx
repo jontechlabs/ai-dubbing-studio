@@ -1,3 +1,4 @@
+import { useModelRevision } from '../hooks/useModelRevision';
 import { useEffect, useState } from 'react';
 import { Download, RefreshCw, AudioLines, Users } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -8,6 +9,7 @@ import { VoiceVariantSettings } from './VoiceVariantSettings';
 import { CosyModel } from './DubPanel';
 import { VoiceEngineModels } from './VoiceEngineModels';
 import { InpaintModel } from './InpaintPanel';
+import { ModelManager } from './ModelManager';
 export function ModelsPanel({
   project,
   jobs,
@@ -27,14 +29,18 @@ export function ModelsPanel({
     [bandit, setBandit] = useState<{ installed: boolean } | null>(null),
     [speakers, setSpeakers] = useState<{ installed: boolean; sizeBytes: number } | null>(null),
     [working, setWorking] = useState(false);
-  const completion = jobs
-    .filter(
-      (job) =>
-        ['runtime', 'speakerInstall', 'modelMove'].includes(job.kind) &&
-        ['succeeded', 'failed', 'cancelled'].includes(job.status),
-    )
-    .map((job) => `${job.id}:${job.status}`)
-    .join(',');
+  const modelRevision = useModelRevision();
+  const completion =
+    jobs
+      .filter(
+        (job) =>
+          ['runtime', 'speakerInstall', 'modelMove'].includes(job.kind) &&
+          ['succeeded', 'failed', 'cancelled'].includes(job.status),
+      )
+      .map((job) => `${job.id}:${job.status}`)
+      .join(',') +
+    ':' +
+    modelRevision;
   const busy = jobs.some((job) => ['running', 'queued', 'paused'].includes(job.status));
   useEffect(() => {
     let disposed = false;
@@ -62,6 +68,7 @@ export function ModelsPanel({
   }, [completion, onError]);
   return (
     <div className="panel-body models-panel">
+      <ModelManager busy={busy} onError={onError} />
       <p className="panel-description">{t('modelsHint')}</p>
       <CosyModel jobs={jobs} onError={onError} onStarted={showJobs} />
       <VoiceEngineModels jobs={jobs} onError={onError} onStarted={showJobs} />

@@ -1477,9 +1477,9 @@ export async function nativeMock(page: Page, large = false, seededProject?: Proj
               id: 'speaker-install',
               projectId: '',
               kind: 'speakerSeparationInstall',
-              status: 'succeeded',
-              stage: 'done',
-              progress: 1,
+              status: host.__slowSpeakerInstall ? 'running' : 'succeeded',
+              stage: host.__slowSpeakerInstall ? 'speakerSeparationDownload' : 'done',
+              progress: host.__slowSpeakerInstall ? 0.5 : 1,
               logs: [],
               error: null,
             };
@@ -1951,6 +1951,17 @@ export async function nativeMock(page: Page, large = false, seededProject?: Proj
               defaultPath: 'C:/Studio/models',
               moving: job?.kind === 'modelMove' && job.status === 'running',
             };
+          if (command === 'managed_models') return host.__managedModels ?? [];
+          if (command === 'remove_installed_model') {
+            if (host.__removeModelError) throw Error(host.__removeModelError);
+            if (!args.confirmed) throw Error('MODEL_REMOVE_CONFIRMATION');
+            const found = host.__managedModels?.find((m: any) => m.id === args.id);
+            if (!found) throw Error('INVALID_MODEL');
+            await new Promise((resolve) => setTimeout(resolve, 150));
+            host.__managedModels = host.__managedModels.filter((m: any) => m.id !== args.id);
+            emit('models-changed', args.id);
+            return { id: args.id, bytes: found.bytes, files: found.files };
+          }
           if (command === 'model_storage_size') {
             if (host.__sizeError) throw Error('disk unavailable');
             return {

@@ -51,7 +51,7 @@ jobs:
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
           pnpm exec prettier --check tests/e2e/selection-toolbox-ui.pw.ts
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
-          pnpm test:e2e --workers 2
+          pnpm test:e2e
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
       - name: Fresh native and worker regression checks
         run: |

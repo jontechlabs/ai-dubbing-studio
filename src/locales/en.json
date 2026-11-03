@@ -421,7 +421,9 @@
     "SPEAKER_SEPARATION_OUT_OF_MEMORY": "Insufficient separator memory. Free GPU memory or select CPU.",
     "SPEAKER_SEPARATION_ALREADY_APPLIED": "This result was already applied. Its sub-dubbings remain in the group.",
     "SPEAKER_SEPARATION_INVALID_AUDIO": "Invalid separator audio output.",
-    "SPEAKER_SEPARATION_NOT_READY": "Voice separation is not finished."
+    "SPEAKER_SEPARATION_NOT_READY": "Voice separation is not finished.",
+    "MODEL_REMOVE_CONFIRMATION": "Explicitly confirm model removal.",
+    "INVALID_MODEL": "This model is not part of managed storage."
   },
   "preparingVideo": "Preparing video…",
   "loadingVideo": "Loading video…",
@@ -1763,5 +1765,20 @@
     "single": "Line",
     "batch": "Batch",
     "tabs": "Inspector tools"
+  },
+  "modelManage": {
+    "title": "Manage model files",
+    "hint": "Remove unused weights or partial downloads. Shared runtimes are retained.",
+    "loading": "Reading models…",
+    "loadError": "Could not read the models. Refresh the list.",
+    "total": "Present files: {{size}}",
+    "empty": "No model files present.",
+    "list": "Models present on disk",
+    "remove": "Delete {{name}}",
+    "confirmTitle": "Delete model files",
+    "confirm": "This model’s files will be removed from storage. Projects, media, references and takes are retained. You can reinstall the model; shared runtimes remain available.",
+    "confirmButton": "Delete model",
+    "removing": "Removing…",
+    "removed": "Model files removed."
   }
 }

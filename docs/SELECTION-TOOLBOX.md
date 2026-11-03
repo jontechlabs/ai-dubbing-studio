@@ -32,4 +32,15 @@ Chaque résultat correspond à la sélection, à sa piste, au modèle et aux ré
 
 Le nombre de voix provient du profil sélectionné ; il n’est pas détecté automatiquement. Une séparation peut conserver des fuites entre voix : écoutez les sorties avant application. Pour créer des sous-doublages par personnage, utilisez toujours l’outil **Isoler plusieurs voix** d’une réplique dans l’onglet Doublage.
 
-Les **143 outils MCP** sont conservés. `studio_separate_dialogue_speakers` accepte désormais l’absence de `lineId` pour une sélection libre ; `studio_apply_speaker_separation_result` affecte les sorties choisies. `studio_create_speaker_dubbings` exige toujours un résultat lié à une réplique. Le format de projet reste **26**.
+Les **143 outils MCP précédents** sont conservés ; deux commandes portent le total à **145**. `studio_separate_dialogue_speakers` accepte désormais l’absence de `lineId` pour une sélection libre ; `studio_apply_speaker_separation_result` affecte les sorties choisies. `studio_create_speaker_dubbings` exige toujours un résultat lié à une réplique. Le format de projet reste **26**.
+
+
+## Installation et suppression des modèles
+
+L’installation de MossFormer2 et des autres modèles globaux est désormais suivie dans l’onglet Doublage même sans projet associé à la tâche. Une installation terminée ne reste plus bloquée sur « Préparation du traitement… ».
+
+Ouvrez **Modèles → Gérer les fichiers des modèles** pour voir les poids présents et leur taille réelle, y compris les téléchargements partiels. Le pictogramme de corbeille ouvre une confirmation avant suppression. La liste et les états d’installation sont actualisés après l’opération ; une réinstallation reste possible depuis le modèle concerné.
+
+Les environnements Python et bibliothèques partagés restent disponibles, ainsi que les projets, médias, références et essais. Le total affiché ici concerne les poids gérés ; la taille du dossier complet reste visible dans Paramètres. Les composants LatentSync 1.5 et 1.6 sont regroupés car ils partagent leur dossier. La suppression est refusée pendant une tâche active et pour les dossiers contenant des liens ou jonctions. Cette suppression de fichiers n’est pas annulable par Ctrl+Z.
+
+Les commandes MCP `studio_managed_models` et `studio_remove_installed_model` exposent la même gestion ; la seconde exige l’identifiant listé et `confirmed: true`.

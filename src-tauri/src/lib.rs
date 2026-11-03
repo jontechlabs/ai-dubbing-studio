@@ -23,6 +23,7 @@ mod local_separation;
 mod mcp;
 mod media;
 mod mix;
+mod model_management;
 mod model_storage;
 mod portrait_preview;
 mod project;
@@ -757,6 +758,22 @@ async fn export_generation(
 #[tauri::command]
 fn model_storage_info(core: State<'_, Shared>) -> Result<model_storage::Info, String> {
     model_storage::info(&core)
+}
+#[tauri::command]
+async fn managed_models(
+    core: State<'_, Shared>,
+    app: tauri::AppHandle,
+) -> Result<Vec<model_management::Entry>, String> {
+    model_management::inventory(core.inner().clone(), app).await
+}
+#[tauri::command]
+async fn remove_installed_model(
+    core: State<'_, Shared>,
+    app: tauri::AppHandle,
+    id: String,
+    confirmed: bool,
+) -> Result<model_management::Removed, String> {
+    model_management::remove(core.inner().clone(), app, id, confirmed).await
 }
 #[tauri::command]
 async fn model_storage_size(core: State<'_, Shared>) -> Result<model_storage::Size, String> {
@@ -1976,6 +1993,8 @@ pub fn run() {
             dubbing_path,
             export_generation,
             model_storage_info,
+            managed_models,
+            remove_installed_model,
             model_storage_size,
             change_model_storage,
             create_project,

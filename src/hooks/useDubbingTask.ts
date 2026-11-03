@@ -15,6 +15,8 @@ type Operation = {
   lastJob?: Job;
   localTake?: { id: string; sequence: number };
 };
+const belongsToProject = (job: Job, projectId: string) =>
+  job.projectId === projectId || job.projectId === '';
 
 /** Keep a panel operation and its eventual selected take together, in either event order. */
 export function useDubbingTask(
@@ -116,10 +118,10 @@ export function useDubbingTask(
   );
   const operation = operations.current.get(scope);
   const current = operation?.task ?? null;
-  const observedJob = jobs.find((j) => j.id === current?.id && j.projectId === project.id);
+  const observedJob = jobs.find((j) => j.id === current?.id && belongsToProject(j, project.id));
   useEffect(() => {
     for (const entry of operations.current.values()) {
-      const observed = jobs.find((j) => j.id === entry.task?.id && j.projectId === project.id);
+      const observed = jobs.find((j) => j.id === entry.task?.id && belongsToProject(j, project.id));
       if (observed) entry.lastJob = observed;
     }
   }, [jobs, project.id, current?.id]);
@@ -127,7 +129,9 @@ export function useDubbingTask(
   // back into an indefinitely pending launch when its record is pruned.
   const job =
     observedJob ??
-    (operation?.lastJob?.id === current?.id && operation?.lastJob?.projectId === project.id
+    (operation?.lastJob &&
+    operation.lastJob.id === current?.id &&
+    belongsToProject(operation.lastJob, project.id)
       ? operation.lastJob
       : undefined);
   const terminal = job && ['succeeded', 'failed', 'cancelled', 'interrupted'].includes(job.status);

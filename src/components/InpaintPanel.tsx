@@ -1,3 +1,4 @@
+import { useModelRevision } from '../hooks/useModelRevision';
 import { JobDuration } from './JobDuration';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -31,15 +32,19 @@ function useRuntime(jobs: Job[], onError: (e: string) => void) {
   };
   const [status, setStatus] = useState<bridge.InpaintStatus | null>(null),
     [working, setWorking] = useState(false);
-  const completion = jobs
-    .filter(
-      (j) =>
-        ['inpaintInstall', 'inpaint', 'inpaintBatch', 'faceDetection', 'modelMove'].includes(
-          j.kind,
-        ) && ['succeeded', 'failed', 'cancelled', 'interrupted'].includes(j.status),
-    )
-    .map((j) => j.id + j.status)
-    .join('|');
+  const modelRevision = useModelRevision();
+  const completion =
+    jobs
+      .filter(
+        (j) =>
+          ['inpaintInstall', 'inpaint', 'inpaintBatch', 'faceDetection', 'modelMove'].includes(
+            j.kind,
+          ) && ['succeeded', 'failed', 'cancelled', 'interrupted'].includes(j.status),
+      )
+      .map((j) => j.id + j.status)
+      .join('|') +
+    ':' +
+    modelRevision;
   useEffect(() => {
     let disposed = false;
     setStatus(null);

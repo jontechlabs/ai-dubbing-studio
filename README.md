@@ -1,6 +1,6 @@
 # AI Dubbing Studio
 
-**v0.39.0 — Compact controls and free-range speaker separation.** Denser dialogue tools/cards, one review status, aligned portrait actions, explicit model loading and results scoped to the current selection. Run MossFormer2 / SepFormer on a free audio-track range, preview and choose voices, then add or replace at the same timestamp. [Guide and screenshots](docs/SELECTION-TOOLBOX.md).
+**v0.39.0 — Compact controls and free-range speaker separation.** Denser dialogue tools/cards, one review status, aligned portrait actions, explicit model loading and results scoped to the current selection. Run MossFormer2 / SepFormer on a free audio-track range, preview and choose voices, then add or replace at the same timestamp. Global model installation progress now completes correctly, and managed weights can be listed by size and deleted with confirmation. [Guide and screenshots](docs/SELECTION-TOOLBOX.md).
 
 **v0.38.0 — Dubbing inspector tab.** Dubbing now lives beside Text and Pronunciation in the right inspector, keeping the video, dialogue list and timeline accessible. Line and batch modes retain separate settings; inline progress and new takes stay tied to their original dialogue. Independent inspector width and keyboard navigation. [Guide and screenshots](docs/DUBBING-INSPECTOR.md).
 

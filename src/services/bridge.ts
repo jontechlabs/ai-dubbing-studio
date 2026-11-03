@@ -9,6 +9,23 @@ import { browserStore, downloadText, pickBrowserFile } from './browserStore';
 import { audioPeaks, type Waveform } from '../domain/waveform';
 
 export const native = isTauri();
+export interface ManagedModel {
+  id: string;
+  name: string;
+  bytes: number;
+  files: number;
+  present: boolean;
+  error: string | null;
+}
+export function managedModels() {
+  return invoke<ManagedModel[]>('managed_models');
+}
+export function removeInstalledModel(id: string, confirmed: boolean) {
+  return invoke<{ id: string; bytes: number; files: number }>('remove_installed_model', {
+    id,
+    confirmed,
+  });
+}
 export function speakerSeparationStatus() {
   return invoke<import('../domain/audioToolbox').AudioToolboxStatus>('speaker_separation_status');
 }
@@ -836,9 +853,13 @@ export async function subscribe(
   if (!native) return () => {};
   const a = await listen<Project>('project-changed', (event) => onProject(event.payload));
   const b = await listen<Job>('job-changed', (event) => onJob(event.payload));
+  const c = await listen('models-changed', () =>
+    document.dispatchEvent(new Event('studio-models-changed')),
+  );
   return () => {
     a();
     b();
+    c();
   };
 }
 

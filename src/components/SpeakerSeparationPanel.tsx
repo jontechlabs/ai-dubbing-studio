@@ -1,3 +1,4 @@
+import { useModelRevision } from '../hooks/useModelRevision';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Dialogue, Job, Project } from '../domain/types';
@@ -56,10 +57,14 @@ export function SpeakerSeparationPanel({
   const groups = (project.speakerDubbings ?? []).filter((g) => g.parentId === parentId);
   const active = groups.find((g) => g.active && speakerDubbingState(project).parents.has(parentId)),
     job = jobs.find((j) => j.id === jobId);
-  const completion = jobs
-    .filter((j) => j.kind === 'speakerSeparationInstall')
-    .map((j) => j.id + j.status)
-    .join('|');
+  const modelRevision = useModelRevision();
+  const completion =
+    jobs
+      .filter((j) => j.kind === 'speakerSeparationInstall')
+      .map((j) => j.id + j.status)
+      .join('|') +
+    ':' +
+    modelRevision;
   useEffect(() => {
     let disposed = false;
     if (open && bridge.native)

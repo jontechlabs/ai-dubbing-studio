@@ -1,3 +1,4 @@
+import { useModelRevision } from '../hooks/useModelRevision';
 import { useEffect, useRef, useState } from 'react';
 import {
   Check,
@@ -67,14 +68,18 @@ export function CosyModel({
     [cuda, setCuda] = useState(true),
     [working, setWorking] = useState(false),
     [revision, setRevision] = useState(0);
-  const completion = jobs
-    .filter(
-      (j) =>
-        ['ttsInstall', 'modelMove'].includes(j.kind) &&
-        ['succeeded', 'failed', 'cancelled'].includes(j.status),
-    )
-    .map((j) => j.id + j.status)
-    .join('|');
+  const modelRevision = useModelRevision();
+  const completion =
+    jobs
+      .filter(
+        (j) =>
+          ['ttsInstall', 'modelMove'].includes(j.kind) &&
+          ['succeeded', 'failed', 'cancelled'].includes(j.status),
+      )
+      .map((j) => j.id + j.status)
+      .join('|') +
+    ':' +
+    modelRevision;
   const busy = jobs.some((j) => ['running', 'queued', 'paused'].includes(j.status));
   useEffect(() => {
     let disposed = false;
@@ -303,14 +308,18 @@ export function DubPanel({
     'cosy3-official';
   const [compareA, setCompareA] = useState(''),
     [compareB, setCompareB] = useState('');
-  const completion = jobs
-    .filter(
-      (j) =>
-        ['ttsInstall', 'modelMove'].includes(j.kind) &&
-        ['succeeded', 'failed', 'cancelled'].includes(j.status),
-    )
-    .map((j) => j.id + j.status)
-    .join('|');
+  const modelRevision = useModelRevision();
+  const completion =
+    jobs
+      .filter(
+        (j) =>
+          ['ttsInstall', 'modelMove'].includes(j.kind) &&
+          ['succeeded', 'failed', 'cancelled'].includes(j.status),
+      )
+      .map((j) => j.id + j.status)
+      .join('|') +
+    ':' +
+    modelRevision;
   useEffect(() => {
     let disposed = false;
     if (bridge.native)

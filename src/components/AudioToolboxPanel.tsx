@@ -1,3 +1,4 @@
+import { useModelRevision } from '../hooks/useModelRevision';
 import { LoaderCircle, RefreshCw } from 'lucide-react';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -53,6 +54,7 @@ export function AudioToolboxPanel({
     [muteSource, setMuteSource] = useState(false),
     [working, setWorking] = useState(false),
     [routing, setRouting] = useState<'replace' | 'add'>('add');
+  const modelRevision = useModelRevision();
   const scope = JSON.stringify([
     project.id,
     project.media?.id,
@@ -135,7 +137,7 @@ export function AudioToolboxPanel({
     return () => {
       disposed = true;
     };
-  }, [open, completed, reload]);
+  }, [open, completed, reload, modelRevision]);
   useEffect(() => {
     let disposed = false;
     if (

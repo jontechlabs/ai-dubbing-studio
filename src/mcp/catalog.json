@@ -2002,6 +2002,30 @@
       "annotations": { "readOnlyHint": true, "destructiveHint": false, "openWorldHint": false }
     },
     {
+      "name": "studio_managed_models",
+      "command": "managed_models",
+      "description": "List allowlisted local model weight bundles, their actual bytes/file counts and presence. Includes partial downloads. Shared Python runtimes and all project assets are excluded. No deletion.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "annotations": { "readOnlyHint": true, "destructiveHint": false, "openWorldHint": false }
+    },
+    {
+      "name": "studio_remove_installed_model",
+      "command": "remove_installed_model",
+      "description": "Explicitly delete an allowlisted local model weight bundle by its managed_models ID, with confirmed=true. Rejects active jobs, path traversal, symlinks and Windows junctions. Keeps shared runtimes, project assets, voice references and all existing takes. Returns removed bytes/files; no implicit deletion. This removal is not undoable, but weights can be reinstalled.",
+      "inputSchema": {
+        "type": "object",
+        "properties": { "id": { "type": "string" }, "confirmed": { "type": "boolean" } },
+        "required": ["id", "confirmed"],
+        "additionalProperties": false
+      },
+      "annotations": { "readOnlyHint": false, "destructiveHint": true, "openWorldHint": false }
+    },
+    {
       "name": "studio_model_storage_size",
       "command": "model_storage_size",
       "description": "model storage size. Uses the current desktop session. Local file paths must be absolute; long operations return job IDs. Existing native validation applies.",

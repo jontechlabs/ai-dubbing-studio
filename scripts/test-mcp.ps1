@@ -40,7 +40,7 @@ try {
         if($desktop.HasExited -or [DateTime]::UtcNow -ge $until){throw 'Desktop MCP did not start'}
         Start-Sleep -Milliseconds 250
     }
-    node (Join-Path $PSScriptRoot 'test-mcp.mjs') --exe $executable --endpoint $endpoint --test-root $testRoot --movie (Join-Path $testRoot 'AI-Dubbing-Studio-Windows/demo/demo.mp4') --proof (Join-Path $repoRoot 'artifacts/mcp-native-validation.json')
+    node (Join-Path $PSScriptRoot 'test-mcp.mjs') --exe $executable --endpoint $endpoint --models-root $modelsRoot --test-root $testRoot --movie (Join-Path $testRoot 'AI-Dubbing-Studio-Windows/demo/demo.mp4') --proof (Join-Path $repoRoot 'artifacts/mcp-native-validation.json')
     if($LASTEXITCODE){throw 'Official MCP SDK / packaged desktop diagnostic failed'}
 } catch {
     if(Test-Path -LiteralPath $stderr){Get-Content -LiteralPath $stderr -Tail 15}

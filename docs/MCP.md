@@ -23,7 +23,7 @@ Les [effets audio](AUDIO-EFFECTS.md) sont accessibles avec `studio_audio_effects
 
 ## Personnages et séparation locale (v0.29)
 
-Depuis v0.36, `studio_reset_speakers` retire l’analyse et les attributions, avec `mode: "assignments"` pour conserver les fiches ou `mode: "characters"` pour les retirer du projet. Contexte courant et mode explicite requis, refus pendant une tâche active, annulation via `studio_history`. Les sous-titres et tous les essais sont conservés. `studio_preview_character_portrait` fournit une image de scène et tous les cadres de visages à choisir avant une capture explicite. [Modes et capture des vignettes](SPEAKER-RESET.md). 143 outils au total, format 26.
+Depuis v0.36, `studio_reset_speakers` retire l’analyse et les attributions, avec `mode: "assignments"` pour conserver les fiches ou `mode: "characters"` pour les retirer du projet. Contexte courant et mode explicite requis, refus pendant une tâche active, annulation via `studio_history`. Les sous-titres et tous les essais sont conservés. `studio_preview_character_portrait` fournit une image de scène et tous les cadres de visages à choisir avant une capture explicite. [Modes et capture des vignettes](SPEAKER-RESET.md). 145 outils au total, format 26.
 
 `studio_identify_speakers` accepte une portée facultative `scope` : `startMs`, `endMs`, `trackId`, `referenceCharacterId`, `replaceAssigned`. Les propositions sont enregistrées séparément ; `studio_apply_speaker_analysis` les applique après vérification. `studio_set_character_profile` renseigne les métadonnées manuelles. `studio_capture_character_portrait` capture une vignette proposée ou un cadrage explicite, sans modifier la vidéo. `studio_character_asset_path` ne donne accès qu’aux images/références de l’analyse actuellement autorisées.
 
@@ -110,3 +110,5 @@ Consultez `studio_get_state` et utilisez son `context` récent pour chaque comma
 ## Préécoute d’une sélection audio
 
 Depuis v0.32.5, `studio_playback` accepte `action: "selection"`, `trackId`, `startMs`, `endMs` et `beforeLevels` facultatif (faux par défaut). La piste est temporairement isolée ; ses volumes sont conservés ou contournés avec `beforeLevels: true`. La lecture s’arrête à la fin, même si la boucle générale est active. `pause`/`stop`, un déplacement du curseur ou une autre préécoute annulent cette écoute. Les réglages enregistrés du projet restent intacts. `studio_get_state.playback.selection` expose la sélection active, puis revient à `null`.
+
+Depuis v0.39, `studio_managed_models` liste les poids gérés et leur taille réelle. `studio_remove_installed_model` les retire uniquement avec `confirmed: true`, hors tâche active ; les projets et environnements partagés sont conservés. [Gestion et limites](SELECTION-TOOLBOX.md#installation-et-suppression-des-modèles).

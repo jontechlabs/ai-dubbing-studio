@@ -4572,6 +4572,12 @@ pre {
 .dialogue-actions :is(.subtitle-imports, .batch-selection-actions, .translation-selection-actions) {
   display: contents;
 }
+.dialogue-actions .translation-selection-actions {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: nowrap;
+  gap: 3px;
+}
 .dialogue-actions button {
   display: inline-grid;
   place-items: center;
@@ -4700,4 +4706,61 @@ pre {
 }
 .toolbox-output .checkbox-field {
   font-size: 12px;
+}
+.model-manager {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px;
+  margin-bottom: 14px;
+}
+.model-manager summary {
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+}
+.model-manager summary svg {
+  vertical-align: middle;
+  margin-right: 7px;
+}
+.model-manager-total,
+.model-manager li {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: space-between;
+}
+.model-manager-total {
+  font-size: 11px;
+  color: var(--muted);
+}
+.model-manager ul {
+  list-style: none;
+  padding: 0;
+  margin: 6px 0;
+  max-height: 280px;
+  overflow-y: auto;
+}
+.model-manager li {
+  padding: 7px 0;
+  border-bottom: 1px solid var(--border);
+}
+.model-manager li > div {
+  min-width: 0;
+}
+.model-manager li strong,
+.model-manager li small {
+  display: block;
+  overflow-wrap: anywhere;
+  font-size: 11px;
+}
+.model-manager li small {
+  color: var(--muted);
+  margin-top: 4px;
+}
+.model-manager li button {
+  flex: none;
+}
+.model-manager-notice {
+  color: var(--success);
+  font-size: 11px;
 }

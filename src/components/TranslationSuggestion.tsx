@@ -11,6 +11,7 @@ import {
 } from '../domain/translationProposal';
 import { dialogueText } from '../domain/subtitles';
 import * as bridge from '../services/bridge';
+import { useModelRevision } from '../hooks/useModelRevision';
 
 export function TranslationSuggestion({
   project,
@@ -30,6 +31,7 @@ export function TranslationSuggestion({
   busy: boolean;
 }) {
   const { t } = useTranslation();
+  const modelRevision = useModelRevision();
   const [open, setOpen] = useState(false),
     [status, setStatus] = useState<bridge.TranslationStatus | null>(null);
   const [device, setDevice] = useState(localStorage.getItem('studio.translationDevice') ?? '');
@@ -76,7 +78,7 @@ export function TranslationSuggestion({
     return () => {
       disposed = true;
     };
-  }, [open, installRevision, otherActive]);
+  }, [open, installRevision, otherActive, modelRevision]);
   useEffect(() => {
     if (!open || !bridge.native) return;
     let disposed = false;
