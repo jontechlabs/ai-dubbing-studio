@@ -1,11 +1,11 @@
 {
-  "version": "0.35.0",
-  "notes": "Choisissez de 1 à 4 nouveaux essais par réplique, avec graines successives, progression et annulation dans le panneau Doublage. En TTS simple, le modèle reste chargé pendant la série et est libéré à la fin ; les essais terminés sont conservés et le dernier est sélectionné. Disponible aussi pour la chaîne en deux étapes, avec déchargement entre les étapes, et via le paramètre MCP count. 141 outils, format 26.",
-  "pub_date": "2026-11-02T18:51:05Z",
+  "version": "0.36.0",
+  "notes": "Vignettes : mini lecteur, choix parmi les visages détectés et cadrage manuel. Correction du dialogue utilisé lors du changement de personnage. Remise à zéro des locuteurs au choix : conserver les fiches et références ou retirer les fiches ; sous-titres et essais conservés. Annulation disponible. 143 outils MCP, format 26.",
+  "pub_date": "2026-11-03T06:16:36Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSdFFyMUJGTFp3NkYrR3lUNUNkOXpyMDNuckVmT29aTlQ5eVVEMzZUQkhqTjhFOGw0ckswRHpybjNjWGZ1eElISXUxdFBoMVBqSXlhR2ZtcGxMeVU4U1JsdjlPSFVMY2dVPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkzNjQxNTM0CWZpbGU6QUkgRHViYmluZyBTdHVkaW9fMC4zNS4wX3g2NC1zZXR1cC5leGUJdmVyc2lvbjowLjM1LjAKcHI0dnpTS1JVZS9FU1hlT3EzZnVYYUp6TWg4M0pCNTBNc0J4ZjNDWDNJUjJwVUV0cC8xTGlqbjZQT0tPaDIyMXBGRitkeUsrSFlrd0ZWZS90UjlIQlE9PQo=",
-      "url": "https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.35.0/AI-Dubbing-Studio-0.35.0-Setup.exe"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSdFFyMUJGTFp3Nkc1WFRPNFZTa0ZVeDI1bHhveTRrKzRYWkJoUjV5ckwreEsrRkpDaEdjcGRGellRVVlJbXJrajlNSUt6UDdRUEkxZ3BLRlQvSDhzYlhES0JIVXBXZkFRPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkzNjg1NTY4CWZpbGU6QUkgRHViYmluZyBTdHVkaW9fMC4zNi4wX3g2NC1zZXR1cC5leGUJdmVyc2lvbjowLjM2LjAKQmpob2F4cXduWmR3ek04a0EzWjBjTjVnR3lHRlBhMjlyOGpYT1AyR2VTbzZGdGJIclczdFJSNGF0Z3dNQUNlZGY2by9VVEIwKzFsc25zbmNKTkl6RFE9PQo=",
+      "url": "https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.36.0/AI-Dubbing-Studio-0.36.0-Setup.exe"
     }
   }
 }
