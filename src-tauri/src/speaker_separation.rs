@@ -13,6 +13,9 @@ use std::{
     sync::{atomic::Ordering, Arc},
 };
 use tauri::{Emitter, Manager};
+#[cfg(test)]
+#[path = "speaker_selection_tests.rs"]
+mod selection_tests;
 #[derive(Clone, Serialize, Deserialize)]
 pub struct Model {
     pub id: String,
@@ -138,7 +141,8 @@ for f in &m.files{crate::domain::valid_relative(&f.name)?;let path=folder.join(&
 #[derive(Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct Options {
-    pub line_id: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub line_id: Option<String>,
     pub model_id: String,
     pub source_track_id: String,
     pub start_ms: u64,
@@ -165,16 +169,18 @@ pub struct Destination {
 }
 fn validate(p: &Project, o: &Options, m: &Model) -> Result<(), String> {
     let media = p.media.as_ref().ok_or("MEDIA_MISSING")?;
-    let line = p
-        .dialogues
-        .iter()
-        .find(|l| l.id == o.line_id)
-        .ok_or("INVALID_PROJECT")?;
-    if crate::speaker_dubbing::voice(p, &line.id).is_some()
-        || line.start_ms != o.start_ms
-        || line.end_ms != o.end_ms
-    {
-        return Err("SPEAKER_SEPARATION_OPTIONS".into());
+    if let Some(line_id) = &o.line_id {
+        let line = p
+            .dialogues
+            .iter()
+            .find(|l| &l.id == line_id)
+            .ok_or("INVALID_PROJECT")?;
+        if crate::speaker_dubbing::voice(p, &line.id).is_some()
+            || line.start_ms != o.start_ms
+            || line.end_ms != o.end_ms
+        {
+            return Err("SPEAKER_SEPARATION_OPTIONS".into());
+        }
     }
     if o.end_ms <= o.start_ms
         || o.end_ms > media.info.duration_ms
@@ -243,7 +249,7 @@ fn snapshot(p: &Project, root: &Path, o: &Options) -> Result<Value, String> {
         }
     }
     Ok(
-        json!({"media":media.id,"source":media.path,"stream":media.audio_stream_index,"duration":media.info.duration_ms,"trackId":track.id,"path":path,"patches":patches,"files":files,"line":p.dialogues.iter().find(|l|l.id==o.line_id).map(|l|json!({"id":l.id,"startMs":l.start_ms,"endMs":l.end_ms}))}),
+        json!({"media":media.id,"source":media.path,"stream":media.audio_stream_index,"duration":media.info.duration_ms,"trackId":track.id,"path":path,"patches":patches,"files":files,"line":o.line_id.as_ref().and_then(|id|p.dialogues.iter().find(|l|&l.id==id)).map(|l|json!({"id":l.id,"startMs":l.start_ms,"endMs":l.end_ms}))}),
     )
 }
 fn current(core: &Core, r: &Request) -> Result<Project, String> {
@@ -402,6 +408,11 @@ pub fn create_children<R: tauri::Runtime>(
     }
     let _permit = core.gate.clone().try_acquire_owned().map_err(|_| "BUSY")?;
     let r = request(core, &key)?;
+    let parent_id = r
+        .options
+        .line_id
+        .clone()
+        .ok_or("SPEAKER_SEPARATION_OPTIONS")?;
     let p = current(core, &r)?;
     if snapshot(&p, &r.root, &r.options)? != r.snapshot {
         return Err("STALE_REVISION".into());
@@ -448,7 +459,7 @@ pub fn create_children<R: tauri::Runtime>(
         let parent = p
             .dialogues
             .iter()
-            .find(|l| l.id == r.options.line_id)
+            .find(|l| l.id == parent_id)
             .ok_or("STALE_REVISION")?;
         let mut settings=match &parent.voice_settings {Some(o)=>o.clone(),None=>serde_json::from_value(json!({"device":"auto","referenceMode":"current","referenceId":null,"mode":"crossLingual","speed":1,"seed":0,"variantId":p.model_preferences.as_ref().and_then(|v|v["voiceVariantId"].as_str())})).map_err(io_error)?};
         let character_has_reference = a
@@ -481,13 +492,13 @@ pub fn create_children<R: tauri::Runtime>(
         });
     }
     for g in &mut next.speaker_dubbings {
-        if g.parent_id == r.options.line_id {
+        if g.parent_id == parent_id {
             g.active = false;
         }
     }
     next.speaker_dubbings.push(crate::speaker_dubbing::Group {
         id: id(),
-        parent_id: r.options.line_id,
+        parent_id,
         separation_id: key,
         model_id: m.id,
         source_path: r.source_path,

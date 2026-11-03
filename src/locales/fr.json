@@ -998,7 +998,7 @@
   "translationLegend": "État des traductions",
   "translationState": {
     "untranslated": "Non traduite",
-    "translated": "Traduite · à valider",
+    "translated": "À revoir",
     "approved": "Traduction validée"
   },
   "ttsBatchLocalHint": "Le modèle reste chargé pendant ce lot. Il est libéré à la fin, lors de l’annulation ou d’une erreur du moteur. Une seule réplique est générée à la fois.",
@@ -1749,7 +1749,14 @@
     "text": "Texte",
     "voice": "Voix",
     "takes": "Essais",
-    "tools": "Outils"
+    "tools": "Outils",
+    "dialogueActions": "Actions des répliques",
+    "previewScene": "Prévisualiser",
+    "capturePortrait": "Capturer",
+    "loadingModels": "Chargement du catalogue des modèles…",
+    "modelsFailed": "Impossible de charger les modèles. Réessayez.",
+    "keepVoice": "Conserver {{name}}",
+    "multiVoiceHint": "Choisissez une ou plusieurs voix. Le mode Ajout permet de réunir plusieurs voix sur une même piste au même emplacement."
   },
   "dubbingInspector": {
     "mode": "Mode de doublage",

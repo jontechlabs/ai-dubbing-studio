@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
+import { LoaderCircle, RefreshCw } from 'lucide-react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { AudioSelection, Job, Project } from '../domain/types';
 import type {
@@ -34,6 +35,10 @@ export function AudioToolboxPanel({
   const { t } = useTranslation(),
     [open, setOpen] = useState(!!initialModel),
     [status, setStatus] = useState<AudioToolboxStatus | null>(null),
+    [speakers, setSpeakers] = useState<AudioToolboxStatus | null>(null),
+    [loading, setLoading] = useState(false),
+    [loadError, setLoadError] = useState(''),
+    [reload, setReload] = useState(0),
     [modelId, setModelId] = useState(initialModel ?? 'mel-band-roformer-kim');
   const [source, setSource] = useState(selection?.trackId ?? 'original'),
     [start, setStart] = useState(selection?.startMs ?? 0),
@@ -41,27 +46,59 @@ export function AudioToolboxPanel({
     [device, setDevice] = useState('auto'),
     [prompt, setPrompt] = useState(''),
     [windowSeconds, setWindow] = useState(4);
-  const [key, setKey] = useState<string | null>(null),
-    [result, setResult] = useState<AudioToolboxResult | null>(null),
+  const [request, setRequest] = useState<{ id: string; scope: string } | null>(null),
+    [storedResult, setResult] = useState<AudioToolboxResult | null>(null),
     [urls, setUrls] = useState<Record<string, string>>({}),
     [mappings, setMappings] = useState<Record<string, string>>({}),
     [muteSource, setMuteSource] = useState(false),
-    [working, setWorking] = useState(false);
+    [working, setWorking] = useState(false),
+    [routing, setRouting] = useState<'replace' | 'add'>('add');
+  const scope = JSON.stringify([
+    project.id,
+    project.media?.id,
+    project.media?.path,
+    selection?.mediaId,
+    selection?.trackId,
+    selection?.startMs,
+    selection?.endMs,
+    source,
+    start,
+    end,
+    modelId,
+    device,
+    prompt,
+    windowSeconds,
+  ]);
+  const currentScope = useRef(scope);
+  const key = request?.scope === scope ? request.id : null;
+  const result = key ? storedResult : null;
+  const speakerModel = !!speakers?.models.some((m) => m.id === modelId);
+  useLayoutEffect(() => {
+    currentScope.current = scope;
+    setRequest(null);
+    setResult(null);
+    setUrls({});
+    setMappings({});
+    setMuteSource(false);
+    return () => {
+      currentScope.current = '';
+    };
+  }, [scope]);
+  const launch = async (operation: () => Promise<string>) => {
+    const owner = scope;
+    const id = await operation();
+    if (currentScope.current === owner) setRequest({ id, scope: owner });
+  };
   const section = useRef<HTMLDetailsElement | null>(null),
     job = jobs.find((j) => j.id === key),
     completed = jobs
       .filter(
         (j) =>
-          j.kind === 'toolboxInstall' && ['succeeded', 'failed', 'cancelled'].includes(j.status),
+          ['toolboxInstall', 'speakerSeparationInstall'].includes(j.kind) &&
+          ['succeeded', 'failed', 'cancelled'].includes(j.status),
       )
       .map((j) => j.id + j.status)
       .join('|');
-  const latest = jobs.find(
-    (j) => j.kind === 'audioToolbox' && j.projectId === project.id && j.status === 'succeeded',
-  )?.id;
-  useEffect(() => {
-    if (!key && latest) setKey(latest);
-  }, [key, latest]);
   useEffect(() => {
     if (initialModel) {
       setOpen(true);
@@ -78,24 +115,39 @@ export function AudioToolboxPanel({
   }, [selection, project.media?.id]);
   useEffect(() => {
     let disposed = false;
-    if (open && bridge.native)
-      void bridge
-        .audioToolboxStatus()
-        .then((s) => {
-          if (!disposed) setStatus(s);
+    if (open && bridge.native) {
+      setLoading(true);
+      setLoadError('');
+      void Promise.all([bridge.audioToolboxStatus(), bridge.speakerSeparationStatus()])
+        .then(([base, multi]) => {
+          if (!disposed) {
+            setStatus(base);
+            setSpeakers(multi);
+          }
         })
         .catch((e) => {
-          if (!disposed) onError(String(e));
+          if (!disposed) setLoadError(String(e));
+        })
+        .finally(() => {
+          if (!disposed) setLoading(false);
         });
+    }
     return () => {
       disposed = true;
     };
-  }, [open, completed, onError]);
+  }, [open, completed, reload]);
   useEffect(() => {
     let disposed = false;
-    if (key && job?.status === 'succeeded' && job.kind === 'audioToolbox')
-      void bridge
-        .audioToolboxResult(key)
+    if (
+      key &&
+      job?.status === 'succeeded' &&
+      ['audioToolbox', 'speakerSeparation'].includes(job.kind)
+    )
+      void (
+        job.kind === 'speakerSeparation'
+          ? bridge.speakerSeparationResult(key)
+          : bridge.audioToolboxResult(key)
+      )
         .then((v) => {
           if (!disposed) setResult(v);
         })
@@ -111,7 +163,14 @@ export function AudioToolboxPanel({
     if (result)
       void Promise.all(
         result.outputs.map(
-          async (role) => [role, await bridge.audioToolboxUrl(result.id, role)] as const,
+          async (role) =>
+            [
+              role,
+              await (speakerModel ? bridge.speakerSeparationUrl : bridge.audioToolboxUrl)(
+                result.id,
+                role,
+              ),
+            ] as const,
         ),
       )
         .then((rows) => {
@@ -123,9 +182,11 @@ export function AudioToolboxPanel({
     return () => {
       disposed = true;
     };
-  }, [result, onError]);
-  const model = status?.models.find((m) => m.id === modelId),
-    locked = busy || working,
+  }, [result, speakerModel, onError]);
+  const catalog = [...(status?.models ?? []), ...(speakers?.models ?? [])];
+  const inventory = speakerModel ? speakers : status;
+  const model = catalog.find((m) => m.id === modelId),
+    locked = busy || working || loading || !!loadError,
     range = end - start,
     canRun =
       !!project.media &&
@@ -140,7 +201,11 @@ export function AudioToolboxPanel({
   const bytes = (n: number) => `${(n / 1024 ** 3).toFixed(2)} Gio`,
     tracks = audioTracks(project).filter((t) => t.kind !== 'dubbing');
   const chosen = Object.values(mappings).filter(Boolean),
-    duplicateDestination = new Set(chosen).size !== chosen.length;
+    duplicateDestination = new Set(chosen).size !== chosen.length && !speakerModel;
+  const outputName = (role: string) =>
+    speakerModel
+      ? t('overlap.voice', { number: (result?.outputs.indexOf(role) ?? 0) + 1 })
+      : t(`toolbox.outputs.${role}`, { defaultValue: role });
   const perform = (operation: () => Promise<unknown>) => {
     setWorking(true);
     void operation()
@@ -158,6 +223,23 @@ export function AudioToolboxPanel({
       {open && (
         <>
           <p>{t('toolbox.hint')}</p>
+          {loading && (
+            <div className="toolbox-loading" role="status">
+              <LoaderCircle size={15} className="spin" />
+              <span>{t('compact.loadingModels')}</span>
+              <progress aria-label={t('compact.loadingModels')} />
+            </div>
+          )}
+          {loadError && (
+            <div className="toolbox-load-error" role="alert">
+              <p>{t('compact.modelsFailed')}</p>
+              <button className="button subtle" onClick={() => setReload((n) => n + 1)}>
+                <RefreshCw size={14} />
+                {t('retry')}
+              </button>
+            </div>
+          )}
+
           <label className="field">
             <span>{t('toolbox.model')}</span>
             <select
@@ -166,11 +248,13 @@ export function AudioToolboxPanel({
               disabled={locked}
               onChange={(e) => setModelId(e.target.value)}
             >
-              {status?.models.map((m) => (
-                <option key={m.id} value={m.id}>
-                  {m.name}
-                </option>
-              ))}
+              {loading && <option value={modelId}>{t('compact.loadingModels')}</option>}
+              {!loading &&
+                catalog.map((m) => (
+                  <option key={m.id} value={m.id}>
+                    {m.name}
+                  </option>
+                ))}
             </select>
           </label>
           <label className="field">
@@ -235,7 +319,7 @@ export function AudioToolboxPanel({
               onChange={(e) => setDevice(e.target.value)}
             >
               <option value="auto">{t('auto')}</option>
-              {status?.devices.map((d) => (
+              {inventory?.devices.map((d) => (
                 <option key={d.id} value={d.id}>
                   {d.name}
                 </option>
@@ -266,7 +350,8 @@ export function AudioToolboxPanel({
               <p>
                 {t('toolbox.disk', {
                   required: bytes(model.requiredBytes),
-                  available: status?.availableBytes == null ? '?' : bytes(status.availableBytes),
+                  available:
+                    inventory?.availableBytes == null ? '?' : bytes(inventory.availableBytes),
                 })}
               </p>
               {
@@ -274,12 +359,17 @@ export function AudioToolboxPanel({
                   className="button subtle wide"
                   disabled={
                     locked ||
-                    (status?.availableBytes != null && status.availableBytes < model.requiredBytes)
+                    (inventory?.availableBytes != null &&
+                      inventory.availableBytes < model.requiredBytes)
                   }
                   onClick={() =>
                     perform(async () => {
                       setResult(null);
-                      setKey(await bridge.installAudioToolboxModel(model.id));
+                      await launch(() =>
+                        speakerModel
+                          ? bridge.installSpeakerSeparationModel(model.id)
+                          : bridge.installAudioToolboxModel(model.id),
+                      );
                     })
                   }
                 >
@@ -298,8 +388,8 @@ export function AudioToolboxPanel({
                 setResult(null);
                 setMappings({});
                 setUrls({});
-                setKey(
-                  await bridge.separateAudioSelection({
+                await launch(() =>
+                  (speakerModel ? bridge.separateDialogueSpeakers : bridge.separateAudioSelection)({
                     modelId,
                     sourceTrackId: source,
                     startMs: start,
@@ -324,22 +414,47 @@ export function AudioToolboxPanel({
               </p>
               {result.outputs.map((role) => (
                 <div className="toolbox-output" key={role}>
-                  <label>{t(`toolbox.outputs.${role}`, { defaultValue: role })}</label>
+                  {speakerModel ? (
+                    <label className="checkbox-field">
+                      <input
+                        type="checkbox"
+                        aria-label={t('compact.keepVoice', { name: outputName(role) })}
+                        checked={!!mappings[role]}
+                        disabled={locked || result.applied || result.stale}
+                        onChange={(e) =>
+                          setMappings({
+                            ...mappings,
+                            [role]: e.target.checked ? 'role:speech' : '',
+                          })
+                        }
+                      />
+                      {t('overlap.voice', { number: result.outputs.indexOf(role) + 1 })}
+                    </label>
+                  ) : (
+                    <label>{t(`toolbox.outputs.${role}`, { defaultValue: role })}</label>
+                  )}
                   <audio
                     controls
                     preload="metadata"
                     src={urls[role]}
-                    onPlay={onAudition}
+                    onPlay={(e) => {
+                      document.querySelectorAll('audio').forEach((a) => {
+                        if (a !== e.currentTarget) a.pause();
+                      });
+                      onAudition();
+                    }}
                     aria-label={t('toolbox.listen', {
-                      name: t(`toolbox.outputs.${role}`, { defaultValue: role }),
+                      name: outputName(role),
                     })}
                   />
                   <select
                     aria-label={t('toolbox.destination', {
-                      name: t(`toolbox.outputs.${role}`, { defaultValue: role }),
+                      name: outputName(role),
                     })}
                     value={mappings[role] ?? ''}
-                    disabled={locked || result.applied || result.stale}
+                    disabled={
+                      locked || result.applied || result.stale || (speakerModel && !mappings[role])
+                    }
                     onChange={(e) => setMappings({ ...mappings, [role]: e.target.value })}
                   >
                     <option value="">{t('toolbox.skip')}</option>
@@ -358,6 +473,21 @@ export function AudioToolboxPanel({
                   </select>
                 </div>
               ))}
+              {speakerModel && (
+                <label className="field">
+                  <span>{t('overlap.routing')}</span>
+                  <select
+                    aria-label={t('overlap.routing')}
+                    value={routing}
+                    disabled={locked || result.applied || result.stale}
+                    onChange={(e) => setRouting(e.target.value as 'replace' | 'add')}
+                  >
+                    <option value="add">{t('overlap.add')}</option>
+                    <option value="replace">{t('overlap.replace')}</option>
+                  </select>
+                  <small>{t('compact.multiVoiceHint')}</small>
+                </label>
+              )}
               <label className="checkbox-field">
                 <input
                   type="checkbox"
@@ -386,7 +516,17 @@ export function AudioToolboxPanel({
                           trackId: v.startsWith('track:') ? v.slice(6) : null,
                           role: v.startsWith('role:') ? v.slice(5) : null,
                         }));
-                      return bridge.applyAudioToolboxResult(result.id, destinations, muteSource);
+                      return speakerModel
+                        ? bridge.applySpeakerSeparationResult(
+                            result.id,
+                            destinations.map((d) => ({
+                              ...d,
+                              role: d.role as 'speech' | 'music' | 'sfx' | null,
+                              mode: routing,
+                            })),
+                            muteSource,
+                          )
+                        : bridge.applyAudioToolboxResult(result.id, destinations, muteSource);
                     }),
                   )
                 }

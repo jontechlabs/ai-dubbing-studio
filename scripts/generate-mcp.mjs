@@ -125,6 +125,7 @@ function rustSchema(type) {
 const readOnly =
   /^(?!apply_)(environment|graphics_info|.*_status|.*_result|latest_.*|audio_effects_catalog|.*_path|.*_paths|list_jobs|model_storage_info|model_storage_size|voice_install_space|preview_.*|reference_audio_info|get_waveform)$/;
 const notes = {
+  separate_dialogue_speakers: 'Separate two or three overlapping voices locally on a bounded source-track range (0.1–60 seconds), using the selected installed model. Omit lineId for a free timeline selection, or provide it to require exact dialogue bounds. Poll the job, preview speaker_separation_result/paths, then explicitly route selected outputs with apply_speaker_separation_result. Creating sub-dubs still requires a dialogue-bound result. Originals remain intact.',
   preview_character_portrait: 'Preview one source-video frame and all anonymous CPU face boxes (auto, anime or live). Returns project/revision/source/character/dialogue/time, a read-only cached PNG imagePath, dimensions and normalized rectangles. No identity or gender inference. Choose a face or manual crop, then explicitly call studio_capture_character_portrait with atMs/crop. Original video and project are not modified.',
   transcribe_dialogue_source:
     'Transcribe each source subtitle of a dialogue from the chosen audio track using local Whisper CPU. Returns a job ID. Does not replace subtitles or takes. Read and explicitly review the proposal before applying.',

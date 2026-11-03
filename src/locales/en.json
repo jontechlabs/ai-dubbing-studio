@@ -998,7 +998,7 @@
   "translationLegend": "Translation status",
   "translationState": {
     "untranslated": "Untranslated",
-    "translated": "Translated · pending approval",
+    "translated": "Needs review",
     "approved": "Translation approved"
   },
   "ttsBatchLocalHint": "The model stays loaded for this batch and is released when it ends, is cancelled, or the engine fails. Lines are generated one at a time.",
@@ -1749,7 +1749,14 @@
     "text": "Text",
     "voice": "Voice",
     "takes": "Takes",
-    "tools": "Tools"
+    "tools": "Tools",
+    "dialogueActions": "Dialogue actions",
+    "previewScene": "Preview",
+    "capturePortrait": "Capture",
+    "loadingModels": "Loading the model catalog…",
+    "modelsFailed": "Could not load the models. Please retry.",
+    "keepVoice": "Keep {{name}}",
+    "multiVoiceHint": "Choose one or more voices. Add mode combines voices on the same track at the same position."
   },
   "dubbingInspector": {
     "mode": "Dubbing mode",

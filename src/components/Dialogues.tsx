@@ -7,7 +7,9 @@ import {
   BadgeMinus,
   Captions,
   ChevronDown,
-  FilePlus2,
+  FileInput,
+  FileOutput,
+  ListFilter,
   Play,
   ListChecks,
   ListX,
@@ -204,7 +206,7 @@ function DialoguesPane({
         </button>
       </div>
       <label className="translation-filter">
-        <span>{t('translationFilter')}</span>
+        <ListFilter size={14} aria-hidden="true" />
         <select
           aria-label={t('translationFilter')}
           value={translationFilter}
@@ -241,106 +243,121 @@ function DialoguesPane({
           onChange={(e) => setSearch(e.target.value)}
         />
       </label>
-      <div className="subtitle-imports">
-        <button disabled={!project || busy} onClick={() => onAdd()}>
-          <Plus size={14} />
-          {t('dialogueAdd')}
-        </button>
-        <button disabled={!project || busy} onClick={() => onImport('source')}>
-          <FilePlus2 size={14} />
-          {t('importSource')}
-        </button>
-        <button disabled={!project || busy} onClick={() => onImport('target')}>
-          <FilePlus2 size={14} />
-          {t('importTarget')}
-        </button>
-        <button
-          disabled={!project?.sourceCues.length || !project?.targetCues.length || busy}
-          onClick={onAlignment}
-        >
-          <RefreshCw size={14} />
-          {t('syncSubtitles')}
-        </button>
-      </div>
-      <div className="batch-selection-actions">
-        <button
-          className="button subtle"
-          aria-label={t('batchCheckVisible')}
-          title={t('batchCheckVisible')}
-          disabled={!lines.length}
-          onClick={() => onCheck(lines.map((l) => l.id))}
-        >
-          <ListChecks size={14} />
-        </button>
-        <button
-          className="button subtle"
-          aria-label={t('batchClearSelection')}
-          title={t('batchClearSelection')}
-          disabled={!checkedIds.length}
-          onClick={() => onCheck([])}
-        >
-          <ListX size={14} />
-        </button>
-        <button
-          className="button subtle"
-          aria-label={t('dialogueDeleteSelection')}
-          title={t('dialogueDeleteSelection')}
-          disabled={busy || !checkedIds.length}
-          onClick={() => onDelete(checkedIds)}
-        >
-          <Trash2 size={14} />
-        </button>
-        <button
-          className="button accent"
-          aria-label={`${t('batchDub')}${checkedIds.length > 0 ? ` (${checkedIds.length})` : ''}`}
-          title={t('batchDub')}
-          disabled={!project?.dialogues.length || busy}
-          onClick={onBatch}
-        >
-          <AudioLines size={13} />
-          {t('batchDubCompact')} {checkedIds.length > 0 && `(${checkedIds.length})`}
-        </button>
-        <button
-          className="button subtle"
-          aria-label={t('inpaintBatch')}
-          title={t('inpaintBatch')}
-          disabled={!project?.dialogues.length || busy}
-          onClick={onLipBatch}
-        >
-          <ScanFace size={13} />
-          {t('batchLipCompact')}
-        </button>
-        {checkedIds.length > 0 && (
-          <div
-            className="translation-selection-actions"
-            role="group"
-            aria-label={t('translationSelection')}
+      <div className="dialogue-actions" role="group" aria-label={t('compact.dialogueActions')}>
+        <div className="subtitle-imports">
+          <button
+            aria-label={t('dialogueAdd')}
+            title={t('dialogueAdd')}
+            disabled={!project || busy}
+            onClick={() => onAdd()}
           >
-            <span>{t('translationSelectionCount', { count: checkedIds.length })}</span>
-            <button
-              className="button subtle"
-              aria-label={t('translationApproveSelection')}
-              title={t('translationApproveSelectionHint', { count: selectedTranslations.pending })}
-              disabled={busy || !selectedTranslations.pending}
-              onClick={() => onEdit((p) => approveTranslations(p, checkedIds, true))}
+            <Plus size={14} />
+          </button>
+          <button
+            aria-label={t('importSource')}
+            title={t('importSource')}
+            disabled={!project || busy}
+            onClick={() => onImport('source')}
+          >
+            <FileInput size={14} />
+          </button>
+          <button
+            aria-label={t('importTarget')}
+            title={t('importTarget')}
+            disabled={!project || busy}
+            onClick={() => onImport('target')}
+          >
+            <FileOutput size={14} />
+          </button>
+          <button
+            aria-label={t('syncSubtitles')}
+            title={t('syncSubtitles')}
+            disabled={!project?.sourceCues.length || !project?.targetCues.length || busy}
+            onClick={onAlignment}
+          >
+            <RefreshCw size={14} />
+          </button>
+        </div>
+        <div className="batch-selection-actions">
+          <button
+            className="button subtle"
+            aria-label={t('batchCheckVisible')}
+            title={t('batchCheckVisible')}
+            disabled={!lines.length}
+            onClick={() => onCheck(lines.map((l) => l.id))}
+          >
+            <ListChecks size={14} />
+          </button>
+          <button
+            className="button subtle"
+            aria-label={t('batchClearSelection')}
+            title={t('batchClearSelection')}
+            disabled={!checkedIds.length}
+            onClick={() => onCheck([])}
+          >
+            <ListX size={14} />
+          </button>
+          <button
+            className="button subtle"
+            aria-label={t('dialogueDeleteSelection')}
+            title={t('dialogueDeleteSelection')}
+            disabled={busy || !checkedIds.length}
+            onClick={() => onDelete(checkedIds)}
+          >
+            <Trash2 size={14} />
+          </button>
+          <button
+            className="button accent"
+            aria-label={`${t('batchDub')}${checkedIds.length > 0 ? ` (${checkedIds.length})` : ''}`}
+            title={t('batchDub')}
+            disabled={!project?.dialogues.length || busy}
+            onClick={onBatch}
+          >
+            <AudioLines size={13} />
+          </button>
+          <button
+            className="button subtle"
+            aria-label={t('inpaintBatch')}
+            title={t('inpaintBatch')}
+            disabled={!project?.dialogues.length || busy}
+            onClick={onLipBatch}
+          >
+            <ScanFace size={13} />
+          </button>
+          {checkedIds.length > 0 && (
+            <div
+              className="translation-selection-actions"
+              role="group"
+              aria-label={t('translationSelection')}
             >
-              <BadgeCheck size={14} />
-              {t('translationApproveCompact')}
-            </button>
-            <button
-              className="button subtle"
-              aria-label={t('translationUnapproveSelection')}
-              title={t('translationUnapproveSelectionHint', {
-                count: selectedTranslations.approved,
-              })}
-              disabled={busy || !selectedTranslations.approved}
-              onClick={() => onEdit((p) => approveTranslations(p, checkedIds, false))}
-            >
-              <BadgeMinus size={14} />
-              {t('translationUnapproveCompact')}
-            </button>
-          </div>
-        )}
+              <span className="sr-only">
+                {t('translationSelectionCount', { count: checkedIds.length })}
+              </span>
+              <button
+                className="button subtle"
+                aria-label={t('translationApproveSelection')}
+                title={t('translationApproveSelectionHint', {
+                  count: selectedTranslations.pending,
+                })}
+                disabled={busy || !selectedTranslations.pending}
+                onClick={() => onEdit((p) => approveTranslations(p, checkedIds, true))}
+              >
+                <BadgeCheck size={14} />
+              </button>
+              <button
+                className="button subtle"
+                aria-label={t('translationUnapproveSelection')}
+                title={t('translationUnapproveSelectionHint', {
+                  count: selectedTranslations.approved,
+                })}
+                disabled={busy || !selectedTranslations.approved}
+                onClick={() => onEdit((p) => approveTranslations(p, checkedIds, false))}
+              >
+                <BadgeMinus size={14} />
+              </button>
+            </div>
+          )}
+        </div>
       </div>
       <div className="dialogue-scroll" ref={scrollRef}>
         {!lines.length ? (
@@ -508,6 +525,9 @@ function DialogueCard({
     [project, activeGroup],
   );
   const stale = !!generation && staleGeneration(project, line, generation);
+  const voiceStatus = activeGroup
+    ? t('overlap.groupChildren', { count: activeGroup.voices.length })
+    : t(stale ? 'review' : line.status);
   return (
     <article
       className={`dialogue-card translation-${translation} ${line.excludedFromDubbing ? 'dialogue-excluded' : ''} ${selected ? 'selected' : ''}`}
@@ -683,16 +703,14 @@ function DialogueCard({
         </button>
         <button
           className="status"
-          title={t('ttsOpenHint')}
+          aria-label={`${t('dub')} : ${voiceStatus}`}
+          title={voiceStatus}
           onClick={(event) => {
             event.stopPropagation();
             onDub();
           }}
         >
           <span className="status-dot" />
-          {activeGroup
-            ? t('overlap.groupChildren', { count: activeGroup.voices.length })
-            : t(stale ? 'review' : line.status)}
         </button>
         {line.warnings.length > 0 && (
           <span className="warning" title={t('alignment')}>
@@ -700,14 +718,16 @@ function DialogueCard({
           </span>
         )}
         <button
-          title={t('ttsOpenHint')}
+          aria-label={t(
+            activeGroup ? 'overlap.manageDubs' : generation ? 'regenerate' : 'ttsDubLine',
+          )}
+          title={t(activeGroup ? 'overlap.manageDubs' : generation ? 'regenerate' : 'ttsDubLine')}
           onClick={(event) => {
             event.stopPropagation();
             onDub();
           }}
         >
           <RefreshCw size={12} />
-          {t(activeGroup ? 'overlap.manageDubs' : generation ? 'regenerate' : 'ttsDubLine')}
         </button>
       </div>
     </article>

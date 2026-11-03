@@ -22,7 +22,8 @@ export interface SpeakerDubbingGroup {
   voices: IsolatedVoice[];
 }
 export interface SpeakerSeparationOptions {
-  lineId: string;
+  /** Omit for a free timeline selection; creating sub-dubs still requires a dialogue. */
+  lineId?: string;
   modelId: string;
   sourceTrackId: string;
   device: string;

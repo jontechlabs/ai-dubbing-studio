@@ -370,7 +370,7 @@
     {
       "name": "studio_separate_dialogue_speakers",
       "command": "separate_dialogue_speakers",
-      "description": "separate dialogue speakers. Uses the current desktop session. Local file paths must be absolute; long operations return job IDs. Existing native validation applies.",
+      "description": "Separate two or three overlapping voices locally on a bounded source-track range (0.1–60 seconds), using the selected installed model. Omit lineId for a free timeline selection, or provide it to require exact dialogue bounds. Poll the job, preview speaker_separation_result/paths, then explicitly route selected outputs with apply_speaker_separation_result. Creating sub-dubs still requires a dialogue-bound result. Originals remain intact.",
       "inputSchema": {
         "type": "object",
         "properties": {
@@ -391,7 +391,7 @@
           "options_SpeakerSeparationOptions_0": {
             "type": "object",
             "properties": {
-              "lineId": { "type": "string" },
+              "lineId": { "anyOf": [{ "type": "string" }] },
               "modelId": { "type": "string" },
               "sourceTrackId": { "type": "string" },
               "device": { "type": "string" },
@@ -401,7 +401,6 @@
               "prompt": { "type": "string" }
             },
             "required": [
-              "lineId",
               "modelId",
               "sourceTrackId",
               "device",
@@ -6216,7 +6215,7 @@
         "SpeakerSeparationOptions_0": {
           "type": "object",
           "properties": {
-            "lineId": { "type": "string" },
+            "lineId": { "anyOf": [{ "type": "string" }] },
             "modelId": { "type": "string" },
             "sourceTrackId": { "type": "string" },
             "device": { "type": "string" },
@@ -6226,7 +6225,6 @@
             "prompt": { "type": "string" }
           },
           "required": [
-            "lineId",
             "modelId",
             "sourceTrackId",
             "device",

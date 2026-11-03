@@ -59,7 +59,20 @@ export async function verifySpeakerDubbing({call,context,job,args,projectRoot:pr
  await call('studio_history',{context:await context(),direction:'undo'});assert.deepEqual((await call('studio_get_project')).generations,reopened.generations);
  assert.equal(hash(await fs.readFile(path.join(projectRoot,before.media.path))),original);
  assert.equal(hash(await fs.readFile(path.join(projectRoot,seedPath))),hash(wave));
+ // Free selections do not create or retime subtitle/dialogue records. The same
+ // real separator may route selected outputs, but cannot manufacture sub-dubs.
+ const freeOptions={...result.options,startMs:line.startMs+100,endMs:line.endMs-100};delete freeOptions.lineId;
+ const freeBefore=await call('studio_get_project');
+ const freeId=await call('studio_separate_dialogue_speakers',{context:await context(),options:freeOptions});await job(freeId);
+ const freeResult=await call('studio_speaker_separation_result',{context:await context(),id:freeId});
+ assert.equal(freeResult.options.lineId,undefined);assert.deepEqual(freeResult.outputs,['voice-1','voice-2']);
+ let rejected=false;try{await call('studio_create_speaker_dubbings',{context:await context(),id:freeId,assignments:[{outputId:'voice-1',label:'Free selection',characterId:null,sourceText:'',targetText:'Bonjour.'}]});}catch(e){assert(String(e).includes('SPEAKER_SEPARATION_OPTIONS'));rejected=true;}assert(rejected);
+ const freeApplied=await call('studio_apply_speaker_separation_result',{context:await context(),id:freeId,destinations:freeResult.outputs.map(outputId=>({outputId,trackId:null,role:'speech',mode:'add'})),muteSource:false});
+ assert.deepEqual(freeApplied.dialogues,freeBefore.dialogues);assert.deepEqual(freeApplied.sourceCues,freeBefore.sourceCues);assert.deepEqual(freeApplied.targetCues,freeBefore.targetCues);
+ const freeLayers=freeApplied.generations.filter(g=>g.operationId===freeId);assert.equal(freeLayers.length,2);assert(freeLayers.every(g=>g.mode==='add'&&g.startMs===freeOptions.startMs&&g.endMs===freeOptions.endMs));
+ await call('studio_history',{context:await context(),direction:'undo'});assert.deepEqual((await call('studio_get_project')).generations,freeBefore.generations);
+ assert.equal(hash(await fs.readFile(path.join(projectRoot,before.media.path))),original);
  await call('studio_open_project',{path:previousRoot});const previousAfter=await call('studio_get_project');
  for(const key of ['generations','sourceCues','targetCues','speakerDubbings'])assert.deepEqual(previousAfter[key],previous[key]);
- return {realMossFormer2Cpu:true,outputs:2,independentChildren:true,subtitlesAndPreviousTakesPreserved:true,parentGroupPlayback:true,concurrentMkvExport:true,replaceThenAdd:true,undoAndReopen:true,sourceMovieUnchanged:true};
+ return {realMossFormer2Cpu:true,outputs:2,independentChildren:true,freeSelectionWithoutDialogue:true,freeSelectionCannotCreateChildren:true,freeSelectionRoutingAndUndo:true,subtitlesAndPreviousTakesPreserved:true,parentGroupPlayback:true,concurrentMkvExport:true,replaceThenAdd:true,undoAndReopen:true,sourceMovieUnchanged:true};
 }

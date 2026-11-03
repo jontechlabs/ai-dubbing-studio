@@ -305,124 +305,133 @@ export function CharacterMetadata({
             onChange={(e) => setTime(e.target.value)}
           />
         </label>
-        <button
-          className="button subtle"
-          disabled={!bridge.native || busy || working || !validLineId}
-          onClick={() => setPreviewOpen(true)}
-        >
-          <ImagePlus size={14} /> {t('portraitOpenPreview')}
-        </button>
-        {previewOpen && validLineId && (
-          <CharacterPortraitModal
-            project={project}
-            character={character}
-            lineId={validLineId}
-            atMs={
-              time === ''
-                ? (() => {
-                    const l = project.dialogues.find((l) => l.id === validLineId)!;
-                    return l.startMs + Math.floor((l.endMs - l.startMs) / 2);
-                  })()
-                : Math.max(
-                    0,
-                    Math.min((project.media?.durationMs ?? 1) - 1, Math.round(Number(time) * 1000)),
-                  )
-            }
-            busy={busy || working}
-            snapshot={snapshot}
-            onAudition={onAudition}
-            onClose={() => setPreviewOpen(false)}
-            onCapture={async (options) => {
-              let captured = false,
-                failure: unknown;
-              await run(async () => {
-                try {
-                  const saved = await bridge.captureCharacterPortrait(options);
-                  captured = true;
-                  return saved;
-                } catch (e) {
-                  failure = e;
-                  throw e;
-                }
-              });
-              if (!captured) throw failure ?? Error('STALE_REVISION');
-              setLineId(options.lineId);
-              setTime(String((options.atMs ?? 0) / 1000));
-              if (options.crop) {
-                setCrop({
-                  x: options.crop.x * 100,
-                  y: options.crop.y * 100,
-                  width: options.crop.width * 100,
-                  height: options.crop.height * 100,
-                });
+        <div className="portrait-actions">
+          <button
+            className="button subtle"
+            disabled={!bridge.native || busy || working || !validLineId}
+            aria-label={t('portraitOpenPreview')}
+            title={t('portraitOpenPreview')}
+            onClick={() => setPreviewOpen(true)}
+          >
+            <ImagePlus size={14} /> {t('compact.previewScene')}
+          </button>
+          {previewOpen && validLineId && (
+            <CharacterPortraitModal
+              project={project}
+              character={character}
+              lineId={validLineId}
+              atMs={
+                time === ''
+                  ? (() => {
+                      const l = project.dialogues.find((l) => l.id === validLineId)!;
+                      return l.startMs + Math.floor((l.endMs - l.startMs) / 2);
+                    })()
+                  : Math.max(
+                      0,
+                      Math.min(
+                        (project.media?.durationMs ?? 1) - 1,
+                        Math.round(Number(time) * 1000),
+                      ),
+                    )
               }
-            }}
-          />
-        )}
-        <label className="checkbox">
-          <input
-            type="checkbox"
-            checked={automatic}
-            onChange={(e) => setAutomatic(e.target.checked)}
-          />
-          {t('characterPortraitAuto')}
-        </label>
-        {!automatic && (
-          <div className="character-crop-inputs">
-            {(['x', 'y', 'width', 'height'] as const).map((key) => (
-              <label key={key}>
-                {t(`characterCrop.${key}`)} %
-                <input
-                  type="number"
-                  min="0"
-                  max="100"
-                  step="0.1"
-                  aria-label={t(`characterCrop.${key}`)}
-                  value={crop[key]}
-                  onChange={(e) => setCrop({ ...crop, [key]: Number(e.target.value) })}
-                />
-              </label>
-            ))}
-          </div>
-        )}
-        <button
-          className="button subtle"
-          disabled={
-            busy ||
-            working ||
-            !validLineId ||
-            (time !== '' && (!Number.isFinite(Number(time)) || Number(time) < 0))
-          }
-          onClick={() => {
-            if (automatic) {
-              setPreviewOpen(true);
-              return;
+              busy={busy || working}
+              snapshot={snapshot}
+              onAudition={onAudition}
+              onClose={() => setPreviewOpen(false)}
+              onCapture={async (options) => {
+                let captured = false,
+                  failure: unknown;
+                await run(async () => {
+                  try {
+                    const saved = await bridge.captureCharacterPortrait(options);
+                    captured = true;
+                    return saved;
+                  } catch (e) {
+                    failure = e;
+                    throw e;
+                  }
+                });
+                if (!captured) throw failure ?? Error('STALE_REVISION');
+                setLineId(options.lineId);
+                setTime(String((options.atMs ?? 0) / 1000));
+                if (options.crop) {
+                  setCrop({
+                    x: options.crop.x * 100,
+                    y: options.crop.y * 100,
+                    width: options.crop.width * 100,
+                    height: options.crop.height * 100,
+                  });
+                }
+              }}
+            />
+          )}
+          <label className="checkbox">
+            <input
+              type="checkbox"
+              checked={automatic}
+              onChange={(e) => setAutomatic(e.target.checked)}
+            />
+            <span>{t('characterPortraitAuto')}</span>
+          </label>
+          {!automatic && (
+            <div className="character-crop-inputs">
+              {(['x', 'y', 'width', 'height'] as const).map((key) => (
+                <label key={key}>
+                  {t(`characterCrop.${key}`)} %
+                  <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    step="0.1"
+                    aria-label={t(`characterCrop.${key}`)}
+                    value={crop[key]}
+                    onChange={(e) => setCrop({ ...crop, [key]: Number(e.target.value) })}
+                  />
+                </label>
+              ))}
+            </div>
+          )}
+          <button
+            className="button subtle"
+            aria-label={t('characterCapturePortrait')}
+            title={t('characterCapturePortrait')}
+            disabled={
+              busy ||
+              working ||
+              !validLineId ||
+              (time !== '' && (!Number.isFinite(Number(time)) || Number(time) < 0))
             }
-            setWorking(true);
-            void run(() =>
-              bridge.captureCharacterPortrait({
-                characterId: character.id,
-                lineId: validLineId,
-                ...(time === '' ? {} : { atMs: Math.round(Number(time) * 1000) }),
-                ...(automatic
-                  ? {}
-                  : {
-                      crop: {
-                        x: crop.x / 100,
-                        y: crop.y / 100,
-                        width: crop.width / 100,
-                        height: crop.height / 100,
-                      },
-                    }),
-              }),
-            )
-              .catch((error) => onError(String(error)))
-              .finally(() => setWorking(false));
-          }}
-        >
-          <ImagePlus size={14} />
-          {t('characterCapturePortrait')}
-        </button>
+            onClick={() => {
+              if (automatic) {
+                setPreviewOpen(true);
+                return;
+              }
+              setWorking(true);
+              void run(() =>
+                bridge.captureCharacterPortrait({
+                  characterId: character.id,
+                  lineId: validLineId,
+                  ...(time === '' ? {} : { atMs: Math.round(Number(time) * 1000) }),
+                  ...(automatic
+                    ? {}
+                    : {
+                        crop: {
+                          x: crop.x / 100,
+                          y: crop.y / 100,
+                          width: crop.width / 100,
+                          height: crop.height / 100,
+                        },
+                      }),
+                }),
+              )
+                .catch((error) => onError(String(error)))
+                .finally(() => setWorking(false));
+            }}
+          >
+            <ImagePlus size={14} />
+            {t('compact.capturePortrait')}
+          </button>
+        </div>
         {profile?.portrait && (
           <button
             className="text-button"

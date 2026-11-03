@@ -1,5 +1,7 @@
 # AI Dubbing Studio
 
+**v0.39.0 — Commandes compactes et sélection multivoix.** Pictogrammes et cartes de répliques rapprochées, statut commun « À revoir », boutons de vignette alignés, chargement des modèles explicite et résultats liés à la sélection courante. MossFormer2 / SepFormer accessibles depuis une portion de piste, avec choix des voix et affectation par ajout ou remplacement. [Guide et captures](docs/SELECTION-TOOLBOX.md).
+
 **v0.38.0 — Onglet Doublage.** Doublage rejoint Texte et Prononciation dans le panneau de droite, en gardant l’accès à la vidéo, aux répliques et à la timeline. Modes Réplique / Lot avec réglages séparés, progression intégrée et nouveaux essais rattachés à leur réplique. Largeur propre mémorisée et navigation au clavier. [Guide et captures](docs/DUBBING-INSPECTOR.md).
 
 **v0.37.0 — Interface compacte.** Texte prioritaire dans Doublage, navigation rapide, génération accessible en bas de panneau, dock de montage vocal compact avec fondus et effets en fenêtres dédiées, galerie de personnages rapprochée des commandes et pictogrammes avec infobulles. Agencement général, essais et réglages conservés. [Guide et captures](docs/UI-REFINEMENTS.md).
