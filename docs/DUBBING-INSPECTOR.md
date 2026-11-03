@@ -24,3 +24,10 @@ Dans la barre d’onglets : **← / →**, **Début / Fin** changent d’onglet 
 ![Fenêtre de 1 024 pixels avec l’inspecteur ouvert](screenshots/dubbing-inspector-1024-fr.png)
 
 Les captures utilisent un projet de démonstration isolé. Cette modification ne change ni les moteurs de voix, ni le traitement audio, ni le format du projet (26), ni le catalogue des 143 outils MCP. Le pilotage MCP `panel: "dub"` et `panel: "batchDub"` ouvre désormais l’onglet correspondant ; `panel: null` revient à l’édition.
+
+
+## Correctif v0.39.1 — défilement de la fenêtre
+
+Le panneau Doublage garde désormais les libellés masqués pour les lecteurs d’écran dans son propre conteneur de défilement. Ils ne créent plus de barre de défilement verticale ni d’espace vide dans la fenêtre principale. Les réglages, les logs et les essais restent accessibles en faisant défiler le panneau ; les modes Réplique et Lot et les autres panneaux restent utilisables.
+
+![Panneau Doublage et timeline sans défilement parasite de la page](screenshots/dubbing-scroll-fixed-fr.png)

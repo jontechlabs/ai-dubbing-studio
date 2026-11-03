@@ -1,0 +1,88 @@
+name: Dubbing scroll Windows checks
+on:
+  workflow_dispatch:
+  push:
+    branches: [codex/dubbing-scroll-fix]
+permissions:
+  contents: read
+  actions: read
+jobs:
+  windows:
+    runs-on: windows-latest
+    timeout-minutes: 75
+    env:
+      LIBCLANG_PATH: 'C:\Program Files\LLVM\bin'
+      PYTHONDONTWRITEBYTECODE: '1'
+      PYTHONUTF8: '1'
+      PYTHONIOENCODING: utf-8
+      PYTHONUNBUFFERED: '1'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
+        with:
+          node-version: '24'
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12.10'
+      - name: Verify CSS-only scope and qualified native baseline
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python scripts/verify-dubbing-scroll.py
+      - name: Prepare pinned tools and dependencies
+        run: |
+          npm install --global pnpm@11.25.0
+          pnpm install --frozen-lockfile
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          ./scripts/prepare-ffmpeg.ps1
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          ./scripts/prepare-prosody.ps1
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          rustup update stable --no-self-update
+      - name: Fresh frontend and focused inspector regressions
+        run: |
+          pnpm mcp:check
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          pnpm build
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          pnpm test
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          pnpm lint
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          pnpm format:check
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          pnpm exec prettier --check tests/e2e/dubbing-scroll.pw.ts
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          pnpm exec playwright test tests/e2e/dubbing-scroll.pw.ts tests/e2e/dubbing-inspector.pw.ts tests/e2e/dubbing-panel-tasks.pw.ts tests/e2e/source-and-volume.pw.ts tests/e2e/ui-refinements.pw.ts --workers=1
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          git restore -- docs/screenshots
+      - name: Build signed updater installer
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ''
+        run: pnpm desktop:build
+      - name: Package installer and portable version
+        run: ./scripts/package-windows.ps1
+      - name: Prepare real local separators and source ASR required by packaged MCP regression
+        run: |
+          python -m pip install numpy==2.2.6 scipy==1.15.3 soundfile==0.13.1 opencv-python-headless==4.11.0.86
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          python scripts/test-speaker-separation.py
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          $dir='.cache/reference-transcription/Référence 日本語'
+          New-Item -ItemType Directory -Force $dir | Out-Null
+          Invoke-WebRequest 'https://huggingface.co/ggerganov/whisper.cpp/resolve/5359861c739e955e79d9a303bcbc70fb988958b1/ggml-small-q5_1.bin' -OutFile "$dir/ggml-small-q5_1.bin"
+          if ((Get-FileHash "$dir/ggml-small-q5_1.bin").Hash.ToLowerInvariant() -ne 'ae85e4a935d7a567bd102fe55afc16bb595bdb618e11b2fc7591bc08120411bb') { throw 'Whisper hash mismatch' }
+          Invoke-WebRequest 'https://huggingface.co/csukuangfj/sherpa-onnx-sense-voice-zh-en-ja-ko-yue-2024-07-17/resolve/2365baeacb507f821a0c8120fcee3d484dba7a07/test_wavs/ja.wav' -OutFile "$dir/ja.wav"
+          if ((Get-FileHash "$dir/ja.wav").Hash.ToLowerInvariant() -ne '460bd8dccb0d2a5f4e29c628f837be4082d13defc64c3fc21dd1b6bb0e119095') { throw 'Japanese fixture hash mismatch' }
+      - name: Actual packaged desktop and free speaker selections through official MCP SDK
+        run: ./scripts/test-mcp.ps1
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: dubbing-scroll-windows-packages-and-validation
+          path: |
+            artifacts/*
+            test-results/
+          if-no-files-found: error

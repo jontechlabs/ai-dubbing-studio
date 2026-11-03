@@ -1,5 +1,7 @@
 # AI Dubbing Studio
 
+**v0.39.1 — Défilement du panneau Doublage corrigé.** Les libellés masqués pour l’accessibilité restent dans le défilement du panneau, ce qui supprime la barre parasite et l’espace vide dans la fenêtre principale. Défilement interne, modes réplique/lot, avancement et sélection des essais sont conservés.
+
 **v0.39.0 — Commandes compactes et sélection multivoix.** Pictogrammes et cartes de répliques rapprochées, statut commun « À revoir », boutons de vignette alignés, chargement des modèles explicite et résultats liés à la sélection courante. MossFormer2 / SepFormer accessibles depuis une portion de piste, avec choix des voix et affectation par ajout ou remplacement. Le suivi des installations globales est corrigé ; les poids présents peuvent être listés par taille et supprimés après confirmation. [Guide et captures](docs/SELECTION-TOOLBOX.md).
 
 **v0.38.0 — Onglet Doublage.** Doublage rejoint Texte et Prononciation dans le panneau de droite, en gardant l’accès à la vidéo, aux répliques et à la timeline. Modes Réplique / Lot avec réglages séparés, progression intégrée et nouveaux essais rattachés à leur réplique. Largeur propre mémorisée et navigation au clavier. [Guide et captures](docs/DUBBING-INSPECTOR.md).

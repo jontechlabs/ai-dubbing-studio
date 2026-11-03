@@ -4514,6 +4514,8 @@ pre {
   color: var(--accent);
 }
 .inspector-dubbing .dub-panel {
+  /* Keep visually hidden absolute labels inside this scroll container. */
+  position: relative;
   flex: 1;
   min-height: 0;
   padding: 0 12px 12px;
