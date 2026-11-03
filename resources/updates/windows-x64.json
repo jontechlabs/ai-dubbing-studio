@@ -1,11 +1,11 @@
 {
-  "version": "0.38.0",
-  "notes": "Doublage devient un onglet du panneau de droite, avec accès au lecteur, aux répliques et à la timeline. Modes Réplique / Lot, réglages conservés, progression intégrée et essais liés à leur réplique. Largeur mémorisée et navigation au clavier. Essais existants, 143 outils MCP et format 26 conservés.",
-  "pub_date": "2026-11-03T12:50:33Z",
+  "version": "0.39.0",
+  "notes": "Commandes de répliques compactes avec pictogrammes, statut commun À revoir, boutons de vignette alignés. Chargement des modèles affiché, résultats effacés lors d’une nouvelle sélection. Séparation de deux ou trois voix depuis une portion de piste, choix des sorties et affectation par ajout ou remplacement. Suivi des installations MossFormer2 corrigé et suppression des poids de modèles avec confirmation. Vidéo, SRT et essais conservés.",
+  "pub_date": "2026-11-03T16:15:18Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSdFFyMUJGTFp3NkkxZVJUdnpuOHFMSUhoRkxnZXZjMGRnVXA0cXFxamU2d0EwNGI2M0lLMXFuTEhRNFFKUmNKM0lMSm1CQW85ek53MGIzMjY4RGcweTMwaXBjZktsVXdZPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkzNzA5NDk1CWZpbGU6QUkgRHViYmluZyBTdHVkaW9fMC4zOC4wX3g2NC1zZXR1cC5leGUJdmVyc2lvbjowLjM4LjAKSVllOW16SEh1S29GRDhFeTR5Y1B6OHRGRmZyRDFzMW9jTkhmaXFaeEdSMUhrODYwb2x6ZDhjQ2JvMStYdmttVFRlVkNXekJZTTVQTTJuMTh1UFZOQ2c9PQo=",
-      "url": "https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.38.0/AI-Dubbing-Studio-0.38.0-Setup.exe"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSdFFyMUJGTFp3NkczZERXYnRjaGxjMGxpYVYrZk1IRFZlc2FBOXh5dWRvZFViY0RqTFpTL291SzdCdXd2cWo3d2o5RDZKVVJzdS9FYUo2YWE2UndVS29tS2R4Z3hpVWdnPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkzNzIxNjkxCWZpbGU6QUkgRHViYmluZyBTdHVkaW9fMC4zOS4wX3g2NC1zZXR1cC5leGUJdmVyc2lvbjowLjM5LjAKblgva2h3Q3dybi9lRWRWOTd2UERTV294Q1NYSThmOXRJZWF2UTZXanNVNEFaRmpURE1yVzdvMTN3TFE4Zk9mRWxuZ1VvTkx6ZE9KMTJVd3NCU1BhQ0E9PQo=",
+      "url": "https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.39.0/AI-Dubbing-Studio-0.39.0-Setup.exe"
     }
   }
 }
