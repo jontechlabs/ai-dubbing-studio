@@ -341,7 +341,7 @@ mod tests {
         {
             let status = std::process::Command::new("cmd")
                 .args(["/C", "mklink", "/J"])
-                .arg(d.path().join("model/link"))
+                .arg(d.path().join("model").join("link"))
                 .arg(d.path().join("outside"))
                 .status()
                 .unwrap();
