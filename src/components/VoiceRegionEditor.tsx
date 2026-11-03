@@ -1,5 +1,22 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Scissors, X, Play, Square, VolumeX, RotateCcw } from 'lucide-react';
+import {
+  Scissors,
+  X,
+  Play,
+  Square,
+  VolumeX,
+  RotateCcw,
+  Check,
+  Scan,
+  AudioLines,
+  Plus,
+  MoveHorizontal,
+  SlidersHorizontal,
+  Waves,
+  Info,
+  LoaderCircle,
+} from 'lucide-react';
+import { Modal } from './Modal';
 import { useTranslation } from 'react-i18next';
 import type { Generation, Project } from '../domain/types';
 import {
@@ -42,6 +59,7 @@ export function VoiceRegionEditor({
   onClose: () => void;
 }) {
   const { t } = useTranslation();
+  const [tool, setTool] = useState<'fades' | 'effects' | 'help' | null>(null);
   const [validating, setValidating] = useState(false);
   const busy = externalBusy || validating;
   const editToken = useRef(0);
@@ -388,7 +406,7 @@ export function VoiceRegionEditor({
           {t('voiceRegionEditor')}
         </strong>
         <span>{generation.text}</span>
-        <button onClick={onClose} aria-label={t('closeVoiceEditor')}>
+        <button onClick={onClose} aria-label={t('closeVoiceEditor')} title={t('closeVoiceEditor')}>
           <X size={16} />
         </button>
       </div>
@@ -523,7 +541,7 @@ export function VoiceRegionEditor({
       )}
       <div className="voice-edit-controls">
         <label>
-          {t('voiceSelectionStart')}
+          {t('compact.startMs')}
           <input
             type="number"
             aria-label={t('voiceSelectionStart')}
@@ -535,7 +553,7 @@ export function VoiceRegionEditor({
           />
         </label>
         <label>
-          {t('voiceSelectionEnd')}
+          {t('compact.endMs')}
           <input
             type="number"
             aria-label={t('voiceSelectionEnd')}
@@ -546,20 +564,41 @@ export function VoiceRegionEditor({
             onChange={(e) => input('end', Number(e.target.value))}
           />
         </label>
-        <button disabled={busy} onClick={() => setRange({ start: 0, end: total })}>
-          {t('voiceSelectAll')}
+        <button
+          disabled={busy}
+          onClick={() => setRange({ start: 0, end: total })}
+          aria-label={t('voiceSelectAll')}
+          title={t('voiceSelectAll')}
+        >
+          <Scan size={15} />
         </button>
-        <button disabled={busy} onClick={() => (playing || loading ? stop() : void preview())}>
-          {playing ? <Square size={13} /> : <Play size={13} />}{' '}
-          {t(loading ? 'voicePreparing' : playing ? 'voiceStopPreview' : 'voicePreview')}
+        <button
+          disabled={busy}
+          onClick={() => (playing || loading ? stop() : void preview())}
+          aria-label={t(loading ? 'voicePreparing' : playing ? 'voiceStopPreview' : 'voicePreview')}
+          title={t(loading ? 'voicePreparing' : playing ? 'voiceStopPreview' : 'voicePreview')}
+        >
+          {loading ? (
+            <LoaderCircle className="spin" size={15} />
+          ) : playing ? (
+            <Square size={15} />
+          ) : (
+            <Play size={15} />
+          )}
         </button>
-        <button disabled={busy} onClick={() => void preview(true)}>
-          <Play size={13} /> {t('voiceOriginalPreview')}
+        <button
+          disabled={busy}
+          onClick={() => void preview(true)}
+          aria-label={t('voiceOriginalPreview')}
+          title={t('voiceOriginalPreview')}
+        >
+          <AudioLines size={15} />
         </button>
         <label>
-          {t('voiceVolume')}
+          {t('compact.volume')}
           <input
             type="range"
+            aria-label={t('voiceVolume')}
             min={0}
             max={2}
             step={0.05}
@@ -569,62 +608,32 @@ export function VoiceRegionEditor({
           />
           <output>{Math.round(gain * 100)}%</output>
         </label>
-        <button disabled={busy || !length} onClick={() => apply({ kind: 'gain', gain })}>
-          {t('voiceApplyVolume')}
-        </button>
-        <label>
-          {t('voiceFadeIn')}
-          <input
-            type="number"
-            aria-label={t('voiceFadeIn')}
-            min={0}
-            max={Math.max(0, length - fadeOut)}
-            value={fadeIn}
-            disabled={busy || !length}
-            onChange={(e) => setFadeIn(Number(e.target.value))}
-          />
-        </label>
-        <label>
-          {t('voiceFadeOut')}
-          <input
-            type="number"
-            aria-label={t('voiceFadeOut')}
-            min={0}
-            max={Math.max(0, length - fadeIn)}
-            value={fadeOut}
-            disabled={busy || !length}
-            onChange={(e) => setFadeOut(Number(e.target.value))}
-          />
-        </label>
         <button
           disabled={busy || !length}
-          onClick={() => apply({ kind: 'fade', fadeInMs: fadeIn, fadeOutMs: fadeOut })}
+          onClick={() => apply({ kind: 'gain', gain })}
+          aria-label={t('voiceApplyVolume')}
+          title={t('voiceApplyVolume')}
         >
-          {t('voiceApplyFades')}
+          <Check size={15} />
         </button>
         <button
           disabled={busy || !length}
-          onClick={() => {
-            apply({ kind: 'fade', fadeInMs: 0, fadeOutMs: 0 });
-            setFadeIn(0);
-            setFadeOut(0);
-          }}
+          onClick={() => apply({ kind: 'gain', gain: 0 })}
+          aria-label={t('voiceMuteSelection')}
+          title={t('voiceMuteSelection')}
         >
-          {t('voiceClearFades')}
-        </button>
-        <button disabled={busy || !length} onClick={() => apply({ kind: 'gain', gain: 0 })}>
-          <VolumeX size={13} />
-          {t('voiceMuteSelection')}
+          <VolumeX size={15} />
         </button>
         <button
           disabled={busy || !length || length === total}
           onClick={() => apply({ kind: 'delete' })}
+          aria-label={t('voiceDeleteSelection')}
+          title={t('voiceDeleteSelection')}
         >
-          <Scissors size={13} />
-          {t('voiceDeleteSelection')}
+          <Scissors size={15} />
         </button>
         <label>
-          {t('voiceDurationAmount')}
+          {t('compact.durationMs')}
           <input
             type="number"
             aria-label={t('voiceDurationAmount')}
@@ -638,14 +647,18 @@ export function VoiceRegionEditor({
         <button
           disabled={busy || !Number.isSafeInteger(amount) || amount < 1}
           onClick={() => apply({ kind: 'silence', durationMs: amount })}
+          aria-label={t('voiceInsertSilence')}
+          title={t('voiceInsertSilence')}
         >
-          {t('voiceInsertSilence')}
+          <Plus size={15} />
         </button>
         <button
           disabled={busy || !length || !Number.isSafeInteger(amount) || amount < 1}
           onClick={() => apply({ kind: 'stretch', durationMs: amount })}
+          aria-label={t('voiceStretchSelection')}
+          title={t('voiceStretchSelection')}
         >
-          {t('voiceStretchSelection')}
+          <MoveHorizontal size={15} />
         </button>
         <button
           disabled={busy || !project.voiceEdits?.[generation.id]}
@@ -655,53 +668,130 @@ export function VoiceRegionEditor({
             setRange({ start: 0, end: 0 });
             setError('');
           }}
+          aria-label={t('voiceResetEdit')}
+          title={t('voiceResetEdit')}
         >
-          <RotateCcw size={13} />
-          {t('voiceResetEdit')}
+          <RotateCcw size={15} />
+        </button>
+        <button
+          aria-label={t('compact.fades')}
+          title={t('compact.fades')}
+          disabled={busy || !length}
+          onClick={() => setTool('fades')}
+        >
+          <SlidersHorizontal size={15} />
+        </button>
+        <button
+          aria-label={t('fxTitle')}
+          title={t('fxTitle')}
+          disabled={busy}
+          onClick={() => setTool('effects')}
+        >
+          <Waves size={15} />
+        </button>
+        <button
+          aria-label={t('voiceEditHelp')}
+          title={t('voiceEditHelp')}
+          onClick={() => setTool('help')}
+        >
+          <Info size={15} />
         </button>
       </div>
-      <details className="voice-effects-panel">
-        <summary>{t('fxTitle')}</summary>
-        <p className="panel-description">
-          {t(length > 0 ? 'fxVoiceSelectionHint' : 'fxVoiceWholeHint')}
-        </p>
-        <EffectsChainEditor
-          key={`${generation.id}:${start}:${end}:${JSON.stringify(plan.pieces.map((p) => p.effects ?? []))}`}
-          initial={(() => {
-            let offset = 0;
-            for (const piece of plan.pieces) {
-              offset += piece.durationMs;
-              if (offset > (length > 0 ? start : 0)) return piece.effects ?? [];
-            }
-            return [];
-          })()}
-          disabled={busy || validating || loading}
-          allowEmpty
-          applyLabel={t('fxApplyVoice')}
-          onApply={(effects) => void apply({ kind: 'effects', effects })}
-          onPreview={(effects) => {
-            try {
-              const candidate = editVoice(
-                project,
-                generation.id,
-                length > 0 ? start : 0,
-                length > 0 ? end : total,
-                { kind: 'effects', effects },
-              );
-              void preview(false, candidate.voiceEdits?.[generation.id]);
-            } catch (e) {
-              setError(String(e));
-            }
-          }}
-        />
-      </details>
+      {tool === 'effects' && (
+        <Modal title={t('fxTitle')} onClose={() => setTool(null)}>
+          <div className="voice-effects-panel">
+            <p className="panel-description">
+              {t(length > 0 ? 'fxVoiceSelectionHint' : 'fxVoiceWholeHint')}
+            </p>
+            <EffectsChainEditor
+              key={`${generation.id}:${start}:${end}:${JSON.stringify(plan.pieces.map((p) => p.effects ?? []))}`}
+              initial={(() => {
+                let offset = 0;
+                for (const piece of plan.pieces) {
+                  offset += piece.durationMs;
+                  if (offset > (length > 0 ? start : 0)) return piece.effects ?? [];
+                }
+                return [];
+              })()}
+              disabled={busy || validating || loading}
+              allowEmpty
+              applyLabel={t('fxApplyVoice')}
+              onApply={(effects) => void apply({ kind: 'effects', effects })}
+              onPreview={(effects) => {
+                try {
+                  const candidate = editVoice(
+                    project,
+                    generation.id,
+                    length > 0 ? start : 0,
+                    length > 0 ? end : total,
+                    { kind: 'effects', effects },
+                  );
+                  void preview(false, candidate.voiceEdits?.[generation.id]);
+                } catch (e) {
+                  setError(String(e));
+                }
+              }}
+            />
+          </div>
+        </Modal>
+      )}
+      {tool === 'fades' && (
+        <Modal title={t('compact.fades')} onClose={() => setTool(null)}>
+          <div className="voice-fade-settings voice-edit-controls">
+            {' '}
+            <label>
+              {t('voiceFadeIn')}
+              <input
+                type="number"
+                aria-label={t('voiceFadeIn')}
+                min={0}
+                max={Math.max(0, length - fadeOut)}
+                value={fadeIn}
+                disabled={busy || !length}
+                onChange={(e) => setFadeIn(Number(e.target.value))}
+              />
+            </label>
+            <label>
+              {t('voiceFadeOut')}
+              <input
+                type="number"
+                aria-label={t('voiceFadeOut')}
+                min={0}
+                max={Math.max(0, length - fadeIn)}
+                value={fadeOut}
+                disabled={busy || !length}
+                onChange={(e) => setFadeOut(Number(e.target.value))}
+              />
+            </label>
+            <button
+              disabled={busy || !length}
+              onClick={() => apply({ kind: 'fade', fadeInMs: fadeIn, fadeOutMs: fadeOut })}
+            >
+              {t('voiceApplyFades')}
+            </button>
+            <button
+              disabled={busy || !length}
+              onClick={() => {
+                apply({ kind: 'fade', fadeInMs: 0, fadeOutMs: 0 });
+                setFadeIn(0);
+                setFadeOut(0);
+              }}
+            >
+              {t('voiceClearFades')}
+            </button>
+          </div>
+        </Modal>
+      )}
       {validating && <p role="status">{t('voiceEditValidating')}</p>}
-      <details className="voice-editor-help">
-        <summary>{t('voiceEditHelp')}</summary>
-        <small>{t('voiceOriginalKept')}</small>
-        <small>{t('fxWaveformHint')}</small>
-        <small>{t('voiceEditHint')}</small>
-      </details>
+      {tool === 'help' && (
+        <Modal title={t('voiceEditHelp')} onClose={() => setTool(null)}>
+          <div className="voice-editor-help">
+            <small>{t('voiceOriginalKept')}</small>
+            <small>{t('fxWaveformHint')}</small>
+            <small>{t('voiceEditHint')}</small>
+          </div>
+        </Modal>
+      )}
       {error && <p role="alert">{t(error)}</p>}
     </section>
   );

@@ -1,5 +1,18 @@
 import { useEffect, useRef, useState } from 'react';
-import { Check, Download, Mic2, Play, RefreshCw, Trash2 } from 'lucide-react';
+import {
+  Check,
+  Download,
+  Mic2,
+  Play,
+  RefreshCw,
+  Trash2,
+  FileText,
+  Settings2,
+  Wrench,
+  ListMusic,
+  Square,
+} from 'lucide-react';
+import { IconButton } from './IconButton';
 import { useTranslation } from 'react-i18next';
 import type { Dialogue, Generation, Job, Project, VoiceSettings } from '../domain/types';
 import {
@@ -409,27 +422,60 @@ export function DubPanel({
     if (batch) setBatchSettings({ ...settings, mode, ...change });
     else onEdit((p) => editVoiceSettings(p, line.id, { ...settings, mode, ...change }));
   };
-  return (
-    <div className="panel-body dub-panel">
-      {(task.job || task.pending || task.error) && (
-        <div className="dub-task-progress">
-          <CurrentJobProgress
-            job={task.job}
-            starting={task.pending}
-            error={task.error}
-            onError={onError}
-            onRetry={(id) =>
-              task.start(async () => {
-                await snapshot();
-                return (await bridge.retryJob(id)) ?? id;
-              })
-            }
-          />
-        </div>
+  const textEditor = !batch && (
+    <section id="dub-text" className="dub-section dub-text-section">
+      {' '}
+      <label className="field">
+        <span>{t('ttsResolvedText')}</span>
+        <textarea
+          aria-label={t('ttsResolvedText')}
+          value={line.ttsText ?? dialogueText(project, line, 'target')}
+          disabled={busy}
+          rows={3}
+          onChange={(e) => onEdit((p) => editDialogue(p, line.id, 'tts', e.target.value))}
+        />
+      </label>
+      <p className="panel-description">{t('workbench.sharedVoiceText')}</p>
+      {inputText !== (line.ttsText ?? dialogueText(project, line, 'target')) && (
+        <p className="pronunciation-preview">
+          {t('workbench.resolvedPronunciation')}: {inputText}
+        </p>
       )}
-      {line.excludedFromDubbing && !batch && (
-        <p className="panel-description">{t('dialogueExcludedHint')}</p>
-      )}
+      <details className="dub-original-text" open>
+        <summary>{t('workbench.originalText')}</summary>
+        {(line.sourceCueIds.length
+          ? line.sourceCueIds.map((id) => project.sourceCues.find((c) => c.id === id)!)
+          : [{ id: '', text: dialogueText(project, line, 'source') }]
+        ).map((cue, index, cues) => (
+          <label className="field" key={cue.id || 'missing'}>
+            <span>
+              {t('original')}
+              {cues.length > 1 ? ` ${index + 1}` : ''}
+            </span>
+            <textarea
+              aria-label={t('workbench.originalText') + (cues.length > 1 ? ` ${index + 1}` : '')}
+              value={cue.text}
+              disabled={busy}
+              rows={2}
+              onChange={(e) =>
+                onEdit((p) =>
+                  cue.id
+                    ? editCueText(p, 'source', cue.id, e.target.value)
+                    : editDialogue(p, line.id, 'source', e.target.value),
+                )
+              }
+            />
+          </label>
+        ))}
+      </details>
+    </section>
+  );
+  const tools = !batch && (
+    <section id="dub-tools" className="dub-section dub-tools">
+      <h3>
+        <Wrench size={15} />
+        {t('compact.tools')}
+      </h3>{' '}
       {!batch && (
         <SpeakerSeparationPanel
           key={line.id}
@@ -446,10 +492,6 @@ export function DubPanel({
           onAudition={onReferencePlay}
         />
       )}
-      {!batch && speakerDubbingState(project).parents.has(line.id) && (
-        <p className="panel-description">{t('overlap.parentDisabled')}</p>
-      )}
-      <h3>{variant.name}</h3>
       {!batch && (
         <CharacterSuggestion
           key={'character:' + project.id + line.id}
@@ -494,6 +536,79 @@ export function DubPanel({
           />
         </div>
       )}
+    </section>
+  );
+  return (
+    <div className="panel-body dub-panel">
+      <nav className="dub-navigation" aria-label={t('compact.dubbingNavigation')}>
+        {(
+          [
+            [FileText, 'compact.text', 'dub-text'],
+            [Settings2, 'compact.voice', 'dub-voice'],
+            [ListMusic, 'compact.takes', 'dub-takes'],
+            [Wrench, 'compact.tools', 'dub-tools'],
+          ] as const
+        )
+          .filter(([, , id]) => !batch || id === 'dub-voice' || (id === 'dub-takes' && task.result))
+          .map(([Icon, label, id]) => (
+            <IconButton
+              key={id}
+              label={t(label)}
+              onClick={(event) => {
+                const container = event.currentTarget.closest('.dub-panel');
+                const section = container?.querySelector<HTMLElement>('#' + id);
+                if (!container || !section) return;
+                const header =
+                  container.querySelector('.dub-navigation')?.getBoundingClientRect().height ?? 0;
+                const progress =
+                  container.querySelector('.dub-task-progress')?.getBoundingClientRect().height ??
+                  0;
+                container.scrollTo({
+                  top: Math.max(
+                    0,
+                    section.getBoundingClientRect().top -
+                      container.getBoundingClientRect().top +
+                      container.scrollTop -
+                      header -
+                      progress -
+                      12,
+                  ),
+                  behavior: 'smooth',
+                });
+              }}
+            >
+              <Icon size={16} />
+              <span>{t(label)}</span>
+            </IconButton>
+          ))}
+      </nav>
+      {(task.job || task.pending || task.error) && (
+        <div className="dub-task-progress">
+          <CurrentJobProgress
+            job={task.job}
+            starting={task.pending}
+            error={task.error}
+            onError={onError}
+            onRetry={(id) =>
+              task.start(async () => {
+                await snapshot();
+                return (await bridge.retryJob(id)) ?? id;
+              })
+            }
+          />
+        </div>
+      )}
+      {textEditor}
+      {line.excludedFromDubbing && !batch && (
+        <p className="panel-description">{t('dialogueExcludedHint')}</p>
+      )}
+      {!batch && speakerDubbingState(project).parents.has(line.id) && (
+        <p className="panel-description">{t('overlap.parentDisabled')}</p>
+      )}
+      <h3 id="dub-voice" className="dub-section-title">
+        <Mic2 size={15} />
+        {variant.name}
+      </h3>
       <label className="field">
         <span>{t('phase6Engine')}</span>
         <select
@@ -955,6 +1070,7 @@ export function DubPanel({
           }
         />
       </label>
+      {tools}
       {batch ? (
         <BatchDubbingAction
           project={project}
@@ -968,51 +1084,6 @@ export function DubPanel({
         />
       ) : (
         <>
-          <label className="field">
-            <span>{t('ttsResolvedText')}</span>
-            <textarea
-              aria-label={t('ttsResolvedText')}
-              value={line.ttsText ?? dialogueText(project, line, 'target')}
-              disabled={busy}
-              rows={3}
-              onChange={(e) => onEdit((p) => editDialogue(p, line.id, 'tts', e.target.value))}
-            />
-          </label>
-          <p className="panel-description">{t('workbench.sharedVoiceText')}</p>
-          {inputText !== (line.ttsText ?? dialogueText(project, line, 'target')) && (
-            <p className="pronunciation-preview">
-              {t('workbench.resolvedPronunciation')}: {inputText}
-            </p>
-          )}
-          <details className="dub-original-text" open>
-            <summary>{t('workbench.originalText')}</summary>
-            {(line.sourceCueIds.length
-              ? line.sourceCueIds.map((id) => project.sourceCues.find((c) => c.id === id)!)
-              : [{ id: '', text: dialogueText(project, line, 'source') }]
-            ).map((cue, index, cues) => (
-              <label className="field" key={cue.id || 'missing'}>
-                <span>
-                  {t('original')}
-                  {cues.length > 1 ? ` ${index + 1}` : ''}
-                </span>
-                <textarea
-                  aria-label={
-                    t('workbench.originalText') + (cues.length > 1 ? ` ${index + 1}` : '')
-                  }
-                  value={cue.text}
-                  disabled={busy}
-                  rows={2}
-                  onChange={(e) =>
-                    onEdit((p) =>
-                      cue.id
-                        ? editCueText(p, 'source', cue.id, e.target.value)
-                        : editDialogue(p, line.id, 'source', e.target.value),
-                    )
-                  }
-                />
-              </label>
-            ))}
-          </details>
           {(referenceMissing ||
             transcriptMissing ||
             shortReference ||
@@ -1046,82 +1117,6 @@ export function DubPanel({
             onModels={onModels}
             onReady={setPipelineReady}
           />
-          <label className="field">
-            <span>{t('ttsTakeCount')}</span>
-            <select
-              value={takeCount}
-              disabled={busy}
-              onChange={(event) => setTakeCount(Number(event.target.value) as typeof takeCount)}
-            >
-              {([1, 2, 3, 4] as const).map((count) => (
-                <option value={count} key={count}>
-                  {count}
-                </option>
-              ))}
-            </select>
-          </label>
-          {takeCount > 1 && (
-            <p className="panel-description">
-              {t(pipeline ? 'ttsTrialsPipelineHint' : 'ttsTrialsHint')}
-            </p>
-          )}
-          <button
-            className="button accent wide"
-            disabled={
-              !bridge.native ||
-              line.excludedFromDubbing ||
-              (pipeline && !pipelineReady) ||
-              busy ||
-              referencePending ||
-              !ready ||
-              referenceMissing ||
-              guideIssue ||
-              transcriptMissing ||
-              shortReference ||
-              !inputText ||
-              inputText.length > 1000
-            }
-            onClick={() => {
-              setWorking(true);
-              onEdit((p) => ({
-                ...editVoiceSettings(p, line.id, { ...settings, mode, accent }),
-                modelPreferences: {
-                  ...p.modelPreferences,
-                  ttsProviderId: variant.providerId,
-                  voiceVariantId: variant.id,
-                },
-              }));
-              void task
-                .start(() =>
-                  snapshot().then(() =>
-                    pipeline
-                      ? bridge.generateDubbingPipeline(
-                          {
-                            lineId: line.id,
-                            tts: { ...settings, mode, accent },
-                            conversion,
-                            guideStrength,
-                          },
-                          takeCount,
-                        )
-                      : bridge.generateLine(
-                          line.id,
-                          {
-                            ...settings,
-                            mode,
-                            accent,
-                          },
-                          takeCount,
-                        ),
-                  ),
-                )
-                .catch((e) => onError(String(e)))
-                .finally(() => setWorking(false));
-            }}
-          >
-            <Mic2 size={15} />
-            {takeCount === 1 ? t('ttsGenerateNew') : t('ttsGenerateMultiple', { count: takeCount })}
-          </button>
         </>
       )}
       {(!batch || task.result) && (
@@ -1133,7 +1128,7 @@ export function DubPanel({
               })}
             </p>
           )}
-          <div className="generation-heading">
+          <div id="dub-takes" className="generation-heading">
             <h3>{t('ttsGenerations', { count: generations.length })}</h3>
             <button
               className="text-button"
@@ -1281,16 +1276,29 @@ export function DubPanel({
                   />
                 )}
                 <div className="generation-actions">
-                  <button className="button subtle" onClick={() => onPlay(generation)}>
-                    <Play size={13} />
-                    {t(activeGenerationId === generation.id ? 'ttsStopListening' : 'listen')}
+                  <button
+                    className="button subtle compact-action"
+                    aria-label={t(
+                      activeGenerationId === generation.id ? 'ttsStopListening' : 'listen',
+                    )}
+                    title={t(activeGenerationId === generation.id ? 'ttsStopListening' : 'listen')}
+                    onClick={() => onPlay(generation)}
+                  >
+                    {activeGenerationId === generation.id ? (
+                      <Square size={15} />
+                    ) : (
+                      <Play size={15} />
+                    )}
                   </button>
                   <button
                     className="text-button"
                     disabled={busy || active}
                     onClick={() => onEdit((p) => selectGeneration(p, generation.id))}
+                    aria-label={t('ttsSelect')}
+                    aria-pressed={active}
+                    title={t('ttsSelect')}
                   >
-                    {t('ttsSelect')}
+                    <Check size={15} />
                   </button>
                   <button
                     className="text-button"
@@ -1341,6 +1349,87 @@ export function DubPanel({
             </div>
           )}
         </>
+      )}
+      {!batch && (
+        <div className="dub-generate-bar">
+          {' '}
+          <label className="field">
+            <span>{t('ttsTakeCount')}</span>
+            <select
+              value={takeCount}
+              disabled={busy}
+              onChange={(event) => setTakeCount(Number(event.target.value) as typeof takeCount)}
+            >
+              {([1, 2, 3, 4] as const).map((count) => (
+                <option value={count} key={count}>
+                  {count}
+                </option>
+              ))}
+            </select>
+          </label>
+          {takeCount > 1 && (
+            <p className="panel-description">
+              {t(pipeline ? 'ttsTrialsPipelineHint' : 'ttsTrialsHint')}
+            </p>
+          )}
+          <button
+            className="button accent wide"
+            disabled={
+              !bridge.native ||
+              line.excludedFromDubbing ||
+              (pipeline && !pipelineReady) ||
+              busy ||
+              referencePending ||
+              !ready ||
+              referenceMissing ||
+              guideIssue ||
+              transcriptMissing ||
+              shortReference ||
+              !inputText ||
+              inputText.length > 1000
+            }
+            onClick={() => {
+              setWorking(true);
+              onEdit((p) => ({
+                ...editVoiceSettings(p, line.id, { ...settings, mode, accent }),
+                modelPreferences: {
+                  ...p.modelPreferences,
+                  ttsProviderId: variant.providerId,
+                  voiceVariantId: variant.id,
+                },
+              }));
+              void task
+                .start(() =>
+                  snapshot().then(() =>
+                    pipeline
+                      ? bridge.generateDubbingPipeline(
+                          {
+                            lineId: line.id,
+                            tts: { ...settings, mode, accent },
+                            conversion,
+                            guideStrength,
+                          },
+                          takeCount,
+                        )
+                      : bridge.generateLine(
+                          line.id,
+                          {
+                            ...settings,
+                            mode,
+                            accent,
+                          },
+                          takeCount,
+                        ),
+                  ),
+                )
+                .catch((e) => onError(String(e)))
+                .finally(() => setWorking(false));
+            }}
+          >
+            <Mic2 size={15} />
+            {takeCount === 1 ? t('ttsGenerateNew') : t('ttsGenerateMultiple', { count: takeCount })}
+          </button>
+        </div>
       )}
     </div>
   );

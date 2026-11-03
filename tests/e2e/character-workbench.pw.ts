@@ -52,6 +52,7 @@ test('merge trims and joins selected references as one new default while retaini
 });
 test('bounded guided identification preserves assignments until explicit replacement is chosen', async ({ page }) => {
   await ready(page); await page.getByRole('button', { name: 'Personnages', exact: true }).click();
+  await page.locator('.character-analysis > summary').click();
   await page.getByRole('combobox', { name: 'Zone à analyser' }).selectOption('range');
   await page.getByRole('spinbutton', { name: 'Début de l’analyse (s)' }).fill('0'); await page.getByRole('spinbutton', { name: 'Fin de l’analyse (s)' }).fill('4');
   await page.getByRole('combobox', { name: 'Référence pour retrouver un personnage (facultatif)' }).selectOption('character-1');

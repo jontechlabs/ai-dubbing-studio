@@ -1,5 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
-import { Plus, Users, ScanLine, Download, Trash2, LoaderCircle, RotateCcw } from 'lucide-react';
+import {
+  Users,
+  ScanLine,
+  Download,
+  Trash2,
+  LoaderCircle,
+  RotateCcw,
+  UserPlus,
+  UserCheck,
+} from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { AudioSelection, Dialogue, Job, Project, VoiceReference } from '../domain/types';
 import {
@@ -110,7 +119,9 @@ export function CharactersPanel({
     >
       <p className="panel-description">{t('charactersHint')}</p>
       <button
-        className="button subtle"
+        className="button subtle compact-action speaker-reset-action"
+        aria-label={t('speakerReset')}
+        title={t('speakerReset')}
         disabled={
           active ||
           working ||
@@ -123,7 +134,7 @@ export function CharactersPanel({
           setResetOpen(true);
         }}
       >
-        <RotateCcw size={14} /> {t('speakerReset')}
+        <RotateCcw size={15} />
       </button>
       {resetOpen && (
         <Modal title={t('speakerReset')} onClose={() => setResetOpen(false)}>
@@ -168,11 +179,11 @@ export function CharactersPanel({
           </div>
         </Modal>
       )}
-      <div className="settings-section">
-        <h3>
+      <details className="settings-section character-analysis" open={!!analysis}>
+        <summary>
           <ScanLine size={16} />
           {t('speakerIdentify')}
-        </h3>
+        </summary>
         <p className="panel-description">{t('speakerHint')}</p>
         {!runtime?.installed ? (
           <button className="button accent wide" onClick={onModels}>
@@ -352,7 +363,7 @@ export function CharactersPanel({
             </button>
           </div>
         )}
-      </div>
+      </details>
       <form
         className="character-create"
         onSubmit={(event) => {
@@ -375,9 +386,13 @@ export function CharactersPanel({
           value={name}
           onChange={(event) => setName(event.target.value)}
         />
-        <button className="button accent" disabled={!name.trim()}>
-          <Plus size={15} />
-          {t('characterAdd')}
+        <button
+          className="button accent compact-action"
+          aria-label={t('characterAdd')}
+          title={t('characterAdd')}
+          disabled={!name.trim()}
+        >
+          <UserPlus size={15} />
         </button>
       </form>
       <CharacterGallery
@@ -473,10 +488,13 @@ export function CharactersPanel({
                 onNavigate={onNavigate}
               />
               <button
-                className="button subtle wide"
+                className="button subtle character-assign-selected"
+                title={t('characterAssignSelected')}
+                aria-label={t('characterAssignSelected')}
                 disabled={!selectedId}
                 onClick={() => onEdit((p) => assignCharacter(p, [selectedId!], character.id))}
               >
+                <UserCheck size={15} />
                 {t('characterAssignSelected')}
               </button>
               <form
@@ -514,8 +532,13 @@ export function CharactersPanel({
                     onChange={(event) => setTo(Number(event.target.value))}
                   />
                 </label>
-                <button className="button subtle" disabled={!project.dialogues.length || from > to}>
-                  {t('characterAssignRange')}
+                <button
+                  className="button subtle compact-action"
+                  aria-label={t('characterAssignRange')}
+                  title={t('characterAssignRange')}
+                  disabled={!project.dialogues.length || from > to}
+                >
+                  <UserCheck size={15} />
                 </button>
               </form>
               <h3>{t('voiceReferences')}</h3>

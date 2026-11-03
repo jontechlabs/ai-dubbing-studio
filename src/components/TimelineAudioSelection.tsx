@@ -1,5 +1,16 @@
 import { useEffect, useState } from 'react';
-import { Play, Square, Volume2, VolumeX, X } from 'lucide-react';
+import {
+  Play,
+  Square,
+  Volume2,
+  VolumeX,
+  X,
+  RotateCcw,
+  SlidersHorizontal,
+  ArrowLeftRight,
+  Users,
+  AudioLines,
+} from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { AudioSelection, Project } from '../domain/types';
 import {
@@ -168,19 +179,31 @@ export function TimelineAudioSelection({
         <output>{Math.round(gain * 100)}%</output>
       </label>
       <button
-        className="button subtle"
+        className="button subtle compact-action"
         disabled={busy}
+        title={t(silent ? 'makeRegionAudible' : 'makeRegionSilent')}
+        aria-label={t(silent ? 'makeRegionAudible' : 'makeRegionSilent')}
         aria-pressed={silent}
         onClick={() => change(gain || 1, !silent)}
       >
         {silent ? <Volume2 size={14} /> : <VolumeX size={14} />}
-        {t(silent ? 'makeRegionAudible' : 'makeRegionSilent')}
       </button>
-      <button className="text-button" disabled={busy} onClick={() => change(1, false)}>
-        {t('timelineSelectionNormal')}
+      <button
+        className="text-button compact-action"
+        disabled={busy}
+        onClick={() => change(1, false)}
+        title={t('timelineSelectionNormal')}
+        aria-label={t('timelineSelectionNormal')}
+      >
+        <RotateCcw size={14} />
       </button>
-      <button className="text-button" onClick={onAdvanced}>
-        {t('timelineSelectionAdvanced')}
+      <button
+        className="text-button compact-action"
+        onClick={onAdvanced}
+        title={t('timelineSelectionAdvanced')}
+        aria-label={t('timelineSelectionAdvanced')}
+      >
+        <SlidersHorizontal size={14} />
       </button>
       {track.kind !== 'dubbing' && (
         <>
@@ -205,7 +228,7 @@ export function TimelineAudioSelection({
               ))}
           </select>
           <button
-            className="button subtle"
+            className="button subtle compact-action"
             disabled={
               busy ||
               !audioTracks(project).some(
@@ -223,14 +246,27 @@ export function TimelineAudioSelection({
                 operation: 'swap',
               })
             }
+            title={t('characterSwapSelection')}
+            aria-label={t('characterSwapSelection')}
           >
-            {t('characterSwapSelection')}
+            <ArrowLeftRight size={14} />
           </button>
-          <button className="text-button" disabled={busy} onClick={onCharacters}>
-            {t('speakerIdentifyRange')}
+          <button
+            className="text-button compact-action"
+            disabled={busy}
+            onClick={onCharacters}
+            title={t('speakerIdentifyRange')}
+            aria-label={t('speakerIdentifyRange')}
+          >
+            <Users size={14} />
           </button>
-          <button className="text-button" onClick={onAdvanced}>
-            {t('localSeparationTitle')}
+          <button
+            className="text-button compact-action"
+            onClick={onAdvanced}
+            title={t('localSeparationTitle')}
+            aria-label={t('localSeparationTitle')}
+          >
+            <AudioLines size={14} />
           </button>
         </>
       )}

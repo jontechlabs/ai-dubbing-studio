@@ -1,5 +1,7 @@
 # AI Dubbing Studio
 
+**v0.37.0 — Interface compacte.** Texte prioritaire dans Doublage, navigation rapide, génération accessible en bas de panneau, dock de montage vocal compact avec fondus et effets en fenêtres dédiées, galerie de personnages rapprochée des commandes et pictogrammes avec infobulles. Agencement général, essais et réglages conservés. [Guide et captures](docs/UI-REFINEMENTS.md).
+
 **v0.36.0 — Vignettes et remise à zéro des locuteurs.** La capture choisit une réplique du personnage affiché. Un mini lecteur, une liste de visages détectés et un cadrage visuel réglable permettent de choisir la bonne scène et la bonne personne. Remettez les attributions à zéro en conservant les fiches et références, ou retirez explicitement les fiches du projet. Les sous-titres et tous les essais restent disponibles, avec annulation. **143 outils MCP, format 26.** [Guide](docs/SPEAKER-RESET.md).
 
 **v0.35.0 — 1 à 4 essais par réplique.** Choisir le nombre d’essais dans Doublage ; générations successives avec graines différentes, modèle TTS conservé en mémoire pendant la série, compteur et annulation dans le panneau. Les essais terminés restent disponibles après interruption et le dernier est sélectionné. Compatible avec la chaîne en deux étapes et pilotable par MCP (`count`). [Guide](docs/MULTIPLE-TAKES.md).

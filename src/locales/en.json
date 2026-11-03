@@ -1386,7 +1386,11 @@
   "portraitOpenPreview": "Preview the scene and choose a face",
   "portraitPreviewTitle": "Thumbnail for {{name}}",
   "portraitDetectionProfile": "Face type",
-  "portraitProfile": { "auto": "Automatic", "anime": "Anime / animation", "live": "Live action" },
+  "portraitProfile": {
+    "auto": "Automatic",
+    "anime": "Anime / animation",
+    "live": "Live action"
+  },
   "portraitPreviewVideo": "Thumbnail mini player",
   "portraitPreviewImage": "Scene image to capture",
   "portraitPreviewTime": "Preview position (seconds)",
@@ -1734,5 +1738,17 @@
   "audio8Profile": "Audio8-TTS Realistic 0.6B · GGUF Q8_0 · local multilingual cloning, including French. Model + codec: 1.33 GiB. Apache 2.0 license; community GGUF conversion. Quality and accent depend on the reference. CPU or selected Vulkan GPU, with no silent fallback.",
   "audio8HardwareHint": "Lightweight profile for 16 GB VRAM; choose the RTX 5060 Ti in the Vulkan device list. No additional Python dependencies. File size is not a VRAM measurement; performance on your GPU has not been measured.",
   "audio8CloneHint": "Audio8 requires reference audio and its exact transcript in the recording’s language. Use “Transcribe reference” when needed. Prefer a clean, expressive French reference for French dubbing with less accent transfer.",
-  "audio8StyleHint": "Named mood, regional accent and intonation-guide controls are unavailable for this engine. Text determines the language; the reference supplies delivery and timbre. Quality controls adjust sampling without guaranteeing an accent."
+  "audio8StyleHint": "Named mood, regional accent and intonation-guide controls are unavailable for this engine. Text determines the language; the reference supplies delivery and timbre. Quality controls adjust sampling without guaranteeing an accent.",
+  "compact": {
+    "fades": "Fades",
+    "startMs": "Start · ms",
+    "endMs": "End · ms",
+    "durationMs": "Duration · ms",
+    "volume": "Volume",
+    "dubbingNavigation": "Dubbing panel navigation",
+    "text": "Text",
+    "voice": "Voice",
+    "takes": "Takes",
+    "tools": "Tools"
+  }
 }

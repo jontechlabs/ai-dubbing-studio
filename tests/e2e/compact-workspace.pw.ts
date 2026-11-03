@@ -157,8 +157,8 @@ test('duplicate effect instances keep independent parameters when reordered and 
   await ready(page);
   await page.getByRole('button', { name: 'Doublage 1', exact: true }).dblclick();
   const editor = page.getByRole('region', { name: 'Édition du doublage', exact: true });
-  const fx = editor.locator('.voice-effects-panel');
-  await fx.locator(':scope > summary').click();
+  await editor.getByRole('button', { name: 'Effets audio', exact: true }).click();
+  const fx = page.getByRole('dialog', { name: 'Effets audio', exact: true }).locator('.voice-effects-panel');
   await fx.getByRole('combobox', { name: 'Effet à ajouter', exact: true }).selectOption('pitch');
   for (const [number, value] of [
     [1, '4'],

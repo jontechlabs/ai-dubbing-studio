@@ -91,7 +91,7 @@ test('AI speaker proposals preserve manual corrections and expose editable voice
   await page.getByRole('button',{name:'Personnages',exact:true}).click();
   await page.getByRole('textbox',{name:'Nom du personnage',exact:true}).fill('Narrateur');await page.getByRole('button',{name:'Ajouter',exact:true}).click();
   await page.getByRole('button',{name:'Assigner la réplique sélectionnée'}).click();await expect(page.locator('.save-indicator')).toHaveText('Sauvegardé');
-  await page.getByRole('button',{name:'Identifier les locuteurs par IA',exact:true}).click();
+  await page.locator('.character-analysis > summary').click();await page.getByRole('button',{name:'Identifier les locuteurs par IA',exact:true}).click();
   await expect(page.getByRole('dialog',{name:'Traitements'})).toBeVisible();await page.evaluate(()=>(window as any).__completeSpeakerAnalysis());
   await page.getByRole('button',{name:'Fermer',exact:true}).click();await page.getByRole('button',{name:'Personnages',exact:true}).click();
   await expect(page.getByText('2 groupes de voix proposés')).toBeVisible();await page.getByRole('button',{name:'Créer les personnages et assigner les répliques'}).click();

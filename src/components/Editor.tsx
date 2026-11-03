@@ -1,4 +1,4 @@
-import { Mic2, Play, Type, Scissors, Combine, Trash2 } from 'lucide-react';
+import { Mic2, Play, Type, Scissors, Combine, Trash2, Check } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { dialogueText, editDialogue } from '../domain/subtitles';
@@ -233,21 +233,22 @@ function TimingEditor({
         apply={(start, end) => onEdit((p) => retimeDialogue(p, selected.id, start, end, role))}
       />
       <button
-        className="text-button"
+        className="text-button compact-action"
         title={t('splitHint')}
+        aria-label={t('split')}
         disabled={busy || time < selected.startMs + 100 || time > selected.endMs - 100}
         onClick={() => onEdit((p) => splitDialogue(p, selected.id, time))}
       >
         <Scissors size={13} />
-        {t('split')}
       </button>
       <button
-        className="text-button"
+        className="text-button compact-action"
+        title={t('merge')}
+        aria-label={t('merge')}
         disabled={busy || !next}
         onClick={() => onEdit((p) => mergeDialogue(p, selected.id))}
       >
         <Combine size={13} />
-        {t('merge')}
       </button>
     </div>
   );
@@ -299,8 +300,13 @@ function TimingFields({
         onChange={(event) => setTo(event.target.value)}
         aria-invalid={error}
       />
-      <button className="text-button" disabled={disabled}>
-        {t('timingApply')}
+      <button
+        className="text-button compact-action"
+        title={t('timingApply')}
+        aria-label={t('timingApply')}
+        disabled={disabled}
+      >
+        <Check size={14} />
       </button>
       {error && (
         <span className="warning" role="alert">

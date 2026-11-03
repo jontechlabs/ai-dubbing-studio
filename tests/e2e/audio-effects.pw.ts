@@ -66,8 +66,8 @@ test('voice effect preview keeps project dry until applied and later changes rep
   await editor
     .getByRole('spinbutton', { name: 'Fin de la sélection (ms)', exact: true })
     .fill('900');
-  const fx = editor.locator('.voice-effects-panel');
-  await fx.locator(':scope > summary').click();
+  await editor.getByRole('button', { name: 'Effets audio', exact: true }).click();
+  const fx = page.getByRole('dialog', { name: 'Effets audio', exact: true }).locator('.voice-effects-panel');
   await fx.getByRole('combobox', { name: 'Effet à ajouter', exact: true }).selectOption('pitch');
   await fx.getByRole('button', { name: 'Ajouter un effet', exact: true }).click();
   await fx.getByRole('button', { name: 'Régler Pitch / hauteur · effet 1', exact: true }).click();
