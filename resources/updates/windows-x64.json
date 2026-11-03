@@ -1,11 +1,11 @@
 {
-  "version": "0.36.0",
-  "notes": "Vignettes : mini lecteur, choix parmi les visages détectés et cadrage manuel. Correction du dialogue utilisé lors du changement de personnage. Remise à zéro des locuteurs au choix : conserver les fiches et références ou retirer les fiches ; sous-titres et essais conservés. Annulation disponible. 143 outils MCP, format 26.",
-  "pub_date": "2026-11-03T06:16:36Z",
+  "version": "0.37.0",
+  "notes": "Interface compacte : texte prioritaire et navigation rapide dans Doublage, génération accessible en bas de panneau, dock de montage vocal compact avec fenêtres de fondus et d’effets, galerie de personnages et boutons à pictogramme avec infobulles. Agencement général, essais, paramètres, 143 outils MCP et format 26 conservés.",
+  "pub_date": "2026-11-03T10:38:21Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSdFFyMUJGTFp3Nkc1WFRPNFZTa0ZVeDI1bHhveTRrKzRYWkJoUjV5ckwreEsrRkpDaEdjcGRGellRVVlJbXJrajlNSUt6UDdRUEkxZ3BLRlQvSDhzYlhES0JIVXBXZkFRPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkzNjg1NTY4CWZpbGU6QUkgRHViYmluZyBTdHVkaW9fMC4zNi4wX3g2NC1zZXR1cC5leGUJdmVyc2lvbjowLjM2LjAKQmpob2F4cXduWmR3ek04a0EzWjBjTjVnR3lHRlBhMjlyOGpYT1AyR2VTbzZGdGJIclczdFJSNGF0Z3dNQUNlZGY2by9VVEIwKzFsc25zbmNKTkl6RFE9PQo=",
-      "url": "https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.36.0/AI-Dubbing-Studio-0.36.0-Setup.exe"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSdFFyMUJGTFp3NkRQV3JQdXBocUZhYXdsNXFSYlJ2VUlBb0V5Y1k1TE12UjA2ZjQ4Nlc0bk81L25ZZVFsRUMxTElDYml5T2owc0E5NS9YL1REWVpxSForNGpLbU5zMWcwPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkzNzAxMjQxCWZpbGU6QUkgRHViYmluZyBTdHVkaW9fMC4zNy4wX3g2NC1zZXR1cC5leGUJdmVyc2lvbjowLjM3LjAKNWJSYkU1UXZ2bEdLMmZ3QWc0SzNYUnYrRVk5LzFvWGVYZytraWFJTmpFQnRXMS9hdE1iakh5bUowamtQZmErbEtnMmwxS2EvZmdITHVMT285eVZ4Qnc9PQo=",
+      "url": "https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.37.0/AI-Dubbing-Studio-0.37.0-Setup.exe"
     }
   }
 }
