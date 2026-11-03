@@ -1,6 +1,6 @@
 import {test,expect} from '@playwright/test';
 import {nativeMock} from './nativeMock';
-async function openDub(page:any){await page.locator('.dialogue-card').first().getByRole('button',{name:'Doubler',exact:true}).click();return page.getByRole('dialog',{name:'Doublage',exact:true});}
+async function openDub(page:any){await page.locator('.dialogue-card').first().getByRole('button',{name:'Doubler',exact:true}).click();return page.getByRole('region',{name:'Doublage',exact:true});}
 
 test('reference excerpt can start after twenty seconds, previews only its range and imports exact bounds',async({page})=>{
   await nativeMock(page);await page.goto('/');const panel=await openDub(page);
@@ -38,7 +38,7 @@ test('shift checked selection excludes missing translations and dispatches a com
   await nativeMock(page);await page.goto('/');await expect(page.locator('.dialogue-card').first()).toBeVisible();await page.evaluate(()=>(window as any).__clearTranslation(1));
   await page.getByRole('checkbox',{name:'Cocher la réplique 1 pour le lot',exact:true}).click();await page.getByRole('checkbox',{name:'Cocher la réplique 3 pour le lot',exact:true}).click({modifiers:['Shift']});
   await expect(page.getByRole('checkbox',{name:'Cocher la réplique 2 pour le lot',exact:true})).toBeChecked();
-  await page.getByRole('button',{name:/Doublage par lot/}).click();const panel=page.getByRole('dialog',{name:'Doublage par lot',exact:true});
+  await page.getByRole('button',{name:/Doublage par lot/}).click();const panel=page.getByRole('region',{name:'Doublage par lot',exact:true});
   await expect(panel.getByRole('combobox',{name:'Répliques à doubler'})).toHaveValue('selected');
   await panel.getByRole('button',{name:'Charger un fichier de référence'}).click();await panel.getByRole('spinbutton',{name:'Début de l’extrait (s)'}).fill('30');await panel.getByRole('spinbutton',{name:'Fin de l’extrait (s)'}).fill('38');await panel.getByRole('button',{name:'Utiliser cet extrait'}).click();
   await panel.getByRole('combobox',{name:'Périphérique de génération'}).selectOption('cuda:0');await panel.getByRole('combobox',{name:'Humeur / interprétation'}).selectOption('calm');await panel.getByRole('combobox',{name:'Accent souhaité (consigne)'}).selectOption('fr-FR');
@@ -51,7 +51,7 @@ test('shift checked selection excludes missing translations and dispatches a com
 
 test('all-translated batch keeps current takes unless forced and retains earlier takes after success',async({page})=>{
   await nativeMock(page);await page.goto('/');await expect(page.locator('.dialogue-card').first()).toBeVisible();await page.evaluate(()=>(window as any).__seedDubbing());
-  await page.getByRole('button',{name:/Doublage par lot/}).click();const panel=page.getByRole('dialog',{name:'Doublage par lot',exact:true});
+  await page.getByRole('button',{name:/Doublage par lot/}).click();const panel=page.getByRole('region',{name:'Doublage par lot',exact:true});
   await panel.getByRole('combobox',{name:'Référence vocale',exact:true}).selectOption('current');
   await expect(panel.getByText(/0 à générer · 4 déjà doublées/)).toBeVisible();await expect(panel.getByRole('button',{name:'Doubler 0 répliques'})).toBeDisabled();
   await panel.getByRole('checkbox',{name:/Forcer un nouvel essai/}).check();await expect(panel.getByRole('button',{name:'Doubler 4 répliques'})).toBeEnabled();await panel.getByRole('button',{name:'Doubler 4 répliques'}).click();
@@ -62,7 +62,7 @@ test('all-translated batch keeps current takes unless forced and retains earlier
 });
 
 test('batch progress survives cancel and retry resumes remaining lines with the same settings',async({page})=>{
-  await nativeMock(page);await page.goto('/');await page.getByRole('button',{name:/Doublage par lot/}).click();const panel=page.getByRole('dialog',{name:'Doublage par lot',exact:true});
+  await nativeMock(page);await page.goto('/');await page.getByRole('button',{name:/Doublage par lot/}).click();const panel=page.getByRole('region',{name:'Doublage par lot',exact:true});
   await panel.getByRole('combobox',{name:'Référence vocale',exact:true}).selectOption('current');await panel.getByRole('spinbutton',{name:'Graine'}).fill('17');await panel.getByRole('button',{name:'Doubler 4 répliques'}).click();
   await page.evaluate(()=>(window as any).__advanceBatch());await expect(page.getByText(/1 \/ 4 traitées · 1 réussies/)).toBeVisible();
   await panel.locator('.current-job-progress').getByRole('button',{name:'Annuler',exact:true}).click();await page.getByRole('button',{name:'Réessayer',exact:true}).click();

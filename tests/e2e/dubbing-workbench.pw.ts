@@ -1,6 +1,6 @@
 import {test,expect,type Page} from '@playwright/test';
 import {nativeMock} from './nativeMock';
-async function start(page:Page){await nativeMock(page);await page.goto('/');await expect(page.locator('.dialogue-card').first()).toBeVisible();await page.evaluate(()=>(window as any).__seedDubbing());await page.locator('.dialogue-card').first().locator('.line-select').click();await page.getByRole('button',{name:'Ajouter un doublage',exact:true}).click();return page.getByRole('dialog',{name:'Doublage',exact:true});}
+async function start(page:Page){await nativeMock(page);await page.goto('/');await expect(page.locator('.dialogue-card').first()).toBeVisible();await page.evaluate(()=>(window as any).__seedDubbing());await page.locator('.dialogue-card').first().locator('.line-select').click();await page.getByRole('button',{name:'Ajouter un doublage',exact:true}).click();return page.getByRole('region',{name:'Doublage',exact:true});}
 test('dubbing workbench edits shared voice/source text, previews chosen track and keeps current progress and all takes',async({page})=>{
  await page.setViewportSize({width:1600,height:1100});const panel=await start(page);
  const before=await page.evaluate(()=>(window as any).__getMockProject());
@@ -17,7 +17,7 @@ test('dubbing workbench edits shared voice/source text, previews chosen track an
  await page.evaluate(()=>(window as any).__completeTts());await expect(panel.locator('.generation-card')).toHaveCount(2);
  const after=await page.evaluate(()=>(window as any).__getMockProject());expect(after.generations.slice(0,before.generations.length)).toEqual(before.generations);expect(after.dialogues[0].ttsText).toBe('Une interprétation française expressive.');expect(after.sourceCues[0].text).toBe('日本語の訂正です。');expect(after.targetCues).toEqual(before.targetCues);
  await expect(panel.getByRole('button',{name:'Générer un nouvel essai',exact:true})).toBeEnabled();
- await panel.getByRole('button',{name:'Fermer',exact:true}).click();await page.getByRole('button',{name:'Prononciation',exact:true}).click();await expect(page.getByRole('textbox',{name:'Texte pour la voix',exact:true})).toHaveValue('Une interprétation française expressive.');
+ await panel.getByRole('button',{name:'Fermer',exact:true}).click();await page.getByRole('tab',{name:'Prononciation',exact:true}).click();await expect(page.getByRole('textbox',{name:'Texte pour la voix',exact:true})).toHaveValue('Une interprétation française expressive.');
 });
 test('two-stage option passes independent timbre reference and retains each stage for comparison',async({page})=>{
  const panel=await start(page),before=await page.evaluate(()=>(window as any).__getMockProject());

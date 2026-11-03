@@ -15,6 +15,8 @@ import {
   validateNewDialogueOptions,
 } from './domain/dialogueEditing';
 import { Editor } from './components/Editor';
+import { DubPanel } from './components/DubPanel';
+import { IconButton } from './components/IconButton';
 import { WorkspacePanels } from './components/WorkspacePanels';
 import { Header, type Panel } from './components/Header';
 import { Panels } from './components/Panels';
@@ -37,7 +39,22 @@ export default function App() {
   const { t, i18n } = useTranslation();
   const studio = useProject();
   const updater = useUpdater(studio.flush);
-  const [panel, setPanel] = useState<Panel>(null);
+  const [panel, setOverlay] = useState<Panel>(null);
+  const [dubbingActive, setDubbingActive] = useState(false);
+  const [dubbingMode, setDubbingMode] = useState<'dub' | 'batchDub'>('dub');
+  const [dubbingSeen, setDubbingSeen] = useState({ dub: false, batchDub: false });
+  const setPanel = useCallback((next: Panel) => {
+    if (next === 'dub' || next === 'batchDub') {
+      document
+        .querySelectorAll<HTMLAudioElement>('.inspector-dubbing audio')
+        .forEach((a) => a.pause());
+      document.dispatchEvent(new Event('studio-voice-preview'));
+      setDubbingSeen((seen) => ({ ...seen, [next]: true }));
+      setDubbingMode(next);
+      setDubbingActive(true);
+      setOverlay(null);
+    } else setOverlay(next);
+  }, []);
   const [dialogueAction, setDialogueAction] = useState<DialogueAction | null>(null);
   const [timelineNavigation, setTimelineNavigation] = useState<TimelineNavigation | null>(null);
   const [audioSelection, setAudioSelection] = useState<AudioSelection | null>(null);
@@ -45,7 +62,7 @@ export default function App() {
   const selectAudio = useCallback((value: AudioSelection | null) => {
     setAudioSelection(value);
   }, []);
-  const openAudioAdvanced = useCallback(() => setPanel('audio'), []);
+  const openAudioAdvanced = useCallback(() => setPanel('audio'), [setPanel]);
   const [subtitleRole, setSubtitleRole] = useState<'source' | 'target'>('source');
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [batchSelection, setBatchSelection] = useState<{ projectId: string | null; ids: string[] }>(
@@ -62,8 +79,8 @@ export default function App() {
     (ids: string[]) => setBatchSelection({ projectId: batchProjectId, ids }),
     [batchProjectId],
   );
-  const openBatch = useCallback(() => setPanel('batchDub'), []);
-  const openLipBatch = useCallback(() => setPanel('inpaintBatch'), []);
+  const openBatch = useCallback(() => setPanel('batchDub'), [setPanel]);
+  const openLipBatch = useCallback(() => setPanel('inpaintBatch'), [setPanel]);
   const [translationFocus, setTranslationFocus] = useState(0);
   const [timelineHeight, setTimelineHeight] = useState(
     Number(localStorage.getItem('studio.timelineHeight') ?? 320),
@@ -155,14 +172,28 @@ export default function App() {
   const { stop: stopGeneration } = generationAudio;
   const { seek: seekVideo, playAudioSelection: auditionAudioSelection } = transport;
   const { setError: setStudioError } = studio;
-  const close = useCallback(() => setPanel(null), []);
+  const closeDubbing = useCallback(() => {
+    setDubbingActive(false);
+    stopGeneration();
+    document
+      .querySelectorAll<HTMLAudioElement>('.inspector-dubbing audio')
+      .forEach((a) => a.pause());
+  }, [stopGeneration]);
+  const setMcpPanel = useCallback(
+    (next: Panel) => {
+      if (next === null) closeDubbing();
+      setPanel(next);
+    },
+    [closeDubbing, setPanel],
+  );
+  const close = useCallback(() => setPanel(null), [setPanel]);
   const closeSubtitles = useCallback(
-    () => setPanel((current) => (current === 'subtitles' ? null : current)),
+    () => setOverlay((current) => (current === 'subtitles' ? null : current)),
     [],
   );
-  const showJobs = useCallback(() => setPanel('jobs'), []);
-  const showCharacters = useCallback(() => setPanel('characters'), []);
-  const showAlignment = useCallback(() => setPanel('alignment'), []);
+  const showJobs = useCallback(() => setPanel('jobs'), [setPanel]);
+  const showCharacters = useCallback(() => setPanel('characters'), [setPanel]);
+  const showAlignment = useCallback(() => setPanel('alignment'), [setPanel]);
   const select = useCallback(
     (line: Dialogue, positionMs?: number) => {
       stopGeneration();
@@ -181,10 +212,13 @@ export default function App() {
     },
     [padding, seekVideo, stopGeneration, studio.project?.id],
   );
-  const importSubtitles = useCallback((role: 'source' | 'target') => {
-    setSubtitleRole(role);
-    setPanel('subtitles');
-  }, []);
+  const importSubtitles = useCallback(
+    (role: 'source' | 'target') => {
+      setSubtitleRole(role);
+      setPanel('subtitles');
+    },
+    [setPanel],
+  );
   const editTranslation = useCallback(
     (line: Dialogue) => {
       select(line);
@@ -273,8 +307,8 @@ export default function App() {
       stopGeneration();
       document.dispatchEvent(new Event('studio-voice-preview'));
     },
-    panel,
-    setPanel,
+    panel: panel ?? (dubbingActive ? dubbingMode : null),
+    setPanel: setMcpPanel,
     theme,
     setTheme,
     padding,
@@ -330,6 +364,9 @@ export default function App() {
   }, [timelineHeight, padding]);
   useEffect(() => {
     setSelectedId(null);
+    setDubbingActive(false);
+    setDubbingSeen({ dub: false, batchDub: false });
+    setDubbingMode('dub');
   }, [studio.project?.id]);
   const running = studio.jobs.find((job) => ['running', 'queued', 'paused'].includes(job.status));
   const code =
@@ -454,7 +491,7 @@ export default function App() {
           </div>
         )}
         <main className="workspace">
-          <WorkspacePanels>
+          <WorkspacePanels dubbing={dubbingActive}>
             <Dialogues
               onAdd={(atMs) => {
                 const limit = studio.project?.media?.durationMs ?? 86_400_000;
@@ -505,6 +542,83 @@ export default function App() {
               onEdit={edit}
             />
             <Editor
+              dubbingActive={dubbingActive}
+              onDubbing={() => setPanel(dubbingMode)}
+              onEditorTab={closeDubbing}
+              dubbing={
+                studio.project &&
+                (['dub', 'batchDub'] as const).map(
+                  (mode) =>
+                    dubbingSeen[mode] && (
+                      <section
+                        key={`${studio.project!.id}:${mode}`}
+                        role="region"
+                        aria-label={t(mode)}
+                        className="dubbing-inspector-content"
+                        hidden={dubbingMode !== mode || !!panel}
+                      >
+                        <div className="dubbing-inspector-header">
+                          <div
+                            className="dubbing-modes"
+                            role="group"
+                            aria-label={t('dubbingInspector.mode')}
+                          >
+                            {(['dub', 'batchDub'] as const).map((value) => (
+                              <button
+                                key={value}
+                                aria-pressed={mode === value}
+                                onClick={() => setPanel(value)}
+                              >
+                                {t(
+                                  value === 'dub'
+                                    ? 'dubbingInspector.single'
+                                    : 'dubbingInspector.batch',
+                                )}
+                              </button>
+                            ))}
+                          </div>
+                          <small>
+                            {selected
+                              ? `#${studio.project!.dialogues.findIndex((d) => d.id === selected.id) + 1}`
+                              : ''}
+                          </small>
+                          <IconButton label={t('close')} onClick={closeDubbing}>
+                            <X size={14} />
+                          </IconButton>
+                        </div>
+                        <DubPanel
+                          active={dubbingActive && dubbingMode === mode && !panel}
+                          onChooseLine={select}
+                          onReferencePlay={() => {
+                            transport.videoRef.current?.pause();
+                            document.dispatchEvent(new Event('studio-voice-preview'));
+                          }}
+                          batch={mode === 'batchDub' ? { selectedIds: batchIds } : undefined}
+                          run={studio.run}
+                          project={studio.project!}
+                          line={
+                            selected ??
+                            (mode === 'batchDub' ? studio.project!.dialogues[0] : undefined)
+                          }
+                          jobs={studio.jobs}
+                          onEdit={edit}
+                          snapshot={studio.snapshot}
+                          onError={studio.setError}
+                          onModels={() => setPanel('models')}
+                          onCharacters={() => setPanel('characters')}
+                          onLips={() => setPanel('lips')}
+                          onInpaint={() => setPanel('inpaint')}
+                          onOriginal={(line) => {
+                            generationAudio.stop();
+                            transport.playOriginalLine(line);
+                          }}
+                          onPlay={playGeneration}
+                          activeGenerationId={generationAudio.active}
+                        />
+                      </section>
+                    ),
+                )
+              }
               onDelete={(line) => setDialogueAction({ kind: 'delete', ids: [line.id] })}
               onDub={openDub}
               project={studio.project}
@@ -605,12 +719,6 @@ export default function App() {
           toolboxModel={toolboxModel}
           onSelectDialogue={select}
           batchIds={batchIds}
-          activeGenerationId={generationAudio.active}
-          onPlayGeneration={playGeneration}
-          onOriginal={(line) => {
-            generationAudio.stop();
-            transport.playOriginalLine(line);
-          }}
           audioSelection={audioSelection}
           panel={panel}
           project={studio.project}

@@ -1750,5 +1750,11 @@
     "voice": "Voix",
     "takes": "Essais",
     "tools": "Outils"
+  },
+  "dubbingInspector": {
+    "mode": "Mode de doublage",
+    "single": "Réplique",
+    "batch": "Lot",
+    "tabs": "Outils de l’inspecteur"
   }
 }

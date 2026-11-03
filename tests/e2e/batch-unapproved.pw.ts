@@ -9,7 +9,7 @@ test('all unapproved translations can be regenerated without replacing approved 
   await expect.poll(() => page.evaluate(() => Object.keys(JSON.parse(localStorage.getItem('nativeMockProject')!).translationApprovals ?? {}).length)).toBe(1);
   const before = await page.evaluate(() => JSON.parse(localStorage.getItem('nativeMockProject')!));
   await page.getByRole('button', { name: /Doublage par lot/ }).click();
-  const panel = page.getByRole('dialog', { name: 'Doublage par lot', exact: true });
+  const panel = page.getByRole('region', { name: 'Doublage par lot', exact: true });
   await panel.getByRole('combobox', { name: 'Référence vocale', exact: true }).selectOption('current');
   const filter = panel.getByRole('combobox', { name: 'Traductions à inclure dans le lot', exact: true });
   await expect(filter).toHaveValue('all'); await filter.selectOption('translated');
@@ -39,7 +39,7 @@ test('unapproved filter intersects checked scope and cannot queue untranslated o
   for (const n of [1, 2, 3]) await page.getByRole('checkbox', { name: `Cocher la réplique ${n} pour le lot`, exact: true }).check();
   const before = await page.evaluate(() => JSON.parse(localStorage.getItem('nativeMockProject')!));
   await page.getByRole('button', { name: /Doublage par lot/ }).click();
-  const panel = page.getByRole('dialog', { name: 'Doublage par lot', exact: true });
+  const panel = page.getByRole('region', { name: 'Doublage par lot', exact: true });
   await panel.getByRole('combobox', { name: 'Référence vocale', exact: true }).selectOption('current');
   await panel.getByRole('combobox', { name: 'Traductions à inclure dans le lot', exact: true }).selectOption('translated');
   await expect(panel.getByText(/1 à générer · 0 déjà doublées · 1 sans traduction.*1 validées exclues/)).toBeVisible();

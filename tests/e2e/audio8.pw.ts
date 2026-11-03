@@ -7,7 +7,7 @@ test('Audio8 uses its exact transcript mode, inline progress and preserves histo
   await page.evaluate(() => (window as any).__seedDubbing());
   const before = await page.evaluate(() => JSON.parse(localStorage.getItem('nativeMockProject')!).generations);
   await page.locator('.dialogue-card').first().getByRole('button', { name: 'Régénérer', exact: true }).click();
-  const panel = page.getByRole('dialog', { name: 'Doublage', exact: true });
+  const panel = page.getByRole('region', { name: 'Doublage', exact: true });
   await panel.getByRole('combobox', { name: 'Moteur et variante de voix' }).selectOption('audio8-realistic-06b-gguf-q8');
   await panel.getByRole('combobox', { name: 'Référence vocale', exact: true }).selectOption('current');
   await expect(panel.getByRole('combobox', { name: 'Mode de clonage' })).toHaveValue('zeroShot');
@@ -55,7 +55,7 @@ test('Audio8 preference does not inherit unsupported legacy Cosy mood or diffusi
   });
   await page.reload();
   await page.locator('.dialogue-card').first().getByRole('button', { name: 'Régénérer', exact: true }).click();
-  const panel = page.getByRole('dialog', { name: 'Doublage', exact: true });
+  const panel = page.getByRole('region', { name: 'Doublage', exact: true });
   await expect(panel.getByRole('combobox', { name: 'Moteur et variante de voix' })).toHaveValue('audio8-realistic-06b-gguf-q8');
   await panel.getByRole('button', { name: 'Générer un nouvel essai', exact: true }).click();
   const pending = await page.evaluate(() => (window as any).__pendingTts);

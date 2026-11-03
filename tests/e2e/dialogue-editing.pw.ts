@@ -94,7 +94,7 @@ test('common review is withdrawn by spoken-text editing and a new selected take,
     .click();
   await expect(card).toHaveClass(/translation-approved/);
   await card.locator('.line-select').click();
-  await page.getByRole('button', { name: 'Prononciation', exact: true }).click();
+  await page.getByRole('tab', { name: 'Prononciation', exact: true }).click();
   await page
     .getByRole('textbox', { name: 'Texte pour la voix', exact: true })
     .fill('Une nouvelle diction.');

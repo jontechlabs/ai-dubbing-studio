@@ -195,6 +195,7 @@ function ReferenceAudio({
 }
 
 export function DubPanel({
+  active = true,
   batch,
   run: runProject,
   project,
@@ -213,6 +214,7 @@ export function DubPanel({
   activeGenerationId,
   onChooseLine,
 }: {
+  active?: boolean;
   batch?: { selectedIds: string[] };
   run: (operation: () => Promise<Project | null>) => Promise<void>;
   project: Project;
@@ -267,16 +269,31 @@ export function DubPanel({
   const takeNodes = useRef(new Map<string, HTMLElement>()),
     focused = useRef('');
   useEffect(() => {
-    if (!task.focusId || focused.current === task.focusKey) return;
+    if (!active || !task.focusId || focused.current === task.focusKey) return;
     const card = takeNodes.current.get(task.focusId);
     if (!card) return;
     const frame = requestAnimationFrame(() => {
       focused.current = task.focusKey;
       card.focus({ preventScroll: true });
-      card.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      const scroller = card.closest<HTMLElement>('.dub-panel');
+      if (scroller) {
+        const nav = scroller.querySelector('.dub-navigation')?.getBoundingClientRect().height ?? 0;
+        const progress =
+          scroller.querySelector('.dub-task-progress')?.getBoundingClientRect().height ?? 0;
+        scroller.scrollTo({
+          top:
+            scroller.scrollTop +
+            card.getBoundingClientRect().top -
+            scroller.getBoundingClientRect().top -
+            nav -
+            progress -
+            12,
+          behavior: 'smooth',
+        });
+      }
     });
     return () => cancelAnimationFrame(frame);
-  }, [task.focusId, task.focusKey, project.revision]);
+  }, [active, task.focusId, task.focusKey, project.revision]);
   const [status, setStatus] = useState<bridge.TtsStatus | null>(null),
     [working, setWorking] = useState(false);
   const [engines, setEngines] = useState<bridge.VoiceStatus | null>(null);
@@ -556,7 +573,9 @@ export function DubPanel({
               label={t(label)}
               onClick={(event) => {
                 const container = event.currentTarget.closest('.dub-panel');
-                const section = container?.querySelector<HTMLElement>('#' + id);
+                const section = container?.querySelector<HTMLElement>(
+                  '#' + (batch ? 'batch-' : '') + id,
+                );
                 if (!container || !section) return;
                 const header =
                   container.querySelector('.dub-navigation')?.getBoundingClientRect().height ?? 0;
@@ -605,7 +624,7 @@ export function DubPanel({
       {!batch && speakerDubbingState(project).parents.has(line.id) && (
         <p className="panel-description">{t('overlap.parentDisabled')}</p>
       )}
-      <h3 id="dub-voice" className="dub-section-title">
+      <h3 id={batch ? 'batch-dub-voice' : 'dub-voice'} className="dub-section-title">
         <Mic2 size={15} />
         {variant.name}
       </h3>
@@ -1128,7 +1147,7 @@ export function DubPanel({
               })}
             </p>
           )}
-          <div id="dub-takes" className="generation-heading">
+          <div id={batch ? 'batch-dub-takes' : 'dub-takes'} className="generation-heading">
             <h3>{t('ttsGenerations', { count: generations.length })}</h3>
             <button
               className="text-button"

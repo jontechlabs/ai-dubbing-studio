@@ -6,7 +6,7 @@ test('saved Fish cross-language settings show the exact-transcript help and pres
   await expect(page.locator('.dialogue-card').first()).toBeVisible();
   await page.evaluate(() => (window as any).__seedReference());
   await page.locator('.dialogue-card').first().getByRole('button', {name:'Doubler',exact:true}).click();
-  const panel = page.getByRole('dialog', {name:'Doublage'});
+  const panel = page.getByRole('region', {name:'Doublage'});
   await expect(panel.getByRole('combobox', {name:'Mode de clonage'})).toHaveValue('zeroShot');
   await expect(panel.getByText(/Fish exige un audio de référence/)).toBeVisible();
   await expect(panel.getByText(/Aucune transcription de la référence/)).toHaveCount(0);
@@ -46,7 +46,7 @@ test('custom reference selection is respected and cancellation or failure preser
   await nativeMock(page); await page.goto('/'); await expect(page.locator('.dialogue-card').first()).toBeVisible();
   await page.evaluate(() => (window as any).__seedReference('日本語の参照です。',true));
   const open = async () => page.locator('.dialogue-card').first().getByRole('button', {name:'Doubler',exact:true}).click();
-  await open(); const panel=page.getByRole('dialog', {name:'Doublage'});
+  await open(); const panel=page.getByRole('region', {name:'Doublage'});
   await panel.getByRole('button', {name:'Transcrire automatiquement',exact:true}).click();
   expect(await page.evaluate(() => (window as any).__pendingTranscription.referenceId)).toBe('reference-custom');
   await panel.locator('.current-job-progress').getByRole('button', {name:'Annuler',exact:true}).click();

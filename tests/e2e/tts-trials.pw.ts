@@ -10,7 +10,7 @@ async function open(page: Page) {
     .first()
     .getByRole('button', { name: 'Régénérer', exact: true })
     .click();
-  const panel = page.getByRole('dialog', { name: 'Doublage', exact: true });
+  const panel = page.getByRole('region', { name: 'Doublage', exact: true });
   await panel
     .getByRole('combobox', { name: 'Référence vocale', exact: true })
     .selectOption('current');

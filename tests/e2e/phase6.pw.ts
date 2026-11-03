@@ -5,7 +5,7 @@ test('Qwen GGUF uses the selected Vulkan GPU and persists a labelled take', asyn
   const errors: string[] = []; page.on('pageerror', (e) => errors.push(e.message));
   await nativeMock(page); await page.goto('/');
   await page.locator('.dialogue-card').first().getByRole('button', { name: 'Doubler', exact: true }).click();
-  const panel = page.getByRole('dialog', { name: 'Doublage' });
+  const panel = page.getByRole('region', { name: 'Doublage' });
   await panel.getByRole('combobox', { name: 'Moteur et variante de voix' }).selectOption('qwen3-06b-gguf-q8');
   await panel.getByRole('combobox', { name: 'Référence vocale', exact: true }).selectOption('current');
   await panel.getByRole('combobox', { name: 'Périphérique de génération' }).selectOption('vulkan:1');
@@ -26,7 +26,7 @@ test('Qwen GGUF uses the selected Vulkan GPU and persists a labelled take', asyn
 test('Fish FP8 requires reference text and sends CUDA options to its engine', async ({ page }) => {
   await nativeMock(page); await page.goto('/');
   await page.locator('.dialogue-card').first().getByRole('button', { name: 'Doubler', exact: true }).click();
-  const panel = page.getByRole('dialog', { name: 'Doublage' });
+  const panel = page.getByRole('region', { name: 'Doublage' });
   await panel.getByRole('combobox', { name: 'Moteur et variante de voix' }).selectOption('fish-s2-fp8');
   await expect(panel.getByRole('button', { name: 'Générer un nouvel essai', exact: true })).toBeDisabled();
   await panel.getByRole('combobox', { name: 'Référence vocale', exact: true }).selectOption('current');

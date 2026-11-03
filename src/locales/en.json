@@ -1750,5 +1750,11 @@
     "voice": "Voice",
     "takes": "Takes",
     "tools": "Tools"
+  },
+  "dubbingInspector": {
+    "mode": "Dubbing mode",
+    "single": "Line",
+    "batch": "Batch",
+    "tabs": "Inspector tools"
   }
 }

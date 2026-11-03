@@ -26,7 +26,7 @@ test('Drama FP8 exposes verified install size and the RAM offload profile',async
 
 test('Drama uses the selected CUDA GPU, exact transcript and mood, then retains a distinct take',async({page})=>{
  await nativeMock(page);await page.goto('/');await page.locator('.dialogue-card').first().getByRole('button',{name:'Doubler',exact:true}).click();
- const panel=page.getByRole('dialog',{name:'Doublage'});
+ const panel=page.getByRole('region',{name:'Doublage'});
  await panel.getByRole('combobox',{name:'Moteur et variante de voix'}).selectOption('drama3-comfy-fp8');
  await panel.getByRole('combobox',{name:'Référence vocale',exact:true}).selectOption('current');
  await panel.getByRole('combobox',{name:'Périphérique de génération'}).selectOption('cuda:0');

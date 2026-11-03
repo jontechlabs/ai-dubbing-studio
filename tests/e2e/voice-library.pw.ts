@@ -85,7 +85,7 @@ async function dub(page: Page) {
     .first()
     .getByRole('button', { name: 'Doubler', exact: true })
     .click();
-  return page.getByRole('dialog', { name: 'Doublage' });
+  return page.getByRole('region', { name: 'Doublage' });
 }
 
 test('assemble two trimmed excerpts and generate new pending phrases without replacing dialogue takes', async ({
@@ -348,7 +348,7 @@ test('Vox batch dispatches the explicitly chosen Standard or Ultimate mode witho
   await nativeMock(page, false, p);
   await page.goto('/');
   await page.getByRole('button', { name: /Doublage par lot/ }).click();
-  const panel = page.getByRole('dialog', { name: 'Doublage par lot', exact: true });
+  const panel = page.getByRole('region', { name: 'Doublage par lot', exact: true });
   await panel
     .getByRole('combobox', { name: 'Référence vocale', exact: true })
     .selectOption('current');
@@ -440,7 +440,7 @@ test('Qwen recovery displays its effective conditioning without rewriting reques
     .first()
     .getByRole('button', { name: 'Régénérer', exact: true })
     .click();
-  const panel = page.getByRole('dialog', { name: 'Doublage' });
+  const panel = page.getByRole('region', { name: 'Doublage' });
   await expect(panel.getByText(/Qwen3 : reprise sans transcription/)).toBeVisible();
   await page.getByRole('button', { name: 'Fermer', exact: true }).click();
   await page.reload();

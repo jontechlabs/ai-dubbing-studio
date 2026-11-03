@@ -26,7 +26,7 @@ async function setup(page: Page, kind: 'conversion' | 'prosody') {
     .first()
     .getByRole('button', { name: 'Régénérer', exact: true })
     .click();
-  const panel = page.getByRole('dialog', { name: 'Doublage', exact: true });
+  const panel = page.getByRole('region', { name: 'Doublage', exact: true });
   await panel
     .locator(kind === 'conversion' ? '.conversion-panel summary' : '.prosody-transfer summary')
     .click();

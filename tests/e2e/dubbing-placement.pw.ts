@@ -8,7 +8,7 @@ test('resizes a voice from its edge, persists exact duration and resets to autom
   await expect(page.locator('.save-indicator')).toHaveText('Sauvegardé');
   const saved=await page.evaluate(()=>JSON.parse(localStorage.getItem('nativeMockProject')!)),id=saved.dialogues[0].id;
   expect(saved.dubbingTiming.durationsMs[id].fr).toBeGreaterThan(2000);expect(saved.dubbingTiming.offsetsMs[id].fr).toBe(0);
-  await page.locator('.dialogue-card').first().getByRole('button',{name:'Régénérer',exact:true}).click();const panel=page.getByRole('dialog',{name:'Doublage'});
+  await page.locator('.dialogue-card').first().getByRole('button',{name:'Régénérer',exact:true}).click();const panel=page.getByRole('region',{name:'Doublage'});
   const duration=panel.getByRole('spinbutton',{name:'Durée demandée du doublage (ms)'});await duration.fill('500');await duration.press('Enter');await expect(page.locator('.save-indicator')).toHaveText('Sauvegardé');
   await page.reload();await page.locator('.dialogue-card').first().getByRole('button',{name:'Régénérer',exact:true}).click();await expect(duration).toHaveValue('500');
   await panel.getByRole('button',{name:'Durée automatique',exact:true}).click();await expect(duration).toHaveValue('2000');await expect(page.locator('.save-indicator')).toHaveText('Sauvegardé');
@@ -33,7 +33,7 @@ test('dragging and fine nudging a voice saves its placement without retiming sub
   await expect(page.locator('.save-indicator')).toHaveText('Sauvegardé');
   await expect.poll(()=>page.evaluate((id)=>JSON.parse(localStorage.getItem('nativeMockProject')!).dubbingTiming.offsetsMs[id].fr,before.dialogues[0].id)).toBe(offset-11);
   await page.reload(); await page.locator('.dialogue-card').first().getByRole('button',{name:'Régénérer',exact:true}).click();
-  const panel=page.getByRole('dialog',{name:'Doublage'});
+  const panel=page.getByRole('region',{name:'Doublage'});
   await expect(panel.getByRole('spinbutton',{name:'Décalage du doublage (ms)'})).toHaveValue(String(offset-11));
   await panel.getByRole('spinbutton',{name:'Décalage du doublage (ms)'}).fill('-250');await panel.getByRole('spinbutton',{name:'Décalage du doublage (ms)'}).press('Enter');
   await expect(page.locator('.save-indicator')).toHaveText('Sauvegardé');

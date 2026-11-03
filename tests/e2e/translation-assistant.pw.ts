@@ -21,7 +21,7 @@ test('approved-only batch intersects selection and force without dubbing pending
   await nativeMock(page);await page.goto('/');const cards=page.locator('.dialogue-card');await expect(cards.first()).toBeVisible();
   await cards.first().getByRole('button',{name:'Valider la traduction de la réplique 1',exact:true}).click();
   await page.getByRole('button',{name:'Tout cocher (filtre actuel)',exact:true}).click();
-  await page.getByRole('button',{name:/Doublage par lot/}).click();const panel=page.getByRole('dialog',{name:'Doublage par lot',exact:true});
+  await page.getByRole('button',{name:/Doublage par lot/}).click();const panel=page.getByRole('region',{name:'Doublage par lot',exact:true});
   await panel.getByRole('combobox',{name:'Référence vocale',exact:true}).selectOption('current');
   await panel.getByRole('combobox',{name:'Traductions à inclure dans le lot',exact:true}).selectOption('approved');
   await panel.getByRole('checkbox',{name:/Forcer un nouvel essai/}).check();

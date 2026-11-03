@@ -4447,3 +4447,90 @@ pre {
   top: 49px;
   max-height: min(35vh, 240px);
 }
+
+/* Nonmodal inspector: each tool owns its scroll area, leaving the workspace reachable. */
+.inspector-workspace .editor {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 0;
+}
+.inspector-workspace .editor-header {
+  position: static;
+  flex: none;
+  padding: 0 10px;
+  gap: 0 8px;
+}
+.inspector-workspace .editor-tabs {
+  gap: 12px;
+}
+.inspector-workspace .editor-tabs button {
+  gap: 4px;
+}
+.inspector-workspace .editor-content {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 0 12px 12px;
+}
+.inspector-dubbing,
+.dubbing-inspector-content {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+.inspector-dubbing[hidden],
+.dubbing-inspector-content[hidden],
+.editor-content[hidden] {
+  display: none;
+}
+.dubbing-inspector-header {
+  display: flex;
+  align-items: center;
+  flex: none;
+  gap: 8px;
+  padding: 5px 10px;
+  border-bottom: 1px solid var(--border);
+}
+.dubbing-inspector-header > small {
+  margin-left: auto;
+  color: var(--muted);
+  font-size: 10px;
+}
+.dubbing-modes {
+  display: flex;
+  gap: 3px;
+}
+.dubbing-modes button {
+  font-size: 11px;
+  padding: 4px 9px;
+  border-radius: 5px;
+  color: var(--muted);
+}
+.dubbing-modes button[aria-pressed='true'] {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+.inspector-dubbing .dub-panel {
+  flex: 1;
+  min-height: 0;
+  padding: 0 12px 12px;
+}
+.inspector-dubbing .dub-generate-bar {
+  bottom: -12px;
+}
+.inspector-dubbing .dub-navigation {
+  margin-top: 0;
+}
+.inspector-dubbing .dub-navigation button {
+  padding-inline: 7px;
+}
+.inspector-dubbing :is(select, textarea, input) {
+  min-width: 0;
+  max-width: 100%;
+}
+.inspector-dubbing .generation-card {
+  scroll-margin: 12px;
+}

@@ -3,7 +3,7 @@ import {nativeMock} from './nativeMock';
 async function ready(page:Page){await nativeMock(page);await page.goto('/');await expect(page.getByRole('button',{name:'Lecture',exact:true})).toBeEnabled();await page.evaluate(()=>(window as any).__seedDubbing());}
 const project=(page:Page)=>page.evaluate(()=>JSON.parse(localStorage.getItem('nativeMockProject')!));
 async function saved(page:Page){await expect(page.locator('.save-indicator')).toHaveText('Sauvegardé');return project(page);}
-async function panel(page:Page){await page.locator('.dialogue-card').first().getByRole('button',{name:'Régénérer',exact:true}).click();return page.getByRole('dialog',{name:'Doublage',exact:true});}
+async function panel(page:Page){await page.locator('.dialogue-card').first().getByRole('button',{name:'Régénérer',exact:true}).click();return page.getByRole('region',{name:'Doublage',exact:true});}
 
 test('numeric timing drafts commit atomically, reject overflow, and cancel safely',async({page})=>{
  await ready(page);const before=await saved(page),dub=await panel(page),input=dub.getByRole('spinbutton',{name:'Durée demandée du doublage (ms)',exact:true});

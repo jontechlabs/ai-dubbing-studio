@@ -4,7 +4,7 @@ async function setup(page:Page){
  await nativeMock(page);await page.goto('/');await expect(page.getByRole('button',{name:'Lecture',exact:true})).toBeEnabled();
  await page.evaluate(()=>{(window as any).__seedDubbing();});
  await page.locator('.dialogue-card').first().getByRole('button',{name:'Régénérer',exact:true}).click();
- const panel=page.getByRole('dialog',{name:'Doublage',exact:true});await panel.locator('.prosody-transfer summary').click();return panel;
+ const panel=page.getByRole('region',{name:'Doublage',exact:true});await panel.locator('.prosody-transfer summary').click();return panel;
 }
 test('transfers a selected take through typed options and preserves old takes while queued',async({page})=>{
  const panel=await setup(page),before=await page.evaluate(()=>(window as any).__getMockProject());

@@ -9,7 +9,7 @@ test('real Web Audio microphone capture is auditioned, saved as another take, an
   await nativeMock(page);await page.goto('/');
   await page.evaluate(policy=>{const meta=document.createElement('meta');meta.httpEquiv='Content-Security-Policy';meta.content=policy;document.head.appendChild(meta);},JSON.parse(fs.readFileSync('src-tauri/tauri.conf.json','utf8')).app.security.csp);
   await page.locator('.dialogue-card').first().getByRole('button',{name:'Doubler',exact:true}).click();
-  const panel=page.getByRole('dialog',{name:'Doublage'});
+  const panel=page.getByRole('region',{name:'Doublage'});
   await panel.locator('.microphone-panel summary').click();
   await panel.getByRole('button',{name:'Commencer l’enregistrement',exact:true}).click();
   await expect(page.locator('.microphone-indicator')).toContainText('Enregistrement en cours');
@@ -51,7 +51,7 @@ test('real Web Audio microphone capture is auditioned, saved as another take, an
 
 test('discard closes microphone tracks and never adds a take',async({page})=>{
   await nativeMock(page);await page.goto('/');await page.locator('.dialogue-card').first().getByRole('button',{name:'Doubler',exact:true}).click();
-  const panel=page.getByRole('dialog',{name:'Doublage'});await panel.locator('.microphone-panel summary').click();
+  const panel=page.getByRole('region',{name:'Doublage'});await panel.locator('.microphone-panel summary').click();
   await panel.getByRole('button',{name:'Commencer l’enregistrement',exact:true}).click();
   await expect(page.locator('.microphone-indicator')).toContainText('Enregistrement en cours');
   await page.locator('.microphone-indicator').getByRole('button',{name:'Abandonner la prise'}).click();

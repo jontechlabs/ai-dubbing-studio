@@ -3,6 +3,8 @@ import { useTranslation } from 'react-i18next';
 
 const key = 'studio.workspaceWidths';
 const defaults = { left: 330, right: 340 };
+const dubbingKey = 'studio.dubbingInspectorWidth';
+const dubbingDefault = 430;
 const minimum = { left: 240, right: 280 };
 const maximum = { left: 640, right: 560 };
 type Side = 'left' | 'right';
@@ -22,10 +24,26 @@ function initialWidths() {
   }
 }
 
-export function WorkspacePanels({ children }: { children: [ReactNode, ReactNode, ReactNode] }) {
+export function WorkspacePanels({
+  children,
+  dubbing = false,
+}: {
+  children: [ReactNode, ReactNode, ReactNode];
+  dubbing?: boolean;
+}) {
   const { t } = useTranslation();
   const root = useRef<HTMLDivElement>(null);
   const [desired, setDesired] = useState(initialWidths);
+  const [dubbingWidth, setDubbingWidth] = useState(() => {
+    try {
+      const value = Number(localStorage.getItem(dubbingKey));
+      return Number.isFinite(value) && value >= minimum.right
+        ? Math.min(maximum.right, value)
+        : dubbingDefault;
+    } catch {
+      return dubbingDefault;
+    }
+  });
   const [width, setWidth] = useState(Math.max(930, window.innerWidth - 30));
   useLayoutEffect(() => {
     const element = root.current!;
@@ -42,25 +60,33 @@ export function WorkspacePanels({ children }: { children: [ReactNode, ReactNode,
       // Layout remains usable when browser storage is unavailable.
     }
   }, [desired]);
+  useEffect(() => {
+    try {
+      localStorage.setItem(dubbingKey, String(dubbingWidth));
+    } catch {
+      /* Optional preference. */
+    }
+  }, [dubbingWidth]);
   // Keep at least 320 px for the video. Saved widths are preferences: they must
   // never push the inspector outside the window after a monitor/size change.
   const budget = Math.max(0, width - 16 - 320 - minimum.left - minimum.right);
-  const extra = desired.left - minimum.left + desired.right - minimum.right;
+  const right = dubbing ? dubbingWidth : desired.right;
+  const extra = desired.left - minimum.left + right - minimum.right;
   const scale = extra ? Math.min(1, budget / extra) : 1;
   const sizes = {
     left: Math.floor(minimum.left + (desired.left - minimum.left) * scale),
-    right: Math.floor(minimum.right + (desired.right - minimum.right) * scale),
+    right: Math.floor(minimum.right + (right - minimum.right) * scale),
   };
   const limit = (side: Side) =>
     Math.max(
       minimum[side],
       Math.min(maximum[side], width - 16 - 320 - sizes[side === 'left' ? 'right' : 'left']),
     );
-  const resize = (side: Side, value: number) =>
-    setDesired((current) => ({
-      ...current,
-      [side]: Math.round(Math.max(minimum[side], Math.min(limit(side), value))),
-    }));
+  const resize = (side: Side, value: number) => {
+    const size = Math.round(Math.max(minimum[side], Math.min(limit(side), value)));
+    if (side === 'right' && dubbing) setDubbingWidth(size);
+    else setDesired((current) => ({ ...current, [side]: size }));
+  };
   const separator = (side: Side) => (
     <div
       className="resize-handle vertical"
@@ -73,7 +99,10 @@ export function WorkspacePanels({ children }: { children: [ReactNode, ReactNode,
       aria-valuetext={`${sizes[side]} px`}
       title={t('resizeWorkspaceHint')}
       tabIndex={0}
-      onDoubleClick={() => setDesired((current) => ({ ...current, [side]: defaults[side] }))}
+      onDoubleClick={() => {
+        if (side === 'right' && dubbing) setDubbingWidth(dubbingDefault);
+        else setDesired((current) => ({ ...current, [side]: defaults[side] }));
+      }}
       onKeyDown={(event) => {
         const amount = event.shiftKey ? 40 : 10;
         if (event.key === 'Home') resize(side, minimum[side]);

@@ -5,7 +5,7 @@ async function setup(page: Page) {
   await expect(page.locator('.dialogue-card').first()).toBeVisible();
   await page.evaluate(() => (window as any).__seedDubbing());
   await page.locator('.dialogue-card').first().getByRole('button', { name: 'Régénérer', exact: true }).click();
-  return page.getByRole('dialog', { name: 'Doublage', exact: true });
+  return page.getByRole('region', { name: 'Doublage', exact: true });
 }
 test('Vox Natural is dispatched, saved with the take and reloads without changing previous takes', async ({ page }) => {
   const panel = await setup(page);
@@ -56,7 +56,7 @@ test('batch generation accepts quality and MCP discovers every supported bound',
   await expect(page.locator('.dialogue-card').first()).toBeVisible();
   await page.evaluate(() => (window as any).__seedDubbing());
   await page.getByRole('button', { name: /Doublage par lot/ }).click();
-  const batch = page.getByRole('dialog', { name: 'Doublage par lot', exact: true });
+  const batch = page.getByRole('region', { name: 'Doublage par lot', exact: true });
   await batch.getByRole('combobox', { name: 'Moteur et variante de voix' }).selectOption('voxcpm2-bf16');
   await batch.getByRole('combobox', { name: 'Référence vocale', exact: true }).selectOption('current');
   await batch.getByRole('combobox', { name: 'Qualité de génération' }).selectOption('natural');

@@ -10,6 +10,11 @@ type Task = {
   starting: boolean;
   error?: string;
 };
+type Operation = {
+  task: Task | null;
+  lastJob?: Job;
+  localTake?: { id: string; sequence: number };
+};
 
 /** Keep a panel operation and its eventual selected take together, in either event order. */
 export function useDubbingTask(
@@ -19,76 +24,112 @@ export function useDubbingTask(
   jobs: Job[],
   run: (operation: () => Promise<Project | null>) => Promise<void>,
 ) {
-  const scope = JSON.stringify([project.id, project.languages.target, lineId, batch]);
+  const scope = JSON.stringify([
+    project.id,
+    project.media?.path,
+    project.languages.target,
+    batch ? null : lineId,
+    batch,
+  ]);
   const alive = useRef(false),
     sequence = useRef(0);
-  const [task, setTask] = useState<Task | null>(null);
-  const [lastJob, setLastJob] = useState<Job>();
-  const [localTake, setLocalTake] = useState<{
-    scope: string;
-    id: string;
-    sequence: number;
-  } | null>(null);
+  const operations = useRef(new Map<string, Operation>());
+  const [, refresh] = useState(0);
   useEffect(() => {
     alive.current = true;
-    sequence.current += 1;
-    setTask(null);
-    setLocalTake(null);
-    setLastJob(undefined);
     return () => {
       alive.current = false;
-      sequence.current += 1;
     };
-  }, [scope]);
+  }, []);
+  // Only operated-on replies are retained, with a bounded history. Changing the
+  // selection must not discard a launch whose job ID has not arrived yet.
+  const remember = useCallback((key: string, operation: Operation) => {
+    const cache = operations.current;
+    cache.delete(key);
+    cache.set(key, operation);
+    while (cache.size > 12) cache.delete(cache.keys().next().value!);
+    if (alive.current) refresh((n) => n + 1);
+  }, []);
   const start = useCallback(
     async (operation: () => Promise<string>) => {
       const next: Task = {
         scope,
         sequence: ++sequence.current,
-        before: new Set(voiceGenerations(project).map((g) => g.id)),
+        before: new Set(
+          voiceGenerations(project)
+            .filter((g) => batch || g.dialogueId === lineId)
+            .map((g) => g.id),
+        ),
         id: null,
         starting: true,
       };
-      setTask(next);
-      setLocalTake(null);
+      const operationState: Operation = { task: next };
+      remember(scope, operationState);
       try {
         const id = await operation();
-        if (alive.current && sequence.current === next.sequence)
-          setTask({ ...next, id, starting: false });
+        if (alive.current && operations.current.get(scope) === operationState) {
+          operationState.task = { ...next, id, starting: false };
+          refresh((n) => n + 1);
+        }
         return id;
       } catch (error) {
-        if (alive.current && sequence.current === next.sequence)
-          setTask({ ...next, starting: false, error: String(error) });
+        if (alive.current && operations.current.get(scope) === operationState) {
+          operationState.task = { ...next, starting: false, error: String(error) };
+          refresh((n) => n + 1);
+        }
         throw error;
       }
     },
-    [project, scope],
+    [project, scope, batch, lineId, remember],
   );
   const runInPanel = useCallback(
     (operation: () => Promise<Project | null>) => {
-      const before = new Set(voiceGenerations(project).map((g) => g.id)),
-        currentSequence = sequence.current;
+      const before = new Set(
+          voiceGenerations(project)
+            .filter((g) => g.dialogueId === lineId)
+            .map((g) => g.id),
+        ),
+        currentSequence = ++sequence.current;
+      const operationState: Operation = {
+        ...operations.current.get(scope),
+        task: operations.current.get(scope)?.task ?? null,
+        localTake: undefined,
+      };
+      remember(scope, operationState);
       return run(async () => {
         const result = await operation();
         const line = result?.dialogues.find((l) => l.id === lineId);
         const take = result && line ? selectedGeneration(result, line) : undefined;
-        if (take && !before.has(take.id) && alive.current && sequence.current === currentSequence)
-          setLocalTake({ scope, id: take.id, sequence: ++sequence.current });
+        if (
+          take &&
+          !before.has(take.id) &&
+          alive.current &&
+          operations.current.get(scope) === operationState
+        ) {
+          operationState.localTake = { id: take.id, sequence: currentSequence };
+          refresh((n) => n + 1);
+        }
         return result;
       });
     },
-    [project, scope, lineId, run],
+    [project, scope, lineId, run, remember],
   );
-  const current = task?.scope === scope ? task : null;
+  const operation = operations.current.get(scope);
+  const current = operation?.task ?? null;
   const observedJob = jobs.find((j) => j.id === current?.id && j.projectId === project.id);
   useEffect(() => {
-    if (observedJob) setLastJob(observedJob);
-  }, [observedJob]);
+    for (const entry of operations.current.values()) {
+      const observed = jobs.find((j) => j.id === entry.task?.id && j.projectId === project.id);
+      if (observed) entry.lastJob = observed;
+    }
+  }, [jobs, project.id, current?.id]);
   // The global job history is bounded; a completed panel task must not turn
   // back into an indefinitely pending launch when its record is pruned.
   const job =
     observedJob ??
-    (lastJob?.id === current?.id && lastJob?.projectId === project.id ? lastJob : undefined);
+    (operation?.lastJob?.id === current?.id && operation?.lastJob?.projectId === project.id
+      ? operation.lastJob
+      : undefined);
   const terminal = job && ['succeeded', 'failed', 'cancelled', 'interrupted'].includes(job.status);
   const makesTake =
     job &&
@@ -115,10 +156,9 @@ export function useDubbingTask(
           );
         })
       : undefined;
+  const localTake = operation?.localTake;
   const local =
-    localTake?.scope === scope && voiceGenerations(project).some((g) => g.id === localTake.id)
-      ? localTake
-      : null;
+    localTake && voiceGenerations(project).some((g) => g.id === localTake.id) ? localTake : null;
   return {
     start,
     run: runInPanel,

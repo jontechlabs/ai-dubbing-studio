@@ -4,7 +4,7 @@ import {nativeMock} from './nativeMock';
 test('expanded acting directions group, persist and dispatch for individual and batch dubbing',async({page})=>{
   await nativeMock(page);await page.goto('/');
   await page.locator('.dialogue-card').first().getByRole('button',{name:'Doubler',exact:true}).click();
-  const panel=page.getByRole('dialog',{name:'Doublage',exact:true});
+  const panel=page.getByRole('region',{name:'Doublage',exact:true});
   const mood=panel.getByRole('combobox',{name:'Humeur / interprétation',exact:true});
   await panel.getByRole('combobox',{name:'Référence vocale',exact:true}).selectOption('current');
   await expect(mood.locator('option')).toHaveCount(43);await expect(mood.locator('optgroup')).toHaveCount(5);
@@ -24,7 +24,7 @@ test('expanded acting directions group, persist and dispatch for individual and 
   await mood.selectOption({label:'Hilare'});await expect(mood).toHaveValue('laughing');
   await page.getByRole('button',{name:'Fermer',exact:true}).click();
   await page.getByRole('button',{name:/Doublage par lot/}).click();
-  const batch=page.getByRole('dialog',{name:'Doublage par lot',exact:true});
+  const batch=page.getByRole('region',{name:'Doublage par lot',exact:true});
   await batch.getByRole('combobox',{name:'Référence vocale',exact:true}).selectOption('current');
   await batch.getByRole('combobox',{name:'Humeur / interprétation',exact:true}).selectOption({label:'Stressé'});
   await batch.getByRole('checkbox',{name:/Forcer un nouvel essai/}).check();

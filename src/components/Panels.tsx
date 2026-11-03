@@ -1,14 +1,7 @@
 import { useEffect, useState, type RefObject } from 'react';
 import { Check, Download, FileText, LoaderCircle, Terminal, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import type {
-  AudioSelection,
-  Dialogue,
-  EnvironmentInfo,
-  Generation,
-  Job,
-  Project,
-} from '../domain/types';
+import type { AudioSelection, Dialogue, EnvironmentInfo, Job, Project } from '../domain/types';
 import { APP_VERSION } from '../domain/project';
 import { McpSettings } from './McpSettings';
 import { jobProgress } from '../domain/batchProgress';
@@ -25,7 +18,6 @@ import { AudioPanel } from './AudioPanel';
 import { PlaybackMetrics } from './PlaybackMetrics';
 import { CharactersPanel } from './CharactersPanel';
 import { ModelsPanel } from './ModelsPanel';
-import { DubPanel } from './DubPanel';
 import { ModelStorageSettings } from './ModelStorageSettings';
 import { MkvExportPanel } from './MkvExportPanel';
 import { LipAnalysisPanel } from './LipAnalysisPanel';
@@ -58,9 +50,6 @@ export function Panels({
   onPanel,
   audioSelection,
   toolboxModel,
-  onPlayGeneration,
-  onOriginal,
-  activeGenerationId,
   onSelectDialogue,
 }: {
   onSelectDialogue: (line: Dialogue) => void;
@@ -88,9 +77,6 @@ export function Panels({
   onPanel: (panel: Panel) => void;
   audioSelection: AudioSelection | null;
   toolboxModel?: string | null;
-  onPlayGeneration: (generation: Generation) => void;
-  onOriginal: (line: Dialogue) => void;
-  activeGenerationId: string | null;
 }) {
   const { t } = useTranslation();
   const title =
@@ -102,14 +88,14 @@ export function Panels({
           : 'importTarget'
         : (panel ?? '');
   useEffect(() => {
-    if (!panel) return;
+    if (!panel || panel === 'dub' || panel === 'batchDub') return;
     const key = (event: KeyboardEvent) => {
       if (event.key === 'Escape') close();
     };
     window.addEventListener('keydown', key);
     return () => window.removeEventListener('keydown', key);
   }, [panel, close]);
-  if (!panel) return null;
+  if (!panel || panel === 'dub' || panel === 'batchDub') return null;
   return (
     <div
       className="panel-backdrop"
@@ -131,34 +117,6 @@ export function Panels({
         </div>
         {panel === 'import' && (
           <ImportPanel run={run} onClose={close} onStarted={showJobs} onError={onError} />
-        )}
-        {(panel === 'dub' || panel === 'batchDub') && project && (
-          <DubPanel
-            onChooseLine={onSelectDialogue}
-            onReferencePlay={() => {
-              videoRef.current?.pause();
-              document.dispatchEvent(new Event('studio-voice-preview'));
-            }}
-            key={`${project.id}:${panel}`}
-            batch={panel === 'batchDub' ? { selectedIds: batchIds } : undefined}
-            run={run}
-            project={project}
-            line={
-              project.dialogues.find((d) => d.id === selectedId) ??
-              (panel === 'batchDub' ? project.dialogues[0] : undefined)
-            }
-            jobs={jobs}
-            onEdit={onEdit}
-            snapshot={snapshot}
-            onError={onError}
-            onModels={() => onPanel('models')}
-            onCharacters={() => onPanel('characters')}
-            onLips={() => onPanel('lips')}
-            onInpaint={() => onPanel('inpaint')}
-            onOriginal={onOriginal}
-            onPlay={onPlayGeneration}
-            activeGenerationId={activeGenerationId}
-          />
         )}
         {panel === 'lips' && project && (
           <LipAnalysisPanel

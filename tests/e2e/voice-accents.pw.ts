@@ -180,7 +180,7 @@ test('a non-French project gets a language-specific explanation instead of incom
     .first()
     .getByRole('button', { name: 'Doubler', exact: true })
     .click();
-  const panel = page.getByRole('dialog', { name: 'Doublage', exact: true });
+  const panel = page.getByRole('region', { name: 'Doublage', exact: true });
   const control = panel.locator('.voice-accent');
   await expect(control.getByRole('combobox')).toBeDisabled();
   await expect(control.getByRole('combobox').locator('option')).toHaveCount(1);

@@ -81,7 +81,7 @@ test('new and existing take gains are independent, persist and keep all archived
     .first()
     .getByRole('button', { name: 'Régénérer', exact: true })
     .click();
-  const panel = page.getByRole('dialog', { name: 'Doublage', exact: true });
+  const panel = page.getByRole('region', { name: 'Doublage', exact: true });
   await panel
     .getByRole('combobox', { name: 'Référence vocale', exact: true })
     .selectOption('current');
@@ -93,7 +93,7 @@ test('new and existing take gains are independent, persist and keep all archived
   expect((await page.evaluate(() => (window as any).__pendingTts)).options.outputGain).toBe(1.5);
   await page.evaluate(() => (window as any).__completeTts());
   await page
-    .getByRole('dialog', { name: 'Doublage', exact: true })
+    .getByRole('region', { name: 'Doublage', exact: true })
     .getByRole('button', { name: 'Fermer', exact: true })
     .click();
   await page
@@ -145,7 +145,7 @@ test('batch generation uses the same gain presets', async ({ page }) => {
   await page.goto('/');
   await expect(page.locator('.dialogue-card').first()).toBeVisible();
   await page.getByRole('button', { name: /Doublage par lot/ }).click();
-  const panel = page.getByRole('dialog', { name: 'Doublage par lot', exact: true });
+  const panel = page.getByRole('region', { name: 'Doublage par lot', exact: true });
   await panel
     .getByRole('combobox', { name: 'Référence vocale', exact: true })
     .selectOption('current');

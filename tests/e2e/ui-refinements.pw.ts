@@ -15,7 +15,7 @@ async function dub(page: Page) {
   await ready(page);
   await page.locator('.dialogue-card').first().locator('.line-select').click();
   await page.getByRole('button', { name: 'Ajouter un doublage', exact: true }).click();
-  return page.getByRole('dialog', { name: 'Doublage', exact: true });
+  return page.getByRole('region', { name: 'Doublage', exact: true });
 }
 
 test('dubbing text and generation remain easy to reach, with auxiliary tools below settings and inline completion focused', async ({

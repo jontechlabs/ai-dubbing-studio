@@ -22,7 +22,7 @@ test('moving a voice while playing cancels its old onset and plays it only at th
 async function position(page:Page,time:number){await page.locator('video').evaluate((video:HTMLVideoElement,t)=>{video.playbackRate=0.25;video.currentTime=t;},time);}
 
 test('manual voice duration requests exact fitting and limits the audible interval',async({page})=>{
-  await setup(page);await page.locator('.dialogue-card').first().getByRole('button',{name:'Régénérer',exact:true}).click();const panel=page.getByRole('dialog',{name:'Doublage'});
+  await setup(page);await page.locator('.dialogue-card').first().getByRole('button',{name:'Régénérer',exact:true}).click();const panel=page.getByRole('region',{name:'Doublage'});
   await panel.getByRole('spinbutton',{name:'Durée demandée du doublage (ms)'}).fill('500');await page.getByRole('button',{name:'Fermer',exact:true}).click();await expect(page.locator('.save-indicator')).toHaveText('Sauvegardé');
   await position(page,1);await page.getByRole('button',{name:'Lecture',exact:true}).click();await expect.poll(()=>rms(page)).toBeGreaterThan(.01);
   expect(await page.evaluate(()=>(window as any).__calls.some((c:any)=>c.command==='dubbing_path'&&c.args.id==='take-1'&&c.args.slotMs===500&&c.args.exactDuration===true))).toBe(true);

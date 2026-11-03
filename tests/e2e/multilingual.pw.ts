@@ -8,7 +8,7 @@ test('VoxCPM2 and Chatterbox dispatch supported settings and keep existing takes
   const before = await page.evaluate(() => JSON.parse(localStorage.getItem('nativeMockProject')!).generations);
   for (const variant of ['voxcpm2-bf16', 'chatterbox-multilingual-v3']) {
     await page.locator('.dialogue-card').first().getByRole('button', { name: 'Régénérer', exact: true }).click();
-    const panel = page.getByRole('dialog', { name: 'Doublage', exact: true });
+    const panel = page.getByRole('region', { name: 'Doublage', exact: true });
     await panel.getByRole('combobox', { name: 'Moteur et variante de voix' }).selectOption(variant);
     await panel.getByRole('combobox', { name: 'Référence vocale', exact: true }).selectOption('current');
     const mode = panel.getByRole('combobox', { name: 'Mode de clonage' });
@@ -35,7 +35,7 @@ test('VoxCPM2 and Chatterbox dispatch supported settings and keep existing takes
   expect(saved.formatVersion).toBe(16); expect(saved.generations).toHaveLength(before.length + 2);
   expect(saved.generations.slice(0, before.length)).toEqual(before);
   await page.getByRole('button', { name: /Doublage par lot/ }).click();
-  const batch = page.getByRole('dialog', { name: 'Doublage par lot', exact: true });
+  const batch = page.getByRole('region', { name: 'Doublage par lot', exact: true });
   await batch.getByRole('combobox', { name: 'Moteur et variante de voix' }).selectOption('voxcpm2-bf16');
   await batch.getByRole('combobox', { name: 'Référence vocale', exact: true }).selectOption('current');
   await batch.getByRole('checkbox', { name: /Forcer un nouvel essai/ }).check();

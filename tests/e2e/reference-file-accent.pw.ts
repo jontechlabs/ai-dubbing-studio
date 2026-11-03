@@ -4,7 +4,7 @@ import { nativeMock } from './nativeMock';
 test('direct reference import auditions, edits, persists and reuses a file without a character', async ({page}) => {
   await nativeMock(page); await page.goto('/');
   const open = () => page.locator('.dialogue-card').first().getByRole('button',{name:'Doubler',exact:true}).click();
-  await open(); const panel=page.getByRole('dialog',{name:'Doublage'});
+  await open(); const panel=page.getByRole('region',{name:'Doublage'});
   await page.evaluate(()=>{(window as any).__dialogPath='C:/Audio/voix française.mp3';});
   await panel.getByRole('button',{name:'Charger un fichier de référence'}).click();
   await panel.getByRole('button',{name:'Utiliser cet extrait',exact:true}).click();
@@ -35,7 +35,7 @@ test('direct reference import auditions, edits, persists and reuses a file witho
 
 test('import cancellation and decode failure keep the previous reference selected',async({page})=>{
   await nativeMock(page);await page.goto('/');await page.locator('.dialogue-card').first().getByRole('button',{name:'Doubler',exact:true}).click();
-  const panel=page.getByRole('dialog',{name:'Doublage'}),button=panel.getByRole('button',{name:'Charger un fichier de référence'});
+  const panel=page.getByRole('region',{name:'Doublage'}),button=panel.getByRole('button',{name:'Charger un fichier de référence'});
   await button.click();await panel.getByRole('button',{name:'Utiliser cet extrait',exact:true}).click();await expect(panel.getByRole('combobox',{name:'Référence vocale',exact:true})).toHaveValue('file');
   await expect(page.locator('.save-indicator')).toHaveText('Sauvegardé');
   const before=await page.evaluate(()=>JSON.parse(localStorage.getItem('nativeMockProject')!));
@@ -49,7 +49,7 @@ test('import cancellation and decode failure keep the previous reference selecte
 
 test('Fish transcribes imported reference independently and Qwen disables accent selection',async({page})=>{
   await nativeMock(page);await page.goto('/');const open=()=>page.locator('.dialogue-card').first().getByRole('button',{name:'Doubler',exact:true}).click();await open();
-  const panel=page.getByRole('dialog',{name:'Doublage'}),engine=panel.getByRole('combobox',{name:'Moteur et variante de voix'});
+  const panel=page.getByRole('region',{name:'Doublage'}),engine=panel.getByRole('combobox',{name:'Moteur et variante de voix'});
   await engine.selectOption('fish-s2-fp8');await panel.getByRole('button',{name:'Charger un fichier de référence'}).click();
   await panel.getByRole('button',{name:'Utiliser cet extrait',exact:true}).click();
   await expect(panel.getByRole('button',{name:'Générer un nouvel essai'})).toBeDisabled();

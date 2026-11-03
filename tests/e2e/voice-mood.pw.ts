@@ -2,7 +2,7 @@ import {test,expect} from '@playwright/test';
 import {nativeMock} from './nativeMock';
 
 test('mood is dispatched and saved for CosyVoice and both Fish backends, while Qwen Base disables it',async({page})=>{
-  await nativeMock(page);await page.goto('/');await page.locator('.dialogue-card').first().getByRole('button',{name:'Doubler',exact:true}).click();const panel=page.getByRole('dialog',{name:'Doublage'});
+  await nativeMock(page);await page.goto('/');await page.locator('.dialogue-card').first().getByRole('button',{name:'Doubler',exact:true}).click();const panel=page.getByRole('region',{name:'Doublage'});
   await panel.getByRole('combobox',{name:'Référence vocale',exact:true}).selectOption('current');
   const mood=panel.getByRole('combobox',{name:'Humeur / interprétation',exact:true}),engine=panel.getByRole('combobox',{name:'Moteur et variante de voix'});
   await expect(mood).toHaveValue('default');await mood.selectOption('angry');await expect(panel.getByRole('combobox',{name:'Mode de clonage'})).toBeDisabled();

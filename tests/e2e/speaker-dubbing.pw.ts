@@ -1,6 +1,6 @@
 import {test,expect,type Page} from '@playwright/test';
 import {nativeMock} from './nativeMock';
-async function open(page:Page){await page.setViewportSize({width:1600,height:1100});await nativeMock(page);await page.goto('/');await page.evaluate(()=>(window as any).__seedDubbing());await page.locator('.dialogue-card').first().locator('.line-select').click();await page.getByRole('button',{name:'Ajouter un doublage',exact:true}).click();const panel=page.getByRole('dialog',{name:'Doublage',exact:true});const section=panel.locator('.speaker-separation');await section.locator('summary').click();return {panel,section};}
+async function open(page:Page){await page.setViewportSize({width:1600,height:1100});await nativeMock(page);await page.goto('/');await page.evaluate(()=>(window as any).__seedDubbing());await page.locator('.dialogue-card').first().locator('.line-select').click();await page.getByRole('button',{name:'Ajouter un doublage',exact:true}).click();const panel=page.getByRole('region',{name:'Doublage',exact:true});const section=panel.locator('.speaker-separation');await section.locator('summary').click();return {panel,section};}
 test('separates on demand in the dubbing panel, previews two voices and creates independent child texts without losing any prior take or SRT',async({page})=>{
  const {panel,section}=await open(page);const before=await page.evaluate(()=>(window as any).__getMockProject());
  expect(await page.evaluate(()=>(window as any).__calls.filter((c:any)=>c.command==='separate_dialogue_speakers'))).toEqual([]);
