@@ -3,7 +3,7 @@ import { nativeMock } from './nativeMock';
 import { demoProject } from '../../src/domain/project';
 import { addCharacter } from '../../src/domain/characters';
 
-async function setup(page: Page, faces?: unknown[]) {
+async function setup(page: Page, faces?: unknown[], dimensions = { width: 640, height: 360 }) {
   const p = addCharacter(demoProject(), 'Speaker A');
   p.formatVersion = 26;
   p.dialogues[0].characterId = p.characters[0].id;
@@ -12,11 +12,14 @@ async function setup(page: Page, faces?: unknown[]) {
   await page.route('**/portrait-preview-*.png', (route) =>
     route.fulfill({
       contentType: 'image/svg+xml',
-      body: '<svg xmlns="http://www.w3.org/2000/svg" width="640" height="360"><rect width="640" height="360" fill="#242438"/><rect x="76" y="57" width="128" height="173" fill="#73b4db"/><rect x="384" y="72" width="160" height="180" fill="#d9b16c"/></svg>',
+      body: `<svg xmlns="http://www.w3.org/2000/svg" width="${dimensions.width}" height="${dimensions.height}"><rect width="100%" height="100%" fill="#242438"/><rect x="12%" y="16%" width="20%" height="48%" fill="#73b4db"/><rect x="60%" y="20%" width="25%" height="50%" fill="#d9b16c"/></svg>`,
     }),
   );
   await page.goto('/');
   await expect(page.locator('.dialogue-card').first()).toBeVisible();
+  await page.evaluate((value) => {
+    (window as any).__portraitDimensions = value;
+  }, dimensions);
   if (faces)
     await page.evaluate((value) => {
       (window as any).__portraitFaces = value;
@@ -188,4 +191,21 @@ test('a capture error keeps the scene open for correction and retry', async ({ p
   await modal.getByRole('button', { name: 'Capturer ce cadrage' }).click();
   await expect(modal).toHaveCount(0);
   expect((await data(page)).media).toEqual(before.media);
+});
+
+test('vertical previews fit a small screen and retain an accessible capture action', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await setup(page, undefined, { width: 360, height: 640 });
+  const modal = await open(page);
+  await modal.getByRole('button', { name: 'Choisir le visage 2' }).click();
+  const stage = (await modal.locator('.portrait-preview-stage').boundingBox())!;
+  expect(stage.height).toBeLessThanOrEqual(720 * 0.42 + 2);
+  expect(stage.width / stage.height).toBeCloseTo(360 / 640, 1);
+  await expect(modal.getByRole('button', { name: 'Capturer ce cadrage' })).toBeInViewport();
+  await expect(modal.getByRole('button', { name: 'Choisir le visage 2' })).toBeInViewport({
+    ratio: 0.95,
+  });
+  await page.screenshot({ path: 'test-results/screenshots/portrait-preview-layout.png' });
 });

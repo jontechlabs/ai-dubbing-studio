@@ -51,7 +51,7 @@ export function CharacterPortraitModal({
     [saving, setSaving] = useState(false),
     [playing, setPlaying] = useState(false),
     [error, setError] = useState('');
-  const [ratio, setRatio] = useState('16 / 9');
+  const [ratio, setRatio] = useState(16 / 9);
   const video = useRef<HTMLVideoElement>(null),
     stage = useRef<HTMLDivElement>(null),
     drag = useRef<Drag | null>(null);
@@ -101,7 +101,7 @@ export function CharacterPortraitModal({
       });
       if (!alive.current || request !== serial.current) return;
       setFrame(result);
-      setRatio(`${result.width} / ${result.height}`);
+      setRatio(result.width / result.height);
       setCrop(result.faces.length === 1 ? result.faces[0] : null);
     } catch (e) {
       if (alive.current && request === serial.current)
@@ -216,7 +216,10 @@ export function CharacterPortraitModal({
       <div
         ref={stage}
         className={`portrait-preview-stage ${current ? 'editable' : ''}`}
-        style={{ aspectRatio: ratio }}
+        style={{
+          aspectRatio: ratio,
+          width: `min(100%, 780px, calc(clamp(180px, calc(100vh - 520px), 40vh) * ${ratio}))`,
+        }}
       >
         <video
           ref={video}
@@ -229,8 +232,7 @@ export function CharacterPortraitModal({
           style={{ visibility: current ? 'hidden' : 'visible' }}
           onLoadedMetadata={() => {
             const v = video.current!;
-            if (!current && v.videoWidth && v.videoHeight)
-              setRatio(`${v.videoWidth} / ${v.videoHeight}`);
+            if (!current && v.videoWidth && v.videoHeight) setRatio(v.videoWidth / v.videoHeight);
             v.currentTime = desired.current / 1000;
           }}
           onPlay={() => {
@@ -398,6 +400,7 @@ export function CharacterPortraitModal({
               >
                 <svg
                   viewBox={`${face.x * frame.width} ${face.y * frame.height} ${face.width * frame.width} ${face.height * frame.height}`}
+                  preserveAspectRatio="xMidYMid slice"
                   aria-hidden="true"
                 >
                   <image href={frame.imageUrl} width={frame.width} height={frame.height} />

@@ -3999,14 +3999,18 @@ pre {
   overflow-x: auto;
   padding: 6px 0;
 }
-.portrait-candidate {
+.portrait-candidate.button {
   flex: 0 0 105px;
+  height: auto;
+  min-height: 112px;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 4px;
 }
 .portrait-candidate svg {
+  flex: 0 0 78px;
+  overflow: hidden;
   width: 78px;
   height: 78px;
   background: #08080c;
@@ -4022,4 +4026,11 @@ pre {
 }
 .portrait-crop-controls input {
   width: 100%;
+}
+.portrait-modal .dialogue-manage-actions {
+  position: sticky;
+  bottom: 0;
+  z-index: 3;
+  padding: 10px 0 2px;
+  background: var(--panel);
 }
