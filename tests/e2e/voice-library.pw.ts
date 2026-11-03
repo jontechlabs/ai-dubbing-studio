@@ -248,7 +248,8 @@ for (const preference of [null, 'on', 'off']) {
     // Returning to the panel or opening a different dialogue never relaunches.
     await page.getByRole('button', { name: 'Fermer', exact: true }).click();
     await dub(page);
-    await expect(launch).toBeEnabled();
+    // The inspector retains the explicitly requested proposal when reopened.
+    await expect(panel.getByRole('button', { name: 'Actualiser la proposition' })).toBeEnabled();
     expect(await matchCalls(page)).toHaveLength(1);
     await page.getByRole('button', { name: 'Fermer', exact: true }).click();
     await page

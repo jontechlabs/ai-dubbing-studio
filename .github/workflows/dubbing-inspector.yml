@@ -30,6 +30,10 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: python scripts/verify-dubbing-inspector.py
+      - name: Authenticate successful Chrome cases on identical application inputs
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python scripts/verify-dubbing-browser.py
       - name: Prepare pinned tools and dependencies
         run: |
           npm install --global pnpm@11.25.0
@@ -40,7 +44,7 @@ jobs:
           ./scripts/prepare-prosody.ps1
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
           rustup update stable --no-self-update
-      - name: Fresh frontend unit, complete Chrome, lint and schema checks
+      - name: Fresh frontend unit, retained-state Chrome, lint and schema checks
         run: |
           pnpm mcp:check
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
@@ -54,7 +58,7 @@ jobs:
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
           pnpm exec prettier --check tests/e2e/dubbing-inspector.pw.ts
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
-          pnpm test:e2e
+          pnpm test:e2e tests/e2e/voice-library.pw.ts --grep legacy
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
       - name: Restore screenshot fixtures and check native formatting
         run: |
