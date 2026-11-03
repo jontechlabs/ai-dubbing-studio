@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Plus, Users, ScanLine, Download, Trash2, LoaderCircle, RotateCcw } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { AudioSelection, Dialogue, Job, Project, VoiceReference } from '../domain/types';
@@ -56,6 +56,11 @@ export function CharactersPanel({
   onError: (error: string) => void;
 }) {
   const { t } = useTranslation();
+  const element = useRef<HTMLDivElement>(null);
+  const previewAudition = () => {
+    onAudition();
+    element.current?.querySelectorAll('audio').forEach((audio) => audio.pause());
+  };
   const [name, setName] = useState(''),
     [activeId, setActiveId] = useState(project.characters[0]?.id ?? '');
   const [runtime, setRuntime] = useState<{ installed: boolean } | null>(null),
@@ -92,6 +97,7 @@ export function CharactersPanel({
   }, [onError]);
   return (
     <div
+      ref={element}
       className="panel-body characters-panel"
       onPlayCapture={(event) => {
         if (!(event.target instanceof HTMLAudioElement)) return;
@@ -405,6 +411,8 @@ export function CharactersPanel({
           {character && (
             <div className="character-details" key={`${project.id}:${character.id}`}>
               <CharacterMetadata
+                onAudition={previewAudition}
+                snapshot={snapshot}
                 project={project}
                 character={character}
                 selectedId={selectedId}

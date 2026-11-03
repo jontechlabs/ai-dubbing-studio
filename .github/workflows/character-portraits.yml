@@ -49,7 +49,7 @@ jobs:
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
           pnpm format:check
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
-          pnpm exec prettier --check tests/e2e/character-portraits.pw.ts tests/e2e/speaker-reset.pw.ts
+          pnpm exec prettier --check tests/e2e/character-portraits.pw.ts tests/e2e/speaker-reset.pw.ts tests/e2e/portrait-preview.pw.ts
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
           pnpm test:e2e
           if ($LASTEXITCODE) { exit $LASTEXITCODE }

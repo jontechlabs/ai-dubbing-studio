@@ -2156,6 +2156,48 @@
       "annotations": { "readOnlyHint": false, "destructiveHint": true, "openWorldHint": false }
     },
     {
+      "name": "studio_preview_character_portrait",
+      "command": "preview_character_portrait",
+      "description": "Preview one source-video frame and all anonymous CPU face boxes (auto, anime or live). Returns project/revision/source/character/dialogue/time, a read-only cached PNG imagePath, dimensions and normalized rectangles. No identity or gender inference. Choose a face or manual crop, then explicitly call studio_capture_character_portrait with atMs/crop. Original video and project are not modified.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "options": { "$ref": "#/$defs/options_PortraitPreviewOptions_0" },
+          "context": {
+            "type": "object",
+            "properties": {
+              "projectId": { "type": "string" },
+              "expectedRevision": { "type": "integer", "minimum": 0 }
+            },
+            "required": ["projectId", "expectedRevision"],
+            "additionalProperties": false
+          }
+        },
+        "required": ["options", "context"],
+        "additionalProperties": false,
+        "$defs": {
+          "options_PortraitPreviewOptions_0": {
+            "type": "object",
+            "properties": {
+              "characterId": { "type": "string" },
+              "lineId": { "type": "string" },
+              "atMs": { "anyOf": [{ "type": "number" }] },
+              "profile": {
+                "anyOf": [
+                  { "type": "string", "const": "auto" },
+                  { "type": "string", "const": "anime" },
+                  { "type": "string", "const": "live" }
+                ]
+              }
+            },
+            "required": ["characterId", "lineId", "profile"],
+            "additionalProperties": false
+          }
+        }
+      },
+      "annotations": { "readOnlyHint": true, "destructiveHint": false, "openWorldHint": false }
+    },
+    {
       "name": "studio_suggest_dialogue_character",
       "command": "suggest_dialogue_character",
       "description": "Compare the selected dialogue with ORIGINAL character references using local CAMPPlus/Silero CPU. Returns a job ID; read studio_character_suggestion_result when done. Never assigns automatically. Scores are similarities, not probabilities.",
@@ -7373,6 +7415,28 @@
             }
           },
           "required": ["characterId", "lineId"],
+          "additionalProperties": false
+        }
+      }
+    },
+    "PortraitPreviewOptions": {
+      "$ref": "#/$defs/PortraitPreviewOptions_0",
+      "$defs": {
+        "PortraitPreviewOptions_0": {
+          "type": "object",
+          "properties": {
+            "characterId": { "type": "string" },
+            "lineId": { "type": "string" },
+            "atMs": { "anyOf": [{ "type": "number" }] },
+            "profile": {
+              "anyOf": [
+                { "type": "string", "const": "auto" },
+                { "type": "string", "const": "anime" },
+                { "type": "string", "const": "live" }
+              ]
+            }
+          },
+          "required": ["characterId", "lineId", "profile"],
           "additionalProperties": false
         }
       }

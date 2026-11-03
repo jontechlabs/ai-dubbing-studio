@@ -291,7 +291,7 @@ async fn process<R: tauri::Runtime>(
         crate::separation::process(core, app, key, executable, args, flag).await
     }
 }
-async fn frame<R: tauri::Runtime>(
+pub(crate) async fn frame<R: tauri::Runtime>(
     core: &std::sync::Arc<crate::Core>,
     app: &tauri::AppHandle<R>,
     key: &str,

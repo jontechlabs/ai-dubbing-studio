@@ -3901,3 +3901,125 @@ pre {
   color: var(--accent);
   margin-bottom: 5px;
 }
+/* Character portrait preview: coordinates always follow the exact frame ratio. */
+.settings-modal.portrait-modal {
+  width: min(1000px, 96vw);
+  max-width: 1000px;
+}
+.portrait-preview-controls,
+.portrait-preview-transport,
+.portrait-crop-controls {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin: 10px 0;
+}
+.portrait-preview-controls .field {
+  flex: 1;
+  min-width: 170px;
+}
+.portrait-preview-stage {
+  position: relative;
+  width: min(100%, 780px);
+  margin: 0 auto;
+  overflow: hidden;
+  background: #08080c;
+  border: 1px solid var(--line);
+}
+.portrait-preview-stage video,
+.portrait-preview-stage > img {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.portrait-preview-stage video {
+  object-fit: contain;
+}
+.portrait-preview-overlay {
+  position: absolute;
+  inset: 0;
+  touch-action: none;
+  cursor: crosshair;
+  user-select: none;
+}
+.portrait-face-box {
+  position: absolute;
+  border: 1px solid #a9d5f9;
+  color: #fff;
+  font-size: 12px;
+  text-shadow: 0 1px 3px #000;
+  pointer-events: none;
+}
+.portrait-crop-box {
+  position: absolute;
+  border: 2px solid #bf9ef6;
+  box-shadow: 0 0 0 9999px #0005;
+  cursor: move;
+}
+.portrait-crop-handle {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  background: #bf9ef6;
+  border: 1px solid #fff;
+}
+.portrait-crop-handle.nw {
+  top: -6px;
+  left: -6px;
+  cursor: nwse-resize;
+}
+.portrait-crop-handle.ne {
+  top: -6px;
+  right: -6px;
+  cursor: nesw-resize;
+}
+.portrait-crop-handle.sw {
+  bottom: -6px;
+  left: -6px;
+  cursor: nesw-resize;
+}
+.portrait-crop-handle.se {
+  bottom: -6px;
+  right: -6px;
+  cursor: nwse-resize;
+}
+.portrait-preview-transport > input[type='range'] {
+  flex: 1;
+  min-width: 100px;
+}
+.portrait-preview-transport input[type='number'] {
+  width: 105px;
+}
+.portrait-candidates {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 6px 0;
+}
+.portrait-candidate {
+  flex: 0 0 105px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+.portrait-candidate svg {
+  width: 78px;
+  height: 78px;
+  background: #08080c;
+}
+.portrait-candidate[aria-pressed='true'] {
+  border-color: var(--accent);
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+.portrait-crop-controls label {
+  flex: 1;
+  min-width: 100px;
+  font-size: 11px;
+}
+.portrait-crop-controls input {
+  width: 100%;
+}

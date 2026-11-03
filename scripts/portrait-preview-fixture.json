@@ -1,0 +1,6 @@
+{
+  "url": "https://media.githubusercontent.com/media/opencv/opencv_zoo/47534e27c9851bb1128ccc0102f1145e27f23f98/models/face_detection_yunet/example_outputs/largest_selfie.jpg",
+  "size": 1147146,
+  "sha256": "ab8413ad9bb4f53068f4fb63c6747e5989991dd02241c923d5595b614ecf2bf6",
+  "source": "Official OpenCV Zoo YuNet example output, pinned commit; used only by diagnostics, not bundled in the app."
+}

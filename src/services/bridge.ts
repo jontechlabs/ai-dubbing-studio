@@ -394,6 +394,15 @@ export function applyLocalSeparation(id: string) {
 export function captureCharacterPortrait(options: PortraitOptions) {
   return invoke<Project>('capture_character_portrait', { options });
 }
+export async function previewCharacterPortrait(
+  options: import('../domain/portraitFrame').PortraitPreviewOptions,
+) {
+  const frame = await invoke<import('../domain/portraitFrame').PortraitPreview>(
+    'preview_character_portrait',
+    { options },
+  );
+  return { ...frame, imageUrl: convertFileSrc(frame.imagePath) };
+}
 export function prepareCharacterReference(segments: ReferenceSegment[], label: string) {
   return invoke<import('../domain/types').VoiceReference>('prepare_character_reference', {
     segments,

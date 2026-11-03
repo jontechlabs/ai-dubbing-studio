@@ -24,6 +24,7 @@ mod mcp;
 mod media;
 mod mix;
 mod model_storage;
+mod portrait_preview;
 mod project;
 mod prosody;
 mod qwen_safety;
@@ -818,6 +819,18 @@ async fn capture_character_portrait(
     options: character_review::PortraitOptions,
 ) -> Result<Project, String> {
     character_review::capture_portrait(core.inner().clone(), app, options).await
+}
+#[tauri::command]
+async fn preview_character_portrait(
+    app: tauri::AppHandle,
+    core: State<'_, Shared>,
+    options: portrait_preview::Options,
+) -> Result<portrait_preview::Preview, String> {
+    let preview = portrait_preview::preview(core.inner().clone(), app.clone(), options).await?;
+    app.asset_protocol_scope()
+        .allow_file(&preview.image_path)
+        .map_err(io_error)?;
+    Ok(preview)
 }
 #[tauri::command]
 fn suggest_dialogue_character(
@@ -2000,6 +2013,7 @@ pub fn run() {
             identify_speakers,
             character_asset_path,
             capture_character_portrait,
+            preview_character_portrait,
             prepare_character_reference,
             prepare_voice_library_source,
             suggest_dialogue_character,

@@ -11,6 +11,7 @@ import {
 import { audioTracks, trackLabel } from '../domain/audio';
 import { formatTime } from '../domain/time';
 import * as bridge from '../services/bridge';
+import { CharacterPortraitModal } from './CharacterPortraitModal';
 
 const assets = new Map<string, Promise<string>>();
 export function CharacterAvatar({
@@ -184,6 +185,8 @@ export function CharacterMetadata({
   onEdit,
   run,
   onError,
+  onAudition,
+  snapshot,
 }: {
   project: Project;
   character: Character;
@@ -192,6 +195,8 @@ export function CharacterMetadata({
   onEdit: (update: (p: Project) => Project) => void;
   run: (action: () => Promise<Project | null>) => Promise<void>;
   onError: (message: string) => void;
+  onAudition: () => void;
+  snapshot: () => Promise<Project>;
 }) {
   const { t } = useTranslation();
   const profile = project.characterProfiles?.[character.id];
@@ -205,6 +210,7 @@ export function CharacterMetadata({
     [working, setWorking] = useState(false);
   const validLineId = project.dialogues.some((l) => l.id === lineId) ? lineId : '';
   const register = profile?.vocalRegister;
+  const [previewOpen, setPreviewOpen] = useState(false);
   return (
     <section className="character-metadata">
       <div className="character-profile-head">
@@ -299,6 +305,60 @@ export function CharacterMetadata({
             onChange={(e) => setTime(e.target.value)}
           />
         </label>
+        <button
+          className="button subtle"
+          disabled={!bridge.native || busy || working || !validLineId}
+          onClick={() => setPreviewOpen(true)}
+        >
+          <ImagePlus size={14} /> {t('portraitOpenPreview')}
+        </button>
+        {previewOpen && validLineId && (
+          <CharacterPortraitModal
+            project={project}
+            character={character}
+            lineId={validLineId}
+            atMs={
+              time === ''
+                ? (() => {
+                    const l = project.dialogues.find((l) => l.id === validLineId)!;
+                    return l.startMs + Math.floor((l.endMs - l.startMs) / 2);
+                  })()
+                : Math.max(
+                    0,
+                    Math.min((project.media?.durationMs ?? 1) - 1, Math.round(Number(time) * 1000)),
+                  )
+            }
+            busy={busy || working}
+            snapshot={snapshot}
+            onAudition={onAudition}
+            onClose={() => setPreviewOpen(false)}
+            onCapture={async (options) => {
+              let captured = false,
+                failure: unknown;
+              await run(async () => {
+                try {
+                  const saved = await bridge.captureCharacterPortrait(options);
+                  captured = true;
+                  return saved;
+                } catch (e) {
+                  failure = e;
+                  throw e;
+                }
+              });
+              if (!captured) throw failure ?? Error('STALE_REVISION');
+              setLineId(options.lineId);
+              setTime(String((options.atMs ?? 0) / 1000));
+              if (options.crop) {
+                setCrop({
+                  x: options.crop.x * 100,
+                  y: options.crop.y * 100,
+                  width: options.crop.width * 100,
+                  height: options.crop.height * 100,
+                });
+              }
+            }}
+          />
+        )}
         <label className="checkbox">
           <input
             type="checkbox"
@@ -334,6 +394,10 @@ export function CharacterMetadata({
             (time !== '' && (!Number.isFinite(Number(time)) || Number(time) < 0))
           }
           onClick={() => {
+            if (automatic) {
+              setPreviewOpen(true);
+              return;
+            }
             setWorking(true);
             void run(() =>
               bridge.captureCharacterPortrait({

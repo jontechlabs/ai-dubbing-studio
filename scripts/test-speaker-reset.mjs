@@ -17,6 +17,7 @@ export async function verifySpeakerReset({call,context,client,projectRoot}) {
  const preserved=async(after)=>{
   for(const key of ['generations','sourceCues','targetCues','tracks','media','voiceReferences','voiceEdits','dubbingTiming','pronunciation'])assert.deepEqual(after[key],before[key],key);
   assert(after.dialogues.every(l=>l.characterId===null));
+  for(const [i,line] of after.dialogues.entries())assert.deepEqual(line.selectedGenerationIds,before.dialogues[i].selectedGenerationIds);
   assert(!after.speakerAnalysis);
   for(const file of files)assert.equal(createHash('sha256').update(await fs.readFile(path.join(projectRoot,file))).digest('hex'),hashes.get(file),file);
  };
@@ -34,5 +35,5 @@ export async function verifySpeakerReset({call,context,client,projectRoot}) {
  await call('studio_history',{context:await context(),direction:'redo'});
  await call('studio_open_project',{path:projectRoot});
  after=await call('studio_get_project');await preserved(after);assert.equal(after.characters.length,0);
- return {bothExplicitModes:true,profilesAndLibrariesRetained:true,fullResetRemovesRecords:true,subtitlesTracksAndTakesPreserved:true,selectedTakesRetained:after.dialogues.every((l,i)=>JSON.stringify(l.selectedGenerationIds)===JSON.stringify(before.dialogues[i].selectedGenerationIds)),wavFilesUnchanged:files.length,undoRedo:true,reopen:true,staleContextRejected:true};
+ return {bothExplicitModes:true,profilesAndLibrariesRetained:true,fullResetRemovesRecords:true,subtitlesTracksAndTakesPreserved:true,selectedTakesRetained:true,wavFilesUnchanged:files.length,undoRedo:true,reopen:true,staleContextRejected:true};
 }

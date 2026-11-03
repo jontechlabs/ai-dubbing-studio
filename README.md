@@ -1,6 +1,6 @@
 # AI Dubbing Studio
 
-**v0.36.0 — Character portraits and speaker reset.** Portrait capture chooses a dialogue belonging to the displayed character. Reset speaker assignments while keeping profiles and voice references, or explicitly remove the character records. Subtitles and every dubbing take are retained; undo is available. **142 MCP tools, project format 26.** [Guide](docs/SPEAKER-RESET.md).
+**v0.36.0 — Character portraits and speaker reset.** Portrait capture chooses a dialogue belonging to the displayed character. A mini video player, detected-face picker and adjustable visual crop help choose the right scene and person. Reset speaker assignments while keeping profiles and voice references, or explicitly remove the character records. Subtitles and every dubbing take are retained; undo is available. **143 MCP tools, project format 26.** [Guide](docs/SPEAKER-RESET.md).
 
 **v0.35.0 — 1–4 takes per dialogue.** Choose the number of takes in Dubbing; sequential generation with distinct seeds, a loaded TTS model reused across the series, inline progress and cancellation. Completed takes survive interruption and the latest is selected. Also supports the two-stage pipeline and MCP (`count`). [Guide](docs/MULTIPLE-TAKES.md).
 

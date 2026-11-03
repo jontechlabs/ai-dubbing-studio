@@ -7,10 +7,12 @@ export function Modal({
   title,
   onClose,
   children,
+  className = '',
 }: {
   title: string;
   onClose: () => void;
   children: ReactNode;
+  className?: string;
 }) {
   const { t } = useTranslation();
   const ref = useRef<HTMLDialogElement>(null);
@@ -23,7 +25,7 @@ export function Modal({
   return createPortal(
     <dialog
       ref={ref}
-      className="settings-modal"
+      className={className ? `settings-modal ${className}` : 'settings-modal'}
       aria-labelledby={titleId}
       onKeyDown={(event) => {
         event.stopPropagation();

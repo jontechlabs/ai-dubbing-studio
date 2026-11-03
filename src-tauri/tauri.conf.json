@@ -31,9 +31,7 @@
   },
   "bundle": {
     "active": true,
-    "targets": [
-      "nsis"
-    ],
+    "targets": ["nsis"],
     "resources": {
       "../public/demo.mp4": "demo/demo.mp4",
       "binaries/": "binaries/",
@@ -56,6 +54,7 @@
       "../workers/BANDIT-MODEL-LICENSE.txt": "workers/BANDIT-MODEL-LICENSE.txt",
       "../workers/speaker_worker.py": "workers/speaker_worker.py",
       "../workers/character_worker.py": "workers/character_worker.py",
+      "../workers/portrait_preview_worker.py": "workers/portrait_preview_worker.py",
       "../workers/speaker-model.json": "workers/speaker-model.json",
       "../workers/SPEAKER-MODEL-LICENSE.txt": "workers/SPEAKER-MODEL-LICENSE.txt",
       "../workers/cosyvoice_worker.py": "workers/cosyvoice_worker.py",
@@ -107,18 +106,12 @@
       "../workers/vendor/speaker-separation/manifest.json": "workers/vendor/speaker-separation/manifest.json",
       "../workers/vendor/speaker-separation/README.md": "workers/vendor/speaker-separation/README.md"
     },
-    "icon": [
-      "icons/icon.ico",
-      "icons/icon.png"
-    ],
+    "icon": ["icons/icon.ico", "icons/icon.png"],
     "windows": {
       "nsis": {
         "installMode": "currentUser",
         "displayLanguageSelector": true,
-        "languages": [
-          "French",
-          "English"
-        ]
+        "languages": ["French", "English"]
       }
     },
     "createUpdaterArtifacts": true
