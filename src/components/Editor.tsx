@@ -83,7 +83,7 @@ export function Editor({
                 key={value}
                 role="tab"
                 id={`inspector-tab-${value}`}
-                aria-controls={`inspector-panel-${value}`}
+                aria-controls={value === 'dub' ? 'inspector-panel-dub' : 'inspector-panel-editor'}
                 aria-selected={activeTab === value}
                 tabIndex={activeTab === value ? 0 : -1}
                 disabled={value === 'dub' && !project}
@@ -145,108 +145,102 @@ export function Editor({
           </div>
         )}
       </div>
-      {(['text', 'tts'] as const).map((value) => (
-        <div
-          key={value}
-          id={`inspector-panel-${value}`}
-          role="tabpanel"
-          aria-labelledby={`inspector-tab-${value}`}
-          hidden={dubbingActive || tab !== value}
-          className="editor-content"
-        >
-          {value === tab &&
-            (project && selected ? (
-              <>
-                <TimingEditor
-                  key={selected.id}
-                  project={project}
-                  selected={selected}
-                  onEdit={onEdit}
-                  busy={busy}
-                  time={time}
-                />
-                {tab === 'text' && (
-                  <TranslationSuggestion
-                    key={`${project.id}:${selected.id}`}
-                    project={project}
-                    line={selected}
-                    jobs={jobs}
-                    snapshot={snapshot}
-                    run={run}
-                    onEdit={onEdit}
-                    busy={busy}
-                  />
-                )}
-                {tab === 'text' ? (
-                  <div className="editor-fields">
-                    {(['source', 'target'] as const).map((role) => {
-                      const ids = role === 'source' ? selected.sourceCueIds : selected.targetCueIds;
-                      const existing = (
-                        role === 'source' ? project.sourceCues : project.targetCues
-                      ).filter((cue) => ids.includes(cue.id));
-                      const fields = existing.length ? existing : [{ id: '', text: '' }];
-                      return (
-                        <div className="cue-fields" key={role}>
-                          {fields.map((cue, index, cues) => (
-                            <label key={`${role}:${index}`}>
-                              <span>
-                                {t(role === 'source' ? 'original' : 'displayedText')}{' '}
-                                <small>
-                                  {project.languages[role].toUpperCase()}
-                                  {cues.length > 1 ? ` · ${index + 1}/${cues.length}` : ''}
-                                </small>
-                              </span>
-                              <textarea
-                                ref={role === 'target' && index === 0 ? targetField : undefined}
-                                aria-label={
-                                  t(role === 'source' ? 'original' : 'displayedText') +
-                                  (cues.length > 1 ? ` ${index + 1}` : '')
-                                }
-                                value={cue.text}
-                                disabled={busy}
-                                placeholder={t('translationPlaceholder')}
-                                onChange={(event) =>
-                                  cue.id
-                                    ? onEdit((p) =>
-                                        editCueText(p, role, cue.id, event.target.value),
-                                      )
-                                    : update(role, event.target.value)
-                                }
-                              />
-                            </label>
-                          ))}
-                        </div>
-                      );
-                    })}
-                  </div>
-                ) : (
-                  <div className="tts-editor">
-                    <label>
-                      <span>{t('ttsText')}</span>
-                      <textarea
-                        aria-label={t('ttsText')}
-                        value={selected.ttsText ?? target}
-                        disabled={busy}
-                        onChange={(e) => update('tts', e.target.value)}
-                      />
-                    </label>
-                    <div>
-                      <p>{t('ttsHint')}</p>
-                      <button className="text-button" onClick={() => update('tts', '')}>
-                        {t('useTranslation')}
-                      </button>
+      <div
+        id="inspector-panel-editor"
+        role="tabpanel"
+        aria-labelledby={`inspector-tab-${tab}`}
+        hidden={dubbingActive}
+        className="editor-content"
+      >
+        {project && selected ? (
+          <>
+            <TimingEditor
+              key={selected.id}
+              project={project}
+              selected={selected}
+              onEdit={onEdit}
+              busy={busy}
+              time={time}
+            />
+            {tab === 'text' && (
+              <TranslationSuggestion
+                key={`${project.id}:${selected.id}`}
+                project={project}
+                line={selected}
+                jobs={jobs}
+                snapshot={snapshot}
+                run={run}
+                onEdit={onEdit}
+                busy={busy}
+              />
+            )}
+            {tab === 'text' ? (
+              <div className="editor-fields">
+                {(['source', 'target'] as const).map((role) => {
+                  const ids = role === 'source' ? selected.sourceCueIds : selected.targetCueIds;
+                  const existing = (
+                    role === 'source' ? project.sourceCues : project.targetCues
+                  ).filter((cue) => ids.includes(cue.id));
+                  const fields = existing.length ? existing : [{ id: '', text: '' }];
+                  return (
+                    <div className="cue-fields" key={role}>
+                      {fields.map((cue, index, cues) => (
+                        <label key={`${role}:${index}`}>
+                          <span>
+                            {t(role === 'source' ? 'original' : 'displayedText')}{' '}
+                            <small>
+                              {project.languages[role].toUpperCase()}
+                              {cues.length > 1 ? ` · ${index + 1}/${cues.length}` : ''}
+                            </small>
+                          </span>
+                          <textarea
+                            ref={role === 'target' && index === 0 ? targetField : undefined}
+                            aria-label={
+                              t(role === 'source' ? 'original' : 'displayedText') +
+                              (cues.length > 1 ? ` ${index + 1}` : '')
+                            }
+                            value={cue.text}
+                            disabled={busy}
+                            placeholder={t('translationPlaceholder')}
+                            onChange={(event) =>
+                              cue.id
+                                ? onEdit((p) => editCueText(p, role, cue.id, event.target.value))
+                                : update(role, event.target.value)
+                            }
+                          />
+                        </label>
+                      ))}
                     </div>
-                  </div>
-                )}
-              </>
-            ) : (
-              <div className="empty-editor">
-                <Type size={17} />
-                <span>{t('selectLine')}</span>
+                  );
+                })}
               </div>
-            ))}
-        </div>
-      ))}
+            ) : (
+              <div className="tts-editor">
+                <label>
+                  <span>{t('ttsText')}</span>
+                  <textarea
+                    aria-label={t('ttsText')}
+                    value={selected.ttsText ?? target}
+                    disabled={busy}
+                    onChange={(e) => update('tts', e.target.value)}
+                  />
+                </label>
+                <div>
+                  <p>{t('ttsHint')}</p>
+                  <button className="text-button" onClick={() => update('tts', '')}>
+                    {t('useTranslation')}
+                  </button>
+                </div>
+              </div>
+            )}
+          </>
+        ) : (
+          <div className="empty-editor">
+            <Type size={17} />
+            <span>{t('selectLine')}</span>
+          </div>
+        )}
+      </div>
       <div
         id="inspector-panel-dub"
         role="tabpanel"

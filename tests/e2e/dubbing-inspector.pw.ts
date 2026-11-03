@@ -194,8 +194,16 @@ test('inspector tabs support arrow navigation and Space on Generate does not als
   await tab.focus();
   await page.keyboard.press('ArrowLeft');
   await expect(page.getByRole('tab', { name: 'Prononciation', exact: true })).toBeFocused();
+  const start = page.locator('.editor-content .timing-fields input').first();
+  await start.fill('00:00:00.750');
+  await page.getByRole('tab', { name: 'Texte', exact: true }).click();
+  await expect(start).toHaveValue('00:00:00.750');
+  await page.getByRole('tab', { name: 'Prononciation', exact: true }).click();
   await page.keyboard.press('End');
   await expect(tab).toBeFocused();
+  await page.getByRole('tab', { name: 'Prononciation', exact: true }).click();
+  await expect(start).toHaveValue('00:00:00.750');
+  await page.getByRole('tab', { name: 'Doublage', exact: true }).click();
   await dub
     .getByRole('combobox', { name: 'Référence vocale', exact: true })
     .selectOption('current');
