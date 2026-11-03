@@ -143,7 +143,7 @@ fn owned_files(root: &Path, spec: &Spec) -> Result<OwnedFiles, String> {
     let canonical = root.canonicalize().map_err(io_error)?;
     let (mut files, mut dirs, mut bytes) = (vec![], vec![], 0u64);
     for relative in &spec.paths {
-        crate::domain::valid_relative(&relative.to_string_lossy())?;
+        crate::domain::valid_relative(&relative.to_string_lossy().replace('\\', "/"))?;
         let mut current = root.to_path_buf();
         for component in relative.components() {
             current.push(component);
@@ -290,7 +290,12 @@ mod tests {
         )
         .unwrap();
         fs::write(d.path().join("project.wav"), b"project").unwrap();
-        let r = remove_owned(d.path(), &spec(&["voice-engines/one"])).unwrap();
+        // Windows Path::join emits backslashes; managed manifest folders use it.
+        let joined = Spec {
+            paths: vec![Path::new("voice-engines").join("one")],
+            ..spec(&[])
+        };
+        let r = remove_owned(d.path(), &joined).unwrap();
         assert_eq!(r.bytes, 7);
         assert_eq!(r.files, 1);
         assert_eq!(fs::read(d.path().join("project.wav")).unwrap(), b"project");
