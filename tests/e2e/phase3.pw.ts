@@ -119,7 +119,7 @@ test('manual characters, inline translation and timeline preview controls persis
   await page.getByRole('button',{name:'Afficher Sous-titres source',exact:true}).click();await page.locator('video').evaluate((video:HTMLVideoElement)=>{video.currentTime=2;});await expect(page.locator('.subtitle-overlay')).toContainText('Every story');await expect(page.locator('.subtitle-overlay')).toContainText('Bonjour Shin');
   await page.getByRole('button',{name:'Masquer Sous-titres source',exact:true}).click();await expect(page.locator('.subtitle-overlay')).not.toContainText('Every story');await page.getByRole('button',{name:'Masquer Sous-titres cible',exact:true}).click();await expect(page.locator('.subtitle-overlay')).toHaveText('');
   await page.getByRole('button',{name:'Couper Audio original',exact:true}).click();await expect(page.getByRole('button',{name:'Activer Audio original',exact:true})).toHaveAttribute('aria-pressed','false');await expect(page.locator('.save-indicator')).toHaveText('Sauvegardé');
-  await page.screenshot({path:'test-results/screenshots/studio-track-controls.png'});await page.reload();await expect(page.getByRole('combobox',{name:'Personnage 1',exact:true}).locator('option:checked')).toHaveText('Shin');await expect(page.getByRole('combobox',{name:'Sous-titres du lecteur'})).toHaveValue('off');await expect(page.getByRole('button',{name:'Activer Audio original',exact:true})).toHaveAttribute('aria-pressed','false');
+  await page.screenshot({path:'test-results/screenshots/studio-track-controls.png'});await page.reload();await page.locator('.project-card-open').first().click();await expect(page.getByRole('combobox',{name:'Personnage 1',exact:true}).locator('option:checked')).toHaveText('Shin');await expect(page.getByRole('combobox',{name:'Sous-titres du lecteur'})).toHaveValue('off');await expect(page.getByRole('button',{name:'Activer Audio original',exact:true})).toHaveAttribute('aria-pressed','false');
 });
 
 test('translated SRT can be synchronized automatically during file import',async({page})=> {
@@ -265,7 +265,7 @@ test('timeline range selection paints inside regions, validates bounds, and supp
   await page.getByRole('button',{name:'Fermer',exact:true}).click();await page.keyboard.press('Control+z');await expect(page.locator('.audio-region')).toHaveCount(0);
   await page.keyboard.press('Control+y');await expect(page.locator('.audio-region')).toHaveCount(3);
   await page.locator('.audio-region.audible').first().click();await page.getByRole('button',{name:'Options audio',exact:true}).click();await expect(page.getByRole('dialog',{name:'Audio',exact:true})).toBeVisible();await page.getByRole('slider',{name:'Volume de la zone'}).fill('0.4');await page.getByRole('button',{name:'Enregistrer la zone',exact:true}).click();await expect(page.locator('.audio-region.audible')).toContainText('40%');
-  await page.getByRole('button',{name:'Fermer',exact:true}).click();await expect(page.locator('.save-indicator')).toHaveText('Sauvegardé');await page.reload();await expect(page.locator('.audio-region')).toHaveCount(3);
+  await page.getByRole('button',{name:'Fermer',exact:true}).click();await expect(page.locator('.save-indicator')).toHaveText('Sauvegardé');await page.reload();await page.locator('.project-card-open').first().click();await expect(page.locator('.audio-region')).toHaveCount(3);
 });
 
 test('model folder size is shown, can be refreshed and recovers from an unavailable drive',async({page})=>{

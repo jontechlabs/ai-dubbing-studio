@@ -31,7 +31,7 @@ test('automatic synchronization previews, applies, exports, persists and undoes'
   await expect(page.locator('.count-badge')).toHaveText('16');
   await page.getByRole('button', { name: 'Ctrl+Y', exact: true }).click();
   await expect(page.locator('.count-badge')).toHaveText('8');
-  await page.reload(); await expect(page.locator('.count-badge')).toHaveText('8');
+  await page.reload(); await page.locator('.project-card-open').first().click(); await expect(page.locator('.count-badge')).toHaveText('8');
   await page.getByRole('button', { name: /Réplique 1 ·/ }).click();
   await expect(page.getByRole('textbox', { name: 'Sous-titre affiché', exact: true })).toHaveValue('Français 0');
   expect(errors).toEqual([]);
@@ -67,7 +67,7 @@ test('timeline edits actual cue timings, splits and merges without losing text, 
   expect(await page.locator('.editor-fields .cue-fields').last().locator('textarea').allTextContents()).toHaveLength(1);
   await expect(page.locator('.save-indicator')).toHaveText('Sauvegardé');
   await page.screenshot({ path: 'test-results/screenshots/studio-timeline.png' });
-  await page.reload(); await page.getByRole('button', { name: /Réplique 1 ·/ }).click();
+  await page.reload(); await page.locator('.project-card-open').first().click(); await page.getByRole('button', { name: /Réplique 1 ·/ }).click();
   const texts = await page.locator('.editor-fields .cue-fields').last().locator('textarea').evaluateAll((elements: HTMLTextAreaElement[]) => elements.map((element) => element.value).join(' '));
   expect(texts.replace(/\s/g, '')).toBe('Chaquehistoirecommenceparunevoix.');
 });

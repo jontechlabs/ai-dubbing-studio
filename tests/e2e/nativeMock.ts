@@ -101,10 +101,11 @@ export async function nativeMock(page: Page, large = false, seededProject?: Proj
         if (id) callbacks.get(id)?.({ event: name, id, payload });
       };
       let libraryRows: any[] | null = null,
-        libraryActive = 'fixture-project';
+        libraryActive = localStorage.getItem('nativeMockLibraryActive') || 'fixture-project';
       const lib = () =>
         libraryRows ??
-        (libraryRows = JSON.parse(localStorage.getItem('nativeMockLibrary') || 'null') ||
+        (libraryRows = (
+          JSON.parse(localStorage.getItem('nativeMockLibrary') || 'null') ||
           host.__librarySeeds || [
             {
               key: 'fixture-project',
@@ -112,13 +113,27 @@ export async function nativeMock(page: Page, large = false, seededProject?: Proj
               project: structuredClone(project),
               trashedAt: null,
             },
-          ]);
+          ]
+        ).map((row: any) => ({ ...row, project: row.project ?? structuredClone(project) })));
       const persistLibrary = () => {
         if (!host.__startAtHome) {
           const row = lib().find((r: any) => r.key === libraryActive);
           if (row) row.project = structuredClone(project);
         }
-        localStorage.setItem('nativeMockLibrary', JSON.stringify(lib()));
+        // The real native index stores metadata, not another copy of every cue.
+        // Keep the active snapshot once so large multiline fixtures retain the normal quota.
+        const active = lib().find((r: any) => r.key === libraryActive);
+        if (active) localStorage.setItem('nativeMockProject', JSON.stringify(active.project));
+        localStorage.setItem('nativeMockLibraryActive', libraryActive);
+        localStorage.setItem(
+          'nativeMockLibrary',
+          JSON.stringify(
+            lib().map((row: any) => ({
+              ...row,
+              project: row.key === libraryActive ? null : row.project,
+            })),
+          ),
+        );
       };
       host.__getLibrary = () => structuredClone(lib());
       host.__completeSpeakerSeparation = () => {

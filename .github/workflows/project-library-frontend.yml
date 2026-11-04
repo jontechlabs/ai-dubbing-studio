@@ -1,0 +1,65 @@
+name: Project library frontend verification
+on:
+  workflow_dispatch:
+  push:
+    branches: [codex/project-library]
+permissions:
+  contents: read
+jobs:
+  frontend:
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2]
+    runs-on: windows-latest
+    timeout-minutes: 35
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+      PLAYWRIGHT_JSON_OUTPUT_NAME: test-results/frontend-shard-${{ matrix.shard }}.json
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 0
+      - name: Verify identical application inputs to packaged Windows build
+        run: |
+          git diff --exit-code 34ccd8a73e985d75e33d34d2316c770a19abfa00 -- src src-tauri workers public resources package.json pnpm-lock.yaml scripts README.md README.fr.md docs
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
+        with:
+          node-version: '24'
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12.10'
+      - name: Install pinned frontend dependencies
+        run: |
+          npm install --global pnpm@11.25.0
+          pnpm install --frozen-lockfile
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+      - name: Fresh frontend unit, complete Chrome, lint and schema checks
+        run: |
+          pnpm mcp:check
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          pnpm build
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          pnpm test
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          pnpm lint
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          pnpm format:check
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          pnpm exec prettier --check tests/e2e/project-home.pw.ts tests/e2e/project-home-browser.pw.ts tests/e2e/loading-subtitles.pw.ts
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          pnpm test:e2e --shard=${{ matrix.shard }}/2 '--reporter=line,json'
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: project-library-frontend-${{ matrix.shard }}
+          path: test-results/frontend-shard-${{ matrix.shard }}.json
+          if-no-files-found: error
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: failure()
+        with:
+          name: project-library-chrome-failure-${{ matrix.shard }}
+          path: test-results/
+          if-no-files-found: ignore

@@ -2,7 +2,7 @@ name: Project library Windows checks
 on:
   workflow_dispatch:
   push:
-    branches: [codex/project-library]
+    branches: [codex/project-library-build]
 permissions:
   contents: read
 jobs:
