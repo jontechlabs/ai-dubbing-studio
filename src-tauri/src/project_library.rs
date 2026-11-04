@@ -768,7 +768,7 @@ mod tests {
     }
     #[test]
     fn catalogue_read_does_not_rewrite_project_or_recovery() {
-        let (_, _, root, _, i, _) = fixture();
+        let (_temporary, _, root, _, i, _) = fixture();
         let before = fs::read(root.join("project.json")).unwrap();
         let old = fs::read(root.join("recovery/previous.json"));
         let e = entry(&i.items[0]);
@@ -804,14 +804,14 @@ mod tests {
     }
     #[test]
     fn stale_or_unknown_trash_requests_leave_files_in_place() {
-        let (_, data, root, p, mut i, key) = fixture();
+        let (_temporary, data, root, p, mut i, key) = fixture();
         assert!(trash_move(&data, &mut i, "../outside", p.revision).is_err());
         assert!(trash_move(&data, &mut i, &key, p.revision + 1).is_err());
         assert!(root.join("project.json").is_file())
     }
     #[test]
     fn restore_never_overwrites_an_existing_destination() {
-        let (_, data, root, p, mut i, key) = fixture();
+        let (_temporary, data, root, p, mut i, key) = fixture();
         trash_move(&data, &mut i, &key, p.revision).unwrap();
         fs::create_dir(&root).unwrap();
         fs::write(root.join("keep.txt"), b"KEEP").unwrap();
@@ -827,7 +827,7 @@ mod tests {
         let (d, data, root, p, mut i, key) = fixture();
         let plain = d.path().join("Documents");
         fs::rename(&root, &plain).unwrap();
-        i.items[0].path = plain.clone();
+        i.items[0].path = plain.canonicalize().unwrap();
         assert_eq!(
             trash_move(&data, &mut i, &key, p.revision).unwrap_err(),
             "PROJECT_FOLDER_REQUIRED"
@@ -836,7 +836,7 @@ mod tests {
     }
     #[test]
     fn interrupted_move_is_recovered_from_the_durable_journal() {
-        let (_, data, root, p, mut i, key) = fixture();
+        let (_temporary, data, root, p, mut i, key) = fixture();
         let bin = root.parent().unwrap().join(".ai-dubbing-studio-trash");
         fs::create_dir(&bin).unwrap();
         let target = bin.join(format!("{key}.dubproject"));
@@ -856,7 +856,7 @@ mod tests {
     }
     #[test]
     fn unstarted_move_journal_keeps_the_original_project() {
-        let (_, data, root, _, mut i, key) = fixture();
+        let (_temporary, data, root, _, mut i, key) = fixture();
         i.items[0].pending = Some(PendingMove {
             from: root.clone(),
             to: root
@@ -874,7 +874,7 @@ mod tests {
     }
     #[test]
     fn replaced_project_identity_is_not_accepted() {
-        let (_, _, root, _, i, _) = fixture();
+        let (_temporary, _, root, _, i, _) = fixture();
         let other = Project::new("Other".into(), "en".into(), "fr".into());
         project::save(&root, &other).unwrap();
         assert_eq!(
@@ -930,7 +930,7 @@ mod tests {
     }
     #[test]
     fn future_formats_are_never_replaced_by_older_recovery_data() {
-        let (_, data, root, p, mut i, key) = fixture();
+        let (_temporary, data, root, p, mut i, key) = fixture();
         project::save(&root, &p).unwrap();
         let mut next = serde_json::to_value(&p).unwrap();
         next["formatVersion"] = serde_json::json!(27);

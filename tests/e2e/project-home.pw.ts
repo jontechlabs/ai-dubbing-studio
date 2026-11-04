@@ -1,5 +1,49 @@
 import { test, expect, type Page } from '@playwright/test';
 import { nativeMock } from './nativeMock';
+
+test('MCP library mutations update visible Home cards without reopening or manual refresh', async ({
+  page,
+}) => {
+  const h = await home(page);
+  await expect.poll(() => page.evaluate(() => (window as any).__mcpReady)).toBe(true);
+  await page.evaluate(() =>
+    (window as any).__TAURI_INTERNALS__.invoke('mcp_set_enabled', { enabled: true }),
+  );
+  const call = (tool: string, args: unknown = {}) =>
+    page.evaluate(({ tool, args }) => (window as any).__mcp(tool, args), { tool, args });
+  const list = await call('studio_list_projects');
+  const row = list.entries[0];
+  const renamed = await call('studio_rename_registered_project', {
+    key: row.key,
+    expectedRevision: row.revision,
+    name: 'Projet piloté par IA',
+  });
+  expect(renamed.error).toBeUndefined();
+  await expect(
+    h.getByRole('button', { name: 'Ouvrir Projet piloté par IA', exact: true }),
+  ).toBeVisible();
+  await call('studio_trash_registered_project', {
+    key: row.key,
+    expectedRevision: renamed.revision,
+    confirmed: true,
+  });
+  await expect(h.locator('.project-card')).toHaveCount(0);
+  await page.getByRole('button', { name: /^Corbeille/ }).click();
+  await expect(h.locator('.project-card')).toHaveCount(1);
+  await call('studio_restore_registered_project', { key: row.key, parentPath: null });
+  await expect(h.locator('.project-card')).toHaveCount(0);
+  await page.getByRole('button', { name: 'Projets', exact: true }).click();
+  await expect(
+    h.getByRole('button', { name: 'Ouvrir Projet piloté par IA', exact: true }),
+  ).toBeVisible();
+  await call('studio_open_registered_project', { key: row.key });
+  await expect(
+    page.getByRole('button', { name: 'Renommer Projet piloté par IA', exact: true }),
+  ).toBeVisible();
+  await call('studio_close_project');
+  await expect(h).toBeVisible();
+  expect((await call('studio_get_state')).screen).toBe('home');
+});
 async function home(page: Page) {
   await nativeMock(page);
   await page.addInitScript(() => {

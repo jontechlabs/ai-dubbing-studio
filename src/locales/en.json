@@ -1828,6 +1828,8 @@
     "coverHint": "Default: around 2 minutes in a long video, or near the middle of a short video. Choose a different position if needed.",
     "coverTime": "Video position (seconds)",
     "capture": "Capture thumbnail",
-    "importInto": "Add a video to “{{name}}”."
+    "importInto": "Add a video to “{{name}}”.",
+    "count_one": "{{count}} project",
+    "count_other": "{{count}} projects"
   }
 }

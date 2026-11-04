@@ -175,6 +175,11 @@ export function ProjectHome({
     [cover, setCover] = useState<ProjectCover | null>(null),
     [coverRevision, setCoverRevision] = useState(0);
   useEffect(() => {
+    const changed = () => setRefresh((n) => n + 1);
+    document.addEventListener('studio-projects-changed', changed);
+    return () => document.removeEventListener('studio-projects-changed', changed);
+  }, []);
+  useEffect(() => {
     let disposed = false;
     setLoading(true);
     setError('');
@@ -323,7 +328,7 @@ export function ProjectHome({
             />
           </label>
           <span>
-            {rows.length} {t('home.projects').toLocaleLowerCase()}
+            {t('home.count', { count: rows.length })}
           </span>
           <IconButton
             label={t('refresh')}

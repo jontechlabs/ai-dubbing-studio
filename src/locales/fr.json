@@ -1828,6 +1828,8 @@
     "coverHint": "Par défaut : vers 2 minutes sur une vidéo longue, ou vers le milieu d’une vidéo courte. Choisissez un autre instant si nécessaire.",
     "coverTime": "Position dans la vidéo (secondes)",
     "capture": "Capturer la vignette",
-    "importInto": "Ajouter une vidéo au projet « {{name}} »."
+    "importInto": "Ajouter une vidéo au projet « {{name}} ».",
+    "count_one": "{{count}} projet",
+    "count_other": "{{count}} projets"
   }
 }

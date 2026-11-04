@@ -89,6 +89,16 @@ export function useMcpControl(control: Control) {
             transport.pause();
           }
           result = await invoke(command.command, parameters);
+          if (
+            [
+              'rename_registered_project',
+              'trash_registered_project',
+              'restore_registered_project',
+              'forget_registered_project',
+              'project_cover',
+            ].includes(command.command)
+          )
+            document.dispatchEvent(new Event('studio-projects-changed'));
           if (result && typeof result === 'object' && 'formatVersion' in result)
             studio.load(
               validateProject(result),

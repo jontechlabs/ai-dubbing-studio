@@ -1477,7 +1477,7 @@ export async function nativeMock(page: Page, large = false, seededProject?: Proj
               emit('project-changed', project);
             }
             persistLibrary();
-            return { key: r.key, name: r.project.name };
+            return { key: r.key, name: r.project.name, revision: r.project.revision };
           }
           if (command === 'trash_registered_project') {
             if (!args.confirmed) throw Error('PROJECT_DELETE_CONFIRMATION');
