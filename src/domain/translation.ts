@@ -59,7 +59,10 @@ function matchesReview(
   if (line.excludedFromDubbing) return false;
   if (!matches(approval, current)) return false;
   const take = index ? indexedTake(project, line, index) : selectedGeneration(project, line);
-  if (take && (line.status !== 'validated' || staleGeneration(project, line, take))) return false;
+  if (take && line.status !== 'validated') return false;
+  // An explicit review of an existing take belongs to the current snapshot,
+  // even when its immutable generation metadata predates an accepted edit.
+  if (take && !approval!.joint && staleGeneration(project, line, take)) return false;
   return (
     !approval!.joint ||
     sameReview(approval!.joint, jointReviewSnapshot(project, line, take ?? null, index))
@@ -123,17 +126,24 @@ export function cleanTranslationApprovals(project: Project): Project {
       line.status = 'review';
   return project;
 }
-export function approveTranslation(project: Project, id: string, approved: boolean): Project {
+export function approveTranslation(
+  project: Project,
+  id: string,
+  approved: boolean,
+  acceptChangedTake = false,
+): Project {
   const parent = project.dialogues.find((l) => l.id === id);
   if (parent?.excludedFromDubbing) throw Error('DIALOGUE_EXCLUDED');
+  if (approved && parent && translationState(project, parent) === 'approved') return project;
   if (parent && activeSpeakerGroup(project, parent))
-    return approveTranslations(project, [id], approved);
+    return approveTranslations(project, [id], approved, acceptChangedTake);
   const next = structuredClone(project),
     line = next.dialogues.find((line) => line.id === id);
   if (!line || !hasTranslation(next, line)) throw Error('TRANSLATION_REQUIRED');
   if (line.excludedFromDubbing) throw Error('DIALOGUE_EXCLUDED');
   const take = selectedGeneration(next, line);
-  if (approved && take && staleGeneration(next, line, take)) throw Error('TTS_STALE_GENERATION');
+  if (approved && take && !acceptChangedTake && staleGeneration(next, line, take))
+    throw Error('TTS_STALE_GENERATION');
   next.translationApprovals ??= {};
   if (approved) {
     next.formatVersion = Math.max(24, next.formatVersion);
@@ -142,14 +152,19 @@ export function approveTranslation(project: Project, id: string, approved: boole
       joint: jointReviewSnapshot(next, line),
     };
   } else delete next.translationApprovals[id];
-  if (approved && take) line.status = staleGeneration(next, line, take) ? 'review' : 'validated';
+  if (approved && take) line.status = 'validated';
   else if (!approved && line.status === 'validated') line.status = 'review';
   return next;
 }
 
 // Index subtitles once and commit the entire selection as a single project edit.
 // Empty translations are skipped; an unknown dialogue rejects the whole edit.
-export function approveTranslations(project: Project, ids: string[], approved: boolean): Project {
+export function approveTranslations(
+  project: Project,
+  ids: string[],
+  approved: boolean,
+  acceptChangedTake = false,
+): Project {
   const index = reviewIndex(project);
   const lines = new Map(project.dialogues.map((line) => [line.id, line]));
   if (ids.some((id) => !lines.has(id))) throw Error('NO_DIALOGUES');
@@ -180,7 +195,7 @@ export function approveTranslations(project: Project, ids: string[], approved: b
     );
     if (
       current.targetText.replace(/<[^>]*>/g, '').trim() &&
-      !(take && staleGeneration(project, line, take)) &&
+      (acceptChangedTake || !(take && staleGeneration(project, line, take))) &&
       !matchesReview(project, line, project.translationApprovals?.[id], current, index)
     )
       changes.set(id, { ...current, joint: jointReviewSnapshot(project, line, take, index) });
@@ -192,7 +207,7 @@ export function approveTranslations(project: Project, ids: string[], approved: b
       ? !l.excludedFromDubbing &&
           !!g &&
           hasTranslation(project, l) &&
-          !staleGeneration(project, l, g) &&
+          (acceptChangedTake || !staleGeneration(project, l, g)) &&
           l.status !== 'validated'
       : l.status === 'validated';
   });
@@ -207,7 +222,7 @@ export function approveTranslations(project: Project, ids: string[], approved: b
     const l = next.dialogues.find((l) => l.id === id)!;
     const g = selectedGeneration(next, l);
     if (approved && !l.excludedFromDubbing && g && hasTranslation(next, l))
-      l.status = staleGeneration(next, l, g) ? 'review' : 'validated';
+      l.status = !acceptChangedTake && staleGeneration(next, l, g) ? 'review' : 'validated';
     else if (!approved && l.status === 'validated') l.status = 'review';
   }
   if (approved) next.formatVersion = Math.max(24, next.formatVersion);

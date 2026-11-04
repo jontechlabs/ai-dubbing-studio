@@ -470,8 +470,8 @@ tool(
 );
 tool(
   'studio_approve_translations',
-  'Approve or withdraw the common text and selected-current-voice review for supplied dialogue IDs in one undoable saved edit. Empty translations and stale selected takes are skipped; unknown IDs reject the entire edit. Without a selected take, approve text for batch preparation; a new selected take withdraws that approval. Any text, pronunciation, take, edit or placement change withdraws the common approval. Historical takes are preserved. Read checkedIds from studio_get_state to include checked lines hidden by filters.',
-  { ids: { type: 'array', minItems: 1, items: string }, approved: bool },
+  'Approve or withdraw common text and voice review in one undoable saved edit. Empty translations and stale selected takes are skipped by default. Set acceptChangedTake=true only to explicitly accept the existing selected audio despite changes since generation. The exact current text, take, references and edits are then reviewed together; any later change withdraws approval. Unknown IDs reject the entire edit. Without a take, text-only approval prepares batches. Historical takes are preserved.',
+  { ids: { type: 'array', minItems: 1, items: string }, approved: bool, acceptChangedTake: bool },
   ['ids', 'approved'],
   true,
 );
@@ -609,8 +609,8 @@ tool(
 );
 tool(
   'studio_review_take',
-  'Validate or invalidate a dialogue voice take.',
-  { lineId: string, validated: bool },
+  'Validate or invalidate the selected dialogue voice take. Stale takes are rejected by default. Set acceptChangedTake=true only after explicitly accepting the current audio despite changed generation inputs. Later edits withdraw the common review; historical takes stay intact.',
+  { lineId: string, validated: bool, acceptChangedTake: bool },
   ['lineId', 'validated'],
   true,
 );

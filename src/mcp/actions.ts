@@ -165,7 +165,14 @@ export function editProject(
         throw Error('MCP_INVALID_ARGUMENTS');
       const existing = new Set(project.dialogues.map((line) => line.id));
       if (args.ids.some((id) => !existing.has(id))) throw Error('MCP_UNKNOWN_DIALOGUE');
-      next = approveTranslations(project, args.ids as string[], args.approved);
+      if (args.acceptChangedTake !== undefined && typeof args.acceptChangedTake !== 'boolean')
+        throw Error('MCP_INVALID_ARGUMENTS');
+      next = approveTranslations(
+        project,
+        args.ids as string[],
+        args.approved,
+        args.acceptChangedTake === true,
+      );
       break;
     }
     case 'studio_project_patch':
@@ -236,7 +243,12 @@ export function editProject(
       break;
     case 'studio_review_take':
       line();
-      next = reviewGeneration(project, id, args.validated as boolean);
+      if (
+        typeof args.validated !== 'boolean' ||
+        (args.acceptChangedTake !== undefined && typeof args.acceptChangedTake !== 'boolean')
+      )
+        throw Error('MCP_INVALID_ARGUMENTS');
+      next = reviewGeneration(project, id, args.validated, args.acceptChangedTake === true);
       break;
     case 'studio_set_lip_variant':
       next = selectLipVideo(project, id, args.enabled as boolean);

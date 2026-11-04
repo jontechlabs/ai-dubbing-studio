@@ -34,10 +34,10 @@ import { assignCharacter } from '../domain/characters';
 import { CharacterAvatar } from './CharacterTools';
 import { selectedGeneration, staleGeneration } from '../domain/tts';
 import { canApproveJointReview, reviewIndex, indexedTake } from '../domain/jointReview';
+import { useTakeReview } from '../hooks/useTakeReview';
 import type { OpenContextMenu } from './ContextMenu';
 import { setDialogueExclusion } from '../domain/dialogueEditing';
 import {
-  approveTranslation,
   approveTranslations,
   translationState,
   translationStates,
@@ -92,6 +92,7 @@ function DialoguesPane({
   onPlayDub: (line: Dialogue) => void;
 }) {
   const { t } = useTranslation();
+  const takeReview = useTakeReview(project, onEdit, busy);
   const [search, setSearch] = useState('');
   const [review, setReview] = useState(false);
   const [showExcluded, setShowExcluded] = useState(false);
@@ -456,9 +457,7 @@ function DialoguesPane({
                     onDub={() => onDub(line)}
                     onPlayDub={() => onPlayDub(line)}
                     onApprove={() =>
-                      onEdit((p) =>
-                        approveTranslation(p, line.id, translationState(p, line) !== 'approved'),
-                      )
+                      takeReview.request(line.id, translationState(project!, line) !== 'approved')
                     }
                   />
                 </div>
@@ -482,6 +481,7 @@ function DialoguesPane({
         <span className="tiny-dot" />
         {t('dialogueCount', { count: project?.dialogues.length ?? 0 })}
       </div>
+      {takeReview.dialog}
     </section>
   );
 }
@@ -541,7 +541,8 @@ function DialogueCard({
   );
   const stale = !!generation && staleGeneration(project, line, generation);
   const StateIcon = translationIcons[translation];
-  const reviewAllowed = canApproveJointReview(project, line);
+  const reviewAllowed = canApproveJointReview(project, line, true);
+  const changedTake = !canApproveJointReview(project, line);
   const reviewHint = t(
     `translationActionHint.${
       line.excludedFromDubbing
@@ -552,12 +553,14 @@ function DialogueCard({
             ? 'untranslated'
             : translation !== 'approved' && !reviewAllowed
               ? 'blocked'
-              : translation
+              : translation !== 'approved' && changedTake
+                ? 'changed'
+                : translation
     }`,
   );
   const voiceStatus = activeGroup
     ? t('overlap.groupChildren', { count: activeGroup.voices.length })
-    : t(stale ? 'review' : line.status);
+    : t(stale && translation !== 'approved' ? 'review' : line.status);
   return (
     <article
       className={`dialogue-card translation-${translation} ${line.excludedFromDubbing ? 'dialogue-excluded' : ''} ${selected ? 'selected' : ''}`}

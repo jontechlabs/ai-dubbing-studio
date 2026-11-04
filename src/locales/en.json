@@ -434,7 +434,8 @@
     "PROJECT_IS_OPEN": "Return Home before deleting this project.",
     "PROJECT_RECOVERY_REQUIRED": "The project move needs checking. Files have been retained.",
     "INVALID_COVER_TIME": "Choose a position within the video.",
-    "MICROPHONE_PENDING": "Save or discard the microphone take before leaving this project."
+    "MICROPHONE_PENDING": "Save or discard the microphone take before leaving this project.",
+    "REVIEW_CHANGED": "The dialogue or its take changed during this confirmation. Close this window and start the review again."
   },
   "preparingVideo": "Preparing video…",
   "loadingVideo": "Loading video…",
@@ -1836,8 +1837,28 @@
     "translated": "Click ✓ to approve this dialogue.",
     "approved": "Click ↶ to withdraw approval and mark this dialogue for review.",
     "untranslated": "Add a translation before approving this dialogue.",
-    "blocked": "Approval requires a translation and, when present, an up-to-date selected take for every voice.",
+    "blocked": "Each active voice must have a translation before approval.",
     "busy": "Approval is unavailable while this operation is running.",
-    "excluded": "Include this dialogue in dubbing again before approving it."
+    "excluded": "Include this dialogue in dubbing again before approving it.",
+    "changed": "This take differs from current inputs. Click to review the changes and explicitly approve it."
+  },
+  "reviewChanged": {
+    "title": "Approve this existing take?",
+    "explain": "Inputs have changed since generation. Listen to the dub and check the differences before confirming that this take still fits.",
+    "keep": "Approval keeps the audio file and every take. It does not replace text or timing. Any later change withdraws approval again.",
+    "changed": "The dialogue or its take changed during this confirmation. Close this window and start the review again.",
+    "accept": "Approve the take as it is",
+    "voice": "Voice {{number}}",
+    "generated": "Generated take text",
+    "current": "Current spoken text",
+    "accepted": "This take differs from its generation inputs; you approved it as it is for the current dialogue.",
+    "reasons": {
+      "text": "The spoken text changed.",
+      "timing": "The dialogue slot changed.",
+      "character": "The assigned character changed.",
+      "source": "The source video changed.",
+      "language": "The target language changed.",
+      "reference": "The voice reference or its transcript changed."
+    }
   }
 }

@@ -25,7 +25,8 @@ import { Panels } from './components/Panels';
 import { Player } from './components/Player';
 import { Timeline } from './components/Timeline';
 import type { AudioSelection, Dialogue, Generation, Project } from './domain/types';
-import { selectedGeneration, reviewGeneration } from './domain/tts';
+import { selectedGeneration } from './domain/tts';
+import { useTakeReview } from './hooks/useTakeReview';
 import { useGenerationAudio } from './hooks/useGenerationAudio';
 import { useProject } from './hooks/useProject';
 import { useShortcuts } from './hooks/useShortcuts';
@@ -355,6 +356,7 @@ export default function App() {
     language: i18n.resolvedLanguage ?? 'fr',
     changeLanguage: (language) => i18n.changeLanguage(language),
   });
+  const takeReview = useTakeReview(studio.project, studio.edit, busy);
   useShortcuts({
     toggle: transport.toggle,
     dub: () => {
@@ -364,7 +366,7 @@ export default function App() {
       if (selected) openDub(selected);
     },
     validate: () => {
-      if (selected && !busy) studio.edit((p) => reviewGeneration(p, selected.id, true));
+      if (selected && !busy) takeReview.request(selected.id, true, 'take');
     },
     original,
     save: () => {
@@ -418,6 +420,7 @@ export default function App() {
       .trim() ?? 'UNKNOWN';
   return (
     <AudioLevelsContext.Provider value={transport.audioLevels}>
+      {takeReview.dialog}
       <div
         className="app-shell"
         onContextMenu={(event) => {

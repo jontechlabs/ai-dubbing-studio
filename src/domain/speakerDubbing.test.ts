@@ -86,6 +86,20 @@ export function overlapFixture() {
   }
   return p;
 }
+it('explicit parent review accepts changed selected child takes, preserves all takes and does not approve a blank child', () => {
+  const p = overlapFixture(),
+    parent = p.dialogues[0],
+    child = p.dialogues.at(-2)!;
+  child.ttsText = 'Autre texte';
+  const generations = structuredClone(p.generations);
+  const approved = cleanTranslationApprovals(approveTranslation(p, parent.id, true, true));
+  expect(translationState(approved, approved.dialogues[0])).toBe('approved');
+  expect(approved.generations).toEqual(generations);
+  const edited = editDialogue(approved, child.id, 'target', '');
+  const blank = cleanTranslationApprovals(approveTranslation(edited, parent.id, true, true));
+  expect(translationState(blank, blank.dialogues[0])).toBe('translated');
+  expect(blank.generations).toEqual(generations);
+});
 it('mixes two active sibling voices together and keeps parent/all historical takes untouched', () => {
   const p = overlapFixture(),
     before = JSON.stringify(p.generations);

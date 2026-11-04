@@ -434,7 +434,8 @@
     "PROJECT_IS_OPEN": "Revenez à l’accueil avant de supprimer ce projet.",
     "PROJECT_RECOVERY_REQUIRED": "Le déplacement du projet demande une vérification. Les fichiers ont été conservés.",
     "INVALID_COVER_TIME": "Choisissez un instant situé dans la vidéo.",
-    "MICROPHONE_PENDING": "Enregistrez ou supprimez la prise microphone avant de quitter ce projet."
+    "MICROPHONE_PENDING": "Enregistrez ou supprimez la prise microphone avant de quitter ce projet.",
+    "REVIEW_CHANGED": "La réplique ou son essai a changé pendant cette confirmation. Fermez cette fenêtre et recommencez la validation."
   },
   "preparingVideo": "Préparation de la vidéo…",
   "loadingVideo": "Chargement de la vidéo…",
@@ -1836,8 +1837,28 @@
     "translated": "Cliquer sur ✓ pour valider cette réplique.",
     "approved": "Cliquer sur ↶ pour retirer la validation et remettre cette réplique « À revoir ».",
     "untranslated": "Ajoutez une traduction avant de valider cette réplique.",
-    "blocked": "La validation exige une traduction renseignée et, s’il existe, un essai sélectionné à jour pour chaque voix.",
+    "blocked": "Chaque voix active doit avoir une traduction avant la validation.",
     "busy": "La validation est indisponible pendant ce traitement.",
-    "excluded": "Réintégrez cette réplique dans le doublage avant de la valider."
+    "excluded": "Réintégrez cette réplique dans le doublage avant de la valider.",
+    "changed": "Cet essai diffère des données actuelles. Cliquer pour vérifier les changements et le valider explicitement."
+  },
+  "reviewChanged": {
+    "title": "Valider cet essai existant ?",
+    "explain": "Des données ont changé depuis la génération. Écoutez le doublage et vérifiez les différences avant de confirmer que cet essai convient toujours.",
+    "keep": "Valider conserve le fichier audio et tous les essais. Aucun texte ni calage n’est remplacé. Toute modification ultérieure retire à nouveau la validation.",
+    "changed": "La réplique ou son essai a changé pendant cette confirmation. Fermez cette fenêtre et recommencez la validation.",
+    "accept": "Valider l’essai tel quel",
+    "voice": "Voix {{number}}",
+    "generated": "Texte de l’essai généré",
+    "current": "Texte à prononcer actuellement",
+    "accepted": "Cet essai diffère des données de génération ; vous l’avez validé tel quel pour l’état actuel de la réplique.",
+    "reasons": {
+      "text": "Le texte à prononcer a changé.",
+      "timing": "Le créneau de la réplique a changé.",
+      "character": "Le personnage attribué a changé.",
+      "source": "La vidéo source a changé.",
+      "language": "La langue cible a changé.",
+      "reference": "La référence vocale ou sa transcription a changé."
+    }
   }
 }

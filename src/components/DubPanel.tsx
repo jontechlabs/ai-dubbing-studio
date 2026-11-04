@@ -20,7 +20,6 @@ import {
   defaultVoiceSettings,
   deleteGeneration,
   editVoiceSettings,
-  reviewGeneration,
   selectGeneration,
   selectedGeneration,
   spokenText,
@@ -53,6 +52,8 @@ import { moodGroup, moodGroups, voiceMoods } from '../domain/voiceMoods';
 import { SpeakerSeparationPanel } from './SpeakerSeparationPanel';
 import { isolatedVoice, speakerDubbingState } from '../domain/speakerDubbing';
 import { useDubbingTask } from '../hooks/useDubbingTask';
+import { useTakeReview } from '../hooks/useTakeReview';
+import { translationState, hasTranslation } from '../domain/translation';
 
 export function CosyModel({
   jobs,
@@ -347,6 +348,9 @@ export function DubPanel({
       disposed = true;
     };
   }, [completion, onError, variantId]);
+  const busy =
+    task.pending || working || jobs.some((j) => ['queued', 'running', 'paused'].includes(j.status));
+  const takeReview = useTakeReview(project, onEdit, busy);
   if (!line) return <div className="panel-body">{t('selectLine')}</div>;
   const preferred = voiceVariant(project.modelPreferences?.voiceVariantId);
   const rawSettings = batch
@@ -420,11 +424,7 @@ export function DubPanel({
   const generations = voiceGenerations(project).filter(
     (g) => g.dialogueId === takeLine.id && g.language === project.languages.target,
   );
-  const chosen = selectedGeneration(project, takeLine),
-    busy =
-      task.pending ||
-      working ||
-      jobs.some((j) => ['queued', 'running', 'paused'].includes(j.status));
+  const chosen = selectedGeneration(project, takeLine);
   const inputText = speakerDubbingState(project).parents.has(line.id)
     ? ''
     : spokenText(project, line);
@@ -566,6 +566,7 @@ export function DubPanel({
   );
   return (
     <div className="panel-body dub-panel">
+      {takeReview.dialog}
       <nav className="dub-navigation" aria-label={t('compact.dubbingNavigation')}>
         {(
           [
@@ -1293,7 +1294,15 @@ export function DubPanel({
                   </small>
                 )}
                 {(stale || long) && (
-                  <p className="warning">{t(stale ? 'ttsStale' : 'ttsTooLong')}</p>
+                  <p className="warning">
+                    {t(
+                      stale
+                        ? active && translationState(project, takeLine) === 'approved'
+                          ? 'reviewChanged.accepted'
+                          : 'ttsStale'
+                        : 'ttsTooLong',
+                    )}
+                  </p>
                 )}
                 {active && (
                   <OutputGainControl
@@ -1360,9 +1369,14 @@ export function DubPanel({
                 disabled={
                   busy ||
                   speakerDubbingState(project).parents.has(takeLine.id) ||
-                  staleGeneration(project, takeLine, chosen)
+                  !hasTranslation(project, takeLine)
                 }
-                onClick={() => onEdit((p) => reviewGeneration(p, takeLine.id, true))}
+                title={t(
+                  staleGeneration(project, takeLine, chosen)
+                    ? 'translationActionHint.changed'
+                    : 'translationActionHint.translated',
+                )}
+                onClick={() => takeReview.request(takeLine.id, true, 'take')}
               >
                 <Check size={14} />
                 {t('ttsValidate')}
@@ -1370,7 +1384,7 @@ export function DubPanel({
               <button
                 className="text-button"
                 disabled={busy || speakerDubbingState(project).parents.has(takeLine.id)}
-                onClick={() => onEdit((p) => reviewGeneration(p, takeLine.id, false))}
+                onClick={() => takeReview.request(takeLine.id, false, 'take')}
               >
                 {t('ttsReview')}
               </button>

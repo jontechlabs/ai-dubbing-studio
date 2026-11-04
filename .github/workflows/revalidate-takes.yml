@@ -1,0 +1,94 @@
+name: Revalidate existing takes Windows checks
+on:
+  workflow_dispatch:
+  push:
+    branches: [codex/revalidate-existing-takes]
+permissions:
+  contents: read
+  actions: read
+jobs:
+  frontend:
+    runs-on: windows-latest
+    timeout-minutes: 20
+    env:
+      PLAYWRIGHT_JSON_OUTPUT_NAME: test-results/revalidate-takes.json
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
+        with:
+          node-version: '24'
+      - name: Install pinned frontend dependencies
+        run: |
+          npm install --global pnpm@11.25.0
+          pnpm install --frozen-lockfile
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+      - name: Fresh frontend and dialogue review regressions
+        run: |
+          pnpm mcp:check
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          pnpm build
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          pnpm test
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          pnpm lint
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          pnpm format:check
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          pnpm exec prettier --check tests/e2e/revalidate-takes.pw.ts tests/e2e/dialogue-review-actions.pw.ts tests/e2e/selection-toolbox-ui.pw.ts scripts/test-revalidation-mcp.mjs
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          pnpm exec playwright test tests/e2e/revalidate-takes.pw.ts tests/e2e/dialogue-review-actions.pw.ts tests/e2e/translation-review.pw.ts tests/e2e/bulk-translation-review.pw.ts tests/e2e/dialogue-editing.pw.ts tests/e2e/batch-unapproved.pw.ts tests/e2e/selection-toolbox-ui.pw.ts tests/e2e/lip-batch-recovery.pw.ts --workers=1 '--reporter=line,json'
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: revalidate-takes-frontend
+          path: test-results/
+          if-no-files-found: error
+  windows:
+    runs-on: windows-latest
+    timeout-minutes: 55
+    env:
+      LIBCLANG_PATH: 'C:\Program Files\LLVM\bin'
+      PYTHONDONTWRITEBYTECODE: '1'
+      PYTHONUTF8: '1'
+      PYTHONIOENCODING: utf-8
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
+        with:
+          node-version: '24'
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12.10'
+      - name: Verify revalidation scope and authenticated native baseline
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python scripts/verify-revalidate-takes.py
+      - name: Prepare pinned tools and dependencies
+        run: |
+          npm install --global pnpm@11.25.0
+          pnpm install --frozen-lockfile
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          ./scripts/prepare-ffmpeg.ps1
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          ./scripts/prepare-prosody.ps1
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          rustup update stable --no-self-update
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+      - name: Build signed updater installer
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ''
+        run: pnpm desktop:build
+      - name: Package installer and portable version
+        run: ./scripts/package-windows.ps1
+      - name: Actual packaged review and persistence through official MCP SDK
+        run: ./scripts/test-mcp.ps1 -ClientScript test-revalidation-mcp.mjs
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: revalidate-takes-windows-packages-and-validation
+          path: artifacts/*
+          if-no-files-found: error

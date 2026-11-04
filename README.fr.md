@@ -1,5 +1,7 @@
 # AI Dubbing Studio
 
+**v0.40.2 — Revalidation des doublages existants.** Un essai n’est plus définitivement bloqué après changement de texte, calage, personnage ou référence : la confirmation montre les différences et permet de valider l’audio tel quel après écoute. Une modification ultérieure retire la validation. Essais et WAV conservés. [Guide et capture](docs/REVALIDATION.md).
+
 **v0.40.1 — Validation des répliques plus claire.** Statut déplacé dans la barre d’actions en bas des cartes, pictogrammes distincts et action explicite : ✓ pour valider, ↶ pour remettre « À revoir ». Infobulles contextuelles et accès au clavier. [Guide et capture](docs/DIALOGUE-REVIEW-ACTIONS.md).
 
 **v0.40.0 — Gestionnaire de projets.** Accueil au démarrage pour créer, ouvrir, rechercher et renommer les projets. Retour à l’accueil et renommage depuis l’éditeur. Corbeille avec restauration, vignettes capturées dans la vidéo et choix manuel du moment de capture. Sous-titres, essais et vidéo source conservés. **155 outils MCP, format de projet 26.** [Guide et capture](docs/PROJECTS.md).

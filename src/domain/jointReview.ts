@@ -134,7 +134,11 @@ export function sameReview(a: unknown, b: unknown): boolean {
     Object.keys(x).every((k) => Object.hasOwn(y, k) && sameReview(x[k], y[k]))
   );
 }
-export function canApproveJointReview(project: Project, line: Dialogue): boolean {
+export function canApproveJointReview(
+  project: Project,
+  line: Dialogue,
+  acceptChangedTake = false,
+): boolean {
   if (line.excludedFromDubbing) return false;
   const group = activeSpeakerGroup(project, line);
   if (group) {
@@ -147,10 +151,10 @@ export function canApproveJointReview(project: Project, line: Dialogue): boolean
       children.every(
         (l) =>
           !!isolatedVoice(project, l.id)?.voice.translations[project.languages.target]?.trim() &&
-          canApproveJointReview(project, l),
+          canApproveJointReview(project, l, acceptChangedTake),
       )
     );
   }
   const take = selectedGeneration(project, line);
-  return !take || !staleGeneration(project, line, take);
+  return acceptChangedTake || !take || !staleGeneration(project, line, take);
 }

@@ -101,7 +101,7 @@ test('Space and Enter approve and withdraw review without playing video, seeking
   expect(await video.evaluate((v: HTMLVideoElement) => v.paused)).toBe(true);
 });
 
-test('disabled review controls explain missing translations and stale selected takes', async ({
+test('review controls explain missing translations and offer explicit stale-take acceptance', async ({
   page,
 }) => {
   await ready(page);
@@ -117,8 +117,8 @@ test('disabled review controls explain missing translations and stale selected t
     .getByRole('textbox', { name: 'Sous-titre affiché', exact: true })
     .fill('Texte modifié après la génération.');
   const stale = cards.nth(1).locator('.translation-review button');
-  await expect(stale).toBeDisabled();
-  await expect(stale).toHaveAttribute('title', /essai sélectionné à jour/);
+  await expect(stale).toBeEnabled();
+  await expect(stale).toHaveAttribute('title', /vérifier les changements/);
   const after = await snapshot(page);
   expect(after.generations).toEqual(before.generations);
 });

@@ -143,17 +143,22 @@ export function deleteGeneration(project: Project, id: string): Project {
       }
   return next;
 }
-export function reviewGeneration(project: Project, lineId: string, validated: boolean): Project {
+export function reviewGeneration(
+  project: Project,
+  lineId: string,
+  validated: boolean,
+  acceptChangedTake = false,
+): Project {
   const next = structuredClone(project),
     line = next.dialogues.find((line) => line.id === lineId);
   if (!line) throw Error('NO_DIALOGUES');
   if (activeSpeakerGroup(next, line)) throw Error('SPEAKER_DUBBING_PARENT_ACTIVE');
   const generation = selectedGeneration(next, line);
-  if (!generation || (validated && staleGeneration(next, line, generation)))
-    throw Error('TTS_STALE_GENERATION');
-  line.status = validated ? 'validated' : 'review';
-  if (hasTranslation(next, line)) return approveTranslation(next, line.id, validated);
+  if (!generation) throw Error('TTS_STALE_GENERATION');
+  if (hasTranslation(next, line))
+    return approveTranslation(next, line.id, validated, acceptChangedTake);
   if (validated) throw Error('TRANSLATION_REQUIRED');
+  line.status = 'review';
   delete next.translationApprovals?.[line.id];
   return next;
 }
