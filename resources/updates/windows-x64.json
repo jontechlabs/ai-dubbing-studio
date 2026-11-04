@@ -1,11 +1,11 @@
 {
-  "version": "0.40.0",
-  "notes": "Accueil de gestion des projets au démarrage : créer, ouvrir, rechercher, renommer et retrouver ses projets. Retour à l’accueil et renommage depuis l’éditeur. Vignettes vidéo automatiques ou capturées au moment choisi. Corbeille avec restauration ; sous-titres, essais et médias conservés. 155 outils MCP, format 26.",
-  "pub_date": "2026-11-04T06:07:21Z",
+  "version": "0.40.1",
+  "notes": "Statuts de traduction dans la barre d’actions au bas des répliques. Pictogrammes pour les trois états, ✓ pour valider et ↶ pour remettre À revoir. Infobulles explicites et activation au clavier sans lancer la vidéo. Essais et sous-titres conservés.",
+  "pub_date": "2026-11-04T13:38:23Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSdFFyMUJGTFp3Nkh6YS8rd3dXQUJnZUIzeHZVeGdZTWxmTmxlRzlZMDVRblE2REpmK0VsUzVPZ0I5YkJkR0RBL25WcVpERHI0WSthVTRqMVhCKytVV2t2TDNVOHhwQXdzPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkzNzcwNTcxCWZpbGU6QUkgRHViYmluZyBTdHVkaW9fMC40MC4wX3g2NC1zZXR1cC5leGUJdmVyc2lvbjowLjQwLjAKL2lUVjd3cUx0T2U4Wjg4WmNpTS9CWXQzOXhJeUhEcUgyNTlOUDk1N2RuMVNhSWFWcmRVVzlXRFZ1d0J2TmFxK0xzNUdXcmVsZU9lQkMxNTNiTTNZQkE9PQo=",
-      "url": "https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.40.0/AI-Dubbing-Studio-0.40.0-Setup.exe"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSdFFyMUJGTFp3NkdoVXJGbnRHTFMzdHdjbW9yWGs5MmEyUTdUZWFNR3VpaEFTZEhqOUs5bG1PZUwzSDFJcHB0VGcwQ3RrVHNEMDRheDdPTUtoY05jOHg5R3JxUlg2elFVPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkzNzk4OTk1CWZpbGU6QUkgRHViYmluZyBTdHVkaW9fMC40MC4xX3g2NC1zZXR1cC5leGUJdmVyc2lvbjowLjQwLjEKd0xEVmRoQmRWMTMzeUFIdEdQb3dKM3Y3YjhNQ2gyYmNlcC8zamhGS2NwVkVKaVNQb01QNWdzYXlQdGhCMXRtWjZ0NGNQdDdDVC84clRYQ2Frd0txRFE9PQo=",
+      "url": "https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.40.1/AI-Dubbing-Studio-0.40.1-Setup.exe"
     }
   }
 }
