@@ -1,0 +1,60 @@
+name: Batch recovery UI continuation
+on:
+  workflow_dispatch:
+  push:
+    branches: [codex/take-dates-batch-ui-validation]
+permissions:
+  contents: read
+jobs:
+  frontend:
+    runs-on: windows-latest
+    timeout-minutes: 30
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+      PLAYWRIGHT_JSON_OUTPUT_NAME: test-results/frontend-shard-2.json
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
+        with:
+          node-version: '24'
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12.10'
+      - name: Verify unchanged application and compiled source
+        shell: python
+        run: |
+          import subprocess
+          def git(*args): return subprocess.check_output(['git',*args],text=True).strip()
+          baseline='f23c2818604c95ce1fae8d82de2af001090f93d5'
+          changed=set(git('diff','--name-only',baseline,'HEAD').splitlines())
+          assert changed=={'tests/e2e/reference-range-batch.pw.ts','.github/workflows/batch-recovery-ui-validation.yml'},changed
+          for path in ['src','src-tauri','workers','public','package.json','pnpm-lock.yaml','vite.config.ts','playwright.config.ts','tests/e2e/nativeMock.ts']:
+              assert git('rev-parse','HEAD:'+path)==git('rev-parse',baseline+':'+path),path
+          print('Exact compiled application, native code, workers, dependencies and browser fixture preserved.')
+      - name: Install pinned frontend dependencies
+        run: |
+          npm install --global pnpm@11.25.0
+          pnpm install --frozen-lockfile
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+      - name: Fresh second Chrome shard with updated recovery path
+        run: |
+          pnpm mcp:check
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          pnpm build
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          pnpm test:e2e --shard=2/2 '--reporter=line,json'
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: batch-recovery-frontend-2
+          path: test-results/frontend-shard-2.json
+          if-no-files-found: error
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: failure()
+        with:
+          name: batch-recovery-chrome-continuation-failure
+          path: test-results/
+          if-no-files-found: ignore
