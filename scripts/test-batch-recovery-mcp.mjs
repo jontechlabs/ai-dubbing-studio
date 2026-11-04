@@ -103,6 +103,9 @@ try {
   assert(Number.isFinite(Date.parse(p.generations[0].createdAt)));
   const projects = await call('studio_list_projects'),
     entry = projects.entries.find((e) => e.key === projects.activeKey);
+  // Library paths are display strings; persisted native journals use the
+  // canonical Windows namespaced root held by the open session.
+  const root = path.toNamespacedPath(await fs.realpath(entry.path));
   const options = {
     variantId: 'cosy3-official',
     device: 'cpu',
@@ -113,7 +116,7 @@ try {
     seed: 13,
   };
   const request = {
-    root: entry.path,
+    root,
     project_id: p.id,
     language: 'fr',
     approved_only: false,
@@ -123,7 +126,7 @@ try {
       status: ['succeeded', 'failed', 'pending'][n],
       error: n === 1 ? 'TTS_EMPTY_AUDIO' : null,
       request: {
-        root: entry.path,
+        root,
         projectId: p.id,
         lineId: l.id,
         options,
