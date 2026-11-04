@@ -760,11 +760,21 @@ export async function nativeMock(page: Page, large = false, seededProject?: Proj
         if (!error) {
           const before = structuredClone(job);
           host.__pendingTts = { lineId: row.id, options: host.__pendingBatch.options };
-          host.__completeTts();
+          host.__completeTts(2000, false);
           job = before;
           row.status = 'succeeded';
-        } else row.status = 'failed';
+          row.generationId = project.generations.at(-1).id;
+          row.error = null;
+        } else {
+          row.status = 'failed';
+          row.error = error;
+        }
         batchJobUpdate();
+      };
+      host.__failBatchFatal = (error = 'TTS_DRAMA_RAM_REQUIRED') => {
+        host.__advanceBatch(error);
+        job = { ...job, status: 'failed', error: 'TTS_BATCH_PARTIAL', stage: 'done' };
+        emit('job-changed', job);
       };
       host.__completeTts = (durationMs = 2000, terminal = true) => {
         const { lineId, options } = host.__pendingTts,
@@ -2494,6 +2504,9 @@ export async function nativeMock(page: Page, large = false, seededProject?: Proj
             const plan = batchPlan(args.selection);
             host.__pendingBatch = structuredClone(args.selection);
             host.__batchRows = plan.ready.map((id: string) => ({ id, status: 'pending' }));
+            host.__batchOriginRows = host.__batchRows;
+            host.__batchRoot = 'batch-job';
+            host.__batchRetryCount = 0;
             host.__batchSkipped =
               plan.existing +
               plan.untranslated +
@@ -2507,6 +2520,61 @@ export async function nativeMock(page: Page, large = false, seededProject?: Proj
               logs: [],
               error: null,
             };
+            batchJobUpdate();
+            return job.id;
+          }
+          if (command === 'dubbing_batch_report') {
+            const all = host.__batchOriginRows ?? [],
+              succeeded = all.filter((r: any) => r.status === 'succeeded').length,
+              failed = all.filter((r: any) => r.status === 'failed').length;
+            const rows = all.filter(
+              (r: any) => !args.problemsOnly || ['failed', 'pending'].includes(r.status),
+            );
+            return {
+              reportId: host.__batchRoot,
+              progress: {
+                total: all.length,
+                completed: all.filter((r: any) => r.status !== 'pending').length,
+                succeeded,
+                failed,
+                skipped: host.__batchSkipped ?? 0,
+                currentLineId: null,
+              },
+              matching: rows.length,
+              offset: args.offset ?? 0,
+              items: rows
+                .slice(args.offset ?? 0, (args.offset ?? 0) + (args.limit ?? 100))
+                .map((r: any) => {
+                  const g = project.generations.find((g: any) => g.id === r.generationId);
+                  return {
+                    lineId: r.id,
+                    status: r.status,
+                    error: r.error ?? null,
+                    generationId: g?.id ?? null,
+                    createdAt: g?.createdAt ?? null,
+                  };
+                }),
+            };
+          }
+          if (command === 'retry_dubbing_batch') {
+            host.__retrySelection = structuredClone(args.selection);
+            const s = args.selection,
+              ids = new Set(s.lineIds),
+              rows = host.__batchOriginRows.filter((r: any) =>
+                s.scope === 'selected'
+                  ? ids.has(r.id)
+                  : s.scope === 'failed'
+                    ? r.status === 'failed'
+                    : ['failed', 'pending'].includes(r.status),
+              );
+            if (!rows.length || rows.some((r: any) => r.status === 'succeeded'))
+              throw Error('INVALID_TTS_BATCH');
+            for (const r of rows) {
+              r.status = 'pending';
+              r.error = null;
+            }
+            host.__batchRows = rows;
+            job = { ...job, id: `batch-retry-${++host.__batchRetryCount}`, logs: [], error: null };
             batchJobUpdate();
             return job.id;
           }

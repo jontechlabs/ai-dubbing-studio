@@ -1,0 +1,122 @@
+name: Batch recovery Windows checks
+on:
+  workflow_dispatch:
+  push:
+    branches: [codex/take-dates-batch-recovery]
+permissions:
+  contents: read
+jobs:
+  frontend:
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2]
+    runs-on: windows-latest
+    timeout-minutes: 35
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+      PLAYWRIGHT_JSON_OUTPUT_NAME: test-results/frontend-shard-${{ matrix.shard }}.json
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
+        with:
+          node-version: '24'
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12.10'
+      - name: Install pinned frontend dependencies
+        run: |
+          npm install --global pnpm@11.25.0
+          pnpm install --frozen-lockfile
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+      - name: Fresh frontend unit, complete Chrome, lint and schema checks
+        run: |
+          pnpm mcp:check
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          pnpm build
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          pnpm test
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          pnpm lint
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          pnpm format:check
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          pnpm exec prettier --check tests/e2e/take-dates-batch-recovery.pw.ts scripts/test-batch-recovery-mcp.mjs
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          pnpm test:e2e --shard=${{ matrix.shard }}/2 '--reporter=line,json'
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: batch-recovery-frontend-${{ matrix.shard }}
+          path: test-results/frontend-shard-${{ matrix.shard }}.json
+          if-no-files-found: error
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: failure()
+        with:
+          name: batch-recovery-chrome-failure-${{ matrix.shard }}
+          path: test-results/
+          if-no-files-found: ignore
+  windows:
+    runs-on: windows-latest
+    timeout-minutes: 75
+    env:
+      LIBCLANG_PATH: 'C:\Program Files\LLVM\bin'
+      PYTHONDONTWRITEBYTECODE: '1'
+      PYTHONUTF8: '1'
+      PYTHONIOENCODING: utf-8
+      PYTHONUNBUFFERED: '1'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
+        with:
+          node-version: '24'
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12.10'
+      - name: Verify batch recovery scope and identical inference engines
+        run: python scripts/verify-batch-recovery.py
+      - name: Prepare pinned tools and dependencies
+        run: |
+          npm install --global pnpm@11.25.0
+          pnpm install --frozen-lockfile
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          ./scripts/prepare-ffmpeg.ps1
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          ./scripts/prepare-prosody.ps1
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          rustup update stable --no-self-update
+      - name: Fresh native and worker regression checks
+        run: |
+          git restore -- docs/screenshots
+          cargo test --locked --manifest-path src-tauri/Cargo.toml
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          cargo clippy --locked --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          cargo fmt --manifest-path src-tauri/Cargo.toml --check
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          python -m pip install numpy==2.2.6 scipy==1.15.3 soundfile==0.13.1 opencv-python-headless==4.11.0.86
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          python -m unittest discover -s workers -p "test_*.py"
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+      - name: Build signed updater installer
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ''
+        run: pnpm desktop:build
+      - name: Package installer and portable version
+        run: ./scripts/package-windows.ps1
+      - name: Actual packaged batch reports and recovery through official MCP SDK
+        run: ./scripts/test-mcp.ps1 -ClientScript test-batch-recovery-mcp.mjs
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: batch-recovery-windows-packages-and-validation
+          path: |
+            artifacts/*
+            test-results/
+          if-no-files-found: error

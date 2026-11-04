@@ -53,6 +53,8 @@ import { SpeakerSeparationPanel } from './SpeakerSeparationPanel';
 import { isolatedVoice, speakerDubbingState } from '../domain/speakerDubbing';
 import { useDubbingTask } from '../hooks/useDubbingTask';
 import { useTakeReview } from '../hooks/useTakeReview';
+import { TakeDate } from './TakeDate';
+import { BatchRecovery } from './BatchRecovery';
 import { translationState, hasTranslation } from '../domain/translation';
 
 export function CosyModel({
@@ -618,14 +620,40 @@ export function DubPanel({
             starting={task.pending}
             error={task.error}
             onError={onError}
-            onRetry={(id) =>
-              task.start(async () => {
-                await snapshot();
-                return (await bridge.retryJob(id)) ?? id;
-              })
+            onDismiss={task.canDismiss ? task.dismiss : undefined}
+            onRetry={
+              task.job?.kind === 'ttsBatch'
+                ? undefined
+                : (id) =>
+                    task.start(async () => {
+                      await snapshot();
+                      return (await bridge.retryJob(id)) ?? id;
+                    })
             }
           />
+          {task.batchReportId && (
+            <BatchRecovery
+              job={task.job}
+              starting={task.pending}
+              reportId={task.batchReportId}
+              project={project}
+              busy={busy}
+              startTask={task.start}
+              snapshot={snapshot}
+              onDismiss={task.dismiss}
+              onError={onError}
+              onChooseLine={(id) => {
+                const target = project.dialogues.find((l) => l.id === id);
+                if (target) onChooseLine(target);
+              }}
+            />
+          )}
         </div>
+      )}
+      {task.dismissed && (
+        <button className="text-button" onClick={task.restore}>
+          {t('batchRecovery.restore')}
+        </button>
       )}
       {textEditor}
       {line.excludedFromDubbing && !batch && (
@@ -1234,6 +1262,7 @@ export function DubPanel({
                   {t('ttsGenerationNumber', { number: generations.length - index })} ·{' '}
                   {(generation.durationMs / 1000).toFixed(2)} s {active && <Check size={13} />}
                 </strong>
+                <TakeDate value={generation.createdAt} />
                 <small>
                   {voiceVariant(generation.options.variantId)?.name ?? generation.modelId} ·{' '}
                   {generation.deviceName} · {generation.options.speed.toFixed(2)}× · {t('ttsSeed')}{' '}

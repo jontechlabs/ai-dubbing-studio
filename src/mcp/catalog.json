@@ -3296,6 +3296,64 @@
       "annotations": { "readOnlyHint": false, "destructiveHint": true, "openWorldHint": false }
     },
     {
+      "name": "studio_dubbing_batch_report",
+      "command": "dubbing_batch_report",
+      "description": "Read paginated saved outcomes of a dubbing batch belonging to the open project. Resolves retry jobs to the original report, includes error codes and successful take timestamps. Defaults: offset 0, limit 100 (maximum 200), problemsOnly true. Does not change the project or run inference.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "offset": { "anyOf": [{ "type": "integer", "minimum": 0 }, { "type": "null" }] },
+          "limit": { "anyOf": [{ "type": "integer", "minimum": 0 }, { "type": "null" }] },
+          "problemsOnly": { "anyOf": [{ "type": "boolean" }, { "type": "null" }] }
+        },
+        "required": ["id"],
+        "additionalProperties": false
+      },
+      "annotations": { "readOnlyHint": true, "destructiveHint": false, "openWorldHint": false }
+    },
+    {
+      "name": "studio_retry_dubbing_batch",
+      "command": "retry_dubbing_batch",
+      "description": "Retry only failed, unfinished or explicitly selected failed/unfinished lines from a saved batch. Reuses the original generation options with current line text/reference inputs; successful committed takes are never regenerated or replaced. Results update the original report. Returns a new job ID. Requires current context.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "selection": { "$ref": "#/$defs/selection_DubbingBatchRetrySelection_0" },
+          "context": {
+            "type": "object",
+            "properties": {
+              "projectId": { "type": "string" },
+              "expectedRevision": { "type": "integer", "minimum": 0 }
+            },
+            "required": ["projectId", "expectedRevision"],
+            "additionalProperties": false
+          }
+        },
+        "required": ["id", "selection", "context"],
+        "additionalProperties": false,
+        "$defs": {
+          "selection_DubbingBatchRetrySelection_0": {
+            "type": "object",
+            "properties": {
+              "scope": {
+                "anyOf": [
+                  { "type": "string", "const": "selected" },
+                  { "type": "string", "const": "failed" },
+                  { "type": "string", "const": "unfinished" }
+                ]
+              },
+              "lineIds": { "type": "array", "items": { "type": "string" } }
+            },
+            "required": ["scope", "lineIds"],
+            "additionalProperties": false
+          }
+        }
+      },
+      "annotations": { "readOnlyHint": false, "destructiveHint": true, "openWorldHint": false }
+    },
+    {
       "name": "studio_voice_reference_path",
       "command": "voice_reference_path",
       "description": "voice reference path. Uses the current desktop session. Local file paths must be absolute; long operations return job IDs. Existing native validation applies.",
@@ -7503,6 +7561,26 @@
             "trackId": { "anyOf": [{ "type": "string" }] }
           },
           "required": ["mode"],
+          "additionalProperties": false
+        }
+      }
+    },
+    "DubbingBatchRetrySelection": {
+      "$ref": "#/$defs/DubbingBatchRetrySelection_0",
+      "$defs": {
+        "DubbingBatchRetrySelection_0": {
+          "type": "object",
+          "properties": {
+            "scope": {
+              "anyOf": [
+                { "type": "string", "const": "selected" },
+                { "type": "string", "const": "failed" },
+                { "type": "string", "const": "unfinished" }
+              ]
+            },
+            "lineIds": { "type": "array", "items": { "type": "string" } }
+          },
+          "required": ["scope", "lineIds"],
           "additionalProperties": false
         }
       }

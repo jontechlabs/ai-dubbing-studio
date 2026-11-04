@@ -1063,6 +1063,31 @@ fn generate_dubbing_batch(
     tts_batch::enqueue(core.inner().clone(), app, selection)
 }
 #[tauri::command]
+fn dubbing_batch_report(
+    core: State<'_, Shared>,
+    id: String,
+    offset: Option<u32>,
+    limit: Option<u32>,
+    problems_only: Option<bool>,
+) -> Result<tts_batch::review::Report, String> {
+    tts_batch::review::report(
+        &core,
+        &id,
+        offset.unwrap_or(0),
+        limit.unwrap_or(100),
+        problems_only.unwrap_or(true),
+    )
+}
+#[tauri::command]
+fn retry_dubbing_batch(
+    app: tauri::AppHandle,
+    core: State<'_, Shared>,
+    id: String,
+    selection: tts_batch::review::RetrySelection,
+) -> Result<String, String> {
+    tts_batch::review::retry(core.inner().clone(), app, &id, selection)
+}
+#[tauri::command]
 fn voice_reference_path(
     app: tauri::AppHandle,
     core: State<'_, Shared>,
@@ -1714,7 +1739,15 @@ fn retry_job(app: tauri::AppHandle, core: State<'_, Shared>, id: String) -> Resu
         return tts_trials::resume(core.inner().clone(), app, request);
     }
     if let Some(key) = record.tts_batch {
-        return tts_batch::resume(core.inner().clone(), app, tts_batch::load(&core, &key)?);
+        return tts_batch::review::retry(
+            core.inner().clone(),
+            app,
+            &key,
+            tts_batch::review::RetrySelection {
+                scope: "unfinished".into(),
+                line_ids: vec![],
+            },
+        );
     }
     if let Some(request) = record.face_detection {
         return face_detection::start(core.inner().clone(), app, request);
@@ -2157,6 +2190,8 @@ pub fn run() {
             reference_audio_info,
             preview_dubbing_batch,
             generate_dubbing_batch,
+            dubbing_batch_report,
+            retry_dubbing_batch,
             voice_reference_path,
             transcribe_voice_reference,
             load_demo

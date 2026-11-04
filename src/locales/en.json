@@ -1860,5 +1860,36 @@
       "language": "The target language changed.",
       "reference": "The voice reference or its transcript changed."
     }
+  },
+  "batchRecovery": {
+    "dismiss": "Dismiss summary",
+    "restore": "Show task summary again",
+    "abandon": "Abandon retries",
+    "title": "Batch dubbing results",
+    "details": "Batch dialogues · {{failed}} failed",
+    "hint": "Latest result per dialogue. Retries reuse the batch settings with current text and references. Successful takes are kept. Dismissing this summary never deletes a take.",
+    "retryFailed": "Retry failed ({{count}})",
+    "retryRemaining": "Retry failed and unprocessed",
+    "retrySelected": "Retry selected ({{count}})",
+    "retryLine": "Retry dialogue {{number}}",
+    "check": "Select dialogue {{number}} to retry",
+    "summary": "{{succeeded}} succeeded · {{failed}} failed · {{pending}} unprocessed",
+    "showAll": "Also show succeeded and skipped dialogues",
+    "loading": "Loading batch results…",
+    "empty": "No failed or unprocessed dialogues in this batch.",
+    "missing": "Dialogue unavailable",
+    "previous": "Previous",
+    "next": "Next",
+    "states": {
+      "pending": "Unprocessed",
+      "running": "Running",
+      "succeeded": "Succeeded",
+      "failed": "Failed",
+      "skipped": "Skipped"
+    }
+  },
+  "takeDate": {
+    "created": "Created {{date}}",
+    "unknown": "Generation date unavailable"
   }
 }

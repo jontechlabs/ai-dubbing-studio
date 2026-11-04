@@ -92,6 +92,7 @@ const mapping = {
   'inpaint::Options': 'InpaintOptions',
   'inpaint_batch::Selection': 'InpaintBatchSelection',
   'tts_batch::Selection': 'DubbingBatchSelection',
+  'tts_batch::review::RetrySelection': 'DubbingBatchRetrySelection',
   'audio_patch::Options': 'TransferOptions',
   'character_review::Scope': 'SpeakerScope',
   'character_review::PortraitOptions': 'PortraitOptions',
@@ -123,8 +124,12 @@ function rustSchema(type) {
   throw Error('Unknown native parameter type: ' + type);
 }
 const readOnly =
-  /^(?!apply_)(environment|graphics_info|.*_status|.*_result|latest_.*|audio_effects_catalog|.*_path|.*_paths|list_jobs|model_storage_info|model_storage_size|managed_models|current_project|list_projects|project_cover|voice_install_space|preview_.*|reference_audio_info|get_waveform)$/;
+  /^(?!apply_)(environment|graphics_info|.*_status|.*_result|latest_.*|audio_effects_catalog|.*_path|.*_paths|list_jobs|model_storage_info|model_storage_size|managed_models|current_project|list_projects|project_cover|voice_install_space|preview_.*|reference_audio_info|get_waveform|dubbing_batch_report)$/;
 const notes = {
+  dubbing_batch_report:
+    'Read paginated saved outcomes of a dubbing batch belonging to the open project. Resolves retry jobs to the original report, includes error codes and successful take timestamps. Defaults: offset 0, limit 100 (maximum 200), problemsOnly true. Does not change the project or run inference.',
+  retry_dubbing_batch:
+    'Retry only failed, unfinished or explicitly selected failed/unfinished lines from a saved batch. Reuses the original generation options with current line text/reference inputs; successful committed takes are never regenerated or replaced. Results update the original report. Returns a new job ID. Requires current context.',
   current_project:
     'Read the currently open editor project, or null on Home. Does not reopen the previous project.',
   list_projects:
@@ -234,6 +239,7 @@ const projectCommands = new Set(
   ),
 );
 projectCommands.add('preview_character_portrait');
+projectCommands.add('retry_dubbing_batch');
 for (const command of [
   'transcribe_dialogue_source',
   'apply_source_transcription',

@@ -1,5 +1,5 @@
 [CmdletBinding()]
-param([string]$PortablePath, [ValidateSet('test-mcp.mjs','test-review-actions-mcp.mjs','test-revalidation-mcp.mjs')][string]$ClientScript='test-mcp.mjs')
+param([string]$PortablePath, [ValidateSet('test-mcp.mjs','test-review-actions-mcp.mjs','test-revalidation-mcp.mjs','test-batch-recovery-mcp.mjs')][string]$ClientScript='test-mcp.mjs')
 $ErrorActionPreference='Stop'
 $repoRoot=Split-Path -Parent $PSScriptRoot
 if(-not $PortablePath){$PortablePath=Join-Path $repoRoot 'artifacts/AI-Dubbing-Studio-Windows-Portable.zip'}

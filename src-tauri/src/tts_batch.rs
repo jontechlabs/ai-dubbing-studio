@@ -3,6 +3,8 @@ use crate::{
     jobs, project, separation, tts, Core,
 };
 use serde::{Deserialize, Serialize};
+#[path = "tts_batch_review.rs"]
+pub mod review;
 #[cfg(test)]
 #[path = "tts_batch_tests.rs"]
 pub(crate) mod tests;
@@ -54,12 +56,16 @@ pub struct Progress {
 }
 #[derive(Clone, Serialize, Deserialize)]
 pub struct Item {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub origin_index: Option<usize>,
     pub request: tts::Request,
     pub status: String,
     pub error: Option<String>,
 }
 #[derive(Clone, Serialize, Deserialize)]
 pub struct Request {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub origin_batch_id: Option<String>,
     pub root: PathBuf,
     #[serde(default)]
     pub approved_only: bool,
@@ -230,6 +236,7 @@ pub fn plan(
                 request.batch_item_id = Some(id());
                 preview.ready.push(line.id.clone());
                 items.push(Item {
+                    origin_index: None,
                     request,
                     status: "pending".into(),
                     error: None,
@@ -268,6 +275,7 @@ pub fn enqueue<R: tauri::Runtime>(
         }
         (
             Request {
+                origin_batch_id: None,
                 root: s.root.clone(),
                 approved_only: selection.approved_only,
                 unapproved_only: selection.unapproved_only,
@@ -285,13 +293,7 @@ pub fn enqueue<R: tauri::Runtime>(
     };
     start(core, app, request, Some(preview))
 }
-pub fn resume<R: tauri::Runtime>(
-    core: Arc<Core>,
-    app: tauri::AppHandle<R>,
-    request: Request,
-) -> Result<String, String> {
-    resume_with_launch(core, app, request, None)
-}
+#[cfg(test)]
 fn resume_with_launch<R: tauri::Runtime>(
     core: Arc<Core>,
     app: tauri::AppHandle<R>,
@@ -479,12 +481,16 @@ fn start_with_launch<R: tauri::Runtime>(
             let outcome=async {
             for index in 0..request.items.len() {
                 if request.items[index].status=="succeeded"{continue;}
+                if request.items[index].status=="failed" {
+                    review::record_origin(&core,&request,&request.items[index])?;
+                    continue;
+                }
                 if flag.load(Ordering::Relaxed){return Err("CANCELLED".into());}
                 let committed={let session=core.session.lock().map_err(io_error)?;let s=session.as_ref().ok_or("NO_PROJECT")?;if s.root!=request.root||s.project.id!=request.project_id||s.project.languages.target!=request.language{return Err("STALE_REVISION".into());}already_committed(&s.project,&s.root,&request.items[index])};
-                if committed{request.items[index].status="succeeded".into();record_item(&core,&key,index,&request.items[index])?;persist(&core,&app,&key,&request,None);continue;}
+                if committed{request.items[index].status="succeeded".into();record_item(&core,&key,index,&request.items[index])?;review::record_origin(&core,&request,&request.items[index])?;persist(&core,&app,&key,&request,None);continue;}
                 let item=&request.items[index];let line_id=item.request.line_id.clone();
                 let excluded={let guard=core.session.lock().map_err(io_error)?;let session=guard.as_ref().ok_or("NO_PROJECT")?;session.project.dialogues.iter().any(|l|l.id==line_id&&l.excluded_from_dubbing==Some(true))};
-                if excluded {request.items[index].status="skipped".into();request.items[index].error=None;record_item(&core,&key,index,&request.items[index])?;persist(&core,&app,&key,&request,None);jobs::update(&core,&app,&key,|j|j.logs.push(format!("Skipped excluded dialogue: {line_id}")));continue;}
+                if excluded {request.items[index].status="skipped".into();request.items[index].error=None;record_item(&core,&key,index,&request.items[index])?;review::record_origin(&core,&request,&request.items[index])?;persist(&core,&app,&key,&request,None);jobs::update(&core,&app,&key,|j|j.logs.push(format!("Skipped excluded dialogue: {line_id}")));continue;}
                 let item=&request.items[index];
                 if request.approved_only || request.unapproved_only {
                     let session=core.session.lock().map_err(io_error)?;let s=session.as_ref().ok_or("NO_PROJECT")?;
@@ -503,6 +509,7 @@ fn start_with_launch<R: tauri::Runtime>(
                     Err(error)=>{item.status="failed".into();item.error=Some(error.clone());jobs::update(&core,&app,&key,|j|j.logs.push(format!("Failed {line_id}: {error}")));}
                 }
                 record_item(&core,&key,index,&request.items[index])?;
+                review::record_origin(&core,&request,&request.items[index])?;
                 persist(&core,&app,&key,&request,None);
                 if request.items[index].error.as_deref().is_some_and(|e|["TTS_OUT_OF_MEMORY","TTS_SYSTEM_MEMORY","TTS_FP8_MEMORY_REQUIRED","TTS_FP8_CUDA_REQUIRED","MODEL_CHECKSUM_FAILED","TTS_DRAMA_RAM_REQUIRED","TTS_DRAMA_VRAM_REQUIRED","TTS_DRAMA_DISK_REQUIRED","DEVICE_UNAVAILABLE","TTS_RUNTIME_FAILED","TTS_RUNTIME_REQUIRED"].contains(&e)){return Err("TTS_BATCH_PARTIAL".into());}
             }

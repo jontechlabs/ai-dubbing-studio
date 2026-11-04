@@ -9,6 +9,8 @@ type Task = {
   id: string | null;
   starting: boolean;
   error?: string;
+  reportId?: string;
+  dismissed?: boolean;
 };
 type Operation = {
   task: Task | null;
@@ -53,7 +55,7 @@ export function useDubbingTask(
     if (alive.current) refresh((n) => n + 1);
   }, []);
   const start = useCallback(
-    async (operation: () => Promise<string>) => {
+    async (operation: () => Promise<string>, reportId?: string) => {
       const next: Task = {
         scope,
         sequence: ++sequence.current,
@@ -64,6 +66,7 @@ export function useDubbingTask(
         ),
         id: null,
         starting: true,
+        reportId,
       };
       const operationState: Operation = { task: next };
       remember(scope, operationState);
@@ -163,12 +166,30 @@ export function useDubbingTask(
   const localTake = operation?.localTake;
   const local =
     localTake && voiceGenerations(project).some((g) => g.id === localTake.id) ? localTake : null;
+  const canDismiss = !!current && !current.starting && (!!current.error || !!terminal);
   return {
     start,
     run: runInPanel,
-    job,
-    pending: !!current && (current.starting || (!!current.id && !job)),
-    error: current?.error,
+    job: current?.dismissed ? undefined : job,
+    reportId: current?.reportId ?? current?.id ?? undefined,
+    batchReportId: current?.dismissed
+      ? undefined
+      : (current?.reportId ?? (job?.kind === 'ttsBatch' ? (current?.id ?? undefined) : undefined)),
+    dismissed: !!current?.dismissed,
+    restore: () => {
+      if (operation && current) {
+        operation.task = { ...current, dismissed: false };
+        refresh((n) => n + 1);
+      }
+    },
+    pending: !!current && !current.dismissed && (current.starting || (!!current.id && !job)),
+    error: current?.dismissed ? undefined : current?.error,
+    dismiss: () => {
+      if (!canDismiss || !operation || !current) return;
+      operation.task = { ...current, dismissed: true };
+      refresh((n) => n + 1);
+    },
+    canDismiss,
     result,
     focusId: local?.id ?? result?.id,
     focusKey: local

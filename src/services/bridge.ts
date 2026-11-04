@@ -491,6 +491,29 @@ export function previewDubbingBatch(selection: DubbingBatchSelection) {
 export function generateDubbingBatch(selection: DubbingBatchSelection) {
   return invoke<string>('generate_dubbing_batch', { selection });
 }
+export type DubbingBatchRetrySelection = {
+  scope: 'failed' | 'unfinished' | 'selected';
+  lineIds: string[];
+};
+export type DubbingBatchReport = {
+  reportId: string;
+  progress: NonNullable<import('../domain/types').Job['batch']>;
+  matching: number;
+  offset: number;
+  items: {
+    lineId: string;
+    status: 'succeeded' | 'failed' | 'pending' | 'skipped';
+    error: string | null;
+    generationId: string | null;
+    createdAt: string | null;
+  }[];
+};
+export function dubbingBatchReport(id: string, offset = 0, limit = 25, problemsOnly = true) {
+  return invoke<DubbingBatchReport>('dubbing_batch_report', { id, offset, limit, problemsOnly });
+}
+export function retryDubbingBatch(id: string, selection: DubbingBatchRetrySelection) {
+  return invoke<string>('retry_dubbing_batch', { id, selection });
+}
 export type ReferenceFileSelection = ReferenceAudioInfo & { startMs: number; endMs: number };
 export async function chooseReferenceAudio(): Promise<ReferenceAudioInfo | null> {
   if (!native) throw Error('DESKTOP_REQUIRED');

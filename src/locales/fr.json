@@ -1860,5 +1860,36 @@
       "language": "La langue cible a changé.",
       "reference": "La référence vocale ou sa transcription a changé."
     }
+  },
+  "batchRecovery": {
+    "dismiss": "Fermer le récapitulatif",
+    "restore": "Réafficher le suivi",
+    "abandon": "Abandonner les relances",
+    "title": "Résultats du doublage par lot",
+    "details": "Répliques du lot · {{failed}} échec(s)",
+    "hint": "Dernier résultat par réplique. Les relances reprennent les réglages du lot avec le texte et les références actuels. Les réussites sont conservées. Fermer ce récapitulatif ne supprime aucun essai.",
+    "retryFailed": "Relancer les échecs ({{count}})",
+    "retryRemaining": "Relancer les échecs et les non-traitées",
+    "retrySelected": "Relancer la sélection ({{count}})",
+    "retryLine": "Relancer la réplique {{number}}",
+    "check": "Sélectionner la réplique {{number}} à relancer",
+    "summary": "{{succeeded}} réussite(s) · {{failed}} échec(s) · {{pending}} non traitée(s)",
+    "showAll": "Afficher aussi les réussites et les répliques ignorées",
+    "loading": "Chargement du bilan…",
+    "empty": "Aucun échec ni réplique non traitée dans ce lot.",
+    "missing": "Réplique indisponible",
+    "previous": "Précédent",
+    "next": "Suivant",
+    "states": {
+      "pending": "Non traitée",
+      "running": "En cours",
+      "succeeded": "Réussie",
+      "failed": "Échec",
+      "skipped": "Ignorée"
+    }
+  },
+  "takeDate": {
+    "created": "Généré le {{date}}",
+    "unknown": "Date de génération indisponible"
   }
 }

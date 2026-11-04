@@ -3027,6 +3027,55 @@ pre {
   padding: 3px 6px;
   border-radius: 4px;
 }
+.take-created-at {
+  display: block;
+  color: var(--muted);
+  font-size: 11px;
+  margin: 4px 0;
+}
+.current-job-progress {
+  position: relative;
+}
+.current-job-progress .task-dismiss {
+  position: absolute;
+  right: 6px;
+  top: 6px;
+}
+.current-job-progress > strong {
+  padding-right: 24px;
+}
+.batch-recovery-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin: 10px 0;
+}
+.batch-recovery-rows {
+  max-height: 45vh;
+  overflow: auto;
+}
+.batch-recovery-row {
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  padding: 8px;
+  margin: 6px 0;
+}
+.batch-recovery-row header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+.batch-recovery-row header strong {
+  margin-left: auto;
+  font-size: 11px;
+}
+.batch-recovery-row p {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  margin: 5px 0;
+}
 .translation-badge.translated {
   color: #c0efc2;
   background: #b8e8ba18;

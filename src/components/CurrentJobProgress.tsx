@@ -1,4 +1,4 @@
-import { LoaderCircle, Check, XCircle } from 'lucide-react';
+import { LoaderCircle, Check, XCircle, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { Job } from '../domain/types';
 import { JobDuration } from './JobDuration';
@@ -10,12 +10,14 @@ export function CurrentJobProgress({
   starting = false,
   error,
   onRetry,
+  onDismiss,
 }: {
   job: Job | undefined;
   onError: (error: string) => void;
   starting?: boolean;
   error?: string;
   onRetry?: (id: string) => Promise<unknown>;
+  onDismiss?: () => void;
 }) {
   const { t } = useTranslation();
   if (!job)
@@ -29,6 +31,16 @@ export function CurrentJobProgress({
           {starting ? <LoaderCircle size={14} className="spin" /> : <XCircle size={14} />}
           {t(starting ? 'workbench.startingTask' : 'jobFailed')}
         </strong>
+        {!starting && onDismiss && (
+          <button
+            className="icon-button task-dismiss"
+            aria-label={t('batchRecovery.dismiss')}
+            title={t('batchRecovery.dismiss')}
+            onClick={onDismiss}
+          >
+            <X size={14} />
+          </button>
+        )}
         {starting && <progress aria-label={t('workbench.progress')} />}
         {error && (
           <p role="alert">
@@ -55,6 +67,16 @@ export function CurrentJobProgress({
         )}
         {t(`jobKinds.${job.kind}`, { defaultValue: job.kind })}
       </strong>
+      {!active && onDismiss && (
+        <button
+          className="icon-button task-dismiss"
+          aria-label={t('batchRecovery.dismiss')}
+          title={t('batchRecovery.dismiss')}
+          onClick={onDismiss}
+        >
+          <X size={14} />
+        </button>
+      )}
       <span>
         {t(
           active
