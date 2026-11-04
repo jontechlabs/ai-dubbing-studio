@@ -83,9 +83,24 @@ export function useMcpControl(control: Control) {
           if (args.context) checkContext(project, args.context as Context);
           const parameters = { ...args };
           delete parameters.context;
+          if (command.command === 'close_project') {
+            if (readMicrophone().phase !== 'idle') throw Error('MICROPHONE_PENDING');
+            c.stopAudio();
+            transport.pause();
+          }
           result = await invoke(command.command, parameters);
           if (result && typeof result === 'object' && 'formatVersion' in result)
-            studio.load(validateProject(result));
+            studio.load(
+              validateProject(result),
+              [
+                'create_project',
+                'open_project',
+                'create_library_project',
+                'open_registered_project',
+                'restore_project',
+                'load_demo',
+              ].includes(command.command),
+            );
         } else if (tool === 'studio_microphone') {
           checkContext(project, args.context as Context);
           const action = args.action;
@@ -146,6 +161,7 @@ export function useMcpControl(control: Control) {
             context: project && { projectId: project.id, expectedRevision: project.revision },
             name: project?.name ?? null,
             media: project?.media ?? null,
+            screen: project ? 'editor' : 'home',
             selectedId: c.selectedId,
             checkedIds: c.batchIds,
             counts: project && {

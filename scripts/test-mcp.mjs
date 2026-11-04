@@ -19,6 +19,7 @@ import {verifySpeakerDubbing} from './test-speaker-dubbing.mjs';
 import {verifySpeakerReset} from './test-speaker-reset.mjs';
 import {verifyModelManagement} from './test-model-management.mjs';
 import {verifyPortraitPreview} from './test-portrait-preview.mjs';
+import {verifyProjectLibrary} from './test-project-library.mjs';
 const args=Object.fromEntries(process.argv.slice(2).reduce((rows,value,index,all)=>index%2===0?[...rows,[value.slice(2),all[index+1]]]:rows,[]));
 const client=new Client({name:'studio-native-validation',version:'1.0.0'},{capabilities:{}});
 const transport=new StdioClientTransport({command:args.exe,args:['--mcp','--endpoint',args.endpoint],stderr:'pipe'});
@@ -68,6 +69,7 @@ try {
     const until=Date.now()+90000;
     while(true){try {await state();break;}catch(error){if(!String(error).includes('MCP_UI_NOT_READY')||Date.now()>=until)throw error;await new Promise(resolve=>setTimeout(resolve,250));}}
     proofs.packagedSshTransport=await verifySshTransport(args.exe,args.endpoint,args['test-root']);
+    assert.equal((await state()).screen,'home');assert.equal(await call('studio_current_project'),null);proofs.coldStartupHome=true;
     const name='Projet MCP 日本語';
     await call('studio_create_project',{parentPath:args['test-root'],name,source:'ja',target:'fr'});
     const originalHash=createHash('sha256').update(await fs.readFile(args.movie)).digest('hex');
@@ -312,6 +314,7 @@ try {
     proofs.portraitPreview=await verifyPortraitPreview({call,context,args});
     proofs.speakerReset=await verifySpeakerReset({call,context,client,projectRoot});
     proofs.modelManagement=await verifyModelManagement({call,context,args,projectRoot});
+    proofs.projectLibrary=await verifyProjectLibrary({call,context,args,job});
     await fs.writeFile(args.proof,JSON.stringify(proofs,null,2)+'\n','utf8');
     console.log('MCP_NATIVE_PROOF '+JSON.stringify(proofs));
 } catch(error){if(stderr)console.error(stderr.slice(-2000));throw error;}

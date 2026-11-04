@@ -18,7 +18,7 @@ export function useShortcuts(actions: {
       const target = event.target as HTMLElement;
       if (
         target.closest(
-          'input:not([type="range"]), textarea, select, [contenteditable="true"], [role="dialog"], [role="tab"], .inspector-dubbing button, .inspector-dubbing summary, .dialogue-actions button',
+          'input:not([type="range"]), textarea, select, [contenteditable="true"], [role="dialog"], [role="tab"], .inspector-dubbing button, .inspector-dubbing summary, .dialogue-actions button, .titlebar button, .project-home button',
         )
       )
         return;

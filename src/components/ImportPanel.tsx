@@ -5,11 +5,13 @@ import type { MediaInfo, Project } from '../domain/types';
 import * as bridge from '../services/bridge';
 
 export function ImportPanel({
+  project,
   run,
   onClose,
   onStarted,
   onError,
 }: {
+  project: Project | null;
   run: (operation: () => Promise<Project | null>) => Promise<void>;
   onClose: () => void;
   onStarted: () => void;
@@ -19,9 +21,10 @@ export function ImportPanel({
   const [choice, setChoice] = useState<{ path: string; info: MediaInfo } | null>(null);
   const [probing, setProbing] = useState(false);
   const [creating, setCreating] = useState(false);
-  const [name, setName] = useState('');
-  const [source, setSource] = useState('ja');
-  const [target, setTarget] = useState('fr');
+  const intoCurrent = !!project && !project.media;
+  const [name, setName] = useState(intoCurrent ? project.name : '');
+  const [source, setSource] = useState(project && !project.media ? project.languages.source : 'ja');
+  const [target, setTarget] = useState(project && !project.media ? project.languages.target : 'fr');
   const [audio, setAudio] = useState<number | null>(null);
   const choose = async () => {
     setProbing(true);
@@ -29,7 +32,7 @@ export function ImportPanel({
       const result = await bridge.chooseMedia();
       if (!result) return;
       setChoice(result);
-      setName(result.info.originalName.replace(/\.[^.]+$/, ''));
+      if (!intoCurrent) setName(result.info.originalName.replace(/\.[^.]+$/, ''));
       const track = result.info.streams.find((stream) => stream.kind === 'audio');
       setAudio(track?.index ?? null);
     } catch (e) {
@@ -42,23 +45,27 @@ export function ImportPanel({
     if (!choice || !name.trim()) return;
     setCreating(true);
     await run(async () => {
-      const project = await bridge.createProject(name.trim(), source, target);
-      if (!project) return null;
+      const created = intoCurrent
+        ? project
+        : await bridge.createProject(name.trim(), source, target);
+      if (!created) return null;
       try {
         const imported = await bridge.importMedia(choice.path, audio);
         if (bridge.native) onStarted();
         else onClose();
-        return imported ?? project;
+        return imported ?? created;
       } catch (e) {
         onError(String(e));
-        return project;
+        return created;
       }
     });
     setCreating(false);
   };
   return (
     <div className="panel-body import-panel">
-      <p className="panel-description">{t('importHint')}</p>
+      <p className="panel-description">
+        {intoCurrent ? t('home.importInto', { name: project.name }) : t('importHint')}
+      </p>
       <button className="media-choice" onClick={() => void choose()} disabled={probing || creating}>
         {probing ? <LoaderCircle className="spin" size={26} /> : <Film size={28} />}
         <strong>{probing ? t('probing') : (choice?.info.originalName ?? t('chooseVideo'))}</strong>
@@ -70,11 +77,25 @@ export function ImportPanel({
       </button>
       <label className="field">
         <span>{t('projectName')}</span>
-        <input value={name} onChange={(e) => setName(e.target.value)} disabled={creating} />
+        <input
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          disabled={creating || intoCurrent}
+        />
       </label>
       <div className="two-fields">
-        <LanguageField label={t('sourceLanguage')} value={source} onChange={setSource} />
-        <LanguageField label={t('targetLanguage')} value={target} onChange={setTarget} />
+        <LanguageField
+          label={t('sourceLanguage')}
+          value={source}
+          onChange={setSource}
+          disabled={intoCurrent || creating}
+        />
+        <LanguageField
+          label={t('targetLanguage')}
+          value={target}
+          onChange={setTarget}
+          disabled={intoCurrent || creating}
+        />
       </div>
       <label className="field">
         <span>{t('sourceAudio')}</span>
@@ -112,16 +133,18 @@ export function ImportPanel({
         onClick={() => void create()}
       >
         {creating ? <LoaderCircle size={16} className="spin" /> : <FolderOpen size={16} />}{' '}
-        {t('create')}
+        {t(intoCurrent ? 'importVideo' : 'create')}
       </button>
     </div>
   );
 }
 function LanguageField({
+  disabled = false,
   label,
   value,
   onChange,
 }: {
+  disabled?: boolean;
   label: string;
   value: string;
   onChange: (value: string) => void;
@@ -130,7 +153,7 @@ function LanguageField({
   return (
     <label className="field">
       <span>{label}</span>
-      <select value={value} onChange={(e) => onChange(e.target.value)}>
+      <select disabled={disabled} value={value} onChange={(e) => onChange(e.target.value)}>
         {['ja', 'fr', 'en', 'es', 'de', 'it', 'pt', 'zh', 'ko'].map((code) => (
           <option key={code} value={code}>
             {new Intl.DisplayNames([i18n.resolvedLanguage ?? 'en'], { type: 'language' }).of(code)}

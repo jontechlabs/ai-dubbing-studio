@@ -1,5 +1,7 @@
 # AI Dubbing Studio
 
+**v0.40.0 — Gestionnaire de projets.** Accueil au démarrage pour créer, ouvrir, rechercher et renommer les projets. Retour à l’accueil et renommage depuis l’éditeur. Corbeille avec restauration, vignettes capturées dans la vidéo et choix manuel du moment de capture. Sous-titres, essais et vidéo source conservés. **155 outils MCP, format de projet 26.** [Guide et capture](docs/PROJECTS.md).
+
 **v0.39.1 — Défilement du panneau Doublage corrigé.** Les libellés masqués pour l’accessibilité restent dans le défilement du panneau, ce qui supprime la barre parasite et l’espace vide dans la fenêtre principale. Défilement interne, modes réplique/lot, avancement et sélection des essais sont conservés.
 
 **v0.39.0 — Commandes compactes et sélection multivoix.** Pictogrammes et cartes de répliques rapprochées, statut commun « À revoir », boutons de vignette alignés, chargement des modèles explicite et résultats liés à la sélection courante. MossFormer2 / SepFormer accessibles depuis une portion de piste, avec choix des voix et affectation par ajout ou remplacement. Le suivi des installations globales est corrigé ; les poids présents peuvent être listés par taille et supprimés après confirmation. [Guide et captures](docs/SELECTION-TOOLBOX.md).

@@ -27,6 +27,7 @@ mod model_management;
 mod model_storage;
 mod portrait_preview;
 mod project;
+mod project_library;
 mod prosody;
 mod qwen_safety;
 mod separation;
@@ -1116,6 +1117,7 @@ fn attach(
         &core.data_dir.join("recent.txt"),
         root.to_string_lossy().as_bytes(),
     )?;
+    project_library::remember(core, &root, &p, true)?;
     *core.session.lock().map_err(io_error)? = Some(Session::new(root, p.clone()));
     Ok(p)
 }
@@ -1130,7 +1132,7 @@ async fn create_project(
 ) -> Result<Project, String> {
     let core = core.inner().clone();
     tauri::async_runtime::spawn_blocking(move || {
-        ensure_idle(&core)?;
+        let _permit = project_library::idle(&core)?;
         let root = project::create_root(Path::new(&parent_path), &name)?;
         let p = Project::new(name, source, target);
         project::save(&root, &p)?;
@@ -1147,13 +1149,107 @@ async fn open_project(
 ) -> Result<Project, String> {
     let core = core.inner().clone();
     tauri::async_runtime::spawn_blocking(move || {
-        ensure_idle(&core)?;
+        let _permit = project_library::idle(&core)?;
         let root = PathBuf::from(path).canonicalize().map_err(io_error)?;
         let p = project::load(&root)?;
         attach(&app, &core, root, p)
     })
     .await
     .map_err(io_error)?
+}
+#[tauri::command]
+fn current_project(core: State<'_, Shared>) -> Result<Option<Project>, String> {
+    Ok(core
+        .session
+        .lock()
+        .map_err(io_error)?
+        .as_ref()
+        .map(|s| s.project.clone()))
+}
+#[tauri::command]
+async fn list_projects(
+    core: State<'_, Shared>,
+    app: tauri::AppHandle,
+) -> Result<project_library::Library, String> {
+    project_library::list(core.inner().clone(), app).await
+}
+#[tauri::command]
+async fn create_library_project(
+    core: State<'_, Shared>,
+    app: tauri::AppHandle,
+    name: String,
+    source: String,
+    target: String,
+    parent_path: Option<String>,
+) -> Result<Project, String> {
+    let name = project_library::valid_name(&name)?;
+    let parent = project_library::creation_parent(&core, &app, parent_path)?;
+    create_project(
+        app,
+        core,
+        parent.to_string_lossy().into_owned(),
+        name,
+        source,
+        target,
+    )
+    .await
+}
+#[tauri::command]
+async fn open_registered_project(
+    core: State<'_, Shared>,
+    app: tauri::AppHandle,
+    key: String,
+) -> Result<Project, String> {
+    let path = project_library::resolve(&core, &key)?;
+    open_project(app, core, path.to_string_lossy().into_owned()).await
+}
+#[tauri::command]
+async fn rename_registered_project(
+    core: State<'_, Shared>,
+    app: tauri::AppHandle,
+    key: String,
+    expected_revision: u64,
+    name: String,
+) -> Result<project_library::Entry, String> {
+    project_library::rename(core.inner().clone(), app, key, expected_revision, name).await
+}
+#[tauri::command]
+async fn trash_registered_project(
+    core: State<'_, Shared>,
+    key: String,
+    expected_revision: u64,
+    confirmed: bool,
+) -> Result<project_library::Entry, String> {
+    project_library::trash(core.inner().clone(), key, expected_revision, confirmed).await
+}
+#[tauri::command]
+async fn restore_registered_project(
+    core: State<'_, Shared>,
+    key: String,
+    parent_path: Option<String>,
+) -> Result<project_library::Entry, String> {
+    project_library::restore(core.inner().clone(), key, parent_path).await
+}
+#[tauri::command]
+async fn forget_registered_project(
+    core: State<'_, Shared>,
+    key: String,
+    confirmed: bool,
+) -> Result<(), String> {
+    project_library::forget(core.inner().clone(), key, confirmed).await
+}
+#[tauri::command]
+async fn close_project(core: State<'_, Shared>, app: tauri::AppHandle) -> Result<(), String> {
+    project_library::close(core.inner().clone(), app).await
+}
+#[tauri::command]
+async fn project_cover(
+    core: State<'_, Shared>,
+    app: tauri::AppHandle,
+    key: String,
+    at_ms: Option<u64>,
+) -> Result<project_library::Cover, String> {
+    project_library::cover(core.inner().clone(), app, key, at_ms).await
 }
 #[tauri::command]
 async fn restore_project(
@@ -1997,6 +2093,16 @@ pub fn run() {
             remove_installed_model,
             model_storage_size,
             change_model_storage,
+            current_project,
+            list_projects,
+            create_library_project,
+            open_registered_project,
+            rename_registered_project,
+            trash_registered_project,
+            restore_registered_project,
+            forget_registered_project,
+            close_project,
+            project_cover,
             create_project,
             open_project,
             restore_project,

@@ -3365,6 +3365,145 @@
       "annotations": { "readOnlyHint": false, "destructiveHint": true, "openWorldHint": false }
     },
     {
+      "name": "studio_current_project",
+      "command": "current_project",
+      "description": "Read the currently open editor project, or null on Home. Does not reopen the previous project.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "annotations": { "readOnlyHint": true, "destructiveHint": false, "openWorldHint": false }
+    },
+    {
+      "name": "studio_list_projects",
+      "command": "list_projects",
+      "description": "List the registered project catalogue, unavailable entries, recoverable application trash, thumbnail times, default parent folder and active key. Migrates the last-used folder without changing project contents. Use entry.key for catalogue actions; project IDs may be shared by copied folders.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "annotations": { "readOnlyHint": true, "destructiveHint": false, "openWorldHint": false }
+    },
+    {
+      "name": "studio_create_library_project",
+      "command": "create_library_project",
+      "description": "Create and open a project with a validated display name and source/target languages. Optional absolute parentPath defaults to the last project folder or Documents/AI Dubbing Studio Projects. Existing folders are never overwritten.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string" },
+          "source": { "type": "string" },
+          "target": { "type": "string" },
+          "parentPath": { "anyOf": [{ "type": "string" }, { "type": "null" }] }
+        },
+        "required": ["name", "source", "target"],
+        "additionalProperties": false
+      },
+      "annotations": { "readOnlyHint": false, "destructiveHint": true, "openWorldHint": false }
+    },
+    {
+      "name": "studio_open_registered_project",
+      "command": "open_registered_project",
+      "description": "Open an available, non-trashed project by catalogue key. Refuses active tasks; saved editor changes are flushed first by the desktop MCP handler.",
+      "inputSchema": {
+        "type": "object",
+        "properties": { "key": { "type": "string" } },
+        "required": ["key"],
+        "additionalProperties": false
+      },
+      "annotations": { "readOnlyHint": false, "destructiveHint": true, "openWorldHint": false }
+    },
+    {
+      "name": "studio_rename_registered_project",
+      "command": "rename_registered_project",
+      "description": "Rename the display name by catalogue key and expectedRevision from list_projects. The project folder and all assets keep their paths. Refuses active jobs, wrong identities and stale revisions.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "key": { "type": "string" },
+          "expectedRevision": { "type": "integer", "minimum": 0 },
+          "name": { "type": "string" }
+        },
+        "required": ["key", "expectedRevision", "name"],
+        "additionalProperties": false
+      },
+      "annotations": { "readOnlyHint": false, "destructiveHint": true, "openWorldHint": false }
+    },
+    {
+      "name": "studio_trash_registered_project",
+      "command": "trash_registered_project",
+      "description": "Move a closed registered .dubproject folder to recoverable application trash on the SAME volume. Requires expectedRevision and confirmed=true; refuses active jobs, links, changed identities and open projects. A durable journal recovers interrupted moves. Does not permanently delete files.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "key": { "type": "string" },
+          "expectedRevision": { "type": "integer", "minimum": 0 },
+          "confirmed": { "type": "boolean" }
+        },
+        "required": ["key", "expectedRevision", "confirmed"],
+        "additionalProperties": false
+      },
+      "annotations": { "readOnlyHint": false, "destructiveHint": true, "openWorldHint": false }
+    },
+    {
+      "name": "studio_restore_registered_project",
+      "command": "restore_registered_project",
+      "description": "Restore a catalogue trash entry without overwriting an existing destination. Optional absolute parentPath chooses a different existing parent folder; defaults to its original location.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "key": { "type": "string" },
+          "parentPath": { "anyOf": [{ "type": "string" }, { "type": "null" }] }
+        },
+        "required": ["key"],
+        "additionalProperties": false
+      },
+      "annotations": { "readOnlyHint": false, "destructiveHint": true, "openWorldHint": false }
+    },
+    {
+      "name": "studio_forget_registered_project",
+      "command": "forget_registered_project",
+      "description": "Remove only a catalogue entry with confirmed=true, for example an unavailable project. Does not delete or move project files.",
+      "inputSchema": {
+        "type": "object",
+        "properties": { "key": { "type": "string" }, "confirmed": { "type": "boolean" } },
+        "required": ["key", "confirmed"],
+        "additionalProperties": false
+      },
+      "annotations": { "readOnlyHint": false, "destructiveHint": true, "openWorldHint": false }
+    },
+    {
+      "name": "studio_close_project",
+      "command": "close_project",
+      "description": "Save pending desktop changes, stop playback and return to Home. Refuses active jobs and a pending microphone take. Keeps project files and the catalogue entry.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "annotations": { "readOnlyHint": false, "destructiveHint": true, "openWorldHint": false }
+    },
+    {
+      "name": "studio_project_cover",
+      "command": "project_cover",
+      "description": "Get or capture a project thumbnail without opening it in the editor. key comes from list_projects. Optional atMs must lie within the video. Default: 120 seconds for long videos, 40 percent into short videos. Captures and caches one frame locally; source video is unchanged. Returns a local image path, actual atMs and durationMs.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "key": { "type": "string" },
+          "atMs": { "anyOf": [{ "type": "integer", "minimum": 0 }, { "type": "null" }] }
+        },
+        "required": ["key"],
+        "additionalProperties": false
+      },
+      "annotations": { "readOnlyHint": true, "destructiveHint": false, "openWorldHint": false }
+    },
+    {
       "name": "studio_restore_project",
       "command": "restore_project",
       "description": "restore project. Uses the current desktop session. Local file paths must be absolute; long operations return job IDs. Existing native validation applies.",

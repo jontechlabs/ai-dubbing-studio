@@ -100,6 +100,27 @@ export async function nativeMock(page: Page, large = false, seededProject?: Proj
         const id = listeners.get(name);
         if (id) callbacks.get(id)?.({ event: name, id, payload });
       };
+      let libraryRows: any[] | null = null,
+        libraryActive = 'fixture-project';
+      const lib = () =>
+        libraryRows ??
+        (libraryRows = JSON.parse(localStorage.getItem('nativeMockLibrary') || 'null') ||
+          host.__librarySeeds || [
+            {
+              key: 'fixture-project',
+              path: 'C:/Studio/First light.dubproject',
+              project: structuredClone(project),
+              trashedAt: null,
+            },
+          ]);
+      const persistLibrary = () => {
+        if (!host.__startAtHome) {
+          const row = lib().find((r: any) => r.key === libraryActive);
+          if (row) row.project = structuredClone(project);
+        }
+        localStorage.setItem('nativeMockLibrary', JSON.stringify(lib()));
+      };
+      host.__getLibrary = () => structuredClone(lib());
       host.__completeSpeakerSeparation = () => {
         job = { ...job, status: 'succeeded', stage: 'done', progress: 1 };
         emit('job-changed', job);
@@ -1366,6 +1387,129 @@ export async function nativeMock(page: Page, large = false, seededProject?: Proj
             };
             emit('job-changed', job);
             return job.id;
+          }
+          if (command === 'current_project')
+            return host.__startAtHome ? null : structuredClone(project);
+          if (command === 'list_projects') {
+            persistLibrary();
+            return {
+              defaultParent: 'C:/Studio',
+              activeKey: host.__startAtHome ? null : libraryActive,
+              entries: lib().map((r: any) => ({
+                key: r.key,
+                projectId: r.project.id,
+                name: r.project.name,
+                path: r.path,
+                revision: r.project.revision,
+                updatedAt: r.project.updatedAt,
+                lastOpenedAt: r.project.updatedAt,
+                durationMs: r.project.media?.durationMs ?? null,
+                source: r.project.languages.source,
+                target: r.project.languages.target,
+                hasVideo: !!r.project.media,
+                available: r.available !== false,
+                error: r.available === false ? 'MEDIA_MISSING' : null,
+                trashedAt: r.trashedAt ?? null,
+                coverAtMs: r.coverAtMs ?? null,
+              })),
+            };
+          }
+          if (command === 'close_project') {
+            if (job && ['running', 'queued', 'paused'].includes(job.status)) throw Error('BUSY');
+            persistLibrary();
+            host.__startAtHome = true;
+            emit('project-closed', null);
+            return;
+          }
+          if (command === 'create_library_project') {
+            if (host.__libraryCreateError) throw Error(host.__libraryCreateError);
+            persistLibrary();
+            const date = new Date().toISOString();
+            project = {
+              formatVersion: 1,
+              appVersion: initial.appVersion,
+              id: crypto.randomUUID(),
+              name: args.name,
+              revision: 0,
+              createdAt: date,
+              updatedAt: date,
+              languages: { source: args.source, target: args.target },
+              media: null,
+              sourceCues: [],
+              targetCues: [],
+              dialogues: [],
+              tracks: [],
+              characters: [],
+              generations: [],
+              pronunciation: {},
+            };
+            libraryActive = crypto.randomUUID();
+            lib().push({
+              key: libraryActive,
+              path: 'C:/Studio/' + args.name + '.dubproject',
+              project: structuredClone(project),
+              trashedAt: null,
+            });
+            host.__startAtHome = false;
+            persistLibrary();
+            localStorage.setItem('nativeMockProject', JSON.stringify(project));
+            return structuredClone(project);
+          }
+          if (command === 'open_registered_project') {
+            persistLibrary();
+            const r = lib().find((r: any) => r.key === args.key && !r.trashedAt);
+            if (!r || r.available === false) throw Error('PROJECT_NOT_FOUND');
+            project = structuredClone(r.project);
+            libraryActive = r.key;
+            host.__startAtHome = false;
+            localStorage.setItem('nativeMockProject', JSON.stringify(project));
+            return structuredClone(project);
+          }
+          if (command === 'rename_registered_project') {
+            const r = lib().find((r: any) => r.key === args.key);
+            if (!r) throw Error('PROJECT_NOT_FOUND');
+            if (r.project.revision !== args.expectedRevision) throw Error('STALE_REVISION');
+            r.project.name = args.name;
+            r.project.revision++;
+            r.project.updatedAt = new Date().toISOString();
+            if (!host.__startAtHome && libraryActive === r.key) {
+              project = structuredClone(r.project);
+              emit('project-changed', project);
+            }
+            persistLibrary();
+            return { key: r.key, name: r.project.name };
+          }
+          if (command === 'trash_registered_project') {
+            if (!args.confirmed) throw Error('PROJECT_DELETE_CONFIRMATION');
+            const r = lib().find((r: any) => r.key === args.key);
+            if (!r) throw Error('PROJECT_NOT_FOUND');
+            if (r.project.revision !== args.expectedRevision) throw Error('STALE_REVISION');
+            r.trashedAt = new Date().toISOString();
+            persistLibrary();
+            return { key: r.key };
+          }
+          if (command === 'restore_registered_project') {
+            const r = lib().find((r: any) => r.key === args.key);
+            if (!r) throw Error('PROJECT_NOT_FOUND');
+            r.trashedAt = null;
+            persistLibrary();
+            return { key: r.key };
+          }
+          if (command === 'forget_registered_project') {
+            if (!args.confirmed) throw Error('PROJECT_DELETE_CONFIRMATION');
+            libraryRows = lib().filter((r: any) => r.key !== args.key);
+            persistLibrary();
+            return;
+          }
+          if (command === 'project_cover') {
+            const r = lib().find((r: any) => r.key === args.key);
+            if (!r?.project.media) throw Error('MEDIA_MISSING');
+            const duration = r.project.media.durationMs;
+            const at = args.atMs ?? r.coverAtMs ?? Math.min(120000, Math.floor(duration * 0.4));
+            if (at < 0 || at >= duration) throw Error('INVALID_COVER_TIME');
+            r.coverAtMs = at;
+            persistLibrary();
+            return { path: 'project-cover-' + at + '.png', atMs: at, durationMs: duration };
           }
           if (command === 'restore_project') return structuredClone(project);
           if (command === 'latest_lip_analysis')

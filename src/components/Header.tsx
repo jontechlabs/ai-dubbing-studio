@@ -1,4 +1,6 @@
 import {
+  Home,
+  Pencil,
   AudioLines,
   Captions,
   Download,
@@ -35,6 +37,9 @@ export type Panel =
   | 'inpaintBatch'
   | null;
 export function Header({
+  onHome,
+  onRename,
+  projectLocked,
   project,
   saveState,
   panel,
@@ -46,6 +51,9 @@ export function Header({
   busy,
   updateAvailable,
 }: {
+  onHome: () => void;
+  onRename: () => void;
+  projectLocked: boolean;
   project: Project | null;
   saveState: string;
   panel: Panel;
@@ -62,16 +70,26 @@ export function Header({
     <header className="header">
       <div className="titlebar">
         <div className="brand">
+          <IconButton label={t('home.back')} disabled={busy || projectLocked} onClick={onHome}>
+            <Home size={18} />
+          </IconButton>
           <div className="brand-icon">
             <AudioLines size={23} />
           </div>
           <span>{t('brand')}</span>
           <span className="phase-label">{t('local')}</span>
         </div>
-        <div className="project-title">
+        <button
+          className="project-title"
+          title={t('home.rename')}
+          aria-label={t('home.renameNamed', { name: project?.name })}
+          disabled={busy || projectLocked}
+          onClick={onRename}
+        >
           <Film size={14} />
-          {project?.name ?? '—'}
-        </div>
+          <span>{project?.name ?? '—'}</span>
+          <Pencil size={12} />
+        </button>
         <div className="title-actions">
           {updateAvailable && (
             <IconButton label={t('updatesAvailableShort')} onClick={() => onPanel('settings')}>

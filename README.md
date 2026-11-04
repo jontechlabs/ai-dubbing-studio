@@ -1,5 +1,7 @@
 # AI Dubbing Studio
 
+**v0.40.0 — Project manager.** Start on Home to create, open, search and rename projects. Return Home or rename directly from the editor. Recoverable project trash, restoration, automatic interior video thumbnails and a manual timestamp picker. Existing subtitles, dubbing takes and source video are retained. **155 MCP tools, project format 26.** [Guide and screenshot](docs/PROJECTS.md).
+
 **v0.39.1 — Dubbing scroll fix.** The dubbing inspector keeps hidden accessibility labels inside its own scroll area, removing the extra scrollbar and blank space in the main window. Internal scrolling, single/batch mode, progress and take selection remain available.
 
 **v0.39.0 — Compact controls and free-range speaker separation.** Denser dialogue tools/cards, one review status, aligned portrait actions, explicit model loading and results scoped to the current selection. Run MossFormer2 / SepFormer on a free audio-track range, preview and choose voices, then add or replace at the same timestamp. Global model installation progress now completes correctly, and managed weights can be listed by size and deleted with confirmation. [Guide and screenshots](docs/SELECTION-TOOLBOX.md).
@@ -189,8 +191,8 @@ Audio regions with independent silence and volume, timeline range selection, fas
 
 | Package | Purpose |
 | --- | --- |
-| [Windows x64 setup](https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.39.1/AI-Dubbing-Studio-0.39.1-Setup.exe) | NSIS installer for the current user, with English/French installer interface |
-| [Portable ZIP](https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.39.1/AI-Dubbing-Studio-Windows-Portable.zip) | Extract the whole folder and launch `AI Dubbing Studio.exe` |
+| [Windows x64 setup](https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.40.0/AI-Dubbing-Studio-0.40.0-Setup.exe) | NSIS installer for the current user, with English/French installer interface |
+| [Portable ZIP](https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.40.0/AI-Dubbing-Studio-Windows-Portable.zip) | Extract the whole folder and launch `AI Dubbing Studio.exe` |
 | [SHA-256 checksums](https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.35.0/SHA256SUMS.txt) | Verify the setup and ZIP downloads |
 
 Target: **Windows 10/11 x64**, with **Microsoft Edge WebView2 Runtime**. FFmpeg and FFprobe are included. Python, CUDA and AI model downloads are not required for editing and playback. Installation may need Internet access if WebView2 is missing; local project editing does not require a cloud account.

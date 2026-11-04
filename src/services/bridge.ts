@@ -637,6 +637,45 @@ async function storeBrowser(project: Project) {
   browserProject = project;
   return project;
 }
+/** Startup shows the library; explicit restore_project remains available to older MCP clients. */
+export async function startupProject(): Promise<Project | null> {
+  return native ? invoke('current_project') : null;
+}
+export async function closeProject(): Promise<void> {
+  if (native) await invoke('close_project');
+  else {
+    browserProject = null;
+    mediaBlob = null;
+    undoStack.length = 0;
+    redoStack.length = 0;
+  }
+}
+export async function createLibraryProject(
+  name: string,
+  source: string,
+  target: string,
+  parentPath?: string,
+): Promise<Project> {
+  if (native)
+    return invoke('create_library_project', {
+      name,
+      source,
+      target,
+      parentPath: parentPath ?? null,
+    });
+  const p = await createProject(name, source, target);
+  if (!p) throw Error('INVALID_PROJECT');
+  return p;
+}
+export async function openRegisteredProject(key: string): Promise<Project> {
+  if (native) return invoke('open_registered_project', { key });
+  const record = await browserStore('get', key);
+  if (!record) throw Error('PROJECT_NOT_FOUND');
+  mediaBlob = record.media;
+  undoStack.length = 0;
+  redoStack.length = 0;
+  return storeBrowser(validateProject(record.project));
+}
 export async function restoreProject(): Promise<Project | null> {
   if (native) return invoke('restore_project');
   const id = localStorage.getItem('studio.lastProject');
@@ -849,6 +888,7 @@ export async function retryJob(id: string): Promise<string | undefined> {
 export async function subscribe(
   onProject: (p: Project) => void,
   onJob: (j: Job) => void,
+  onClosed: () => void = () => {},
 ): Promise<() => void> {
   if (!native) return () => {};
   const a = await listen<Project>('project-changed', (event) => onProject(event.payload));
@@ -856,10 +896,12 @@ export async function subscribe(
   const c = await listen('models-changed', () =>
     document.dispatchEvent(new Event('studio-models-changed')),
   );
+  const d = await listen('project-closed', onClosed);
   return () => {
     a();
     b();
     c();
+    d();
   };
 }
 

@@ -1,6 +1,6 @@
 # Piloter le studio avec une IA via MCP
 
-Le studio fournit **134 outils MCP** en v0.32.1 : 100 commandes natives et 34 commandes d’édition, d’état et de lecture. Le serveur utilise **stdio** et le même exécutable que l’application. Cette intégration pilote **l’application ouverte** ; aucun environnement Node.js ou Python supplémentaire n’est requis pour la connexion.
+Le studio fournit **155 outils MCP** en v0.40.0 : 120 commandes natives et 35 commandes d’édition, d’état et de lecture. Le serveur utilise **stdio** et le même exécutable que l’application. Cette intégration pilote **l’application ouverte** ; aucun environnement Node.js ou Python supplémentaire n’est requis pour la connexion.
 
 `studio_audio_levels` mesure les niveaux stéréo en dBFS et permet d’effacer les crêtes maximales/voyants, sans modifier le projet. Les valeurs sont aussi dans `studio_get_state.audioLevels`. [Mesure, mix final et limites](AUDIO-LEVELS.md).
 
@@ -112,3 +112,13 @@ Consultez `studio_get_state` et utilisez son `context` récent pour chaque comma
 Depuis v0.32.5, `studio_playback` accepte `action: "selection"`, `trackId`, `startMs`, `endMs` et `beforeLevels` facultatif (faux par défaut). La piste est temporairement isolée ; ses volumes sont conservés ou contournés avec `beforeLevels: true`. La lecture s’arrête à la fin, même si la boucle générale est active. `pause`/`stop`, un déplacement du curseur ou une autre préécoute annulent cette écoute. Les réglages enregistrés du projet restent intacts. `studio_get_state.playback.selection` expose la sélection active, puis revient à `null`.
 
 Depuis v0.39, `studio_managed_models` liste les poids gérés et leur taille réelle. `studio_remove_installed_model` les retire uniquement avec `confirmed: true`, hors tâche active ; les projets et environnements partagés sont conservés. [Gestion et limites](SELECTION-TOOLBOX.md#installation-et-suppression-des-modèles).
+
+## Accueil et projets (v0.40)
+
+Le studio démarre sur l’accueil, sans rouvrir automatiquement le dernier projet. `studio_get_state.screen` indique `home` ou `editor`. `studio_current_project` renvoie le projet ouvert ou `null`. `studio_list_projects` liste les projets disponibles et en corbeille avec une clé de catalogue distincte de l’UUID du projet, sa révision et le dossier par défaut. Les projets copiés gardent des clés distinctes.
+
+`studio_create_library_project` accepte un nom, les langues et un `parentPath` facultatif. `studio_open_registered_project` ouvre par `key`. `studio_close_project` sauvegarde les modifications en attente, arrête la lecture et retourne à l’accueil ; une tâche active ou un enregistrement microphone en attente interdit la fermeture. `studio_rename_registered_project` demande `key`, `expectedRevision` et `name`. Le dossier conserve son chemin.
+
+`studio_trash_registered_project` exige `confirmed: true` et la révision actuelle ; seul un dossier `.dubproject` fermé et enregistré peut être déplacé. `studio_restore_registered_project` restaure sans écraser la destination, avec un autre `parentPath` facultatif. `studio_forget_registered_project` avec `confirmed: true` retire seulement l’entrée du catalogue, sans toucher aux fichiers.
+
+`studio_project_cover` prend `key` et un `atMs` facultatif, renvoie un PNG local, le moment de capture et la durée. Il ne charge pas le projet dans l’éditeur et ne modifie pas la vidéo. Le format du projet reste 26. [Utilisation et limites](PROJECTS.md).

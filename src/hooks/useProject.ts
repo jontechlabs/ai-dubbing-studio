@@ -18,10 +18,12 @@ export function useProject() {
   const savedVersion = useRef(0);
   const inFlight = useRef<Promise<void> | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
-  const load = useCallback((value: Project) => {
+  const load = useCallback((value: Project, newSession = false) => {
     value = cleanTranslationApprovals(value);
-    if (latest.current?.id === value.id && latest.current.revision > value.revision) return;
+    if (!newSession && latest.current?.id === value.id && latest.current.revision > value.revision)
+      return;
     if (
+      !newSession &&
       latest.current?.id === value.id &&
       base.current &&
       savedVersion.current !== version.current
@@ -39,6 +41,16 @@ export function useProject() {
     version.current = 0;
     savedVersion.current = 0;
     setProject(value);
+    setSaveState('saved');
+  }, []);
+  const clear = useCallback(() => {
+    clearTimeout(timer.current);
+    latest.current = null;
+    base.current = null;
+    revision.current = 0;
+    version.current = 0;
+    savedVersion.current = 0;
+    setProject(null);
     setSaveState('saved');
   }, []);
   const save = useCallback(async () => {
@@ -104,11 +116,26 @@ export function useProject() {
     },
     [load, save],
   );
+  const open = useCallback(
+    async (operation: () => Promise<Project | null>) => {
+      await save();
+      if (savedVersion.current !== version.current) throw Error('SAVE_FAILED');
+      try {
+        const p = await operation();
+        if (p) load(p, true);
+        return p;
+      } catch (e) {
+        setError(String(e));
+        throw e;
+      }
+    },
+    [load, save],
+  );
   useEffect(() => {
     let disposed = false;
     let unsubscribe: (() => void) | undefined;
     void bridge
-      .restoreProject()
+      .startupProject()
       .then((p) => {
         if (p && !disposed) load(p);
       })
@@ -120,10 +147,14 @@ export function useProject() {
       }
     });
     void bridge
-      .subscribe(load, (job) => {
-        setJobs((current) => [job, ...current.filter((j) => j.id !== job.id)].slice(0, 100));
-        document.dispatchEvent(new CustomEvent('studio-job-event', { detail: job }));
-      })
+      .subscribe(
+        load,
+        (job) => {
+          setJobs((current) => [job, ...current.filter((j) => j.id !== job.id)].slice(0, 100));
+          document.dispatchEvent(new CustomEvent('studio-job-event', { detail: job }));
+        },
+        clear,
+      )
       .then((fn) => {
         if (disposed) fn();
         else unsubscribe = fn;
@@ -137,7 +168,7 @@ export function useProject() {
       clearInterval(periodic);
       clearTimeout(timer.current);
     };
-  }, [load, save]);
+  }, [load, save, clear]);
   useEffect(() => {
     if (!bridge.native) return;
     let disposed = false;
@@ -211,9 +242,11 @@ export function useProject() {
     load,
     edit,
     run,
+    open,
     save,
     snapshot,
     applySnapshot,
+    clear,
     applying,
     flush,
     currentSnapshot,

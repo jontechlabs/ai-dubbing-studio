@@ -15,6 +15,8 @@ import {
   validateNewDialogueOptions,
 } from './domain/dialogueEditing';
 import { Editor } from './components/Editor';
+import { ProjectHome, ProjectNameModal } from './components/ProjectHome';
+import { projectName } from './domain/projectLibrary';
 import { DubPanel } from './components/DubPanel';
 import { IconButton } from './components/IconButton';
 import { WorkspacePanels } from './components/WorkspacePanels';
@@ -39,6 +41,9 @@ export default function App() {
   const { t, i18n } = useTranslation();
   const studio = useProject();
   const updater = useUpdater(studio.flush);
+  const [renaming, setRenaming] = useState(false),
+    [nameWorking, setNameWorking] = useState(false),
+    [nameError, setNameError] = useState('');
   const [panel, setOverlay] = useState<Panel>(null);
   const [dubbingActive, setDubbingActive] = useState(false);
   const [dubbingMode, setDubbingMode] = useState<'dub' | 'batchDub'>('dub');
@@ -96,6 +101,40 @@ export default function App() {
     window.addEventListener('resize', clamp);
     return () => window.removeEventListener('resize', clamp);
   }, []);
+  const projectLocked = studio.jobs.some((j) => ['queued', 'running', 'paused'].includes(j.status));
+  const goHome = async () => {
+    try {
+      if (readMicrophone().phase !== 'idle') throw Error('MICROPHONE_PENDING');
+      await studio.flush();
+      await bridge.closeProject();
+      transport.pause();
+      generationAudio.stop();
+      document.dispatchEvent(new Event('studio-voice-preview'));
+      setPanel(null);
+      setAudioSelection(null);
+      setTimelineNavigation(null);
+      setDialogueAction(null);
+      setBatchSelection({ projectId: null, ids: [] });
+      studio.clear();
+    } catch (e) {
+      studio.setError(String(e));
+    }
+  };
+  const renameCurrent = async (value: string) => {
+    setNameWorking(true);
+    setNameError('');
+    try {
+      const name = projectName(value);
+      await studio.flush();
+      studio.edit((p) => ({ ...p, name }));
+      await studio.flush();
+      setRenaming(false);
+    } catch (e) {
+      setNameError(t(`errors.${String(e).replace(/^Error: /, '')}`, { defaultValue: String(e) }));
+    } finally {
+      setNameWorking(false);
+    }
+  };
   const selected = studio.project?.dialogues.find((d) => d.id === selectedId);
   const busy =
     studio.applying ||
@@ -364,6 +403,9 @@ export default function App() {
   }, [timelineHeight, padding]);
   useEffect(() => {
     setSelectedId(null);
+    setRenaming(false);
+    setAudioSelection(null);
+    setTimelineNavigation(null);
     setDubbingActive(false);
     setDubbingSeen({ dub: false, batchDub: false });
     setDubbingMode('dub');
@@ -424,28 +466,46 @@ export default function App() {
             setPanel('dub');
           }}
         />
-        <Header
-          project={studio.project}
-          saveState={studio.saveState}
-          panel={panel}
-          onPanel={setPanel}
-          onOpen={() => {
-            void studio.run(bridge.openProject);
-          }}
-          onPreview={() => {
-            generationAudio.stop();
-            if (selected) transport.playLine(selected);
-            else transport.toggle();
-          }}
-          onSave={() => {
-            void studio.save();
-          }}
-          onHistory={(direction) => {
-            void studio.run(() => bridge.history(direction));
-          }}
-          busy={busy}
-          updateAvailable={!!updater.available}
-        />
+        {studio.project && (
+          <Header
+            onHome={() => void goHome()}
+            onRename={() => {
+              setNameError('');
+              setRenaming(true);
+            }}
+            projectLocked={projectLocked}
+            project={studio.project}
+            saveState={studio.saveState}
+            panel={panel}
+            onPanel={setPanel}
+            onOpen={() => {
+              void studio.open(bridge.openProject).catch(() => {});
+            }}
+            onPreview={() => {
+              generationAudio.stop();
+              if (selected) transport.playLine(selected);
+              else transport.toggle();
+            }}
+            onSave={() => {
+              void studio.save();
+            }}
+            onHistory={(direction) => {
+              void studio.run(() => bridge.history(direction));
+            }}
+            busy={busy}
+            updateAvailable={!!updater.available}
+          />
+        )}
+        {renaming && studio.project && (
+          <ProjectNameModal
+            name={studio.project.name}
+            error={nameError}
+            working={nameWorking}
+            onSave={(value) => void renameCurrent(value)}
+            onClose={() => setRenaming(false)}
+          />
+        )}
+
         {dialogueAction && (
           <DialogueManageModal
             action={dialogueAction}
@@ -490,207 +550,223 @@ export default function App() {
             {t('browser')}
           </div>
         )}
-        <main className="workspace">
-          <WorkspacePanels dubbing={dubbingActive}>
-            <Dialogues
-              onAdd={(atMs) => {
-                const limit = studio.project?.media?.durationMs ?? 86_400_000;
-                const startMs = Math.max(
-                  0,
-                  Math.min(Math.round(atMs ?? transport.time), limit - 100),
-                );
-                setDialogueAction({ kind: 'add', startMs, endMs: Math.min(limit, startMs + 2000) });
-              }}
-              onDelete={(ids) => setDialogueAction({ kind: 'delete', ids })}
-              openContext={openContext}
-              checkedIds={batchIds}
-              onCheck={checkBatch}
-              onBatch={openBatch}
-              onLipBatch={openLipBatch}
-              project={studio.project}
-              selectedId={selectedId}
-              onSelect={select}
-              onPlay={transport.playOriginalLine}
-              onImport={importSubtitles}
-              onEdit={edit}
-              onCharacters={showCharacters}
-              onDub={openDub}
-              onPlayDub={playDub}
-              onAlignment={showAlignment}
-              onTranslation={editTranslation}
-              busy={busy}
-            />
-            <Player
-              project={studio.project}
-              transport={transport}
-              onImport={() => setPanel('import')}
-              onOpen={() => {
-                void studio.run(bridge.openProject);
-              }}
-              onDemo={() => {
-                void studio.run(bridge.loadDemo);
-              }}
-              onStep={step}
-              onAudio={() => setPanel('audio')}
-              importJob={studio.jobs.find(
-                (job) =>
-                  job.kind === 'import' &&
-                  job.projectId === studio.project?.id &&
-                  ['queued', 'running'].includes(job.status),
-              )}
-              onJobs={showJobs}
-              onEdit={edit}
-            />
-            <Editor
-              dubbingActive={dubbingActive}
-              onDubbing={() => setPanel(dubbingMode)}
-              onEditorTab={closeDubbing}
-              dubbing={
-                studio.project &&
-                (['dub', 'batchDub'] as const).map(
-                  (mode) =>
-                    dubbingSeen[mode] && (
-                      <section
-                        key={`${studio.project!.id}:${mode}`}
-                        role="region"
-                        aria-label={t(mode)}
-                        className="dubbing-inspector-content"
-                        hidden={dubbingMode !== mode || !!panel}
-                      >
-                        <div className="dubbing-inspector-header">
-                          <div
-                            className="dubbing-modes"
-                            role="group"
-                            aria-label={t('dubbingInspector.mode')}
-                          >
-                            {(['dub', 'batchDub'] as const).map((value) => (
-                              <button
-                                key={value}
-                                aria-pressed={mode === value}
-                                onClick={() => setPanel(value)}
-                              >
-                                {t(
-                                  value === 'dub'
-                                    ? 'dubbingInspector.single'
-                                    : 'dubbingInspector.batch',
-                                )}
-                              </button>
-                            ))}
+        {studio.project ? (
+          <main className="workspace">
+            <WorkspacePanels dubbing={dubbingActive}>
+              <Dialogues
+                onAdd={(atMs) => {
+                  const limit = studio.project?.media?.durationMs ?? 86_400_000;
+                  const startMs = Math.max(
+                    0,
+                    Math.min(Math.round(atMs ?? transport.time), limit - 100),
+                  );
+                  setDialogueAction({
+                    kind: 'add',
+                    startMs,
+                    endMs: Math.min(limit, startMs + 2000),
+                  });
+                }}
+                onDelete={(ids) => setDialogueAction({ kind: 'delete', ids })}
+                openContext={openContext}
+                checkedIds={batchIds}
+                onCheck={checkBatch}
+                onBatch={openBatch}
+                onLipBatch={openLipBatch}
+                project={studio.project}
+                selectedId={selectedId}
+                onSelect={select}
+                onPlay={transport.playOriginalLine}
+                onImport={importSubtitles}
+                onEdit={edit}
+                onCharacters={showCharacters}
+                onDub={openDub}
+                onPlayDub={playDub}
+                onAlignment={showAlignment}
+                onTranslation={editTranslation}
+                busy={busy}
+              />
+              <Player
+                project={studio.project}
+                transport={transport}
+                onImport={() => setPanel('import')}
+                onOpen={() => {
+                  void studio.open(bridge.openProject).catch(() => {});
+                }}
+                onDemo={() => {
+                  void studio.open(bridge.loadDemo).catch(() => {});
+                }}
+                onStep={step}
+                onAudio={() => setPanel('audio')}
+                importJob={studio.jobs.find(
+                  (job) =>
+                    job.kind === 'import' &&
+                    job.projectId === studio.project?.id &&
+                    ['queued', 'running'].includes(job.status),
+                )}
+                onJobs={showJobs}
+                onEdit={edit}
+              />
+              <Editor
+                dubbingActive={dubbingActive}
+                onDubbing={() => setPanel(dubbingMode)}
+                onEditorTab={closeDubbing}
+                dubbing={
+                  studio.project &&
+                  (['dub', 'batchDub'] as const).map(
+                    (mode) =>
+                      dubbingSeen[mode] && (
+                        <section
+                          key={`${studio.project!.id}:${mode}`}
+                          role="region"
+                          aria-label={t(mode)}
+                          className="dubbing-inspector-content"
+                          hidden={dubbingMode !== mode || !!panel}
+                        >
+                          <div className="dubbing-inspector-header">
+                            <div
+                              className="dubbing-modes"
+                              role="group"
+                              aria-label={t('dubbingInspector.mode')}
+                            >
+                              {(['dub', 'batchDub'] as const).map((value) => (
+                                <button
+                                  key={value}
+                                  aria-pressed={mode === value}
+                                  onClick={() => setPanel(value)}
+                                >
+                                  {t(
+                                    value === 'dub'
+                                      ? 'dubbingInspector.single'
+                                      : 'dubbingInspector.batch',
+                                  )}
+                                </button>
+                              ))}
+                            </div>
+                            <small>
+                              {selected
+                                ? `#${studio.project!.dialogues.findIndex((d) => d.id === selected.id) + 1}`
+                                : ''}
+                            </small>
+                            <IconButton label={t('close')} onClick={closeDubbing}>
+                              <X size={14} />
+                            </IconButton>
                           </div>
-                          <small>
-                            {selected
-                              ? `#${studio.project!.dialogues.findIndex((d) => d.id === selected.id) + 1}`
-                              : ''}
-                          </small>
-                          <IconButton label={t('close')} onClick={closeDubbing}>
-                            <X size={14} />
-                          </IconButton>
-                        </div>
-                        <DubPanel
-                          active={dubbingActive && dubbingMode === mode && !panel}
-                          onChooseLine={select}
-                          onReferencePlay={() => {
-                            transport.videoRef.current?.pause();
-                            document.dispatchEvent(new Event('studio-voice-preview'));
-                          }}
-                          batch={mode === 'batchDub' ? { selectedIds: batchIds } : undefined}
-                          run={studio.run}
-                          project={studio.project!}
-                          line={
-                            selected ??
-                            (mode === 'batchDub' ? studio.project!.dialogues[0] : undefined)
-                          }
-                          jobs={studio.jobs}
-                          onEdit={edit}
-                          snapshot={studio.snapshot}
-                          onError={studio.setError}
-                          onModels={() => setPanel('models')}
-                          onCharacters={() => setPanel('characters')}
-                          onLips={() => setPanel('lips')}
-                          onInpaint={() => setPanel('inpaint')}
-                          onOriginal={(line) => {
-                            generationAudio.stop();
-                            transport.playOriginalLine(line);
-                          }}
-                          onPlay={playGeneration}
-                          activeGenerationId={generationAudio.active}
-                        />
-                      </section>
-                    ),
-                )
-              }
-              onDelete={(line) => setDialogueAction({ kind: 'delete', ids: [line.id] })}
-              onDub={openDub}
-              project={studio.project}
-              selected={selected}
-              onEdit={edit}
-              onPlay={transport.playOriginalLine}
-              busy={busy}
-              time={transport.time}
-              translationFocus={translationFocus}
-              jobs={studio.jobs}
-              snapshot={studio.snapshot}
-              run={studio.run}
-            />
-          </WorkspacePanels>
-          <div
-            className="resize-handle horizontal"
-            role="separator"
-            aria-label={t('resizeTimeline')}
-            aria-orientation="horizontal"
-            aria-valuenow={timelineHeight}
-            tabIndex={0}
-            onKeyDown={(e) => {
-              if (e.key === 'ArrowUp')
-                setTimelineHeight(
-                  Math.max(160, Math.min(420, window.innerHeight - 500, timelineHeight + 10)),
-                );
-              if (e.key === 'ArrowDown') setTimelineHeight(Math.max(160, timelineHeight - 10));
-            }}
-            onPointerDown={(e) => e.currentTarget.setPointerCapture(e.pointerId)}
-            onPointerMove={(e) => {
-              if (e.currentTarget.hasPointerCapture(e.pointerId) && e.buttons === 1)
-                setTimelineHeight(
-                  Math.max(
-                    160,
-                    Math.min(420, window.innerHeight - 500, window.innerHeight - e.clientY - 36),
-                  ),
-                );
-            }}
-          />
-          <div className="timeline-container" style={{ height: timelineHeight, flexShrink: 0 }}>
-            <Timeline
-              onAudioToolbox={(model) => {
-                setToolboxModel(model);
-                setPanel('audio');
+                          <DubPanel
+                            active={dubbingActive && dubbingMode === mode && !panel}
+                            onChooseLine={select}
+                            onReferencePlay={() => {
+                              transport.videoRef.current?.pause();
+                              document.dispatchEvent(new Event('studio-voice-preview'));
+                            }}
+                            batch={mode === 'batchDub' ? { selectedIds: batchIds } : undefined}
+                            run={studio.run}
+                            project={studio.project!}
+                            line={
+                              selected ??
+                              (mode === 'batchDub' ? studio.project!.dialogues[0] : undefined)
+                            }
+                            jobs={studio.jobs}
+                            onEdit={edit}
+                            snapshot={studio.snapshot}
+                            onError={studio.setError}
+                            onModels={() => setPanel('models')}
+                            onCharacters={() => setPanel('characters')}
+                            onLips={() => setPanel('lips')}
+                            onInpaint={() => setPanel('inpaint')}
+                            onOriginal={(line) => {
+                              generationAudio.stop();
+                              transport.playOriginalLine(line);
+                            }}
+                            onPlay={playGeneration}
+                            activeGenerationId={generationAudio.active}
+                          />
+                        </section>
+                      ),
+                  )
+                }
+                onDelete={(line) => setDialogueAction({ kind: 'delete', ids: [line.id] })}
+                onDub={openDub}
+                project={studio.project}
+                selected={selected}
+                onEdit={edit}
+                onPlay={transport.playOriginalLine}
+                busy={busy}
+                time={transport.time}
+                translationFocus={translationFocus}
+                jobs={studio.jobs}
+                snapshot={studio.snapshot}
+                run={studio.run}
+              />
+            </WorkspacePanels>
+            <div
+              className="resize-handle horizontal"
+              role="separator"
+              aria-label={t('resizeTimeline')}
+              aria-orientation="horizontal"
+              aria-valuenow={timelineHeight}
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === 'ArrowUp')
+                  setTimelineHeight(
+                    Math.max(160, Math.min(420, window.innerHeight - 500, timelineHeight + 10)),
+                  );
+                if (e.key === 'ArrowDown') setTimelineHeight(Math.max(160, timelineHeight - 10));
               }}
-              onCharacters={() => setPanel('characters')}
-              onTransfer={(options) =>
-                void studio.run(async () => {
-                  await bridge.transferAudio(options);
-                  showJobs();
-                  return null;
-                })
-              }
-              onContextMenu={openContext}
-              navigation={timelineNavigation}
-              audioSelection={audioSelection}
-              onPlayAudioSelection={playAudioSelection}
-              onStopAudioSelection={transport.stopAudioSelection}
-              audioSelectionPlaying={!!transport.selectionAudition}
-              audioPlaybackReady={transport.ready}
-              onAudioAdvanced={openAudioAdvanced}
-              onAudioSelection={selectAudio}
-              project={studio.project}
-              selected={selected}
-              timeRef={transport.timeRef}
-              onSeek={transport.seek}
-              onSelect={select}
-              onEdit={edit}
-              busy={busy}
+              onPointerDown={(e) => e.currentTarget.setPointerCapture(e.pointerId)}
+              onPointerMove={(e) => {
+                if (e.currentTarget.hasPointerCapture(e.pointerId) && e.buttons === 1)
+                  setTimelineHeight(
+                    Math.max(
+                      160,
+                      Math.min(420, window.innerHeight - 500, window.innerHeight - e.clientY - 36),
+                    ),
+                  );
+              }}
             />
-          </div>
-        </main>
+            <div className="timeline-container" style={{ height: timelineHeight, flexShrink: 0 }}>
+              <Timeline
+                onAudioToolbox={(model) => {
+                  setToolboxModel(model);
+                  setPanel('audio');
+                }}
+                onCharacters={() => setPanel('characters')}
+                onTransfer={(options) =>
+                  void studio.run(async () => {
+                    await bridge.transferAudio(options);
+                    showJobs();
+                    return null;
+                  })
+                }
+                onContextMenu={openContext}
+                navigation={timelineNavigation}
+                audioSelection={audioSelection}
+                onPlayAudioSelection={playAudioSelection}
+                onStopAudioSelection={transport.stopAudioSelection}
+                audioSelectionPlaying={!!transport.selectionAudition}
+                audioPlaybackReady={transport.ready}
+                onAudioAdvanced={openAudioAdvanced}
+                onAudioSelection={selectAudio}
+                project={studio.project}
+                selected={selected}
+                timeRef={transport.timeRef}
+                onSeek={transport.seek}
+                onSelect={select}
+                onEdit={edit}
+                busy={busy}
+              />
+            </div>
+          </main>
+        ) : (
+          <ProjectHome
+            open={async (fn) => {
+              await studio.open(fn);
+            }}
+            onPanel={setPanel}
+            onError={studio.setError}
+            onMenu={openContext}
+            locked={projectLocked || studio.applying}
+          />
+        )}
         <footer className="statusbar">
           {mcpActive && <span>{t('mcpActive')}</span>}
           {generationAudio.active && (

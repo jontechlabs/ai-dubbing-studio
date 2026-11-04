@@ -116,7 +116,13 @@ export function Panels({
           </IconButton>
         </div>
         {panel === 'import' && (
-          <ImportPanel run={run} onClose={close} onStarted={showJobs} onError={onError} />
+          <ImportPanel
+            project={project}
+            run={run}
+            onClose={close}
+            onStarted={showJobs}
+            onError={onError}
+          />
         )}
         {panel === 'lips' && project && (
           <LipAnalysisPanel

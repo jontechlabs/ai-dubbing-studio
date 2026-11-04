@@ -73,12 +73,12 @@ function makeSchema(name) {
   return { ...root, ...(Object.keys(definitions).length ? { $defs: definitions } : {}) };
 }
 const mapping = {
- 'speaker_separation::Options':'SpeakerSeparationOptions',
- 'speaker_separation::Destination':'SpeakerSeparationDestination',
- 'speaker_separation::Assignment':'SpeakerDubbingAssignment',
- 'audio_toolbox::Options':'AudioToolboxOptions',
- 'audio_toolbox::Destination':'AudioToolboxDestination',
-  'dubbing_pipeline::Options':'DubbingPipelineOptions',
+  'speaker_separation::Options': 'SpeakerSeparationOptions',
+  'speaker_separation::Destination': 'SpeakerSeparationDestination',
+  'speaker_separation::Assignment': 'SpeakerDubbingAssignment',
+  'audio_toolbox::Options': 'AudioToolboxOptions',
+  'audio_toolbox::Destination': 'AudioToolboxDestination',
+  'dubbing_pipeline::Options': 'DubbingPipelineOptions',
   'source_transcription::Options': 'SourceTranscriptionOptions',
   'character_match::Options': 'CharacterMatchOptions',
   'voice_library::SourceOptions': 'VoiceLibrarySourceOptions',
@@ -123,12 +123,37 @@ function rustSchema(type) {
   throw Error('Unknown native parameter type: ' + type);
 }
 const readOnly =
-  /^(?!apply_)(environment|graphics_info|.*_status|.*_result|latest_.*|audio_effects_catalog|.*_path|.*_paths|list_jobs|model_storage_info|model_storage_size|managed_models|voice_install_space|preview_.*|reference_audio_info|get_waveform)$/;
+  /^(?!apply_)(environment|graphics_info|.*_status|.*_result|latest_.*|audio_effects_catalog|.*_path|.*_paths|list_jobs|model_storage_info|model_storage_size|managed_models|current_project|list_projects|project_cover|voice_install_space|preview_.*|reference_audio_info|get_waveform)$/;
 const notes = {
-  managed_models: 'List allowlisted local model weight bundles, their actual bytes/file counts and presence. Includes partial downloads. Shared Python runtimes and all project assets are excluded. No deletion.',
-  remove_installed_model: 'Explicitly delete an allowlisted local model weight bundle by its managed_models ID, with confirmed=true. Rejects active jobs, path traversal, symlinks and Windows junctions. Keeps shared runtimes, project assets, voice references and all existing takes. Returns removed bytes/files; no implicit deletion. This removal is not undoable, but weights can be reinstalled.',
-  separate_dialogue_speakers: 'Separate two or three overlapping voices locally on a bounded source-track range (0.1–60 seconds), using the selected installed model. Omit lineId for a free timeline selection, or provide it to require exact dialogue bounds. Poll the job, preview speaker_separation_result/paths, then explicitly route selected outputs with apply_speaker_separation_result. Creating sub-dubs still requires a dialogue-bound result. Originals remain intact.',
-  preview_character_portrait: 'Preview one source-video frame and all anonymous CPU face boxes (auto, anime or live). Returns project/revision/source/character/dialogue/time, a read-only cached PNG imagePath, dimensions and normalized rectangles. No identity or gender inference. Choose a face or manual crop, then explicitly call studio_capture_character_portrait with atMs/crop. Original video and project are not modified.',
+  current_project:
+    'Read the currently open editor project, or null on Home. Does not reopen the previous project.',
+  list_projects:
+    'List the registered project catalogue, unavailable entries, recoverable application trash, thumbnail times, default parent folder and active key. Migrates the last-used folder without changing project contents. Use entry.key for catalogue actions; project IDs may be shared by copied folders.',
+  create_library_project:
+    'Create and open a project with a validated display name and source/target languages. Optional absolute parentPath defaults to the last project folder or Documents/AI Dubbing Studio Projects. Existing folders are never overwritten.',
+  open_registered_project:
+    'Open an available, non-trashed project by catalogue key. Refuses active tasks; saved editor changes are flushed first by the desktop MCP handler.',
+  rename_registered_project:
+    'Rename the display name by catalogue key and expectedRevision from list_projects. The project folder and all assets keep their paths. Refuses active jobs, wrong identities and stale revisions.',
+  trash_registered_project:
+    'Move a closed registered .dubproject folder to recoverable application trash on the SAME volume. Requires expectedRevision and confirmed=true; refuses active jobs, links, changed identities and open projects. A durable journal recovers interrupted moves. Does not permanently delete files.',
+  restore_registered_project:
+    'Restore a catalogue trash entry without overwriting an existing destination. Optional absolute parentPath chooses a different existing parent folder; defaults to its original location.',
+  forget_registered_project:
+    'Remove only a catalogue entry with confirmed=true, for example an unavailable project. Does not delete or move project files.',
+  close_project:
+    'Save pending desktop changes, stop playback and return to Home. Refuses active jobs and a pending microphone take. Keeps project files and the catalogue entry.',
+  project_cover:
+    'Get or capture a project thumbnail without opening it in the editor. key comes from list_projects. Optional atMs must lie within the video. Default: 120 seconds for long videos, 40 percent into short videos. Captures and caches one frame locally; source video is unchanged. Returns a local image path, actual atMs and durationMs.',
+
+  managed_models:
+    'List allowlisted local model weight bundles, their actual bytes/file counts and presence. Includes partial downloads. Shared Python runtimes and all project assets are excluded. No deletion.',
+  remove_installed_model:
+    'Explicitly delete an allowlisted local model weight bundle by its managed_models ID, with confirmed=true. Rejects active jobs, path traversal, symlinks and Windows junctions. Keeps shared runtimes, project assets, voice references and all existing takes. Returns removed bytes/files; no implicit deletion. This removal is not undoable, but weights can be reinstalled.',
+  separate_dialogue_speakers:
+    'Separate two or three overlapping voices locally on a bounded source-track range (0.1–60 seconds), using the selected installed model. Omit lineId for a free timeline selection, or provide it to require exact dialogue bounds. Poll the job, preview speaker_separation_result/paths, then explicitly route selected outputs with apply_speaker_separation_result. Creating sub-dubs still requires a dialogue-bound result. Originals remain intact.',
+  preview_character_portrait:
+    'Preview one source-video frame and all anonymous CPU face boxes (auto, anime or live). Returns project/revision/source/character/dialogue/time, a read-only cached PNG imagePath, dimensions and normalized rectangles. No identity or gender inference. Choose a face or manual crop, then explicitly call studio_capture_character_portrait with atMs/crop. Original video and project are not modified.',
   transcribe_dialogue_source:
     'Transcribe each source subtitle of a dialogue from the chosen audio track using local Whisper CPU. Returns a job ID. Does not replace subtitles or takes. Read and explicitly review the proposal before applying.',
   source_transcription_result:
@@ -212,9 +237,17 @@ projectCommands.add('preview_character_portrait');
 for (const command of [
   'transcribe_dialogue_source',
   'apply_source_transcription',
-  'separate_dialogue_speakers','speaker_separation_result','speaker_separation_path','apply_speaker_separation_result','create_speaker_dubbings',
+  'separate_dialogue_speakers',
+  'speaker_separation_result',
+  'speaker_separation_path',
+  'apply_speaker_separation_result',
+  'create_speaker_dubbings',
   'set_voice_output_gain',
-  'generate_dubbing_pipeline', 'separate_audio_selection', 'audio_toolbox_result', 'audio_toolbox_path', 'apply_audio_toolbox_result',
+  'generate_dubbing_pipeline',
+  'separate_audio_selection',
+  'audio_toolbox_result',
+  'audio_toolbox_path',
+  'apply_audio_toolbox_result',
 ])
   projectCommands.add(command);
 const text = fs.readFileSync('src-tauri/src/lib.rs', 'utf8');
@@ -246,9 +279,10 @@ for (const match of text.matchAll(
     const optional = type.startsWith('Option<');
     if (optional) type = type.slice(7, -1);
     const property = name.replace(/_([a-z])/g, (_, c) => c.toUpperCase());
-    const value = property === 'count' && ['generate_line', 'generate_dubbing_pipeline'].includes(command)
-      ? { type: 'integer', enum: [1, 2, 3, 4], default: 1 }
-      : rustSchema(type);
+    const value =
+      property === 'count' && ['generate_line', 'generate_dubbing_pipeline'].includes(command)
+        ? { type: 'integer', enum: [1, 2, 3, 4], default: 1 }
+        : rustSchema(type);
     properties[property] = optional ? { anyOf: [value, { type: 'null' }] } : value;
     if (!optional) required.push(property);
   }
@@ -420,8 +454,20 @@ tool(
   ['lineId', 'role', 'text'],
   true,
 );
-tool('studio_add_dialogue','Add a timed dialogue with optional original or translated text (at least one nonempty). Creates independent SRT cues without moving existing lines. Context required; undoable. Read studio_get_project to retrieve its new ID.',{options:makeSchema('NewDialogueOptions')},['options'],true);
-tool('studio_set_dialogue_exclusion','Exclude or restore dialogues for dubbing. Preserve source/translated subtitles, every historical take, voice edit and placement. Excluded lines stay outside voice mixing, generation and lip batches. Undoable; unknown IDs reject atomically.',{ids:{type:'array',minItems:1,items:string},excluded:bool},['ids','excluded'],true);
+tool(
+  'studio_add_dialogue',
+  'Add a timed dialogue with optional original or translated text (at least one nonempty). Creates independent SRT cues without moving existing lines. Context required; undoable. Read studio_get_project to retrieve its new ID.',
+  { options: makeSchema('NewDialogueOptions') },
+  ['options'],
+  true,
+);
+tool(
+  'studio_set_dialogue_exclusion',
+  'Exclude or restore dialogues for dubbing. Preserve source/translated subtitles, every historical take, voice edit and placement. Excluded lines stay outside voice mixing, generation and lip batches. Undoable; unknown IDs reject atomically.',
+  { ids: { type: 'array', minItems: 1, items: string }, excluded: bool },
+  ['ids', 'excluded'],
+  true,
+);
 tool(
   'studio_approve_translations',
   'Approve or withdraw the common text and selected-current-voice review for supplied dialogue IDs in one undoable saved edit. Empty translations and stale selected takes are skipped; unknown IDs reject the entire edit. Without a selected take, approve text for batch preparation; a new selected take withdraws that approval. Any text, pronunciation, take, edit or placement change withdraws the common approval. Historical takes are preserved. Read checkedIds from studio_get_state to include checked lines hidden by filters.',
