@@ -25,9 +25,14 @@ test('generates independent takes on selected RTX, reviews, compares and persist
   const calls=await page.evaluate(()=>(window as any).__calls.filter((c:any)=>c.command==='replace_project'));expect(calls.at(-1)?.args.project.formatVersion??5).toBe(5);expect(errors).toEqual([]);
 });
 
-test('missing references block generation and an edited line cannot validate its old take',async({page})=>{
+test('missing references block generation and an edited line requires explicit review of its old take',async({page})=>{
   await nativeMock(page);await page.goto('/');await page.locator('.dialogue-card').first().getByRole('button',{name:'Doubler',exact:true}).click();const panel=page.getByRole('region',{name:'Doublage'});
   await expect(panel.getByRole('button',{name:'Générer un nouvel essai'})).toBeDisabled();await panel.getByRole('combobox',{name:'Référence vocale',exact:true}).selectOption('current');await panel.getByRole('button',{name:'Générer un nouvel essai'}).click();await page.evaluate(()=>(window as any).__completeTts());await page.getByRole('button',{name:'Fermer',exact:true}).click();
-  await page.getByRole('textbox',{name:'Sous-titre affiché',exact:true}).fill('Un texte corrigé après génération.');await page.locator('.dialogue-card').first().getByRole('button',{name:'Régénérer',exact:true}).click();await expect(panel.getByText(/ont changé depuis cet essai/)).toBeVisible();await expect(panel.getByRole('button',{name:'Valider',exact:true})).toBeDisabled();
+  await page.getByRole('textbox',{name:'Sous-titre affiché',exact:true}).fill('Un texte corrigé après génération.');await page.locator('.dialogue-card').first().getByRole('button',{name:'Régénérer',exact:true}).click();await expect(panel.getByText(/ont changé depuis cet essai/)).toBeVisible();
+  await panel.getByRole('button',{name:'Valider',exact:true}).click();
+  const review=page.getByRole('dialog',{name:'Valider cet essai existant ?',exact:true});
+  await expect(review.getByRole('textbox',{name:'Texte à prononcer actuellement',exact:true})).toHaveValue('Un texte corrigé après génération.');
+  await expect(page.locator('.dialogue-card').first().locator('.translation-review button')).toHaveAttribute('aria-pressed','false');
+  await review.getByRole('button',{name:'Annuler',exact:true}).click();
   await panel.getByRole('button',{name:'Retirer l’essai 1'}).click();await expect(panel.locator('.generation-card')).toHaveCount(0);await expect(page.locator('.save-indicator')).toHaveText('Sauvegardé');
 });
