@@ -1,0 +1,29 @@
+{
+  "compiledHead": "1bbedc084699a0ae43f0fdf16774400a099f0cd5",
+  "runId": 41836312323,
+  "artifact": {
+    "id": 13327447980,
+    "node_id": "MDg6QXJ0aWZhY3QxMzMyNzQ0Nzk4MA==",
+    "name": "review-actions-windows-packages-and-validation",
+    "size_in_bytes": 304889462,
+    "url": "https://api.github.com/repos/jontechlabs/ai-dubbing-studio/actions/artifacts/13327447980",
+    "archive_download_url": "https://api.github.com/repos/jontechlabs/ai-dubbing-studio/actions/artifacts/13327447980/zip",
+    "expired": false,
+    "digest": "sha256:b5706f69dbb865b2d1abca5423d645cc3c941b80d6cd0826fcaa6abc0e4cf001",
+    "created_at": "2026-11-04T13:30:31Z",
+    "updated_at": "2026-11-04T13:30:31Z",
+    "expires_at": "2027-02-02T13:14:36Z",
+    "workflow_run": {
+      "id": 41836312323,
+      "repository_id": 1416617483,
+      "head_repository_id": 1416617483,
+      "head_branch": "codex/dialogue-review-actions",
+      "head_sha": "1bbedc084699a0ae43f0fdf16774400a099f0cd5"
+    }
+  },
+  "packages": {
+    "AI-Dubbing-Studio-0.40.1-Setup.exe": "3934024e603a2abd7b6e6a96407d869127c66d2e20f78154c72626d7da3d1335",
+    "AI-Dubbing-Studio-Windows-Portable.zip": "91561f5bf1e2e57d0c3ebb6d937a4a3fe18530b438f30931d73b8894213ec370",
+    "AI-Dubbing-Studio-0.40.1-Setup.exe.sig": "e95788653d065b12d9c48746125509652914d9beca5483be9b06d65ee4b20c3f"
+  }
+}

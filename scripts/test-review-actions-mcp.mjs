@@ -24,21 +24,24 @@ const call = async (name, parameters = {}) => {
   return r.structuredContent.value;
 };
 const context = async () => (await call('studio_get_state')).context;
+const screen = async (expected) => {
+  const deadline = Date.now() + 60000;
+  for (;;) {
+    try {
+      if ((await call('studio_get_state')).screen === expected) return;
+    } catch (e) {
+      if (!String(e).includes('MCP_UI_NOT_READY')) throw e;
+    }
+    if (Date.now() > deadline) throw Error('Desktop screen did not become ' + expected);
+    await new Promise((r) => setTimeout(r, 100));
+  }
+};
 try {
   await client.connect(transport);
   const tools = (await client.listTools()).tools;
   assert.equal(tools.length, 155);
   assert.equal(client.getServerVersion().version, '0.40.1');
-  const deadline = Date.now() + 60000;
-  while (true) {
-    try {
-      assert.equal((await call('studio_get_state')).screen, 'home');
-      break;
-    } catch (e) {
-      if (!String(e).includes('MCP_UI_NOT_READY') || Date.now() > deadline) throw e;
-      await new Promise((r) => setTimeout(r, 100));
-    }
-  }
+  await screen('home');
   const created = await call('studio_create_library_project', {
     parentPath: args['test-root'],
     name: 'Review actions 日本語',
@@ -66,7 +69,8 @@ try {
   });
   let p = await call('studio_get_project');
   assert(p.translationApprovals[id]);
-  assert.equal(p.dialogues[0].status, 'validated');
+  // Approving text before a take exists does not invent a validated voice.
+  assert.equal(p.dialogues[0].status, before.dialogues[0].status);
   for (const key of ['sourceCues', 'targetCues', 'generations', 'characters', 'media'])
     assert.deepEqual(p[key], before[key]);
   assert.equal((await call('studio_get_dialogues', { status: 'approved' })).total, 1);
@@ -92,7 +96,7 @@ try {
     key = index.activeKey;
   assert(key);
   await call('studio_close_project');
-  assert.equal((await call('studio_get_state')).screen, 'home');
+  await screen('home');
   await call('studio_open_registered_project', { key });
   const reopened = await call('studio_get_project');
   assert.equal(reopened.id, created.id);
@@ -108,7 +112,8 @@ try {
     approveAndWithdraw: true,
     undoReview: true,
     translationEditWithdrawsApproval: true,
-    sourceAndTakesPreserved: true,
+    sourceAndGenerationFieldsUnchanged: true,
+    generationCount: before.generations.length,
     reopenPreservesReview: true,
     noNeuralModelsRequired: true,
   };

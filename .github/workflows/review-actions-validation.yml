@@ -1,0 +1,50 @@
+name: Dialogue review packaged MCP verification
+on:
+  workflow_dispatch:
+  push:
+    branches: [codex/dialogue-review-actions]
+    paths: [.github/workflows/review-actions-validation.yml, scripts/test-review-actions-mcp.mjs, scripts/verify-review-actions-package.py, scripts/review-actions-build.json]
+permissions:
+  contents: read
+  actions: read
+jobs:
+  validate:
+    runs-on: windows-latest
+    timeout-minutes: 15
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+      PYTHONUTF8: '1'
+      PYTHONIOENCODING: utf-8
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
+        with:
+          node-version: '24'
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12.10'
+      - uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53
+        with:
+          artifact-ids: '13327447980'
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          run-id: 41836312323
+          path: .cache/review-actions-build
+      - name: Authenticate exact build and identical application inputs
+        run: python scripts/verify-review-actions-package.py
+      - name: Install pinned SDK validation dependencies
+        run: |
+          npm install --global pnpm@11.25.0
+          pnpm install --frozen-lockfile
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+      - name: Actual packaged review and persistence through official MCP SDK
+        run: ./scripts/test-mcp.ps1 -ClientScript test-review-actions-mcp.mjs
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: review-actions-packaged-mcp-validation
+          path: |
+            artifacts/mcp-native-validation.json
+            artifacts/review-actions-reuse.json
+          if-no-files-found: error
