@@ -114,10 +114,10 @@ try {
   };
   const request = {
     root: entry.path,
-    projectId: p.id,
+    project_id: p.id,
     language: 'fr',
-    approvedOnly: false,
-    unapprovedOnly: false,
+    approved_only: false,
+    unapproved_only: false,
     skipped: 0,
     items: p.dialogues.map((l, n) => ({
       status: ['succeeded', 'failed', 'pending'][n],
