@@ -5,6 +5,24 @@ import path from 'node:path';
 import { createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
 export async function verifyProjectLibrary({ call, context, args, job }) {
+  const transition = async (tool, parameters = {}) => {
+    const until = Date.now() + 30_000;
+    for (;;) {
+      try {
+        return await call(tool, parameters);
+      } catch (error) {
+        if (String(error) !== 'Error: BUSY' || Date.now() >= until) throw error;
+        const jobs = await call('studio_list_jobs');
+        console.log(
+          'PROJECT_LIBRARY_WAITING_FOR_BACKGROUND_WORK',
+          jobs
+            .filter((j) => ['queued', 'running', 'paused'].includes(j.status))
+            .map((j) => ({ type: j.type, stage: j.stage, status: j.status })),
+        );
+        await new Promise((resolve) => setTimeout(resolve, 150));
+      }
+    }
+  };
   const hash = (b) => createHash('sha256').update(b).digest('hex');
   const screen = async (expected) => {
     const until = Date.now() + 15000;
@@ -44,7 +62,7 @@ export async function verifyProjectLibrary({ call, context, args, job }) {
     }),
     /PROJECT_IS_OPEN/,
   );
-  await call('studio_close_project');
+  await transition('studio_close_project');
   await screen('home');
   assert.equal(await call('studio_current_project'), null);
   const projectBytes = await fs.readFile(path.join(root, 'project.json'));
@@ -186,7 +204,7 @@ export async function verifyProjectLibrary({ call, context, args, job }) {
   list = await call('studio_list_projects');
   const freshRow = list.entries.find((e) => e.key === list.activeKey);
   assert.equal(freshRow.projectId, fresh.id);
-  await call('studio_close_project');
+  await transition('studio_close_project');
   await screen('home');
   const copy = path.join(args['test-root'], 'Projet copié 日本語.dubproject');
   await fs.cp(freshRow.path, copy, { recursive: true, errorOnExist: true, force: false });
@@ -197,7 +215,7 @@ export async function verifyProjectLibrary({ call, context, args, job }) {
   assert.notEqual(copies[0].key, copies[1].key);
   const copyRow = copies.find((e) => path.resolve(e.path) === path.resolve(copy));
   assert(copyRow);
-  await call('studio_close_project');
+  await transition('studio_close_project');
   await screen('home');
   const copyBytes = await manifest(copy);
   await assert.rejects(

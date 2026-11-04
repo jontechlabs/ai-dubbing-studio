@@ -2,7 +2,7 @@ name: Project library frontend verification
 on:
   workflow_dispatch:
   push:
-    branches: [codex/project-library]
+    branches: [codex/project-library-frontend-check]
 permissions:
   contents: read
 jobs:

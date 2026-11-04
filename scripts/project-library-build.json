@@ -1,0 +1,13 @@
+{
+  "version": "0.40.0",
+  "compiledHead": "34ccd8a73e985d75e33d34d2316c770a19abfa00",
+  "runId": 41778038124,
+  "jobId": 126402853416,
+  "artifactId": 13299022465,
+  "artifactDigest": "sha256:81bbc5fab170aba2c2b539a846a215fdd558317683ffc15695a0ffb7f5e33d78",
+  "packages": {
+    "AI-Dubbing-Studio-0.40.0-Setup.exe": "921255496b3289b358fc25f056160abd69ac44ef4908ff72e258339626392928",
+    "AI-Dubbing-Studio-Windows-Portable.zip": "21535c23dbeca4c137761e870bf40ae9667ba4349c3c470708d9e45030b80d12",
+    "AI-Dubbing-Studio-0.40.0-Setup.exe.sig": "d7506291e912a7305a8e1bea979c2ebb301945f728b93231ff1cb1232a82f840"
+  }
+}
