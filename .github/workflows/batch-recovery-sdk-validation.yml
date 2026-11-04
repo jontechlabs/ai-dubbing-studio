@@ -59,6 +59,7 @@ jobs:
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
       - name: Actual packaged batch reports and recovery through official MCP SDK
         run: |
+          New-Item -ItemType Directory -Force artifacts | Out-Null
           $portable=Get-ChildItem -LiteralPath .cache/reused-batch-package -Recurse -Filter AI-Dubbing-Studio-Windows-Portable.zip
           if(@($portable).Count -ne 1){throw 'Expected original portable package'}
           ./scripts/test-mcp.ps1 -PortablePath $portable.FullName -ClientScript test-batch-recovery-mcp.mjs
