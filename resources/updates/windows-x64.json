@@ -1,11 +1,11 @@
 {
-  "version": "0.40.2",
-  "notes": "Validation des essais existants après modification de texte, calage, personnage ou référence : différences affichées et confirmation Valider l’essai tel quel. Modifications ultérieures retirant la validation. Annulation, sauvegarde et tous les WAV conservés. Option MCP acceptChangedTake explicite ; lots prudents par défaut.",
-  "pub_date": "2026-11-04T14:21:29Z",
+  "version": "0.41.0",
+  "notes": "Date et heure locale des essais. Bilan paginé des doublages par lot, erreurs par réplique et relances individuelles/multiples avec conservation des réussites. Reprise des non-traitées, fermeture et réouverture du suivi. 157 outils MCP, format 26.",
+  "pub_date": "2026-11-04T16:11:54Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSdFFyMUJGTFp3NkQwb29uS3JlTDhjSlQyMlBobk1YRkltczVTU3dJY0ZMRTJLazNpNEFvejNLTm9GeG5UT2R2d2t3U0gxU05vT0E0cjlYUy9tazBUTWMybmZ6VGJWaXdVPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkzODAxNDk4CWZpbGU6QUkgRHViYmluZyBTdHVkaW9fMC40MC4yX3g2NC1zZXR1cC5leGUJdmVyc2lvbjowLjQwLjIKNjY5T3BQUlNwTGZYRjREaUNSc0lFN3lHZUZ2U3NQMmlIbSt5RTNwQXBGM3ZWZzRmc1B2RXZSa2VpSlEyL3pEQ2dIbW5uWE9tTldQSUdQZVhDY3ZjQlE9PQo=",
-      "url": "https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.40.2/AI-Dubbing-Studio-0.40.2-Setup.exe"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSdFFyMUJGTFp3NkVJV09uZUdCenR5NjgycUZUei85aGdFOHF6aHJmYndTeWhrRHV0Ym92Slg5WVVKTDFESGtiUDF2SE5pSlBoWUpOcDFUb09QZjJYQ2FrZ0RtQlZRakFRPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkzODA3MzIxCWZpbGU6QUkgRHViYmluZyBTdHVkaW9fMC40MS4wX3g2NC1zZXR1cC5leGUJdmVyc2lvbjowLjQxLjAKWHFGdThCNWF5U3BweUE3U1Y3ZkRLKzBxUXN4ZC8xcllLK2ZoUDVRN2ZKdFZuVHZPd2lYeWhDOHY0d0hwR0xxcEcvSkZkUm5tTFI5Tm1ReFNFSnQ1RHc9PQo=",
+      "url": "https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.41.0/AI-Dubbing-Studio-0.41.0-Setup.exe"
     }
   }
 }
