@@ -1831,5 +1831,13 @@
     "importInto": "Add a video to “{{name}}”.",
     "count_one": "{{count}} project",
     "count_other": "{{count}} projects"
+  },
+  "translationActionHint": {
+    "translated": "Click ✓ to approve this dialogue.",
+    "approved": "Click ↶ to withdraw approval and mark this dialogue for review.",
+    "untranslated": "Add a translation before approving this dialogue.",
+    "blocked": "Approval requires a translation and, when present, an up-to-date selected take for every voice.",
+    "busy": "Approval is unavailable while this operation is running.",
+    "excluded": "Include this dialogue in dubbing again before approving it."
   }
 }

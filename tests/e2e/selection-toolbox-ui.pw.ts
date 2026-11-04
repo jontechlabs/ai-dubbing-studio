@@ -34,7 +34,7 @@ test('compact dialogue header uses named icon actions and a single visible revie
     await expect(button).toBeInViewport();
   }
   const card = page.locator('.dialogue-card').first();
-  await expect(card.locator('.translation-review')).toHaveText('● À revoir');
+  await expect(card.locator('.card-footer .translation-review')).toHaveText('À revoir');
   await expect(card.locator('.card-footer .status')).toHaveText('');
   const scroll = await page.locator('.dialogue-scroll').boundingBox();
   expect(scroll!.height).toBeGreaterThan(95);

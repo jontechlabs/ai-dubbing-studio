@@ -1831,5 +1831,13 @@
     "importInto": "Ajouter une vidéo au projet « {{name}} ».",
     "count_one": "{{count}} projet",
     "count_other": "{{count}} projets"
+  },
+  "translationActionHint": {
+    "translated": "Cliquer sur ✓ pour valider cette réplique.",
+    "approved": "Cliquer sur ↶ pour retirer la validation et remettre cette réplique « À revoir ».",
+    "untranslated": "Ajoutez une traduction avant de valider cette réplique.",
+    "blocked": "La validation exige une traduction renseignée et, s’il existe, un essai sélectionné à jour pour chaque voix.",
+    "busy": "La validation est indisponible pendant ce traitement.",
+    "excluded": "Réintégrez cette réplique dans le doublage avant de la valider."
   }
 }

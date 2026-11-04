@@ -1,5 +1,7 @@
 # AI Dubbing Studio
 
+**v0.40.1 — Validation des répliques plus claire.** Statut déplacé dans la barre d’actions en bas des cartes, pictogrammes distincts et action explicite : ✓ pour valider, ↶ pour remettre « À revoir ». Infobulles contextuelles et accès au clavier. [Guide et capture](docs/DIALOGUE-REVIEW-ACTIONS.md).
+
 **v0.40.0 — Gestionnaire de projets.** Accueil au démarrage pour créer, ouvrir, rechercher et renommer les projets. Retour à l’accueil et renommage depuis l’éditeur. Corbeille avec restauration, vignettes capturées dans la vidéo et choix manuel du moment de capture. Sous-titres, essais et vidéo source conservés. **155 outils MCP, format de projet 26.** [Guide et capture](docs/PROJECTS.md).
 
 **v0.39.1 — Défilement du panneau Doublage corrigé.** Les libellés masqués pour l’accessibilité restent dans le défilement du panneau, ce qui supprime la barre parasite et l’espace vide dans la fenêtre principale. Défilement interne, modes réplique/lot, avancement et sélection des essais sont conservés.

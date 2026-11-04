@@ -6,6 +6,10 @@ import {
   BadgeCheck,
   BadgeMinus,
   Captions,
+  Ban,
+  Check,
+  CircleDashed,
+  CircleHelp,
   ChevronDown,
   FileInput,
   FileOutput,
@@ -19,6 +23,7 @@ import {
   UserRound,
   Plus,
   Trash2,
+  Undo2,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { activeSpeakerGroup, isolatedVoice, speakerDubbingState } from '../domain/speakerDubbing';
@@ -38,6 +43,12 @@ import {
   translationStates,
   type TranslationState,
 } from '../domain/translation';
+
+const translationIcons = {
+  untranslated: CircleDashed,
+  translated: CircleHelp,
+  approved: BadgeCheck,
+};
 
 function DialoguesPane({
   onAdd,
@@ -457,11 +468,15 @@ function DialoguesPane({
         )}
       </div>
       <div className="translation-legend" aria-label={t('translationLegend')}>
-        {(['untranslated', 'translated', 'approved'] as const).map((state) => (
-          <span key={state} className={`translation-badge ${state}`}>
-            ● {t(`translationState.${state}`)}
-          </span>
-        ))}
+        {(['untranslated', 'translated', 'approved'] as const).map((state) => {
+          const StateIcon = translationIcons[state];
+          return (
+            <span key={state} className={`translation-badge ${state}`}>
+              <StateIcon size={12} aria-hidden="true" />
+              {t(`translationState.${state}`)}
+            </span>
+          );
+        })}
       </div>
       <div className="pane-footnote">
         <span className="tiny-dot" />
@@ -525,6 +540,21 @@ function DialogueCard({
     [project, activeGroup],
   );
   const stale = !!generation && staleGeneration(project, line, generation);
+  const StateIcon = translationIcons[translation];
+  const reviewAllowed = canApproveJointReview(project, line);
+  const reviewHint = t(
+    `translationActionHint.${
+      line.excludedFromDubbing
+        ? 'excluded'
+        : busy
+          ? 'busy'
+          : translation === 'untranslated'
+            ? 'untranslated'
+            : translation !== 'approved' && !reviewAllowed
+              ? 'blocked'
+              : translation
+    }`,
+  );
   const voiceStatus = activeGroup
     ? t('overlap.groupChildren', { count: activeGroup.voices.length })
     : t(stale ? 'review' : line.status);
@@ -657,32 +687,6 @@ function DialogueCard({
           )}
         </div>
       </div>
-      <div className="translation-review">
-        {line.excludedFromDubbing && (
-          <span className="translation-badge untranslated">{t('dialogueExcluded')}</span>
-        )}
-        <button
-          className={`translation-badge ${translation}`}
-          disabled={
-            busy ||
-            translation === 'untranslated' ||
-            (translation !== 'approved' && !canApproveJointReview(project, line))
-          }
-          aria-pressed={translation === 'approved'}
-          aria-label={t(
-            translation === 'approved' ? 'translationUnapprove' : 'translationApprove',
-            { number: index },
-          )}
-          title={t('translationReviewHint')}
-          onClick={(e) => {
-            e.stopPropagation();
-            onApprove();
-          }}
-        >
-          <span aria-hidden="true">{translation === 'approved' ? '✓' : '●'}</span>{' '}
-          {t(`translationState.${translation}`)}
-        </button>
-      </div>
       <div className="card-footer">
         <button
           className="icon-button"
@@ -717,6 +721,43 @@ function DialogueCard({
             <AlertTriangle size={13} />
           </span>
         )}
+        <div className="translation-review">
+          {line.excludedFromDubbing && (
+            <span className="translation-badge untranslated">
+              <Ban size={12} aria-hidden="true" />
+              {t('dialogueExcluded')}
+            </span>
+          )}
+          <button
+            className={`translation-badge ${translation}`}
+            disabled={
+              busy ||
+              translation === 'untranslated' ||
+              (translation !== 'approved' && !reviewAllowed)
+            }
+            aria-pressed={translation === 'approved'}
+            aria-label={
+              translation === 'untranslated'
+                ? `${t('translationState.untranslated')} · ${t('selectedLine', { index })}`
+                : t(translation === 'approved' ? 'translationUnapprove' : 'translationApprove', {
+                    number: index,
+                  })
+            }
+            title={`${reviewHint}\n${t('translationReviewHint')}`}
+            onClick={(e) => {
+              e.stopPropagation();
+              onApprove();
+            }}
+          >
+            <StateIcon size={12} aria-hidden="true" className="translation-state-icon" />
+            <span className="translation-state-label">{t(`translationState.${translation}`)}</span>
+            {translation !== 'untranslated' && (
+              <span className="translation-next-action" aria-hidden="true">
+                {translation === 'approved' ? <Undo2 size={12} /> : <Check size={12} />}
+              </span>
+            )}
+          </button>
+        </div>
         <button
           aria-label={t(
             activeGroup ? 'overlap.manageDubs' : generation ? 'regenerate' : 'ttsDubLine',

@@ -16,6 +16,8 @@ export function useShortcuts(actions: {
   useEffect(() => {
     const listener = (event: KeyboardEvent) => {
       const target = event.target as HTMLElement;
+      // Space activates the focused review button without toggling video playback.
+      if (event.key === ' ' && target.closest('.translation-review button')) return;
       if (
         target.closest(
           'input:not([type="range"]), textarea, select, [contenteditable="true"], [role="dialog"], [role="tab"], .inspector-dubbing button, .inspector-dubbing summary, .dialogue-actions button, .titlebar button, .project-home button',

@@ -3018,6 +3018,9 @@ pre {
   cursor: default;
 }
 .translation-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   font-size: 10px;
   color: #a2a8b3;
   background: #7d849111;
@@ -4619,8 +4622,46 @@ pre {
   flex: none;
 }
 .dialogue-card .translation-review {
-  margin: 4px 0;
+  display: flex;
+  flex: 1;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-width: 0;
+  margin: 0;
   padding: 0;
+}
+.translation-review .translation-badge {
+  max-width: 100%;
+  min-width: 0;
+  min-height: 24px;
+}
+.translation-review button.translation-badge {
+  padding: 3px 5px;
+  cursor: pointer;
+}
+.translation-review .translation-state-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.translation-review .translation-badge > svg,
+.translation-next-action {
+  flex: none;
+}
+.translation-next-action {
+  display: inline-flex;
+  align-items: center;
+  padding-left: 4px;
+  border-left: 1px solid color-mix(in srgb, currentColor 30%, transparent);
+}
+.translation-review button.translation-badge:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--translation-color) 25%, var(--surface));
+}
+.translation-review button.translation-badge:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 .dialogue-card .card-footer {
   margin-top: 4px;
