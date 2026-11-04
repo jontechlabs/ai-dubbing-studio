@@ -327,9 +327,7 @@ export function ProjectHome({
               onChange={(e) => setQuery(e.target.value)}
             />
           </label>
-          <span>
-            {t('home.count', { count: rows.length })}
-          </span>
+          <span>{t('home.count', { count: rows.length })}</span>
           <IconButton
             label={t('refresh')}
             disabled={loading || working}

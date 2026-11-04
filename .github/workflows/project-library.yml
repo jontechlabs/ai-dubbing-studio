@@ -45,7 +45,7 @@ jobs:
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
           pnpm exec prettier --check tests/e2e/project-home.pw.ts tests/e2e/project-home-browser.pw.ts tests/e2e/loading-subtitles.pw.ts
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
-          pnpm test:e2e --shard=${{ matrix.shard }}/2 --reporter=line,json
+          pnpm test:e2e --shard=${{ matrix.shard }}/2 '--reporter=line,json'
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
