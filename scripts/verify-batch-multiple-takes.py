@@ -19,7 +19,15 @@ for path in ['src-tauri/Cargo.toml','src-tauri/Cargo.lock']:
  assert value('HEAD',path).replace(b'name = "ai-dubbing-studio"\nversion = "0.43.0"',b'name = "ai-dubbing-studio"\nversion = "0.42.0"')==value(BASE,path)
 before=json.loads(value(BASE,'src/mcp/catalog.json'));after=json.loads(value('HEAD','src/mcp/catalog.json'))
 assert after['builtins']==before['builtins'] and len(after['commands'])==len(before['commands'])
+def strip_optional(schema,field):
+ removed=0
+ for definition in [schema,*schema.get('$defs',{}).values()]:
+  if field in definition.get('properties',{}):
+   assert field not in definition.get('required',[]);definition['properties'].pop(field);removed+=1
+ assert removed==1
 for command in after['commands']:
+ if command['name'] in ['studio_preview_dubbing_batch','studio_generate_dubbing_batch']:strip_optional(command['inputSchema'],'takeCount')
+ if command['name']=='studio_retry_dubbing_batch':strip_optional(command['inputSchema'],'itemIndices')
  old=next(v for v in before['commands'] if v['name']==command['name'])
  if command['name'] in ['studio_preview_dubbing_batch','studio_generate_dubbing_batch','studio_dubbing_batch_report','studio_retry_dubbing_batch']: command['description']=old['description']
 assert after['commands']==before['commands']

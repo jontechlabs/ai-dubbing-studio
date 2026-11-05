@@ -2969,7 +2969,7 @@
     {
       "name": "studio_preview_dubbing_batch",
       "command": "preview_dubbing_batch",
-      "description": "Preview a dubbing batch before starting. Optional approvedOnly or unapprovedOnly filters translation approval; they are mutually exclusive. Counts include approved and unapproved lines excluded by the chosen filter.",
+      "description": "Preview eligible dialogue IDs with current filters. Optional takeCount 1–4, default 1, is the number of new alternatives per eligible dialogue; existing usable dialogue takes are skipped unless force is true. Read-only.",
       "inputSchema": {
         "type": "object",
         "properties": { "selection": { "$ref": "#/$defs/selection_DubbingBatchSelection_0" } },
@@ -3136,7 +3136,7 @@
     {
       "name": "studio_generate_dubbing_batch",
       "command": "generate_dubbing_batch",
-      "description": "Generate translated lines in all/selected scope with one shared configuration. Optional approvedOnly or unapprovedOnly filters translation approval; they are mutually exclusive. Untranslated lines are always excluded; force creates new takes without removing existing ones. Returns a job ID.",
+      "description": "Generate 1–4 new takes per eligible dialogue with optional takeCount (default 1). Sequential inference, offset seeds, immutable earlier takes and a durable outcome for each requested take. History/retry preserve successful takes. Returns job ID; context required.",
       "inputSchema": {
         "type": "object",
         "properties": {

@@ -128,10 +128,6 @@ const readOnly =
 const notes = {
   dubbing_batch_history:
     'List durable root batch journals for the open project and current target language, newest first. Survives app restart and job-history pruning; groups retry runs with their original batch. Includes dates, outcomes, active job IDs and retry counts. Defaults: offset 0, limit 20 (maximum 100), problemsOnly false. Read-only; never restarts inference.',
-  preview_dubbing_batch:
-    'Preview eligible dialogue IDs with current filters. Optional takeCount 1–4, default 1, is the number of new alternatives per eligible dialogue; existing usable dialogue takes are skipped unless force is true. Read-only.',
-  generate_dubbing_batch:
-    'Generate 1–4 new takes per eligible dialogue with optional takeCount (default 1). Sequential inference, offset seeds, immutable earlier takes and a durable outcome for each requested take. History/retry preserve successful takes. Returns job ID; context required.',
   dubbing_batch_report:
     'Read paginated saved outcomes of a dubbing batch belonging to the open project. Resolves retry jobs to the original report, includes error codes, successful take timestamps, stable zero-based itemIndex and one-based takeIndex for each requested take. Defaults: offset 0, limit 100 (maximum 200), problemsOnly true. Does not change the project or run inference.',
   retry_dubbing_batch:
@@ -220,9 +216,9 @@ const notes = {
   generate_dubbing_pipeline:
     'Generate 1–4 two-stage dubbing alternatives. Optional count defaults to 1. Seeds increment from options.tts.seed. Each alternative completes TTS, optional prosody and local timbre conversion sequentially; models are released between stages. Completed stages and earlier takes survive failure/cancellation. Returns a job ID.',
   generate_dubbing_batch:
-    'Generate translated lines in all/selected scope with one shared configuration. Optional approvedOnly or unapprovedOnly filters translation approval; they are mutually exclusive. Untranslated lines are always excluded; force creates new takes without removing existing ones. Returns a job ID.',
+    'Generate 1–4 new takes per eligible dialogue with optional takeCount (default 1). Sequential inference, offset seeds, immutable earlier takes and a durable outcome for each requested take. History/retry preserve successful takes. Returns job ID; context required.',
   preview_dubbing_batch:
-    'Preview a dubbing batch before starting. Optional approvedOnly or unapprovedOnly filters translation approval; they are mutually exclusive. Counts include approved and unapproved lines excluded by the chosen filter.',
+    'Preview eligible dialogue IDs with current filters. Optional takeCount 1–4, default 1, is the number of new alternatives per eligible dialogue; existing usable dialogue takes are skipped unless force is true. Read-only.',
   start_inpaint_batch:
     'Render independent lip clips per dialogue; preserve the main movie. Returns a job ID.',
   export_mkv:
