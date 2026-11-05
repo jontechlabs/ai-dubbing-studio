@@ -65,6 +65,8 @@ pub struct Item {
 #[derive(Clone, Serialize, Deserialize)]
 pub struct Request {
     #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub created_at: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub origin_batch_id: Option<String>,
     pub root: PathBuf,
     #[serde(default)]
@@ -275,6 +277,7 @@ pub fn enqueue<R: tauri::Runtime>(
         }
         (
             Request {
+                created_at: None,
                 origin_batch_id: None,
                 root: s.root.clone(),
                 approved_only: selection.approved_only,
@@ -440,6 +443,9 @@ fn start_with_launch<R: tauri::Runtime>(
     preview: Option<Preview>,
     launch: Option<tts::WorkerLaunch>,
 ) -> Result<String, String> {
+    if request.created_at.is_none() {
+        request.created_at = Some(chrono::Utc::now().to_rfc3339());
+    }
     let key = jobs::create(&core, &app, "ttsBatch", request.project_id.clone(), None);
     let save = (|| {
         let folder = folder(&core, &key)?;

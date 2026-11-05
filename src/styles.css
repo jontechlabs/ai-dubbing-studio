@@ -3076,6 +3076,19 @@ pre {
   overflow-wrap: anywhere;
   margin: 5px 0;
 }
+.batch-history {
+  margin: 5px 0;
+}
+.batch-history-modal .batch-recovery-row {
+  border-color: var(--line);
+}
+.batch-history-modal .batch-recovery-row header strong {
+  margin-left: 0;
+  font-size: 12px;
+}
+.batch-history-modal .batch-recovery-row header span {
+  margin-left: auto;
+}
 .translation-badge.translated {
   color: #c0efc2;
   background: #b8e8ba18;

@@ -19,6 +19,8 @@ export function BatchRecovery({
   onDismiss,
   onError,
   onChooseLine,
+  initiallyOpen = false,
+  onClose,
 }: {
   job: Job | undefined;
   starting: boolean;
@@ -30,9 +32,11 @@ export function BatchRecovery({
   onDismiss: () => void;
   onError: (error: string) => void;
   onChooseLine?: (id: string) => void;
+  initiallyOpen?: boolean;
+  onClose?: () => void;
 }) {
   const { t } = useTranslation();
-  const [open, setOpen] = useState(false),
+  const [open, setOpen] = useState(initiallyOpen),
     [offset, setOffset] = useState(0),
     [all, setAll] = useState(false),
     [checked, setChecked] = useState<string[]>([]),
@@ -70,6 +74,10 @@ export function BatchRecovery({
     };
   }, [key, reportId, offset, all]);
   const data = result?.key === key ? result.data : null;
+  const close = () => {
+    setOpen(false);
+    onClose?.();
+  };
   const active = starting || (!!job && ['queued', 'running', 'paused'].includes(job.status));
   const retry = async (scope: 'failed' | 'unfinished' | 'selected', ids: string[] = []) => {
     setWorking(true);
@@ -123,11 +131,7 @@ export function BatchRecovery({
         {t('batchRecovery.details', { failed: progress?.failed ?? job?.batch?.failed ?? 0 })}
       </button>
       {open && (
-        <Modal
-          title={t('batchRecovery.title')}
-          onClose={() => setOpen(false)}
-          className="batch-recovery-modal"
-        >
+        <Modal title={t('batchRecovery.title')} onClose={close} className="batch-recovery-modal">
           <p>{t('batchRecovery.hint')}</p>
           {progress && (
             <p role="status">
@@ -186,7 +190,7 @@ export function BatchRecovery({
                           disabled={!line || !onChooseLine}
                           onClick={() => {
                             onChooseLine?.(row.lineId);
-                            setOpen(false);
+                            close();
                           }}
                         >
                           {t('batchLine', { number })}
@@ -241,7 +245,7 @@ export function BatchRecovery({
             </>
           )}
           <div className="dialogue-manage-actions">
-            <button className="button subtle" onClick={() => setOpen(false)}>
+            <button className="button subtle" onClick={close}>
               {t('close')}
             </button>
             {!active && (

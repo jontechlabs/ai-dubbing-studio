@@ -124,8 +124,10 @@ function rustSchema(type) {
   throw Error('Unknown native parameter type: ' + type);
 }
 const readOnly =
-  /^(?!apply_)(environment|graphics_info|.*_status|.*_result|latest_.*|audio_effects_catalog|.*_path|.*_paths|list_jobs|model_storage_info|model_storage_size|managed_models|current_project|list_projects|project_cover|voice_install_space|preview_.*|reference_audio_info|get_waveform|dubbing_batch_report)$/;
+  /^(?!apply_)(environment|graphics_info|.*_status|.*_result|latest_.*|audio_effects_catalog|.*_path|.*_paths|list_jobs|model_storage_info|model_storage_size|managed_models|current_project|list_projects|project_cover|voice_install_space|preview_.*|reference_audio_info|get_waveform|dubbing_batch_report|dubbing_batch_history)$/;
 const notes = {
+  dubbing_batch_history:
+    'List durable root batch journals for the open project and current target language, newest first. Survives app restart and job-history pruning; groups retry runs with their original batch. Includes dates, outcomes, active job IDs and retry counts. Defaults: offset 0, limit 20 (maximum 100), problemsOnly false. Read-only; never restarts inference.',
   dubbing_batch_report:
     'Read paginated saved outcomes of a dubbing batch belonging to the open project. Resolves retry jobs to the original report, includes error codes and successful take timestamps. Defaults: offset 0, limit 100 (maximum 200), problemsOnly true. Does not change the project or run inference.',
   retry_dubbing_batch:

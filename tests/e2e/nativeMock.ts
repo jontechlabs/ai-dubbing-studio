@@ -730,6 +730,35 @@ export async function nativeMock(page: Page, large = false, seededProject?: Proj
         }
         return result;
       };
+      const batchArchive = () => JSON.parse(localStorage.getItem('nativeMockBatchHistory') ?? '{}');
+      const saveBatch = () => {
+        if (!host.__batchRoot || !host.__batchOriginRows) return;
+        const archive = batchArchive(),
+          old = archive[host.__batchRoot];
+        archive[host.__batchRoot] = {
+          reportId: host.__batchRoot,
+          projectId: project.id,
+          language: project.languages.target,
+          createdAt: old?.createdAt ?? new Date().toISOString(),
+          options: host.__pendingBatch,
+          rows: host.__batchOriginRows,
+          skipped: host.__batchSkipped ?? 0,
+          retryCount: host.__batchRetryCount ?? 0,
+          status: job.status,
+        };
+        localStorage.setItem('nativeMockBatchHistory', JSON.stringify(archive));
+      };
+      const restoreBatch = (id: string) => {
+        if (host.__batchRoot === id && host.__batchOriginRows) return;
+        const entry = batchArchive()[id];
+        if (!entry || entry.projectId !== project.id || entry.language !== project.languages.target)
+          throw Error('STALE_REVISION');
+        host.__batchRoot = id;
+        host.__batchOriginRows = structuredClone(entry.rows);
+        host.__pendingBatch = structuredClone(entry.options);
+        host.__batchSkipped = entry.skipped;
+        host.__batchRetryCount = entry.retryCount;
+      };
       const batchJobUpdate = () => {
         const rows = host.__batchRows,
           done = rows.filter((r: any) => r.status !== 'pending').length,
@@ -751,6 +780,7 @@ export async function nativeMock(page: Page, large = false, seededProject?: Proj
             currentLineId: rows.find((r: any) => r.status === 'pending')?.id ?? null,
           },
         };
+        saveBatch();
         emit('job-changed', job);
       };
       host.__advanceBatch = (error: string | null = null) => {
@@ -2505,7 +2535,9 @@ export async function nativeMock(page: Page, large = false, seededProject?: Proj
             host.__pendingBatch = structuredClone(args.selection);
             host.__batchRows = plan.ready.map((id: string) => ({ id, status: 'pending' }));
             host.__batchOriginRows = host.__batchRows;
-            host.__batchRoot = 'batch-job';
+            host.__batchRoot = Object.keys(batchArchive()).length
+              ? `batch-job-${Object.keys(batchArchive()).length + 1}`
+              : 'batch-job';
             host.__batchRetryCount = 0;
             host.__batchSkipped =
               plan.existing +
@@ -2514,7 +2546,7 @@ export async function nativeMock(page: Page, large = false, seededProject?: Proj
               plan.approved +
               plan.blocked.length;
             job = {
-              id: 'batch-job',
+              id: host.__batchRoot,
               projectId: project.id,
               kind: 'ttsBatch',
               logs: [],
@@ -2523,7 +2555,58 @@ export async function nativeMock(page: Page, large = false, seededProject?: Proj
             batchJobUpdate();
             return job.id;
           }
+          if (command === 'dubbing_batch_history') {
+            const all: any[] = Object.values(batchArchive())
+              .filter(
+                (e: any) => e.projectId === project.id && e.language === project.languages.target,
+              )
+              .map((e: any) => {
+                const succeeded = e.rows.filter((r: any) => r.status === 'succeeded').length,
+                  failed = e.rows.filter((r: any) => r.status === 'failed').length,
+                  pending = e.rows.filter((r: any) => r.status === 'pending').length;
+                const active =
+                  host.__batchRoot === e.reportId &&
+                  job.kind === 'ttsBatch' &&
+                  ['running', 'queued', 'paused'].includes(job.status);
+                return {
+                  reportId: e.reportId,
+                  createdAt: e.createdAt,
+                  variantId: e.options.options.variantId,
+                  retryCount: e.retryCount,
+                  activeJobId: active ? job.id : null,
+                  status: active
+                    ? job.status
+                    : pending
+                      ? 'interrupted'
+                      : failed
+                        ? 'failed'
+                        : 'succeeded',
+                  progress: {
+                    total: e.rows.length,
+                    completed: e.rows.length - pending,
+                    succeeded,
+                    failed,
+                    skipped: e.skipped,
+                    currentLineId: null,
+                  },
+                };
+              })
+              .filter(
+                (e) =>
+                  !args.problemsOnly ||
+                  e.progress.failed ||
+                  e.progress.completed < e.progress.total,
+              )
+              .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+            return {
+              matching: all.length,
+              offset: args.offset ?? 0,
+              unreadable: 0,
+              items: all.slice(args.offset ?? 0, (args.offset ?? 0) + (args.limit ?? 20)),
+            };
+          }
           if (command === 'dubbing_batch_report') {
+            restoreBatch(args.id.startsWith('batch-retry-') ? host.__batchRoot : args.id);
             const all = host.__batchOriginRows ?? [],
               succeeded = all.filter((r: any) => r.status === 'succeeded').length,
               failed = all.filter((r: any) => r.status === 'failed').length;
@@ -2557,6 +2640,7 @@ export async function nativeMock(page: Page, large = false, seededProject?: Proj
             };
           }
           if (command === 'retry_dubbing_batch') {
+            restoreBatch(args.id);
             host.__retrySelection = structuredClone(args.selection);
             const s = args.selection,
               ids = new Set(s.lineIds),

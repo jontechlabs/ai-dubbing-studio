@@ -1,5 +1,9 @@
 # AI Dubbing Studio
 
+## v0.42.0 — Historique des doublages par lot
+
+L’[historique persistant](docs/BATCH-HISTORY.md) permet de retrouver les lots après redémarrage : date, moteur, réussites, échecs et répliques non traitées. Ouvrez **Doublage → Lot → Historique des doublages par lot**, puis le bilan pour relancer une ligne, une sélection ou tous les échecs. Les relances restent groupées avec le lot initial ; les essais existants sont conservés. Aucun traitement ne reprend automatiquement.
+
 **v0.41.0 — Dates des essais et reprise des lots.** Date et heure locale de chaque essai, bilan des répliques échouées ou non traitées, relance individuelle ou multiple avec la configuration du lot et les données actuelles. Les réussites sont conservées ; le suivi peut être fermé et réaffiché. **157 outils MCP, format 26.** [Guide et captures](docs/BATCH-RECOVERY.md).
 
 **v0.40.2 — Revalidation des doublages existants.** Un essai n’est plus définitivement bloqué après changement de texte, calage, personnage ou référence : la confirmation montre les différences et permet de valider l’audio tel quel après écoute. Une modification ultérieure retire la validation. Essais et WAV conservés. [Guide et capture](docs/REVALIDATION.md).

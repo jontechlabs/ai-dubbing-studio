@@ -16,6 +16,7 @@ fn request(p: &Project, root: &Path) -> Request {
     )
     .unwrap();
     Request {
+        created_at: None,
         origin_batch_id: None,
         root: root.into(),
         project_id: p.id.clone(),

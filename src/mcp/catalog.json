@@ -3296,6 +3296,22 @@
       "annotations": { "readOnlyHint": false, "destructiveHint": true, "openWorldHint": false }
     },
     {
+      "name": "studio_dubbing_batch_history",
+      "command": "dubbing_batch_history",
+      "description": "List durable root batch journals for the open project and current target language, newest first. Survives app restart and job-history pruning; groups retry runs with their original batch. Includes dates, outcomes, active job IDs and retry counts. Defaults: offset 0, limit 20 (maximum 100), problemsOnly false. Read-only; never restarts inference.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "offset": { "anyOf": [{ "type": "integer", "minimum": 0 }, { "type": "null" }] },
+          "limit": { "anyOf": [{ "type": "integer", "minimum": 0 }, { "type": "null" }] },
+          "problemsOnly": { "anyOf": [{ "type": "boolean" }, { "type": "null" }] }
+        },
+        "required": [],
+        "additionalProperties": false
+      },
+      "annotations": { "readOnlyHint": true, "destructiveHint": false, "openWorldHint": false }
+    },
+    {
       "name": "studio_dubbing_batch_report",
       "command": "dubbing_batch_report",
       "description": "Read paginated saved outcomes of a dubbing batch belonging to the open project. Resolves retry jobs to the original report, includes error codes and successful take timestamps. Defaults: offset 0, limit 100 (maximum 200), problemsOnly true. Does not change the project or run inference.",

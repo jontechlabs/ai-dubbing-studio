@@ -1063,6 +1063,25 @@ fn generate_dubbing_batch(
     tts_batch::enqueue(core.inner().clone(), app, selection)
 }
 #[tauri::command]
+async fn dubbing_batch_history(
+    core: State<'_, Shared>,
+    offset: Option<u32>,
+    limit: Option<u32>,
+    problems_only: Option<bool>,
+) -> Result<tts_batch::review::history::History, String> {
+    let core = core.inner().clone();
+    tauri::async_runtime::spawn_blocking(move || {
+        tts_batch::review::history::list(
+            &core,
+            offset.unwrap_or(0),
+            limit.unwrap_or(20),
+            problems_only.unwrap_or(false),
+        )
+    })
+    .await
+    .map_err(io_error)?
+}
+#[tauri::command]
 fn dubbing_batch_report(
     core: State<'_, Shared>,
     id: String,
@@ -2191,6 +2210,7 @@ pub fn run() {
             preview_dubbing_batch,
             generate_dubbing_batch,
             dubbing_batch_report,
+            dubbing_batch_history,
             retry_dubbing_batch,
             voice_reference_path,
             transcribe_voice_reference,

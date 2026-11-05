@@ -1,5 +1,7 @@
 //! Read-only paginated batch outcomes and selected, idempotent recovery.
 use super::*;
+#[path = "tts_batch_history.rs"]
+pub mod history;
 #[cfg(test)]
 #[path = "tts_batch_review_tests.rs"]
 mod tests;

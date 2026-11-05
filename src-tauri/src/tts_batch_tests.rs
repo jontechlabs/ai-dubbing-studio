@@ -111,6 +111,7 @@ pub(crate) async fn finished(core: &Core, key: &str) -> jobs::Job {
 fn request(p: &Project, root: &Path) -> Request {
     let (preview, items) = plan(p, root, &selection()).unwrap();
     Request {
+        created_at: None,
         origin_batch_id: None,
         root: root.into(),
         approved_only: false,

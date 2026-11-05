@@ -1891,5 +1891,25 @@
   "takeDate": {
     "created": "Created {{date}}",
     "unknown": "Generation date unavailable"
+  },
+  "batchHistory": {
+    "title": "Batch dubbing history",
+    "hint": "Saved batches for this project and target language, newest first. Retries are grouped with their original batch. Nothing restarts automatically.",
+    "problems": "Only batches to resume",
+    "refresh": "Refresh batch history",
+    "loading": "Loading batch history…",
+    "empty": "No saved batches for this project with this filter.",
+    "unreadable": "Some journals could not be read and were skipped. Other batches remain available.",
+    "retries": "{{count}} retry run(s)",
+    "inspect": "View results and retry",
+    "states": {
+      "queued": "Queued",
+      "running": "Running",
+      "paused": "Paused",
+      "interrupted": "Incomplete / interrupted",
+      "cancelled": "Cancelled",
+      "failed": "With failures",
+      "succeeded": "Completed"
+    }
   }
 }

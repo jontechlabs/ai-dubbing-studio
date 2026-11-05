@@ -514,6 +514,23 @@ export function dubbingBatchReport(id: string, offset = 0, limit = 25, problemsO
 export function retryDubbingBatch(id: string, selection: DubbingBatchRetrySelection) {
   return invoke<string>('retry_dubbing_batch', { id, selection });
 }
+export type DubbingBatchHistory = {
+  matching: number;
+  offset: number;
+  unreadable: number;
+  items: {
+    reportId: string;
+    createdAt: string | null;
+    variantId: string;
+    status: string;
+    activeJobId: string | null;
+    retryCount: number;
+    progress: DubbingBatchReport['progress'];
+  }[];
+};
+export function dubbingBatchHistory(offset = 0, limit = 20, problemsOnly = false) {
+  return invoke<DubbingBatchHistory>('dubbing_batch_history', { offset, limit, problemsOnly });
+}
 export type ReferenceFileSelection = ReferenceAudioInfo & { startMs: number; endMs: number };
 export async function chooseReferenceAudio(): Promise<ReferenceAudioInfo | null> {
   if (!native) throw Error('DESKTOP_REQUIRED');

@@ -1891,5 +1891,25 @@
   "takeDate": {
     "created": "Généré le {{date}}",
     "unknown": "Date de génération indisponible"
+  },
+  "batchHistory": {
+    "title": "Historique des doublages par lot",
+    "hint": "Lots enregistrés pour ce projet et cette langue cible, du plus récent au plus ancien. Les relances restent regroupées avec leur lot d’origine. Aucun traitement ne reprend automatiquement.",
+    "problems": "Uniquement les lots à reprendre",
+    "refresh": "Actualiser l’historique",
+    "loading": "Chargement de l’historique…",
+    "empty": "Aucun lot enregistré pour ce projet avec ce filtre.",
+    "unreadable": "Certains journaux sont illisibles et ont été ignorés. Les autres lots restent accessibles.",
+    "retries": "{{count}} relance(s)",
+    "inspect": "Voir le bilan et relancer",
+    "states": {
+      "queued": "En attente",
+      "running": "En cours",
+      "paused": "En pause",
+      "interrupted": "Incomplet / interrompu",
+      "cancelled": "Annulé",
+      "failed": "Avec échecs",
+      "succeeded": "Terminé"
+    }
   }
 }

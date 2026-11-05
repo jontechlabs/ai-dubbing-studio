@@ -55,6 +55,7 @@ import { useDubbingTask } from '../hooks/useDubbingTask';
 import { useTakeReview } from '../hooks/useTakeReview';
 import { TakeDate } from './TakeDate';
 import { BatchRecovery } from './BatchRecovery';
+import { BatchHistory } from './BatchHistory';
 import { translationState, hasTranslation } from '../domain/translation';
 
 export function CosyModel({
@@ -613,6 +614,20 @@ export function DubPanel({
             </IconButton>
           ))}
       </nav>
+      {batch && (
+        <BatchHistory
+          project={project}
+          jobs={jobs}
+          busy={busy}
+          startTask={task.start}
+          snapshot={snapshot}
+          onError={onError}
+          onChooseLine={(id) => {
+            const target = project.dialogues.find((l) => l.id === id);
+            if (target) onChooseLine(target);
+          }}
+        />
+      )}
       {(task.job || task.pending || task.error) && (
         <div className="dub-task-progress">
           <CurrentJobProgress
