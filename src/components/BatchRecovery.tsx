@@ -39,7 +39,7 @@ export function BatchRecovery({
   const [open, setOpen] = useState(initiallyOpen),
     [offset, setOffset] = useState(0),
     [all, setAll] = useState(false),
-    [checked, setChecked] = useState<string[]>([]),
+    [checked, setChecked] = useState<Record<number, string>>({}),
     [working, setWorking] = useState(false),
     [revision, setRevision] = useState(0);
   const [result, setResult] = useState<{
@@ -79,14 +79,22 @@ export function BatchRecovery({
     onClose?.();
   };
   const active = starting || (!!job && ['queued', 'running', 'paused'].includes(job.status));
-  const retry = async (scope: 'failed' | 'unfinished' | 'selected', ids: string[] = []) => {
+  const retry = async (
+    scope: 'failed' | 'unfinished' | 'selected',
+    ids: string[] = [],
+    indices: number[] = [],
+  ) => {
     setWorking(true);
     try {
       await startTask(async () => {
         await snapshot();
-        return bridge.retryDubbingBatch(data?.reportId ?? reportId, { scope, lineIds: ids });
+        return bridge.retryDubbingBatch(data?.reportId ?? reportId, {
+          scope,
+          lineIds: multiple ? [] : ids,
+          ...(multiple && scope === 'selected' ? { itemIndices: indices } : {}),
+        });
       }, data?.reportId ?? reportId);
-      setChecked([]);
+      setChecked({});
       setOffset(0);
     } catch (error) {
       onError(String(error));
@@ -97,6 +105,7 @@ export function BatchRecovery({
   };
   const disabled = busy || working || active;
   const progress = data?.progress;
+  const multiple = (progress?.takeCount ?? job?.batch?.takeCount ?? 1) > 1;
   const remaining = progress ? Math.max(0, progress.total - progress.completed) : 0;
   const controls = (
     <>
@@ -118,10 +127,12 @@ export function BatchRecovery({
       )}
       <button
         className="button accent"
-        disabled={disabled || !checked.length}
-        onClick={() => void retry('selected', checked)}
+        disabled={disabled || !Object.keys(checked).length}
+        onClick={() =>
+          void retry('selected', Object.values(checked), Object.keys(checked).map(Number))
+        }
       >
-        {t('batchRecovery.retrySelected', { count: checked.length })}
+        {t('batchRecovery.retrySelected', { count: Object.keys(checked).length })}
       </button>
     </>
   );
@@ -135,7 +146,7 @@ export function BatchRecovery({
           <p>{t('batchRecovery.hint')}</p>
           {progress && (
             <p role="status">
-              {t('batchRecovery.summary', {
+              {t(multiple ? 'batchTakes.summary' : 'batchRecovery.summary', {
                 succeeded: progress.succeeded,
                 failed: progress.failed,
                 pending: remaining,
@@ -168,20 +179,32 @@ export function BatchRecovery({
                     number = project.dialogues.findIndex((l) => l.id === row.lineId) + 1;
                   const retryable = row.status === 'failed' || row.status === 'pending';
                   const status =
-                    active && job?.batch?.currentLineId === row.lineId ? 'running' : row.status;
+                    active &&
+                    row.status === 'pending' &&
+                    job?.batch?.currentLineId === row.lineId &&
+                    (!multiple || job.batch.currentIndex === row.itemIndex)
+                      ? 'running'
+                      : row.status;
                   return (
-                    <article key={row.lineId} className={`batch-recovery-row ${row.status}`}>
+                    <article key={row.itemIndex} className={`batch-recovery-row ${row.status}`}>
                       <header>
                         <input
                           type="checkbox"
-                          aria-label={t('batchRecovery.check', { number })}
-                          checked={checked.includes(row.lineId)}
+                          aria-label={t(multiple ? 'batchTakes.check' : 'batchRecovery.check', {
+                            number,
+                            take: row.takeIndex,
+                          })}
+                          checked={checked[row.itemIndex] !== undefined}
                           disabled={!retryable || disabled}
                           onChange={(e) =>
                             setChecked((ids) =>
                               e.target.checked
-                                ? [...ids, row.lineId]
-                                : ids.filter((id) => id !== row.lineId),
+                                ? { ...ids, [row.itemIndex]: row.lineId }
+                                : Object.fromEntries(
+                                    Object.entries(ids).filter(
+                                      ([i]) => Number(i) !== row.itemIndex,
+                                    ),
+                                  ),
                             )
                           }
                         />
@@ -196,14 +219,28 @@ export function BatchRecovery({
                           {t('batchLine', { number })}
                           {line ? ` · ${formatTime(line.startMs)}` : ''}
                         </button>
+                        {multiple && (
+                          <span>
+                            {t('batchTakes.index', {
+                              take: row.takeIndex,
+                              count: progress?.takeCount ?? job?.batch?.takeCount ?? 1,
+                            })}
+                          </span>
+                        )}
                         <strong>{t(`batchRecovery.states.${status}`)}</strong>
                         {retryable && (
                           <button
                             className="icon-button"
                             disabled={disabled}
-                            aria-label={t('batchRecovery.retryLine', { number })}
-                            title={t('batchRecovery.retryLine', { number })}
-                            onClick={() => void retry('selected', [row.lineId])}
+                            aria-label={t(
+                              multiple ? 'batchTakes.retry' : 'batchRecovery.retryLine',
+                              { number, take: row.takeIndex },
+                            )}
+                            title={t(multiple ? 'batchTakes.retry' : 'batchRecovery.retryLine', {
+                              number,
+                              take: row.takeIndex,
+                            })}
+                            onClick={() => void retry('selected', [row.lineId], [row.itemIndex])}
                           >
                             <RefreshCw size={14} />
                           </button>

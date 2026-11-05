@@ -111,6 +111,8 @@ fn persist<R: tauri::Runtime>(core: &Core, app: &tauri::AppHandle<R>, key: &str,
     jobs::persist(core);
     jobs::update(core, app, key, |j| {
         j.batch = Some(crate::tts_batch::Progress {
+            take_count: None,
+            current_index: None,
             total: r.count as usize,
             completed: r.completed as usize,
             succeeded: r.completed as usize,

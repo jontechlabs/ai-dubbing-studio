@@ -469,6 +469,7 @@ export async function importDubbingReference(
 }
 export type ReferenceAudioInfo = { path: string; durationMs: number; url: string };
 export type DubbingBatchSelection = {
+  takeCount?: 1 | 2 | 3 | 4;
   scope: 'all' | 'selected';
   approvedOnly?: boolean;
   unapprovedOnly?: boolean;
@@ -492,6 +493,7 @@ export function generateDubbingBatch(selection: DubbingBatchSelection) {
   return invoke<string>('generate_dubbing_batch', { selection });
 }
 export type DubbingBatchRetrySelection = {
+  itemIndices?: number[];
   scope: 'failed' | 'unfinished' | 'selected';
   lineIds: string[];
 };
@@ -501,6 +503,8 @@ export type DubbingBatchReport = {
   matching: number;
   offset: number;
   items: {
+    itemIndex: number;
+    takeIndex: number;
     lineId: string;
     status: 'succeeded' | 'failed' | 'pending' | 'skipped';
     error: string | null;

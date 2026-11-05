@@ -1763,6 +1763,7 @@ fn retry_job(app: tauri::AppHandle, core: State<'_, Shared>, id: String) -> Resu
             app,
             &key,
             tts_batch::review::RetrySelection {
+                item_indices: vec![],
                 scope: "unfinished".into(),
                 line_ids: vec![],
             },

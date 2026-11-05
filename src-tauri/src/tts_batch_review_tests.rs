@@ -6,6 +6,7 @@ fn request(p: &Project, root: &Path) -> Request {
         p,
         root,
         &Selection {
+            take_count: None,
             scope: "all".into(),
             line_ids: vec![],
             force: false,
@@ -16,6 +17,7 @@ fn request(p: &Project, root: &Path) -> Request {
     )
     .unwrap();
     Request {
+        take_count: None,
         created_at: None,
         origin_batch_id: None,
         root: root.into(),
@@ -69,6 +71,7 @@ async fn selected_and_multiple_retries_update_the_original_report_and_never_repe
                 app.handle().clone(),
                 &key,
                 RetrySelection {
+                    item_indices: vec![],
                     scope: "selected".into(),
                     line_ids: bad
                 },
@@ -90,6 +93,7 @@ async fn selected_and_multiple_retries_update_the_original_report_and_never_repe
         app.handle().clone(),
         &key,
         RetrySelection {
+            item_indices: vec![],
             scope: "selected".into(),
             line_ids: vec![ids[1].clone(), ids[1].clone()],
         },
@@ -108,6 +112,7 @@ async fn selected_and_multiple_retries_update_the_original_report_and_never_repe
         app.handle().clone(),
         &key,
         RetrySelection {
+            item_indices: vec![],
             scope: "failed".into(),
             line_ids: vec![],
         },
@@ -174,6 +179,7 @@ async fn fatal_errors_leave_unprocessed_lines_retryable_and_success_is_not_repea
         app.handle().clone(),
         &key,
         RetrySelection {
+            item_indices: vec![],
             scope: "unfinished".into(),
             line_ids: vec![],
         },
@@ -227,6 +233,7 @@ async fn preflight_errors_are_reported_per_line_without_loading_a_worker() {
         app.handle().clone(),
         &key,
         RetrySelection {
+            item_indices: vec![],
             scope: "failed".into(),
             line_ids: vec![],
         },

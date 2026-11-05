@@ -6,6 +6,9 @@ use serde::{Deserialize, Serialize};
 #[path = "tts_batch_review.rs"]
 pub mod review;
 #[cfg(test)]
+#[path = "tts_batch_takes_tests.rs"]
+mod takes_tests;
+#[cfg(test)]
 #[path = "tts_batch_tests.rs"]
 pub(crate) mod tests;
 use std::{
@@ -18,6 +21,8 @@ use std::{
 #[derive(Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Selection {
+    #[serde(default)]
+    pub take_count: Option<u32>,
     pub scope: String,
     #[serde(default)]
     pub approved_only: bool,
@@ -47,6 +52,10 @@ pub struct Preview {
 #[derive(Clone, Default, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Progress {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub current_index: Option<usize>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub take_count: Option<u32>,
     pub total: usize,
     pub completed: usize,
     pub succeeded: usize,
@@ -56,6 +65,8 @@ pub struct Progress {
 }
 #[derive(Clone, Serialize, Deserialize)]
 pub struct Item {
+    #[serde(default)]
+    pub take_index: u32,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub origin_index: Option<usize>,
     pub request: tts::Request,
@@ -64,6 +75,8 @@ pub struct Item {
 }
 #[derive(Clone, Serialize, Deserialize)]
 pub struct Request {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub take_count: Option<u32>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub created_at: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -168,6 +181,7 @@ pub fn plan(
     root: &Path,
     selection: &Selection,
 ) -> Result<(Preview, Vec<Item>), String> {
+    let count = crate::tts_trials::count(selection.take_count)?;
     selection.options.validate()?;
     if !["all", "selected"].contains(&selection.scope.as_str())
         || (selection.approved_only && selection.unapproved_only)
@@ -235,14 +249,22 @@ pub fn plan(
         }
         match tts::prepare_request(p, root, line.id.clone(), selection.options.clone()) {
             Ok(mut request) => {
-                request.batch_item_id = Some(id());
                 preview.ready.push(line.id.clone());
-                items.push(Item {
-                    origin_index: None,
-                    request,
-                    status: "pending".into(),
-                    error: None,
-                });
+                for take_index in 0..count {
+                    if take_index > 0 {
+                        let mut options = selection.options.clone();
+                        options.seed = options.seed.wrapping_add(take_index);
+                        request = tts::prepare_request(p, root, line.id.clone(), options)?;
+                    }
+                    request.batch_item_id = Some(id());
+                    items.push(Item {
+                        take_index,
+                        origin_index: None,
+                        request: request.clone(),
+                        status: "pending".into(),
+                        error: None,
+                    });
+                }
             }
             Err(error) => preview.blocked.push(Problem {
                 line_id: line.id.clone(),
@@ -262,6 +284,7 @@ pub fn enqueue<R: tauri::Runtime>(
     app: tauri::AppHandle<R>,
     selection: Selection,
 ) -> Result<String, String> {
+    let count = crate::tts_trials::count(selection.take_count)?;
     if tts::busy(&core) {
         return Err("BUSY".into());
     }
@@ -277,6 +300,7 @@ pub fn enqueue<R: tauri::Runtime>(
         }
         (
             Request {
+                take_count: selection.take_count,
                 created_at: None,
                 origin_batch_id: None,
                 root: s.root.clone(),
@@ -285,11 +309,12 @@ pub fn enqueue<R: tauri::Runtime>(
                 project_id: s.project.id.clone(),
                 language: s.project.languages.target.clone(),
                 items,
-                skipped: preview.existing
+                skipped: (preview.existing
                     + preview.untranslated
                     + preview.unapproved
                     + preview.approved
-                    + preview.blocked.len(),
+                    + preview.blocked.len())
+                    * count as usize,
             },
             preview,
         )
@@ -339,6 +364,15 @@ fn progress(request: &Request, current: Option<String>) -> Progress {
         .filter(|i| i.status == "failed")
         .count();
     Progress {
+        current_index: current.as_ref().and_then(|line| {
+            request
+                .items
+                .iter()
+                .enumerate()
+                .find(|(_, i)| i.request.line_id == *line && i.status == "pending")
+                .map(|(index, i)| i.origin_index.unwrap_or(index))
+        }),
+        take_count: request.take_count.filter(|n| *n > 1),
         total: request.items.len(),
         completed: succeeded
             + failed
@@ -400,6 +434,10 @@ pub fn load(core: &Core, key: &str) -> Result<Request, String> {
     let mut request: Request =
         serde_json::from_slice(&std::fs::read(folder.join("request.json")).map_err(io_error)?)
             .map_err(io_error)?;
+    let count = crate::tts_trials::count(request.take_count)?;
+    if request.items.iter().any(|i| i.take_index >= count) {
+        return Err("INVALID_TTS_TAKE_COUNT".into());
+    }
     if let Ok(bytes) = std::fs::read(folder.join("results.jsonl")) {
         // Only newline-terminated outcomes are committed; a crashed final write can be ignored.
         for line in bytes
@@ -436,6 +474,71 @@ fn start<R: tauri::Runtime>(
 ) -> Result<String, String> {
     start_with_launch(core, app, request, preview, None)
 }
+/// Update sibling snapshots only for our own committed selection/settings.
+/// Other edits retain the old snapshot and are rejected by normal TTS checks.
+fn advance_siblings(
+    core: &Core,
+    request: &mut Request,
+    index: usize,
+    before: Option<Project>,
+) -> Result<(), String> {
+    let Some(mut expected) = before else {
+        return Ok(());
+    };
+    let done = request.items[index].request.clone();
+    let (generation, edit) = {
+        let guard = core.session.lock().map_err(io_error)?;
+        let s = guard.as_ref().ok_or("NO_PROJECT")?;
+        let Some(g) = s
+            .project
+            .generations
+            .iter()
+            .rev()
+            .find(|g| g["batchItemId"].as_str() == done.batch_item_id.as_deref())
+        else {
+            return Ok(());
+        };
+        let id = g["id"].as_str().ok_or("INVALID_GENERATION")?;
+        if !s.project.dialogues.iter().any(|l| {
+            l.id == done.line_id
+                && l.selected_generation_ids
+                    .get(&request.language)
+                    .is_some_and(|v| v == id)
+        }) {
+            return Ok(());
+        }
+        (g.clone(), s.project.voice_edits.get(id).cloned())
+    };
+    let id = generation["id"]
+        .as_str()
+        .ok_or("INVALID_GENERATION")?
+        .to_owned();
+    if let Some(line) = expected.dialogues.iter_mut().find(|l| l.id == done.line_id) {
+        line.voice_settings = Some(done.options.clone());
+        line.selected_generation_ids
+            .insert(request.language.clone(), id.clone());
+    }
+    expected.generations.push(generation);
+    if let Some(edit) = edit {
+        expected.voice_edits.insert(id, edit);
+    }
+    for next in request
+        .items
+        .iter_mut()
+        .skip(index + 1)
+        .filter(|i| i.request.line_id == done.line_id && i.status == "pending")
+    {
+        let mut prepared = tts::prepare_request(
+            &expected,
+            &request.root,
+            done.line_id.clone(),
+            next.request.options.clone(),
+        )?;
+        prepared.batch_item_id = next.request.batch_item_id.clone();
+        next.request = prepared;
+    }
+    Ok(())
+}
 fn start_with_launch<R: tauri::Runtime>(
     core: Arc<Core>,
     app: tauri::AppHandle<R>,
@@ -443,6 +546,10 @@ fn start_with_launch<R: tauri::Runtime>(
     preview: Option<Preview>,
     launch: Option<tts::WorkerLaunch>,
 ) -> Result<String, String> {
+    let count = crate::tts_trials::count(request.take_count)?;
+    if request.items.iter().any(|i| i.take_index >= count) {
+        return Err("INVALID_TTS_TAKE_COUNT".into());
+    }
     if request.created_at.is_none() {
         request.created_at = Some(chrono::Utc::now().to_rfc3339());
     }
@@ -484,6 +591,7 @@ fn start_with_launch<R: tauri::Runtime>(
             let _permit=tokio::select!{_=jobs::cancelled(&flag)=>return Err("CANCELLED".into()),permit=core.gate.clone().acquire_owned()=>permit.map_err(io_error)?,};
             jobs::update(&core,&app,&key,|j|j.status="running".into());
             let mut hot=crate::tts_session::Session::default();
+            let mut authorized_lines=HashSet::new();
             let outcome=async {
             for index in 0..request.items.len() {
                 if request.items[index].status=="succeeded"{continue;}
@@ -498,21 +606,28 @@ fn start_with_launch<R: tauri::Runtime>(
                 let excluded={let guard=core.session.lock().map_err(io_error)?;let session=guard.as_ref().ok_or("NO_PROJECT")?;session.project.dialogues.iter().any(|l|l.id==line_id&&l.excluded_from_dubbing==Some(true))};
                 if excluded {request.items[index].status="skipped".into();request.items[index].error=None;record_item(&core,&key,index,&request.items[index])?;review::record_origin(&core,&request,&request.items[index])?;persist(&core,&app,&key,&request,None);jobs::update(&core,&app,&key,|j|j.logs.push(format!("Skipped excluded dialogue: {line_id}")));continue;}
                 let item=&request.items[index];
-                if request.approved_only || request.unapproved_only {
+                if (request.approved_only || request.unapproved_only) && !authorized_lines.contains(&line_id) {
                     let session=core.session.lock().map_err(io_error)?;let s=session.as_ref().ok_or("NO_PROJECT")?;
                     let mut current=s.project.clone();current.clean_translation_approvals();
                     let approved=current.translation_approvals.contains_key(&line_id);
                     if request.approved_only && !approved { return Err("TTS_BATCH_TRANSLATION_UNAPPROVED".into()); }
                     if request.unapproved_only && approved { return Err("TTS_BATCH_TRANSLATION_APPROVED".into()); }
+                    authorized_lines.insert(line_id.clone());
                 }
                 persist(&core,&app,&key,&request,Some(line_id.clone()));
                 jobs::update(&core,&app,&key,|j|{j.stage="ttsReference".into();j.progress=None;j.logs.push(format!("Dubbing {}/{}: {}",index+1,request.items.len(),line_id));});
+                let before = if request.items.iter().skip(index+1).any(|next|next.request.line_id==line_id && next.status=="pending") {
+                    Some(core.session.lock().map_err(io_error)?.as_ref().ok_or("NO_PROJECT")?.project.clone())
+                } else { None };
                 let default_launch;let launch=if let Some(launch)=launch.as_ref(){launch}else{default_launch=tts::worker_launch(&core,&app,&item.request);&default_launch};let result=tts::execute_with_session(&core,&app,&key,&item.request,&flag,launch,Some(&mut hot)).await;
                 let item=&mut request.items[index];
                 match result {
                     Ok(())=>{item.status="succeeded".into();item.error=None;}
                     Err(error) if error=="CANCELLED"||flag.load(Ordering::Relaxed)=>{persist(&core,&app,&key,&request,None);return Err("CANCELLED".into());}
                     Err(error)=>{item.status="failed".into();item.error=Some(error.clone());jobs::update(&core,&app,&key,|j|j.logs.push(format!("Failed {line_id}: {error}")));}
+                }
+                if request.items[index].status=="succeeded" {
+                    advance_siblings(&core,&mut request,index,before)?;
                 }
                 record_item(&core,&key,index,&request.items[index])?;
                 review::record_origin(&core,&request,&request.items[index])?;

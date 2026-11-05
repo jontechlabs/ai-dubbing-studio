@@ -46,6 +46,7 @@ pub(crate) fn core(root: &Path, p: Project) -> Arc<Core> {
 }
 fn selection() -> Selection {
     Selection {
+        take_count: None,
         scope: "all".into(),
         approved_only: false,
         unapproved_only: false,
@@ -111,6 +112,7 @@ pub(crate) async fn finished(core: &Core, key: &str) -> jobs::Job {
 fn request(p: &Project, root: &Path) -> Request {
     let (preview, items) = plan(p, root, &selection()).unwrap();
     Request {
+        take_count: None,
         created_at: None,
         origin_batch_id: None,
         root: root.into(),
@@ -146,7 +148,7 @@ else:
     );
 }
 
-fn approve(p: &mut Project, index: usize) {
+pub(crate) fn approve(p: &mut Project, index: usize) {
     let line = &p.dialogues[index];
     p.format_version = 24;
     p.translation_approvals.insert(

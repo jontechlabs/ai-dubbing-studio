@@ -124,12 +124,20 @@ export function BatchHistory({
                       <small>{t('takeDate.unknown')}</small>
                     )}
                     <p>
-                      {t('batchRecovery.summary', {
-                        succeeded: entry.progress.succeeded,
-                        failed: entry.progress.failed,
-                        pending: Math.max(0, entry.progress.total - entry.progress.completed),
-                      })}
+                      {t(
+                        (entry.progress.takeCount ?? 1) > 1
+                          ? 'batchTakes.summary'
+                          : 'batchRecovery.summary',
+                        {
+                          succeeded: entry.progress.succeeded,
+                          failed: entry.progress.failed,
+                          pending: Math.max(0, entry.progress.total - entry.progress.completed),
+                        },
+                      )}
                     </p>
+                    {(entry.progress.takeCount ?? 1) > 1 && (
+                      <small>{t('batchTakes.perLine', { count: entry.progress.takeCount })}</small>
+                    )}
                     {entry.retryCount > 0 && (
                       <small>{t('batchHistory.retries', { count: entry.retryCount })}</small>
                     )}

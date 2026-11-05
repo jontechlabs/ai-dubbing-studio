@@ -128,10 +128,14 @@ const readOnly =
 const notes = {
   dubbing_batch_history:
     'List durable root batch journals for the open project and current target language, newest first. Survives app restart and job-history pruning; groups retry runs with their original batch. Includes dates, outcomes, active job IDs and retry counts. Defaults: offset 0, limit 20 (maximum 100), problemsOnly false. Read-only; never restarts inference.',
+  preview_dubbing_batch:
+    'Preview eligible dialogue IDs with current filters. Optional takeCount 1–4, default 1, is the number of new alternatives per eligible dialogue; existing usable dialogue takes are skipped unless force is true. Read-only.',
+  generate_dubbing_batch:
+    'Generate 1–4 new takes per eligible dialogue with optional takeCount (default 1). Sequential inference, offset seeds, immutable earlier takes and a durable outcome for each requested take. History/retry preserve successful takes. Returns job ID; context required.',
   dubbing_batch_report:
-    'Read paginated saved outcomes of a dubbing batch belonging to the open project. Resolves retry jobs to the original report, includes error codes and successful take timestamps. Defaults: offset 0, limit 100 (maximum 200), problemsOnly true. Does not change the project or run inference.',
+    'Read paginated saved outcomes of a dubbing batch belonging to the open project. Resolves retry jobs to the original report, includes error codes, successful take timestamps, stable zero-based itemIndex and one-based takeIndex for each requested take. Defaults: offset 0, limit 100 (maximum 200), problemsOnly true. Does not change the project or run inference.',
   retry_dubbing_batch:
-    'Retry only failed, unfinished or explicitly selected failed/unfinished lines from a saved batch. Reuses the original generation options with current line text/reference inputs; successful committed takes are never regenerated or replaced. Results update the original report. Returns a new job ID. Requires current context.',
+    'Retry only failed/unfinished items from a saved batch. Optional itemIndices are zero-based indices from the original report and select exact failed takes; lineIds select all failed/unfinished takes of those dialogues. Successful/unknown item indices are rejected atomically. Reuses the original generation options with current line text/reference inputs; successful committed takes are never regenerated or replaced. Results update the original report. Returns a new job ID. Requires current context.',
   current_project:
     'Read the currently open editor project, or null on Home. Does not reopen the previous project.',
   list_projects:

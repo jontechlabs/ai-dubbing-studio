@@ -1911,5 +1911,17 @@
       "failed": "Avec échecs",
       "succeeded": "Terminé"
     }
+  },
+  "batchTakes": {
+    "count": "Essais par réplique",
+    "hint": "Chaque réplique à traiter reçoit le nombre choisi de nouveaux essais. Les graines sont décalées pour demander des variantes. Génération séquentielle, modèle conservé lorsque le moteur le permet ; tous les essais existants restent disponibles.",
+    "total": "{{lines}} réplique(s) · {{count}} essais à générer",
+    "start": "Générer {{count}} essais",
+    "perLine": "{{count}} essais par réplique",
+    "index": "Essai {{take}} / {{count}}",
+    "check": "Sélectionner la réplique {{number}}, essai {{take}} à relancer",
+    "retry": "Relancer la réplique {{number}}, essai {{take}}",
+    "summary": "{{succeeded}} essai(s) réussi(s) · {{failed}} en échec · {{pending}} non traité(s)",
+    "progress": "{{completed}} / {{total}} essais traités · {{succeeded}} réussis · {{failed}} en échec · {{skipped}} exclus ou déjà disponibles"
   }
 }

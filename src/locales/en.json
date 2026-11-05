@@ -1911,5 +1911,17 @@
       "failed": "With failures",
       "succeeded": "Completed"
     }
+  },
+  "batchTakes": {
+    "count": "Takes per dialogue",
+    "hint": "Each eligible dialogue receives the chosen number of new takes. Seeds are offset to request alternatives. Takes run sequentially, keeping the model loaded when supported; existing takes stay available.",
+    "total": "{{lines}} dialogue(s) · {{count}} takes to generate",
+    "start": "Generate {{count}} takes",
+    "perLine": "{{count}} takes per dialogue",
+    "index": "Take {{take}} / {{count}}",
+    "check": "Select dialogue {{number}}, take {{take}} to retry",
+    "retry": "Retry dialogue {{number}}, take {{take}}",
+    "summary": "{{succeeded}} successful take(s) · {{failed}} failed · {{pending}} unprocessed",
+    "progress": "{{completed}} / {{total}} takes processed · {{succeeded}} succeeded · {{failed}} failed · {{skipped}} excluded or already available"
   }
 }

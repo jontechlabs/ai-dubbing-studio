@@ -7,6 +7,8 @@ export function BatchDubbingAction({
   project,
   selectedIds,
   settings,
+  takeCount,
+  onTakeCount,
   busy,
   ready,
   snapshot,
@@ -16,6 +18,8 @@ export function BatchDubbingAction({
   project: Project;
   selectedIds: string[];
   settings: VoiceSettings;
+  takeCount: 1 | 2 | 3 | 4;
+  onTakeCount: (count: 1 | 2 | 3 | 4) => void;
   busy: boolean;
   ready: boolean;
   snapshot: () => Promise<Project>;
@@ -33,6 +37,7 @@ export function BatchDubbingAction({
     error?: string;
   } | null>(null);
   const selectionKey = JSON.stringify({
+    ...(takeCount > 1 ? { takeCount } : {}),
     scope,
     lineIds: selectedIds,
     force,
@@ -61,6 +66,21 @@ export function BatchDubbingAction({
   const plan = result?.key === key ? result.plan : null;
   return (
     <section className="settings-section batch-dubbing">
+      <label className="field">
+        <span>{t('batchTakes.count')}</span>
+        <select
+          value={takeCount}
+          disabled={busy || working}
+          onChange={(e) => onTakeCount(Number(e.target.value) as 1 | 2 | 3 | 4)}
+        >
+          {[1, 2, 3, 4].map((n) => (
+            <option key={n} value={n}>
+              {n}
+            </option>
+          ))}
+        </select>
+      </label>
+      {takeCount > 1 && <p className="panel-description">{t('batchTakes.hint')}</p>}
       <label className="field">
         <span>{t('batchScope')}</span>
         <select value={scope} disabled={busy || working} onChange={(e) => setScope(e.target.value)}>
@@ -102,6 +122,14 @@ export function BatchDubbingAction({
               blocked: plan.blocked.length,
             })}
           </p>
+          {takeCount > 1 && (
+            <p role="status">
+              {t('batchTakes.total', {
+                lines: plan.ready.length,
+                count: plan.ready.length * takeCount,
+              })}
+            </p>
+          )}
           {!!plan.blocked.length && (
             <details>
               <summary>{t('batchExcluded', { count: plan.blocked.length })}</summary>
@@ -138,7 +166,12 @@ export function BatchDubbingAction({
             .finally(() => setWorking(false));
         }}
       >
-        {t('batchStart', { count: plan?.ready.length ?? 0 })}
+        {takeCount > 1
+          ? t('batchTakes.start', {
+              lines: plan?.ready.length ?? 0,
+              count: (plan?.ready.length ?? 0) * takeCount,
+            })
+          : t('batchStart', { count: plan?.ready.length ?? 0 })}
       </button>
     </section>
   );

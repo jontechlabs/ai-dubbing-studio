@@ -1,5 +1,9 @@
 # AI Dubbing Studio
 
+## v0.43.0 — 1 à 4 essais par réplique dans les lots
+
+Le [doublage par lot](docs/BATCH-MULTIPLE-TAKES.md) permet de choisir **1 à 4 essais par réplique**. Le total est annoncé avant le lancement. Chaque essai garde son résultat dans le bilan et l’historique, avec une relance précise des échecs et conservation des réussites. Le modèle reste chargé entre les essais lorsque le moteur le permet, puis est libéré à la fin ou en cas d’annulation.
+
 ## v0.42.0 — Historique des doublages par lot
 
 L’[historique persistant](docs/BATCH-HISTORY.md) permet de retrouver les lots après redémarrage : date, moteur, réussites, échecs et répliques non traitées. Ouvrez **Doublage → Lot → Historique des doublages par lot**, puis le bilan pour relancer une ligne, une sélection ou tous les échecs. Les relances restent groupées avec le lot initial ; les essais existants sont conservés. Aucun traitement ne reprend automatiquement.

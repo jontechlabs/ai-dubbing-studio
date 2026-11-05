@@ -1,5 +1,9 @@
 # AI Dubbing Studio
 
+## v0.43.0 — 1–4 takes per dialogue in batch dubbing
+
+[Batch dubbing](docs/BATCH-MULTIPLE-TAKES.md) now accepts **1–4 takes per eligible dialogue**, showing the total before launch. Each take has its own durable outcome and precise retry; successful and earlier takes are retained. Sequential generation keeps the model loaded when supported, then releases it on completion or cancellation.
+
 ## v0.42.0 — Persistent batch dubbing history
 
 The [saved batch history](docs/BATCH-HISTORY.md) survives application restarts and shows dates, engines, successes, failures and unprocessed lines. Open **Dubbing → Batch → Batch dubbing history**, then inspect a report to retry one line, a selection or all failures. Retry runs stay grouped with their original batch and previous takes are preserved. Nothing resumes automatically.
@@ -201,8 +205,8 @@ Audio regions with independent silence and volume, timeline range selection, fas
 
 | Package | Purpose |
 | --- | --- |
-| [Windows x64 setup](https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.42.0/AI-Dubbing-Studio-0.42.0-Setup.exe) | NSIS installer for the current user, with English/French installer interface |
-| [Portable ZIP](https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.42.0/AI-Dubbing-Studio-Windows-Portable.zip) | Extract the whole folder and launch `AI Dubbing Studio.exe` |
+| [Windows x64 setup](https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.43.0/AI-Dubbing-Studio-0.43.0-Setup.exe) | NSIS installer for the current user, with English/French installer interface |
+| [Portable ZIP](https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.43.0/AI-Dubbing-Studio-Windows-Portable.zip) | Extract the whole folder and launch `AI Dubbing Studio.exe` |
 | [SHA-256 checksums](https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.41.0/SHA256SUMS.txt) | Verify the setup and ZIP downloads |
 
 Target: **Windows 10/11 x64**, with **Microsoft Edge WebView2 Runtime**. FFmpeg and FFprobe are included. Python, CUDA and AI model downloads are not required for editing and playback. Installation may need Internet access if WebView2 is missing; local project editing does not require a cloud account.

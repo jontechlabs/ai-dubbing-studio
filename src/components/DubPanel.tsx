@@ -648,6 +648,7 @@ export function DubPanel({
           />
           {task.batchReportId && (
             <BatchRecovery
+              key={task.batchReportId}
               job={task.job}
               starting={task.pending}
               reportId={task.batchReportId}
@@ -1145,6 +1146,8 @@ export function DubPanel({
       {tools}
       {batch ? (
         <BatchDubbingAction
+          takeCount={takeCount}
+          onTakeCount={setTakeCount}
           project={project}
           selectedIds={batch.selectedIds}
           settings={{ ...settings, mode, accent }}

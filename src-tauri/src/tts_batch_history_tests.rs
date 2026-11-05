@@ -6,6 +6,7 @@ fn request(p: &Project, root: &Path) -> Request {
         p,
         root,
         &Selection {
+            take_count: None,
             scope: "all".into(),
             line_ids: vec![],
             force: false,
@@ -16,6 +17,7 @@ fn request(p: &Project, root: &Path) -> Request {
     )
     .unwrap();
     Request {
+        take_count: None,
         created_at: None,
         origin_batch_id: None,
         root: root.into(),
@@ -72,6 +74,7 @@ async fn history_survives_empty_job_cache_and_retries_update_one_original_entry(
         app.handle().clone(),
         &key,
         RetrySelection {
+            item_indices: vec![],
             scope: "failed".into(),
             line_ids: vec![],
         },

@@ -401,13 +401,20 @@ function JobsPanel({ jobs, onError }: { jobs: Job[]; onError: (s: string) => voi
           <JobDuration job={job} />
           {job.batch && (
             <p className="batch-job-summary">
-              {t(job.kind === 'ttsTrials' ? 'ttsTrialsProgress' : 'batchJobSummary', {
-                completed: job.batch.completed,
-                total: job.batch.total,
-                succeeded: job.batch.succeeded,
-                failed: job.batch.failed,
-                skipped: job.batch.skipped,
-              })}
+              {t(
+                job.kind === 'ttsTrials'
+                  ? 'ttsTrialsProgress'
+                  : (job.batch?.takeCount ?? 1) > 1
+                    ? 'batchTakes.progress'
+                    : 'batchJobSummary',
+                {
+                  completed: job.batch.completed,
+                  total: job.batch.total,
+                  succeeded: job.batch.succeeded,
+                  failed: job.batch.failed,
+                  skipped: job.batch.skipped,
+                },
+              )}
             </p>
           )}
           <span>

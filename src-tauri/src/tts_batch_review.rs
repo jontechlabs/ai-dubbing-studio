@@ -9,12 +9,16 @@ mod tests;
 #[derive(Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct RetrySelection {
+    #[serde(default)]
+    pub item_indices: Vec<u32>,
     pub scope: String,
     pub line_ids: Vec<String>,
 }
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Row {
+    pub item_index: usize,
+    pub take_index: u32,
     pub line_id: String,
     pub status: String,
     pub error: Option<String>,
@@ -94,7 +98,7 @@ pub fn report(
     }
     let mut rows = vec![];
     let takes = take_index(&s.project);
-    for item in &mut request.items {
+    for (item_index, item) in request.items.iter_mut().enumerate() {
         let generation = item
             .request
             .batch_item_id
@@ -107,6 +111,8 @@ pub fn report(
         }
         if !problems_only || matches!(item.status.as_str(), "failed" | "pending") {
             rows.push(Row {
+                item_index,
+                take_index: item.take_index + 1,
                 line_id: item.request.line_id.clone(),
                 status: item.status.clone(),
                 error: item.error.clone(),
@@ -155,7 +161,8 @@ pub(super) fn retry_with_launch<R: tauri::Runtime>(
     launch: Option<tts::WorkerLaunch>,
 ) -> Result<String, String> {
     if !["failed", "unfinished", "selected"].contains(&selection.scope.as_str())
-        || (selection.scope != "selected" && !selection.line_ids.is_empty())
+        || (selection.scope != "selected"
+            && (!selection.line_ids.is_empty() || !selection.item_indices.is_empty()))
     {
         return Err("INVALID_TTS_BATCH".into());
     }
@@ -164,6 +171,7 @@ pub(super) fn retry_with_launch<R: tauri::Runtime>(
     }
     let (root, original) = checked(&core, key)?;
     let ids: HashSet<_> = selection.line_ids.iter().collect();
+    let indices: HashSet<_> = selection.item_indices.iter().map(|v| *v as usize).collect();
     let session = core.session.lock().map_err(io_error)?;
     let s = session.as_ref().ok_or("NO_PROJECT")?;
     if s.root != original.root
@@ -177,7 +185,13 @@ pub(super) fn retry_with_launch<R: tauri::Runtime>(
     }
     let takes = take_index(&s.project);
     if selection.scope == "selected"
-        && (ids.is_empty()
+        && ((ids.is_empty() && indices.is_empty())
+            || indices.iter().any(|index| {
+                original.items.get(*index).is_none_or(|i| {
+                    !matches!(i.status.as_str(), "failed" | "pending")
+                        || committed(&takes, &s.root, i).is_some()
+                })
+            })
             || ids.iter().any(|id| {
                 !original.items.iter().any(|i| {
                     i.request.line_id.as_str() == id.as_str()
@@ -200,7 +214,10 @@ pub(super) fn retry_with_launch<R: tauri::Runtime>(
         let wanted = match selection.scope.as_str() {
             "failed" => old.status == "failed",
             "unfinished" => matches!(old.status.as_str(), "failed" | "pending"),
-            _ => ids.contains(&old.request.line_id),
+            _ => {
+                (indices.contains(&index) || ids.contains(&old.request.line_id))
+                    && matches!(old.status.as_str(), "failed" | "pending")
+            }
         };
         if !wanted || committed(&takes, &s.root, old).is_some() {
             continue;
@@ -239,6 +256,7 @@ pub(super) fn retry_with_launch<R: tauri::Runtime>(
                 }
                 request.batch_item_id = old.request.batch_item_id.clone();
                 Item {
+                    take_index: old.take_index,
                     origin_index: Some(index),
                     request,
                     status: "pending".into(),
@@ -246,6 +264,7 @@ pub(super) fn retry_with_launch<R: tauri::Runtime>(
                 }
             }
             Err(error) => Item {
+                take_index: old.take_index,
                 origin_index: Some(index),
                 request: old.request.clone(),
                 status: "failed".into(),

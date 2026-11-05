@@ -264,6 +264,8 @@ fn progress<R: tauri::Runtime>(
         .count();
     jobs::update(core, app, key, |j| {
         j.batch = Some(crate::tts_batch::Progress {
+            take_count: None,
+            current_index: None,
             total: request.items.len(),
             completed: succeeded
                 + failed

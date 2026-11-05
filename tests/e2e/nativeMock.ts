@@ -416,6 +416,14 @@ export async function nativeMock(page: Page, large = false, seededProject?: Proj
           progress: null,
           error: failed ? 'INPAINT_BATCH_PARTIAL' : null,
           batch: {
+            ...((host.__pendingBatch.takeCount ?? 1) > 1
+              ? {
+                  takeCount: host.__pendingBatch.takeCount,
+                  currentIndex: host.__batchOriginRows.indexOf(
+                    rows.find((r: any) => r.status === 'pending'),
+                  ),
+                }
+              : {}),
             total: rows.length,
             completed: done,
             succeeded,
@@ -664,6 +672,13 @@ export async function nativeMock(page: Page, large = false, seededProject?: Proj
           ready: [],
           blocked: [],
         };
+        if (
+          selection.takeCount !== undefined &&
+          (!Number.isInteger(selection.takeCount) ||
+            selection.takeCount < 1 ||
+            selection.takeCount > 4)
+        )
+          throw Error('INVALID_TTS_TAKE_COUNT');
         if (selection.approvedOnly && selection.unapprovedOnly) throw Error('INVALID_TTS_BATCH');
         for (const line of project.dialogues) {
           if (selection.scope === 'selected' && !selection.lineIds.includes(line.id)) continue;
@@ -772,6 +787,14 @@ export async function nativeMock(page: Page, large = false, seededProject?: Proj
           error: done === rows.length && failed ? 'TTS_BATCH_PARTIAL' : null,
           progress: null,
           batch: {
+            ...((host.__pendingBatch.takeCount ?? 1) > 1
+              ? {
+                  takeCount: host.__pendingBatch.takeCount,
+                  currentIndex: host.__batchOriginRows.indexOf(
+                    rows.find((r: any) => r.status === 'pending'),
+                  ),
+                }
+              : {}),
             total: rows.length,
             completed: done,
             succeeded,
@@ -789,7 +812,13 @@ export async function nativeMock(page: Page, large = false, seededProject?: Proj
         if (!row) return;
         if (!error) {
           const before = structuredClone(job);
-          host.__pendingTts = { lineId: row.id, options: host.__pendingBatch.options };
+          host.__pendingTts = {
+            lineId: row.id,
+            options: {
+              ...host.__pendingBatch.options,
+              seed: (host.__pendingBatch.options.seed + (row.takeIndex ?? 1) - 1) >>> 0,
+            },
+          };
           host.__completeTts(2000, false);
           job = before;
           row.status = 'succeeded';
@@ -2533,7 +2562,13 @@ export async function nativeMock(page: Page, large = false, seededProject?: Proj
           if (command === 'generate_dubbing_batch') {
             const plan = batchPlan(args.selection);
             host.__pendingBatch = structuredClone(args.selection);
-            host.__batchRows = plan.ready.map((id: string) => ({ id, status: 'pending' }));
+            host.__batchRows = plan.ready.flatMap((id: string) =>
+              Array.from({ length: args.selection.takeCount ?? 1 }, (_, i) => ({
+                id,
+                takeIndex: i + 1,
+                status: 'pending',
+              })),
+            );
             host.__batchOriginRows = host.__batchRows;
             host.__batchRoot = Object.keys(batchArchive()).length
               ? `batch-job-${Object.keys(batchArchive()).length + 1}`
@@ -2582,6 +2617,7 @@ export async function nativeMock(page: Page, large = false, seededProject?: Proj
                         ? 'failed'
                         : 'succeeded',
                   progress: {
+                    ...(e.options.takeCount > 1 ? { takeCount: e.options.takeCount } : {}),
                     total: e.rows.length,
                     completed: e.rows.length - pending,
                     succeeded,
@@ -2616,6 +2652,9 @@ export async function nativeMock(page: Page, large = false, seededProject?: Proj
             return {
               reportId: host.__batchRoot,
               progress: {
+                ...(host.__pendingBatch.takeCount > 1
+                  ? { takeCount: host.__pendingBatch.takeCount }
+                  : {}),
                 total: all.length,
                 completed: all.filter((r: any) => r.status !== 'pending').length,
                 succeeded,
@@ -2630,6 +2669,8 @@ export async function nativeMock(page: Page, large = false, seededProject?: Proj
                 .map((r: any) => {
                   const g = project.generations.find((g: any) => g.id === r.generationId);
                   return {
+                    itemIndex: all.indexOf(r),
+                    takeIndex: r.takeIndex ?? 1,
                     lineId: r.id,
                     status: r.status,
                     error: r.error ?? null,
@@ -2646,7 +2687,8 @@ export async function nativeMock(page: Page, large = false, seededProject?: Proj
               ids = new Set(s.lineIds),
               rows = host.__batchOriginRows.filter((r: any) =>
                 s.scope === 'selected'
-                  ? ids.has(r.id)
+                  ? ids.has(r.id) ||
+                    (s.itemIndices ?? []).includes(host.__batchOriginRows.indexOf(r))
                   : s.scope === 'failed'
                     ? r.status === 'failed'
                     : ['failed', 'pending'].includes(r.status),

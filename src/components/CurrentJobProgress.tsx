@@ -95,7 +95,14 @@ export function CurrentJobProgress({
       <JobDuration job={job} />
       {job.batch && (
         <span>
-          {t(job.kind === 'ttsTrials' ? 'ttsTrialsProgress' : 'batchJobSummary', job.batch)}
+          {t(
+            job.kind === 'ttsTrials'
+              ? 'ttsTrialsProgress'
+              : (job.batch?.takeCount ?? 1) > 1
+                ? 'batchTakes.progress'
+                : 'batchJobSummary',
+            job.batch,
+          )}
         </span>
       )}
       {job.error && (
