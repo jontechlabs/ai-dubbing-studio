@@ -144,7 +144,7 @@ pub fn list(core: &Core, offset: u32, limit: u32, problems_only: bool) -> Result
             variant_id: request
                 .items
                 .first()
-                .map(|i| i.request.options.variant_id.clone())
+                .map(|i| i.request.options.variant().to_owned())
                 .unwrap_or_default(),
             status,
             active_job_id: active.map(|(id, _)| id),
