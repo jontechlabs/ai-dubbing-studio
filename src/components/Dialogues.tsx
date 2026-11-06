@@ -68,6 +68,7 @@ function DialoguesPane({
   onCharacters,
   onAlignment,
   onTranslation,
+  onTranscribe,
   onDub,
   onPlayDub,
 }: {
@@ -88,6 +89,7 @@ function DialoguesPane({
   onCharacters: () => void;
   onAlignment: () => void;
   onTranslation: (line: Dialogue) => void;
+  onTranscribe: (line: Dialogue) => void;
   onDub: (line: Dialogue) => void;
   onPlayDub: (line: Dialogue) => void;
 }) {
@@ -403,6 +405,11 @@ function DialoguesPane({
                     onDelete={() => onDelete([line.id])}
                     openContext={(event) =>
                       openContext(event, t('dialogueContext'), [
+                        {
+                          label: t('sourceAsr.context'),
+                          disabled: busy || !project?.media,
+                          run: () => onTranscribe(line),
+                        },
                         { label: t('dialogueAdd'), disabled: busy, run: () => onAdd(line.endMs) },
                         {
                           label: t(

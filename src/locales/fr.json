@@ -1614,6 +1614,9 @@
     "takeHint": "Réglage réversible pour l’écoute, le mix et l’export. Le WAV d’origine, les autres essais et les réglages locaux sont conservés."
   },
   "sourceAsr": {
+    "context": "Transcrire le dialogue…",
+    "replace": "Remplacer le SRT source",
+    "keep": "Conserver le SRT source",
     "title": "Vérifier le texte original par transcription",
     "hint": "Transcrivez l’audio de cette réplique dans sa langue d’origine, puis comparez la proposition au SRT source. Aucune traduction automatique ni modification sans votre accord.",
     "language": "Langue de l’audio source",

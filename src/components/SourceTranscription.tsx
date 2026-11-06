@@ -18,6 +18,9 @@ export function SourceTranscription({
   snapshot,
   run,
   busy,
+  standalone = false,
+  onKeep,
+  onApplied,
 }: {
   project: Project;
   line: Dialogue;
@@ -25,10 +28,13 @@ export function SourceTranscription({
   snapshot: () => Promise<Project>;
   run: (operation: () => Promise<Project | null>) => Promise<void>;
   busy: boolean;
+  standalone?: boolean;
+  onKeep?: () => void;
+  onApplied?: () => void;
 }) {
   const { t, i18n } = useTranslation();
   const requestSerial = useRef(0);
-  const [open, setOpen] = useState(false),
+  const [open, setOpen] = useState(standalone),
     [key, setKey] = useState<string | null>(null),
     [working, setWorking] = useState(false),
     [error, setError] = useState<string | null>(null);
@@ -41,6 +47,7 @@ export function SourceTranscription({
     [proposal, setProposal] = useState<SourceTranscriptionProposal | null>(null),
     [applied, setApplied] = useState(false);
   const job = jobs.find((j) => j.id === key),
+    jobStatus = job?.status,
     active = !!job && ['queued', 'running', 'paused'].includes(job.status),
     otherActive = jobs.some((j) => ['queued', 'running', 'paused'].includes(j.status));
   const locked = busy || working || otherActive;
@@ -61,7 +68,7 @@ export function SourceTranscription({
     };
   }, [open, line.id]);
   useEffect(() => {
-    if (!key || job?.status !== 'succeeded') return;
+    if (!key || (jobStatus !== undefined && jobStatus !== 'succeeded')) return;
     let disposed = false;
     void bridge
       .sourceTranscriptionResult(key)
@@ -77,7 +84,7 @@ export function SourceTranscription({
     return () => {
       disposed = true;
     };
-  }, [key, job?.status, project.revision]);
+  }, [key, jobStatus, project.revision]);
   const current = proposal && sourceProposalCurrent(project, proposal);
   const changed = proposal?.segments.some(
     (s, i) => s.text.trim() !== proposal.basis.slots[i]?.text,
@@ -85,7 +92,7 @@ export function SourceTranscription({
   const message = error ?? job?.error;
   return (
     <details
-      className="source-transcription"
+      className={`source-transcription${standalone ? ' source-transcription-standalone' : ''}`}
       open={open}
       onToggle={(e) => setOpen(e.currentTarget.open)}
     >
@@ -224,34 +231,44 @@ export function SourceTranscription({
                 </p>
               )}
               <p className="panel-description">{t('sourceAsr.applyHint')}</p>
-              <button
-                className="button accent"
-                disabled={
-                  locked || !current || !changed || proposal.segments.some((s) => !s.text.trim())
-                }
-                onClick={() => {
-                  setWorking(true);
-                  setError(null);
-                  void run(async () => {
-                    try {
-                      const saved = await bridge.applySourceTranscription(
-                        proposal.id,
-                        proposal.segments.map((s) => s.text.trim()),
-                      );
-                      setApplied(true);
-                      return saved;
-                    } catch (e) {
-                      setError(String(e));
-                      throw e;
-                    }
-                  }).finally(() => setWorking(false));
-                }}
-              >
-                {t('sourceAsr.apply')}
-              </button>
-              <button className="text-button" disabled={working} onClick={() => setProposal(null)}>
-                {t('llmDiscard')}
-              </button>
+              <div className="source-asr-actions">
+                <button
+                  className="button accent"
+                  disabled={
+                    locked || !current || !changed || proposal.segments.some((s) => !s.text.trim())
+                  }
+                  onClick={() => {
+                    setWorking(true);
+                    setError(null);
+                    void run(async () => {
+                      try {
+                        const saved = await bridge.applySourceTranscription(
+                          proposal.id,
+                          proposal.segments.map((s) => s.text.trim()),
+                        );
+                        setApplied(true);
+                        onApplied?.();
+                        return saved;
+                      } catch (e) {
+                        setError(String(e));
+                        throw e;
+                      }
+                    }).finally(() => setWorking(false));
+                  }}
+                >
+                  {t(standalone ? 'sourceAsr.replace' : 'sourceAsr.apply')}
+                </button>
+                <button
+                  className={standalone ? 'button subtle' : 'text-button'}
+                  disabled={working}
+                  onClick={() => {
+                    setProposal(null);
+                    onKeep?.();
+                  }}
+                >
+                  {t(standalone ? 'sourceAsr.keep' : 'llmDiscard')}
+                </button>
+              </div>
             </div>
           )}
           {applied && <p role="status">{t('sourceAsr.applied')}</p>}

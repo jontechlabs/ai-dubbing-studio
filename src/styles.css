@@ -3787,6 +3787,14 @@ pre {
   align-items: center;
   gap: 7px;
 }
+.source-transcription-standalone > summary {
+  display: none;
+}
+.source-transcription-standalone {
+  border: 0;
+  padding: 0;
+  margin: 0;
+}
 .source-asr-options {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -3798,6 +3806,12 @@ pre {
 }
 .source-asr-proposal {
   margin-top: 12px;
+}
+.source-asr-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
 }
 .output-gain-control {
   display: grid;

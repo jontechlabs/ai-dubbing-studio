@@ -8,6 +8,9 @@ import { readMicrophone } from './services/microphone';
 import { dubbingClips } from './domain/mix';
 import { speakerDubbingState } from './domain/speakerDubbing';
 import { Dialogues } from './components/Dialogues';
+import { SourceTranscription } from './components/SourceTranscription';
+import { Modal } from './components/Modal';
+import { formatTime } from './domain/time';
 import { DialogueManageModal, type DialogueAction } from './components/DialogueManageModal';
 import {
   addDialogue,
@@ -62,6 +65,9 @@ export default function App() {
     } else setOverlay(next);
   }, []);
   const [dialogueAction, setDialogueAction] = useState<DialogueAction | null>(null);
+  const [sourceDialogueId, setSourceDialogueId] = useState<string | null>(null);
+  const sourceDialogue = studio.project?.dialogues.find((l) => l.id === sourceDialogueId);
+  const openSourceTranscription = useCallback((line: Dialogue) => setSourceDialogueId(line.id), []);
   const [timelineNavigation, setTimelineNavigation] = useState<TimelineNavigation | null>(null);
   const [audioSelection, setAudioSelection] = useState<AudioSelection | null>(null);
   const [toolboxModel, setToolboxModel] = useState<string | null>(null);
@@ -405,6 +411,7 @@ export default function App() {
   }, [timelineHeight, padding]);
   useEffect(() => {
     setSelectedId(null);
+    setSourceDialogueId(null);
     setRenaming(false);
     setAudioSelection(null);
     setTimelineNavigation(null);
@@ -586,6 +593,7 @@ export default function App() {
                 onPlayDub={playDub}
                 onAlignment={showAlignment}
                 onTranslation={editTranslation}
+                onTranscribe={openSourceTranscription}
                 busy={busy}
               />
               <Player
@@ -794,6 +802,33 @@ export default function App() {
           </button>
         </footer>
         <JobNotifications onOpen={showJobs} />
+        {studio.project && sourceDialogue && (
+          <Modal
+            title={t('sourceAsr.context')}
+            onClose={() => setSourceDialogueId(null)}
+            className="source-transcription-dialog"
+          >
+            <p>
+              {t('batchLine', {
+                number: studio.project.dialogues.findIndex((l) => l.id === sourceDialogue.id) + 1,
+              })}
+              {' · '}
+              {formatTime(sourceDialogue.startMs)} → {formatTime(sourceDialogue.endMs)}
+            </p>
+            <SourceTranscription
+              key={`${studio.project.id}:${sourceDialogue.id}`}
+              standalone
+              project={studio.project}
+              line={sourceDialogue}
+              jobs={studio.jobs}
+              snapshot={studio.snapshot}
+              run={studio.run}
+              busy={busy}
+              onKeep={() => setSourceDialogueId(null)}
+              onApplied={() => setSourceDialogueId(null)}
+            />
+          </Modal>
+        )}
         <Panels
           toolboxModel={toolboxModel}
           onSelectDialogue={select}

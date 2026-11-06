@@ -1,5 +1,9 @@
 # AI Dubbing Studio
 
+## v0.44.0 — Transcription depuis le clic droit
+
+Clic droit sur un dialogue → **Transcrire le dialogue…** : choisir langue et piste, transcrire localement, comparer et corriger la proposition, puis **Remplacer le SRT source** ou **Conserver le SRT source**. Créneaux, traduction et essais conservés ; remplacement annulable. [Guide et capture](docs/DIALOGUE-TRANSCRIPTION.md).
+
 ## v0.43.0 — 1 à 4 essais par réplique dans les lots
 
 Le [doublage par lot](docs/BATCH-MULTIPLE-TAKES.md) permet de choisir **1 à 4 essais par réplique**. Le total est annoncé avant le lancement. Chaque essai garde son résultat dans le bilan et l’historique, avec une relance précise des échecs et conservation des réussites. Le modèle reste chargé entre les essais lorsque le moteur le permet, puis est libéré à la fin ou en cas d’annulation.

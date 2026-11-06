@@ -1614,6 +1614,9 @@
     "takeHint": "Reversible for audition, mix and export. The original WAV, other takes and local edits are preserved."
   },
   "sourceAsr": {
+    "context": "Transcribe dialogue…",
+    "replace": "Replace source SRT",
+    "keep": "Keep source SRT",
     "title": "Check original text with transcription",
     "hint": "Transcribe this dialogue in its original language and compare the proposal with the source SRT. No translation or changes without your acceptance.",
     "language": "Source audio language",
