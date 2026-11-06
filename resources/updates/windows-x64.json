@@ -1,11 +1,11 @@
 {
-  "version": "0.42.0",
-  "notes": "Historique persistant des doublages par lot après redémarrage. Dates, moteurs, échecs et non-traitées ; relances individuelles/multiples regroupées avec le lot initial. Essais réussis préservés, reprise des journaux v0.41.0, aucun redémarrage automatique. 158 outils MCP, format 26.",
-  "pub_date": "2026-11-05T09:27:36Z",
+  "version": "0.43.0",
+  "notes": "Doublage par lot : 1 à 4 nouveaux essais par réplique, total avant lancement, graines décalées et essais existants conservés. Bilan et historique par essai, relance précise des échecs sans répéter les réussites. Génération séquentielle avec réutilisation du modèle lorsque compatible. Extensions MCP optionnelles, 158 outils, format de projet 26.",
+  "pub_date": "2026-11-06T05:13:18Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSdFFyMUJGTFp3NkdmTUNsL1RQVTQ3dG0rWTdmdU16UUhPZ1Zlei9la2V6UDRrWkQvSnd1RW9GY3pwcjN5UTVkT2UySUdzUHRpVU9ZSkZEbGYyMFRaMTlCMDFIVWRBL1FzPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkzODcwNTQxCWZpbGU6QUkgRHViYmluZyBTdHVkaW9fMC40Mi4wX3g2NC1zZXR1cC5leGUJdmVyc2lvbjowLjQyLjAKZEQvNERpbFdOamIzMVBvZkpVS3NNRG50VC8vUk5CVVdUd0pvbVlnZmwxazNEYkxKQlBZQmxpai96aitQaWtmZzVubSt5UnRWUVZYMXZnYWVYdU41RHc9PQo=",
-      "url": "https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.42.0/AI-Dubbing-Studio-0.42.0-Setup.exe"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSdFFyMUJGTFp3NkZPclFhZ0lQL3NUdVBBM3dsT05YSTIzblRUU2VJd2RyQWxZbzBYN08zbjRRaytQNmJZRkdHeitRMlpyMW02UGdpZkcvZzE5ZTlYd1NneEJMVWtFakF3PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkzOTQxNzc3CWZpbGU6QUkgRHViYmluZyBTdHVkaW9fMC40My4wX3g2NC1zZXR1cC5leGUJdmVyc2lvbjowLjQzLjAKL0U3V1dqR0xtdmJ1ZlNLYUZIRnZITVhwdytjRjRtaklTSDJvdm1qVGI0bmx0bm5TN1FKMm5BVmk5WnpGS3ZSOWpWdHR5c213YzNqbzJMSGllNnc4Q3c9PQo=",
+      "url": "https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.43.0/AI-Dubbing-Studio-0.43.0-Setup.exe"
     }
   }
 }
