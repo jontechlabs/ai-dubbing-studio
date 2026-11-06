@@ -416,14 +416,6 @@ export async function nativeMock(page: Page, large = false, seededProject?: Proj
           progress: null,
           error: failed ? 'INPAINT_BATCH_PARTIAL' : null,
           batch: {
-            ...((host.__pendingBatch.takeCount ?? 1) > 1
-              ? {
-                  takeCount: host.__pendingBatch.takeCount,
-                  currentIndex: host.__batchOriginRows.indexOf(
-                    rows.find((r: any) => r.status === 'pending'),
-                  ),
-                }
-              : {}),
             total: rows.length,
             completed: done,
             succeeded,
