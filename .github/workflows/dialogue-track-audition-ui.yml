@@ -1,0 +1,70 @@
+name: Dialogue track audition compiled UI continuation
+on:
+  workflow_dispatch:
+  push:
+    branches: [codex/dialogue-track-audition-ui]
+permissions:
+  contents: read
+  actions: read
+jobs:
+  frontend:
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [2]
+    runs-on: windows-latest
+    timeout-minutes: 35
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+      STUDIO_TEST_PREVIEW: '1'
+      PLAYWRIGHT_JSON_OUTPUT_NAME: test-results/frontend-shard-${{ matrix.shard }}.json
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
+        with:
+          node-version: '24'
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12.10'
+      - name: Verify identical inputs to the signed build
+        run: python scripts/verify-dialogue-audition-continuation.py
+      - name: Install pinned frontend dependencies
+        run: |
+          npm install --global pnpm@11.25.0
+          pnpm install --frozen-lockfile
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+      - name: Fresh frontend unit, complete Chrome, lint and schema checks
+        run: |
+          pnpm mcp:check
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          pnpm build
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          pnpm test
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          pnpm lint
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          pnpm format:check
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          pnpm exec prettier --check tests/e2e/dialogue-track-audition.pw.ts tests/e2e/project-home-browser.pw.ts scripts/test-dialogue-track-audition-mcp.mjs
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          pnpm test:e2e --shard=${{ matrix.shard }}/2 '--reporter=line,json'
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+      - name: Attach application identity proof
+        if: always()
+        run: Copy-Item -LiteralPath artifacts/dialogue-audition-continuation.json -Destination test-results/dialogue-audition-continuation.json
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: dialogue-track-audition-ui-frontend-${{ matrix.shard }}
+          path: |
+            test-results/frontend-shard-${{ matrix.shard }}.json
+            test-results/dialogue-audition-continuation.json
+          if-no-files-found: error
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: failure()
+        with:
+          name: dialogue-track-audition-ui-chrome-failure-${{ matrix.shard }}
+          path: test-results/
+          if-no-files-found: ignore
