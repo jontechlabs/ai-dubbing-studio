@@ -3781,6 +3781,30 @@ pre {
   padding: 9px;
   margin-bottom: 12px;
 }
+.dialogue-audio-tracks {
+  display: grid;
+  gap: 8px;
+  margin: 14px 0;
+}
+.dialogue-audio-track {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+.dialogue-audio-track.active {
+  border-color: var(--accent);
+}
+.dialogue-audio-name {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.dialogue-audio-name small {
+  display: block;
+}
 .source-transcription > summary {
   cursor: pointer;
   display: flex;

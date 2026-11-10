@@ -7,9 +7,9 @@ export default defineConfig({
   timeout: process.env.CI ? 60_000 : 30_000,
   expect: { timeout: process.env.CI ? 15_000 : 5_000 },
   webServer: {
-    command: 'pnpm dev',
+    command: process.env.STUDIO_TEST_PREVIEW ? 'pnpm preview --port 1420' : 'pnpm dev',
     url: 'http://127.0.0.1:1420',
-    reuseExistingServer: !process.env.CI,
+    reuseExistingServer: !process.env.CI && !process.env.STUDIO_TEST_PREVIEW,
   },
   use: {
     baseURL: 'http://127.0.0.1:1420',

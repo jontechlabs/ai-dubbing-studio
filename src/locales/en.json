@@ -1702,6 +1702,16 @@
   "dialogueDeleteLine": "Exclude dialogue {{number}} from dubbing",
   "dialogueDeleteSelection": "Exclude checked dialogues from dubbing",
   "dialogueContext": "Dialogue actions",
+  "dialogueAudio": {
+    "open": "Listen to tracks…",
+    "title": "Dialogue tracks",
+    "hint": "Audition each track in solo over the dialogue range. Your saved mix stays unchanged; playback stops at the dialogue end.",
+    "play": "Listen to {{name}}",
+    "stop": "Stop {{name}}",
+    "isolate": "Isolate voices from {{name}}",
+    "unavailable": "This track does not cover the full dialogue.",
+    "isolationHint": "The scissors open isolation on this track for 0.1–60 seconds. The Dubbing track is available for listening only."
+  },
   "dialogueIsolation": {
     "open": "Isolate voices…",
     "range": "Isolate voices · requires a 0.1–60 s range"

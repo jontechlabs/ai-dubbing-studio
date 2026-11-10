@@ -1702,6 +1702,16 @@
   "dialogueDeleteLine": "Exclure la réplique {{number}} du doublage",
   "dialogueDeleteSelection": "Exclure les répliques cochées du doublage",
   "dialogueContext": "Actions sur la réplique",
+  "dialogueAudio": {
+    "open": "Écouter les pistes…",
+    "title": "Pistes du dialogue",
+    "hint": "Écoutez chaque piste en solo sur les créneaux du dialogue. Le mix enregistré reste inchangé ; la lecture s’arrête à la fin du dialogue.",
+    "play": "Écouter {{name}}",
+    "stop": "Arrêter {{name}}",
+    "isolate": "Isoler les voix de {{name}}",
+    "unavailable": "Cette piste ne couvre pas tout le dialogue.",
+    "isolationHint": "Les ciseaux ouvrent l’isolation sur cette piste, de 0,1 à 60 secondes. La piste Doublage est disponible à l’écoute uniquement."
+  },
   "dialogueIsolation": {
     "open": "Isoler les voix…",
     "range": "Isoler les voix · intervalle de 0,1 à 60 s requis"

@@ -1,5 +1,9 @@
 # AI Dubbing Studio
 
+## v0.46.0 — Écouter les pistes d’un dialogue
+
+Clic droit → **Écouter les pistes…** : comparaison en solo des pistes Original, Voix, Musique, Effets, Doublage et audio ajouté, sur les créneaux du dialogue. Arrêt automatique, option avant volumes/muets et bouton pour isoler directement la piste concernée. Réglages du mix et essais conservés. [Guide et capture](docs/DIALOGUE-TRACK-AUDITION.md).
+
 ## v0.45.0 — Isoler les voix depuis un dialogue
 
 Clic droit sur un dialogue → **Isoler les voix…** : sa plage est préparée dans la boîte à outils audio. Choisissez la **piste à analyser** (Original, Voix, Musique, Effets ou piste ajoutée), le modèle, puis écoutez et affectez les sorties souhaitées au même timestamp. Sous-titres, vidéo et essais conservés ; application annulable. [Guide et capture](docs/DIALOGUE-VOICE-ISOLATION.md).

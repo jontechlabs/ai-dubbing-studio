@@ -70,6 +70,7 @@ function DialoguesPane({
   onTranslation,
   onTranscribe,
   onIsolate,
+  onListenTracks,
   onDub,
   onPlayDub,
 }: {
@@ -92,6 +93,7 @@ function DialoguesPane({
   onTranslation: (line: Dialogue) => void;
   onTranscribe: (line: Dialogue) => void;
   onIsolate: (line: Dialogue) => void;
+  onListenTracks: (line: Dialogue) => void;
   onDub: (line: Dialogue) => void;
   onPlayDub: (line: Dialogue) => void;
 }) {
@@ -413,6 +415,11 @@ function DialoguesPane({
                     onDelete={() => onDelete([line.id])}
                     openContext={(event) =>
                       openContext(event, t('dialogueContext'), [
+                        {
+                          label: t('dialogueAudio.open'),
+                          disabled: busy || !project?.media,
+                          run: () => onListenTracks(line),
+                        },
                         {
                           label: t(
                             isolationRangeValid

@@ -8,6 +8,7 @@ import { readMicrophone } from './services/microphone';
 import { dubbingClips } from './domain/mix';
 import { speakerDubbingState } from './domain/speakerDubbing';
 import { Dialogues } from './components/Dialogues';
+import { DialogueTrackAudition } from './components/DialogueTrackAudition';
 import { SourceTranscription } from './components/SourceTranscription';
 import { Modal } from './components/Modal';
 import { formatTime } from './domain/time';
@@ -66,18 +67,21 @@ export default function App() {
   }, []);
   const [dialogueAction, setDialogueAction] = useState<DialogueAction | null>(null);
   const [sourceDialogueId, setSourceDialogueId] = useState<string | null>(null);
+  const [auditionDialogueId, setAuditionDialogueId] = useState<string | null>(null);
+  const auditionDialogue = studio.project?.dialogues.find((l) => l.id === auditionDialogueId);
+  const openDialogueAudition = useCallback((line: Dialogue) => setAuditionDialogueId(line.id), []);
   const sourceDialogue = studio.project?.dialogues.find((l) => l.id === sourceDialogueId);
   const openSourceTranscription = useCallback((line: Dialogue) => setSourceDialogueId(line.id), []);
   const [timelineNavigation, setTimelineNavigation] = useState<TimelineNavigation | null>(null);
   const [audioSelection, setAudioSelection] = useState<AudioSelection | null>(null);
   const [toolboxModel, setToolboxModel] = useState<string | null>(null);
   const openDialogueIsolation = useCallback(
-    (line: Dialogue) => {
+    (line: Dialogue, trackId = 'original') => {
       const media = studio.project?.media;
       if (!media) return;
       setAudioSelection({
         mediaId: media.id,
-        trackId: 'original',
+        trackId,
         startMs: line.startMs,
         endMs: line.endMs,
       });
@@ -427,6 +431,7 @@ export default function App() {
   useEffect(() => {
     setSelectedId(null);
     setSourceDialogueId(null);
+    setAuditionDialogueId(null);
     setRenaming(false);
     setAudioSelection(null);
     setTimelineNavigation(null);
@@ -610,6 +615,7 @@ export default function App() {
                 onTranslation={editTranslation}
                 onTranscribe={openSourceTranscription}
                 onIsolate={openDialogueIsolation}
+                onListenTracks={openDialogueAudition}
                 busy={busy}
               />
               <Player
@@ -818,6 +824,27 @@ export default function App() {
           </button>
         </footer>
         <JobNotifications onOpen={showJobs} />
+        {studio.project && auditionDialogue && (
+          <DialogueTrackAudition
+            key={`${studio.project.id}:${auditionDialogue.id}`}
+            project={studio.project}
+            line={auditionDialogue}
+            ready={transport.ready}
+            busy={busy}
+            audition={transport.selectionAudition}
+            onPlay={playAudioSelection}
+            onStop={transport.stopAudioSelection}
+            onClose={() => {
+              transport.stopAudioSelection();
+              setAuditionDialogueId(null);
+            }}
+            onIsolate={(trackId) => {
+              transport.stopAudioSelection();
+              setAuditionDialogueId(null);
+              openDialogueIsolation(auditionDialogue, trackId);
+            }}
+          />
+        )}
         {studio.project && sourceDialogue && (
           <Modal
             title={t('sourceAsr.context')}
