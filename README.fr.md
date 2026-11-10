@@ -1,5 +1,9 @@
 # AI Dubbing Studio
 
+## v0.45.0 — Isoler les voix depuis un dialogue
+
+Clic droit sur un dialogue → **Isoler les voix…** : sa plage est préparée dans la boîte à outils audio. Choisissez la **piste à analyser** (Original, Voix, Musique, Effets ou piste ajoutée), le modèle, puis écoutez et affectez les sorties souhaitées au même timestamp. Sous-titres, vidéo et essais conservés ; application annulable. [Guide et capture](docs/DIALOGUE-VOICE-ISOLATION.md).
+
 ## v0.44.0 — Transcription depuis le clic droit
 
 Clic droit sur un dialogue → **Transcrire le dialogue…** : choisir langue et piste, transcrire localement, comparer et corriger la proposition, puis **Remplacer le SRT source** ou **Conserver le SRT source**. Créneaux, traduction et essais conservés ; remplacement annulable. [Guide et capture](docs/DIALOGUE-TRANSCRIPTION.md).

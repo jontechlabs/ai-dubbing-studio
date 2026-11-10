@@ -1702,6 +1702,10 @@
   "dialogueDeleteLine": "Exclure la réplique {{number}} du doublage",
   "dialogueDeleteSelection": "Exclure les répliques cochées du doublage",
   "dialogueContext": "Actions sur la réplique",
+  "dialogueIsolation": {
+    "open": "Isoler les voix…",
+    "range": "Isoler les voix · intervalle de 0,1 à 60 s requis"
+  },
   "dialogueDeleteConfirm": "Exclure {{count}} réplique(s) du doublage ?",
   "dialogueDeleteKeep": "Les sous-titres source et traduits restent inchangés. Les essais, montages et calages sont conservés. La réplique quitte les lots et le mix vocal. Ctrl+Z annule cette exclusion ; vous pouvez aussi la réintégrer depuis la vue des répliques exclues.",
   "dialogueStart": "Début de la nouvelle réplique",

@@ -71,6 +71,21 @@ export default function App() {
   const [timelineNavigation, setTimelineNavigation] = useState<TimelineNavigation | null>(null);
   const [audioSelection, setAudioSelection] = useState<AudioSelection | null>(null);
   const [toolboxModel, setToolboxModel] = useState<string | null>(null);
+  const openDialogueIsolation = useCallback(
+    (line: Dialogue) => {
+      const media = studio.project?.media;
+      if (!media) return;
+      setAudioSelection({
+        mediaId: media.id,
+        trackId: 'original',
+        startMs: line.startMs,
+        endMs: line.endMs,
+      });
+      setToolboxModel('mel-band-roformer-kim');
+      setPanel('audio');
+    },
+    [studio.project?.media, setPanel],
+  );
   const selectAudio = useCallback((value: AudioSelection | null) => {
     setAudioSelection(value);
   }, []);
@@ -594,6 +609,7 @@ export default function App() {
                 onAlignment={showAlignment}
                 onTranslation={editTranslation}
                 onTranscribe={openSourceTranscription}
+                onIsolate={openDialogueIsolation}
                 busy={busy}
               />
               <Player

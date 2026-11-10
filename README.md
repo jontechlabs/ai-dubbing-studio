@@ -1,5 +1,9 @@
 # AI Dubbing Studio
 
+## v0.45.0 — Isolate voices from a dialogue
+
+Right-click a dialogue → **Isolate voices…** to prepare its range in the audio toolbox. Choose the **source track** (Original, Speech, Music, Effects or added audio), select a separator, then preview and route only the desired outputs at the same timestamps. Subtitles, video and dubbing takes are preserved; application is undoable. [Guide and screenshot](docs/DIALOGUE-VOICE-ISOLATION.md).
+
 ## v0.44.0 — Transcribe a dialogue from its context menu
 
 Right-click a dialogue → **Transcribe dialogue…**. Choose the source language and track, transcribe locally, review/edit the proposal, then **Replace source SRT** or **Keep source SRT**. Timing, translations and all takes are preserved; replacement is undoable. [Guide and screenshot](docs/DIALOGUE-TRANSCRIPTION.md).
@@ -209,9 +213,9 @@ Audio regions with independent silence and volume, timeline range selection, fas
 
 | Package | Purpose |
 | --- | --- |
-| [Windows x64 setup](https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.44.0/AI-Dubbing-Studio-0.44.0-Setup.exe) | NSIS installer for the current user, with English/French installer interface |
-| [Portable ZIP](https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.44.0/AI-Dubbing-Studio-Windows-Portable.zip) | Extract the whole folder and launch `AI Dubbing Studio.exe` |
-| [SHA-256 checksums](https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.44.0/SHA256SUMS.txt) | Verify the setup and ZIP downloads |
+| [Windows x64 setup](https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.45.0/AI-Dubbing-Studio-0.45.0-Setup.exe) | NSIS installer for the current user, with English/French installer interface |
+| [Portable ZIP](https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.45.0/AI-Dubbing-Studio-Windows-Portable.zip) | Extract the whole folder and launch `AI Dubbing Studio.exe` |
+| [SHA-256 checksums](https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.45.0/SHA256SUMS.txt) | Verify the setup and ZIP downloads |
 
 Target: **Windows 10/11 x64**, with **Microsoft Edge WebView2 Runtime**. FFmpeg and FFprobe are included. Python, CUDA and AI model downloads are not required for editing and playback. Installation may need Internet access if WebView2 is missing; local project editing does not require a cloud account.
 

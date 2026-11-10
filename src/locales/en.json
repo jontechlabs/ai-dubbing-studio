@@ -1702,6 +1702,10 @@
   "dialogueDeleteLine": "Exclude dialogue {{number}} from dubbing",
   "dialogueDeleteSelection": "Exclude checked dialogues from dubbing",
   "dialogueContext": "Dialogue actions",
+  "dialogueIsolation": {
+    "open": "Isolate voices…",
+    "range": "Isolate voices · requires a 0.1–60 s range"
+  },
   "dialogueDeleteConfirm": "Exclude {{count}} dialogue(s) from dubbing?",
   "dialogueDeleteKeep": "Original and translated subtitles stay unchanged. Takes, edits and placement are preserved. The dialogue is omitted from batches and the voice mix. Ctrl+Z undoes exclusion; the excluded-lines view also allows restoration.",
   "dialogueStart": "New dialogue start",

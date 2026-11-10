@@ -69,6 +69,7 @@ function DialoguesPane({
   onAlignment,
   onTranslation,
   onTranscribe,
+  onIsolate,
   onDub,
   onPlayDub,
 }: {
@@ -90,6 +91,7 @@ function DialoguesPane({
   onAlignment: () => void;
   onTranslation: (line: Dialogue) => void;
   onTranscribe: (line: Dialogue) => void;
+  onIsolate: (line: Dialogue) => void;
   onDub: (line: Dialogue) => void;
   onPlayDub: (line: Dialogue) => void;
 }) {
@@ -386,6 +388,12 @@ function DialoguesPane({
           <div style={{ height: virtual.getTotalSize(), position: 'relative' }}>
             {virtual.getVirtualItems().map((item) => {
               const line = lines[item.index];
+              const isolationRangeValid =
+                !!project?.media &&
+                line.startMs >= 0 &&
+                line.endMs <= project.media.durationMs &&
+                line.endMs - line.startMs >= 100 &&
+                line.endMs - line.startMs <= 60000;
               return (
                 <div
                   key={line.id}
@@ -405,6 +413,15 @@ function DialoguesPane({
                     onDelete={() => onDelete([line.id])}
                     openContext={(event) =>
                       openContext(event, t('dialogueContext'), [
+                        {
+                          label: t(
+                            isolationRangeValid
+                              ? 'dialogueIsolation.open'
+                              : 'dialogueIsolation.range',
+                          ),
+                          disabled: busy || !isolationRangeValid,
+                          run: () => onIsolate(line),
+                        },
                         {
                           label: t('sourceAsr.context'),
                           disabled: busy || !project?.media,
