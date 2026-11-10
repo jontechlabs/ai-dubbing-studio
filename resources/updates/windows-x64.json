@@ -1,11 +1,11 @@
 {
-  "version": "0.44.0",
-  "notes": "Clic droit sur un dialogue → Transcrire le dialogue… : choisir langue et piste, transcrire localement, comparer et corriger, puis remplacer ou conserver le SRT source. Créneaux, traduction et essais conservés ; remplacement annulable. Avancement intégré, aucune application automatique. Moteurs, 158 outils MCP et format 26 inchangés.",
-  "pub_date": "2026-11-06T16:30:15Z",
+  "version": "0.45.0",
+  "notes": "Clic droit sur un dialogue → Isoler les voix… : plage du dialogue préparée et piste source au choix (Original, Voix, Musique, Effets ou audio ajouté). Mêmes outils que pour une sélection, écoute et affectation explicite des sorties au même timestamp. SRT, vidéo et essais conservés ; application annulable. Moteurs, 158 outils MCP et format 26 inchangés.",
+  "pub_date": "2026-11-10T09:51:32Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSdFFyMUJGTFp3Nko2dDQyci9POCtUTkJHUlBUcWJBMDI1bUlUNkFUZlF3bU5GQ2kvdWx1SVJnbHN5Yi9YTy9NODVTUTNHVG81bmVjOWhOd2xacnAxZHJCbm9zTnZJWkFjPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkzOTgyNDE3CWZpbGU6QUkgRHViYmluZyBTdHVkaW9fMC40NC4wX3g2NC1zZXR1cC5leGUJdmVyc2lvbjowLjQ0LjAKSnNTVndoT1Jmb3hVbXBiSHo3YXR1RHFzYmRvYk42a1JTemVNV2tReGRONUNpZVFudjdINjBaaUlCdGhoVStmRnV1MHpnTGh1OHhIZjUxejBXeHZvREE9PQo=",
-      "url": "https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.44.0/AI-Dubbing-Studio-0.44.0-Setup.exe"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSdFFyMUJGTFp3Nk56TWpKUmdHTFBOMGJFTHdhVkhDZVIzZi90dlNTaVpCYXBubDF1VCsrTHdtZjBWVktyZHhlS0dCWWlHQkEwMVJvTnl2di9BYmJoc3crVVdWYUFqZHcwPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk0MzAyMzM3CWZpbGU6QUkgRHViYmluZyBTdHVkaW9fMC40NS4wX3g2NC1zZXR1cC5leGUJdmVyc2lvbjowLjQ1LjAKc0l5ZlpzR20zZ1BZSUJtSnIyeXRMa1Bya3ZrVGFzWEs2RlZ2VlFtR0pSczgycmhQYTYrR2lZeGwxc20zLzZ1R3ZWb2xTb1NEVmRaaytabWRmUkc1Qnc9PQo=",
+      "url": "https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.45.0/AI-Dubbing-Studio-0.45.0-Setup.exe"
     }
   }
 }
