@@ -52,6 +52,8 @@ mod voice_library;
 mod voice_mood;
 mod voice_quality;
 mod voice_space;
+mod volume_leveling;
+mod volume_leveling_dsp;
 mod waveform;
 pub fn smoke_test(path: &std::path::Path) -> Result<(), String> {
     smoke::run(path)
@@ -1675,6 +1677,52 @@ fn audio_effects_catalog() -> serde_json::Value {
     audio_effects::catalog().clone()
 }
 #[tauri::command]
+fn prepare_volume_leveling(
+    app: tauri::AppHandle,
+    core: State<'_, Shared>,
+    project_id: String,
+    expected_revision: u64,
+    options: volume_leveling::Options,
+) -> Result<String, String> {
+    volume_leveling::enqueue(
+        core.inner().clone(),
+        app,
+        project_id,
+        expected_revision,
+        options,
+    )
+}
+#[tauri::command]
+fn volume_leveling_result(
+    core: State<'_, Shared>,
+    id: String,
+) -> Result<serde_json::Value, String> {
+    volume_leveling::result(&core, &id)
+}
+#[tauri::command]
+fn volume_leveling_path(
+    app: tauri::AppHandle,
+    core: State<'_, Shared>,
+    id: String,
+    role: String,
+) -> Result<String, String> {
+    volume_leveling::path(&core, &app, &id, &role)
+}
+#[tauri::command]
+fn apply_volume_leveling(
+    app: tauri::AppHandle,
+    core: State<'_, Shared>,
+    id: String,
+    project_id: String,
+    expected_revision: u64,
+) -> Result<Project, String> {
+    volume_leveling::apply(core.inner(), &app, &id, &project_id, expected_revision)
+}
+#[tauri::command]
+fn discard_volume_leveling(core: State<'_, Shared>, id: String) -> Result<(), String> {
+    volume_leveling::discard(&core, &id)
+}
+#[tauri::command]
 fn apply_audio_effects(
     app: tauri::AppHandle,
     core: State<'_, Shared>,
@@ -2182,6 +2230,11 @@ pub fn run() {
             export_mkv,
             list_jobs,
             audio_effects_catalog,
+            prepare_volume_leveling,
+            volume_leveling_result,
+            volume_leveling_path,
+            apply_volume_leveling,
+            discard_volume_leveling,
             apply_audio_effects,
             cancel_job,
             pause_job,

@@ -1,6 +1,7 @@
 import type { Project, Track } from '../domain/types';
 import { dubbingClips } from '../domain/mix';
-import { audioTracks, effectiveGain, gainChanges, regionGain } from '../domain/audio';
+import { audioTracks, effectiveGain, regionGain } from '../domain/audio';
+import { trackPatches, layerGate, layerChanges, type AudioPatch } from '../domain/audioPatch';
 import { dubbingUrl } from './bridge';
 
 // Decode only the nearby takes; schedule them against the video clock, never a UI timer.
@@ -138,7 +139,16 @@ export class DubbingBus {
         if (length > 0)
           source.start(now + Math.max(0, clip.startMs - position) / 1000 / rate, offset, length);
       }
-      this.gains(voice.gain, track, base, position, clip.endMs, rate, now);
+      this.gains(
+        voice.gain,
+        track,
+        trackPatches(project, track.id),
+        base,
+        position,
+        clip.endMs,
+        rate,
+        now,
+      );
     }
     void this.prepare(project, position, volume).catch(() => {
       if (!this.disposed && !this.reported) {
@@ -150,6 +160,7 @@ export class DubbingBus {
   private gains(
     node: GainNode,
     track: Track,
+    patches: AudioPatch[],
     base: number,
     position: number,
     end: number,
@@ -157,8 +168,11 @@ export class DubbingBus {
     now: number,
   ) {
     node.gain.cancelScheduledValues(now);
-    node.gain.setValueAtTime(base * regionGain(track, position), now);
-    for (const point of gainChanges(track, position, end))
+    node.gain.setValueAtTime(
+      base * regionGain(track, position) * layerGate(patches, position),
+      now,
+    );
+    for (const point of layerChanges(track, patches, position, end))
       node.gain.setValueAtTime(base * point.gain, now + (point.timeMs - position) / 1000 / rate);
   }
   dispose() {

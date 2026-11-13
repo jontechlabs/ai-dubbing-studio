@@ -81,11 +81,11 @@ pub fn validate(p: &Project) -> Result<(), String> {
             || e.kind != "audioPatch"
             || e.id.is_empty()
             || e.operation_id.is_empty()
-            || e.track_id == "dubbing"
+            || (e.track_id == "dubbing" && e.operation != "leveling")
             || e.track_id.is_empty()
             || e.source_track_id.is_empty()
             || e.end_ms <= e.start_ms
-            || !(10..=if e.operation == "effects" {
+            || !(10..=if ["effects", "leveling"].contains(&e.operation.as_str()) {
                 120000
             } else {
                 60000
@@ -95,7 +95,12 @@ pub fn validate(p: &Project) -> Result<(), String> {
             || !e.gain.is_finite()
             || !(0.0..=2.0).contains(&e.gain)
             || !["add", "replace", "silence"].contains(&e.mode.as_str())
-            || !["copy", "move", "swap", "effects", "separation"].contains(&e.operation.as_str())
+            || !["copy", "move", "swap", "effects", "separation", "leveling"]
+                .contains(&e.operation.as_str())
+            || (e.operation == "leveling"
+                && (p.format_version < 27
+                    || e.mode != "replace"
+                    || e.track_id != e.source_track_id))
             || (e.operation == "separation" && p.format_version < 20)
             || (e.operation == "effects" && p.format_version < 18)
             || p.generations.iter().filter(|g| g["id"] == e.id).count() != 1

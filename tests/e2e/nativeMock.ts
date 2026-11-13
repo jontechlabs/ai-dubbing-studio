@@ -56,11 +56,13 @@ export async function nativeMock(page: Page, large = false, seededProject?: Proj
   });
   await page.route('**/*.wav', async (route) => {
     const data = wav(
-      /reference-source/.test(route.request().url())
-        ? 60
-        : /\/(speech|music|sfx)\.wav$/.test(new URL(route.request().url()).pathname)
-          ? 16
-          : 4,
+      /cache\/volume-leveling\//.test(route.request().url())
+        ? 1.8
+        : /reference-source/.test(route.request().url())
+          ? 60
+          : /\/(speech|music|sfx)\.wav$/.test(new URL(route.request().url()).pathname)
+            ? 16
+            : 4,
     );
     const range = route
       .request()
@@ -136,6 +138,20 @@ export async function nativeMock(page: Page, large = false, seededProject?: Proj
         );
       };
       host.__getLibrary = () => structuredClone(lib());
+      const leveling = new Map<string, any>();
+      host.__completeLeveling = (error = '') => {
+        const r = leveling.get(host.__levelingId);
+        if (!r || r.discarded) return;
+        job = {
+          ...job,
+          status: error ? 'failed' : 'succeeded',
+          error: error || null,
+          stage: 'done',
+          progress: 1,
+        };
+        r.complete = !error;
+        emit('job-changed', job);
+      };
       host.__completeSpeakerSeparation = () => {
         job = { ...job, status: 'succeeded', stage: 'done', progress: 1 };
         emit('job-changed', job);
@@ -1449,6 +1465,92 @@ export async function nativeMock(page: Page, large = false, seededProject?: Proj
             return job.id;
           }
           if (command === 'audio_patch_path') return `stems/patch-${args.id}.wav`;
+          if (command === 'prepare_volume_leveling') {
+            if (args.projectId !== project.id || args.expectedRevision !== project.revision)
+              throw Error('STALE_REVISION');
+            const id = crypto.randomUUID();
+            host.__levelingId = id;
+            leveling.set(id, {
+              id,
+              projectId: project.id,
+              revision: project.revision,
+              options: structuredClone(args.options),
+              complete: false,
+              discarded: false,
+            });
+            host.__lastLeveling = structuredClone(args);
+            job = {
+              id,
+              projectId: project.id,
+              kind: 'volumeLeveling',
+              status: 'running',
+              stage: 'levelingAnalyze',
+              progress: 0.3,
+              error: null,
+              logs: [],
+              timing: { elapsedMs: 1000, observedAtMs: Date.now() },
+            };
+            emit('job-changed', job);
+            return id;
+          }
+          if (command === 'discard_volume_leveling') {
+            const r = leveling.get(args.id);
+            if (r) r.discarded = true;
+            host.__levelingDiscarded = [...(host.__levelingDiscarded ?? []), args.id];
+            if (job?.id === args.id && job.status === 'running') {
+              job = { ...job, status: 'cancelled' };
+              emit('job-changed', job);
+            }
+            return;
+          }
+          if (
+            ['volume_leveling_result', 'volume_leveling_path', 'apply_volume_leveling'].includes(
+              command,
+            )
+          ) {
+            const r = leveling.get(args.id);
+            if (!r || r.discarded || !r.complete) throw Error('VOLUME_LEVELING_NOT_READY');
+            if (r.projectId !== project.id || r.revision !== project.revision)
+              throw Error('STALE_REVISION');
+            if (command === 'volume_leveling_result')
+              return {
+                ...r,
+                stats: {
+                  quietDb: -28,
+                  loudDb: -12,
+                  targetDb: r.options.mode === 'low' ? -28 : -12,
+                  safetyDb: 0,
+                  gainLimited: false,
+                  activeWindows: 4,
+                },
+              };
+            if (command === 'volume_leveling_path')
+              return `cache/volume-leveling/${args.id}/${args.role}.wav`;
+            if (args.projectId !== project.id || args.expectedRevision !== project.revision)
+              throw Error('STALE_REVISION');
+            undoStack.push(structuredClone(project));
+            const patch = crypto.randomUUID(),
+              o = r.options;
+            project.formatVersion = 27;
+            project.generations.push({
+              kind: 'audioPatch',
+              id: patch,
+              operationId: args.id,
+              operation: 'leveling',
+              sourcePath: project.media.path,
+              sourceTrackId: o.trackId,
+              trackId: o.trackId,
+              startMs: o.startMs,
+              endMs: o.endMs,
+              mode: 'replace',
+              gain: 1,
+              path: `stems/patch-${patch}.wav`,
+            });
+            project.revision++;
+            r.discarded = true;
+            emit('project-changed', project);
+            return structuredClone(project);
+          }
           if (command === 'transfer_audio') {
             host.__pendingTransfer = structuredClone(args.options);
             job = {

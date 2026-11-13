@@ -3956,6 +3956,111 @@
       "annotations": { "readOnlyHint": true, "destructiveHint": false, "openWorldHint": false }
     },
     {
+      "name": "studio_prepare_volume_leveling",
+      "command": "prepare_volume_leveling",
+      "description": "Prepare an immutable local RMS volume-levelling preview for a 100 ms–120 s selection on any audio track, including dubbing. mode low attenuates louder passages to the quietest active half-second window; high raises quieter passages to the loudest. Silence is excluded, boost is capped at 18 dB and sample peaks are protected. Input includes existing patches before mixer gains/mutes. Returns a job ID; poll jobs then inspect volume_leveling_result and preview original/leveled audio through volume_leveling_path. No project edit until apply.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "projectId": { "type": "string" },
+          "expectedRevision": { "type": "integer", "minimum": 0 },
+          "options": { "$ref": "#/$defs/options_VolumeLevelingOptions_0" },
+          "context": {
+            "type": "object",
+            "properties": {
+              "projectId": { "type": "string" },
+              "expectedRevision": { "type": "integer", "minimum": 0 }
+            },
+            "required": ["projectId", "expectedRevision"],
+            "additionalProperties": false
+          }
+        },
+        "required": ["projectId", "expectedRevision", "options", "context"],
+        "additionalProperties": false,
+        "$defs": {
+          "options_VolumeLevelingOptions_0": {
+            "type": "object",
+            "properties": {
+              "mediaId": { "type": "string" },
+              "trackId": { "type": "string" },
+              "startMs": { "type": "number" },
+              "endMs": { "type": "number" },
+              "mode": {
+                "anyOf": [
+                  { "type": "string", "const": "low" },
+                  { "type": "string", "const": "high" }
+                ]
+              }
+            },
+            "required": ["mediaId", "trackId", "startMs", "endMs", "mode"],
+            "additionalProperties": false
+          }
+        }
+      },
+      "annotations": { "readOnlyHint": false, "destructiveHint": true, "openWorldHint": false }
+    },
+    {
+      "name": "studio_volume_leveling_result",
+      "command": "volume_leveling_result",
+      "description": "Read the completed immutable levelling preview and measured target/safety statistics. Rejects changed project/revision, discarded or incomplete previews.",
+      "inputSchema": {
+        "type": "object",
+        "properties": { "id": { "type": "string" } },
+        "required": ["id"],
+        "additionalProperties": false
+      },
+      "annotations": { "readOnlyHint": true, "destructiveHint": false, "openWorldHint": false }
+    },
+    {
+      "name": "studio_volume_leveling_path",
+      "command": "volume_leveling_path",
+      "description": "Resolve original or leveled preview WAV for the current completed levelling job. Read-only, before mixer listening controls.",
+      "inputSchema": {
+        "type": "object",
+        "properties": { "id": { "type": "string" }, "role": { "type": "string" } },
+        "required": ["id", "role"],
+        "additionalProperties": false
+      },
+      "annotations": { "readOnlyHint": true, "destructiveHint": false, "openWorldHint": false }
+    },
+    {
+      "name": "studio_apply_volume_leveling",
+      "command": "apply_volume_leveling",
+      "description": "Explicitly apply a completed volume-levelling preview as an undoable replacement layer at the same timestamp. Requires the preview projectId and expectedRevision as well as current MCP context. Source audio, takes and subtitles are preserved; old revisions, duplicate application and discarded previews are rejected.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "projectId": { "type": "string" },
+          "expectedRevision": { "type": "integer", "minimum": 0 },
+          "context": {
+            "type": "object",
+            "properties": {
+              "projectId": { "type": "string" },
+              "expectedRevision": { "type": "integer", "minimum": 0 }
+            },
+            "required": ["projectId", "expectedRevision"],
+            "additionalProperties": false
+          }
+        },
+        "required": ["id", "projectId", "expectedRevision", "context"],
+        "additionalProperties": false
+      },
+      "annotations": { "readOnlyHint": false, "destructiveHint": true, "openWorldHint": false }
+    },
+    {
+      "name": "studio_discard_volume_leveling",
+      "command": "discard_volume_leveling",
+      "description": "Cancel a pending levelling preview and remove only its private cache files. Does not edit the project or delete saved audio.",
+      "inputSchema": {
+        "type": "object",
+        "properties": { "id": { "type": "string" } },
+        "required": ["id"],
+        "additionalProperties": false
+      },
+      "annotations": { "readOnlyHint": false, "destructiveHint": true, "openWorldHint": false }
+    },
+    {
       "name": "studio_apply_audio_effects",
       "command": "apply_audio_effects",
       "description": "Render local audio effects onto a non-destructive track copy or a replace layer (selection up to 120 seconds). Read studio_audio_effects_catalog for allowed kinds and numeric parameters. Whole-track copies can replace the source in the mix; originals remain unchanged. Poll jobs.",
@@ -7814,6 +7919,28 @@
             }
           },
           "required": ["kind", "enabled", "parameters"],
+          "additionalProperties": false
+        }
+      }
+    },
+    "VolumeLevelingOptions": {
+      "$ref": "#/$defs/VolumeLevelingOptions_0",
+      "$defs": {
+        "VolumeLevelingOptions_0": {
+          "type": "object",
+          "properties": {
+            "mediaId": { "type": "string" },
+            "trackId": { "type": "string" },
+            "startMs": { "type": "number" },
+            "endMs": { "type": "number" },
+            "mode": {
+              "anyOf": [
+                { "type": "string", "const": "low" },
+                { "type": "string", "const": "high" }
+              ]
+            }
+          },
+          "required": ["mediaId", "trackId", "startMs", "endMs", "mode"],
           "additionalProperties": false
         }
       }

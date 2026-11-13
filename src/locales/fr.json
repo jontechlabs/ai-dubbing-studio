@@ -203,7 +203,9 @@
     "toolboxPrepare": "Préparation de la sélection",
     "toolboxLoad": "Chargement du modèle de séparation",
     "speakerSeparationLoad": "Chargement du séparateur de voix",
-    "speakerSeparationRun": "Isolation des voix"
+    "speakerSeparationRun": "Isolation des voix",
+    "levelingPrepare": "Préparation de la sélection",
+    "levelingAnalyze": "Analyse et homogénéisation des niveaux"
   },
   "shortcuts": "Espace : lecture · J/K/L : transport · O : original · Ctrl+S : sauvegarde · Ctrl+Z/Y : annuler/rétablir",
   "errors": {
@@ -435,7 +437,11 @@
     "PROJECT_RECOVERY_REQUIRED": "Le déplacement du projet demande une vérification. Les fichiers ont été conservés.",
     "INVALID_COVER_TIME": "Choisissez un instant situé dans la vidéo.",
     "MICROPHONE_PENDING": "Enregistrez ou supprimez la prise microphone avant de quitter ce projet.",
-    "REVIEW_CHANGED": "La réplique ou son essai a changé pendant cette confirmation. Fermez cette fenêtre et recommencez la validation."
+    "REVIEW_CHANGED": "La réplique ou son essai a changé pendant cette confirmation. Fermez cette fenêtre et recommencez la validation.",
+    "VOLUME_LEVELING_OPTIONS": "Sélectionnez une piste du média actuel et une zone de 0,1 à 120 secondes.",
+    "VOLUME_LEVELING_SILENT": "Aucun passage assez audible dans cette sélection. Les silences et signaux sous −60 dBFS RMS ne sont pas amplifiés.",
+    "VOLUME_LEVELING_NOT_READY": "La préécoute est indisponible, annulée ou déjà appliquée. Préparez-la à nouveau.",
+    "VOLUME_LEVELING_INVALID_AUDIO": "Le son de la sélection est incomplet ou invalide. Aucun changement n’a été appliqué."
   },
   "preparingVideo": "Préparation de la vidéo…",
   "loadingVideo": "Chargement de la vidéo…",
@@ -920,7 +926,8 @@
     "move": "Déplacer",
     "swap": "Interchanger",
     "effects": "Effets audio",
-    "separation": "Séparation locale"
+    "separation": "Séparation locale",
+    "leveling": "Égalisation du volume"
   },
   "inpaintPreviewLabel": "Aperçu des lèvres retouchées",
   "inpaintTimeoutHint": "Le traitement peut être annulé dans Traitements.",
@@ -1297,7 +1304,8 @@
     "toolboxInstall": "Installation de l’outil audio",
     "audioToolbox": "Séparation de la sélection",
     "speakerSeparation": "Séparation des voix superposées",
-    "speakerSeparationInstall": "Installation du séparateur de voix"
+    "speakerSeparationInstall": "Installation du séparateur de voix",
+    "volumeLeveling": "Égalisation du volume"
   },
   "fxRemoveTrack": "Retirer la copie avec effets · {{name}}",
   "transferEffects": "Effets audio",
@@ -1940,5 +1948,24 @@
     "retry": "Relancer la réplique {{number}}, essai {{take}}",
     "summary": "{{succeeded}} essai(s) réussi(s) · {{failed}} en échec · {{pending}} non traité(s)",
     "progress": "{{completed}} / {{total}} essais traités · {{succeeded}} réussis · {{failed}} en échec · {{skipped}} exclus ou déjà disponibles"
+  },
+  "leveling": {
+    "context": "Égaliser le volume…",
+    "title": "Égaliser le volume de la sélection",
+    "hint": "Homogénéise les passages sonores dans la zone sélectionnée, sans changer leur durée ni la hauteur de voix. Les silences sont exclus du choix du niveau cible.",
+    "target": "Niveau cible",
+    "low": "Aligner sur le plus bas",
+    "high": "Aligner sur le plus haut",
+    "lowHint": "Atténue les passages forts vers le niveau du passage sonore le plus faible.",
+    "highHint": "Remonte les passages faibles vers le niveau du passage le plus fort. Gain limité à +18 dB et protection des crêtes.",
+    "prepare": "Préparer la préécoute",
+    "preview": "Comparaison avant / après",
+    "original": "Avant égalisation",
+    "leveled": "Après égalisation",
+    "measurement": "Niveaux actifs : {{quiet}} à {{loud}} dBFS RMS · cible : {{target}} dBFS RMS",
+    "limited": "La protection contre la saturation ou la limite de gain réduit l’alignement demandé.",
+    "stale": "Le projet a changé depuis la préparation. Préparez une nouvelle préécoute avant de valider.",
+    "beforeLevels": "Préécoute avant les volumes et zones muettes du mix. Ces réglages restent conservés après application. Analyse par fenêtres de 0,5 s, transitions lissées. Sélection de 0,1 à 120 secondes.",
+    "apply": "Valider et appliquer"
   }
 }

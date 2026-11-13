@@ -65,6 +65,7 @@ export const Timeline = memo(function Timeline({
   audioPlaybackReady,
   onAudioAdvanced,
   onAudioToolbox,
+  onVolumeLeveling,
   onContextMenu,
   onTransfer,
   onCharacters,
@@ -87,6 +88,7 @@ export const Timeline = memo(function Timeline({
   audioPlaybackReady: boolean;
   onAudioAdvanced: () => void;
   onAudioToolbox: (model: string) => void;
+  onVolumeLeveling: (selection: AudioSelection) => void;
   onContextMenu: OpenContextMenu;
 }) {
   const { t } = useTranslation();
@@ -597,19 +599,21 @@ export const Timeline = memo(function Timeline({
                   const region = directId
                     ? track.regions?.find((r) => r.id === directId)
                     : track.regions?.find((r) => r.startMs <= point && point < r.endMs);
-                  const selection = region
-                    ? {
-                        mediaId: project.media.id,
-                        trackId: track.id,
-                        regionId: region.id,
-                        startMs: region.startMs,
-                        endMs: region.endMs,
-                      }
-                    : audioSelection?.mediaId === project.media.id &&
-                        audioSelection.trackId === track.id &&
-                        (selectionHandle ||
-                          (audioSelection.startMs <= point && point < audioSelection.endMs))
-                      ? audioSelection
+                  const currentSelection =
+                    audioSelection?.mediaId === project.media.id &&
+                    audioSelection.trackId === track.id &&
+                    (selectionHandle ||
+                      (audioSelection.startMs <= point && point < audioSelection.endMs));
+                  const selection = currentSelection
+                    ? audioSelection
+                    : region
+                      ? {
+                          mediaId: project.media.id,
+                          trackId: track.id,
+                          regionId: region.id,
+                          startMs: region.startMs,
+                          endMs: region.endMs,
+                        }
                       : null;
                   if (selection) onAudioSelection(selection);
                   onContextMenu(event, t('contextAudioTrack', { name: t(trackLabel(track)) }), [
@@ -645,6 +649,14 @@ export const Timeline = memo(function Timeline({
                           ...(audioSelectionPlaying
                             ? [{ label: t('timelineSelectionStop'), run: onStopAudioSelection }]
                             : []),
+                          {
+                            label: t('leveling.context'),
+                            disabled:
+                              busy ||
+                              selection.endMs - selection.startMs < 100 ||
+                              selection.endMs - selection.startMs > 120000,
+                            run: () => onVolumeLeveling(selection),
+                          },
                           ...audioTracks(project)
                             .filter(
                               (target) =>

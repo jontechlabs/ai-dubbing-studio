@@ -170,9 +170,29 @@ pub(crate) async fn render_dubbing_raw<R: tauri::Runtime>(
     output: &Path,
     flag: &Arc<AtomicBool>,
 ) -> Result<(), String> {
+    let end = p.media.as_ref().ok_or("MEDIA_MISSING")?.info.duration_ms;
+    render_dubbing_range_raw(core, app, key, p, root, output, flag, 0, end).await
+}
+#[allow(clippy::too_many_arguments)]
+pub(crate) async fn render_dubbing_range_raw<R: tauri::Runtime>(
+    core: &Arc<Core>,
+    app: &tauri::AppHandle<R>,
+    key: &str,
+    p: &Project,
+    root: &Path,
+    output: &Path,
+    flag: &Arc<AtomicBool>,
+    start_ms: u64,
+    end_ms: u64,
+) -> Result<(), String> {
+    if end_ms <= start_ms || end_ms > p.media.as_ref().ok_or("MEDIA_MISSING")?.info.duration_ms {
+        return Err("INVALID_AUDIO_REGION".into());
+    }
     let executable = media::binary(app, "ffmpeg")?;
     let mut selected = clips(p);
-    selected.retain(|c| c.slot_ms > 0);
+    selected.retain(|c| {
+        c.slot_ms > 0 && c.start_ms() < end_ms && c.start_ms() + c.duration_ms() > start_ms
+    });
     for clip in &mut selected {
         let edited = crate::voice_edit::render(
             root,
@@ -202,7 +222,7 @@ pub(crate) async fn render_dubbing_raw<R: tauri::Runtime>(
             .to_string_lossy()
             .replace('\\', "/");
     }
-    let duration = p.media.as_ref().ok_or("MEDIA_MISSING")?.info.duration_ms;
+    let duration = end_ms - start_ms;
     let root = root.to_path_buf();
     let output = output.to_path_buf();
     let flag = flag.clone();
@@ -210,9 +230,15 @@ pub(crate) async fn render_dubbing_raw<R: tauri::Runtime>(
     let app = app.clone();
     let key = key.to_owned();
     tauri::async_runtime::spawn_blocking(move || {
-        assemble(&root, &selected, duration, &output, &flag, |value| {
-            jobs::update(&core, &app, &key, |j| j.progress = Some(value))
-        })
+        assemble_at(
+            &root,
+            &selected,
+            start_ms,
+            duration,
+            &output,
+            &flag,
+            |value| jobs::update(&core, &app, &key, |j| j.progress = Some(value)),
+        )
     })
     .await
     .map_err(io_error)?
@@ -259,6 +285,17 @@ fn assemble(
     duration: u64,
     output: &Path,
     flag: &AtomicBool,
+    progress: impl FnMut(f64),
+) -> Result<(), String> {
+    assemble_at(root, clips, 0, duration, output, flag, progress)
+}
+fn assemble_at(
+    root: &Path,
+    clips: &[Clip],
+    origin_ms: u64,
+    duration: u64,
+    output: &Path,
+    flag: &AtomicBool,
     mut progress: impl FnMut(f64),
 ) -> Result<(), String> {
     struct Active {
@@ -269,8 +306,9 @@ fn assemble(
     let mut active: Vec<Active> = vec![];
     let mut pending = clips.iter().peekable();
     let mut output = std::io::BufWriter::new(fs::File::create(output).map_err(io_error)?);
-    let frames = duration * 24;
-    let mut position = 0;
+    let origin = origin_ms * 24;
+    let frames = origin + duration * 24;
+    let mut position = origin;
     let mut samples = vec![0f32; 4096];
     let mut input = vec![0u8; 8192];
     let mut bytes = vec![0u8; 16384];
@@ -300,6 +338,10 @@ fn assemble(
                 file.seek(SeekFrom::Current((size + size % 2) as i64))
                     .map_err(io_error)?;
             }
+            file.seek(SeekFrom::Current(
+                (position.saturating_sub(clip.start) * 2) as i64,
+            ))
+            .map_err(io_error)?;
             active.push(Active {
                 file,
                 start: clip.start,
@@ -330,7 +372,7 @@ fn assemble(
         output.write_all(&bytes[..count * 4]).map_err(io_error)?;
         position += count as u64;
         active.retain(|c| c.end > position);
-        let value = position as f64 / frames.max(1) as f64;
+        let value = (position - origin) as f64 / (frames - origin).max(1) as f64;
         if value - last >= 0.01 {
             progress(value);
             last = value;

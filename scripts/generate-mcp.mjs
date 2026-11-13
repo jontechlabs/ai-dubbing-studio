@@ -100,6 +100,7 @@ const mapping = {
   'character_review::ReferenceSegment': 'ReferenceSegment',
   'local_separation::Options': 'LocalSeparationOptions',
   'audio_fx_job::Options': 'AudioEffectsOptions',
+  'volume_leveling::Options': 'VolumeLevelingOptions',
   'mix::Options': 'MkvOptions',
 };
 const object = (properties) => ({
@@ -126,6 +127,16 @@ function rustSchema(type) {
 const readOnly =
   /^(?!apply_)(environment|graphics_info|.*_status|.*_result|latest_.*|audio_effects_catalog|.*_path|.*_paths|list_jobs|model_storage_info|model_storage_size|managed_models|current_project|list_projects|project_cover|voice_install_space|preview_.*|reference_audio_info|get_waveform|dubbing_batch_report|dubbing_batch_history)$/;
 const notes = {
+  prepare_volume_leveling:
+    'Prepare an immutable local RMS volume-levelling preview for a 100 ms–120 s selection on any audio track, including dubbing. mode low attenuates louder passages to the quietest active half-second window; high raises quieter passages to the loudest. Silence is excluded, boost is capped at 18 dB and sample peaks are protected. Input includes existing patches before mixer gains/mutes. Returns a job ID; poll jobs then inspect volume_leveling_result and preview original/leveled audio through volume_leveling_path. No project edit until apply.',
+  volume_leveling_result:
+    'Read the completed immutable levelling preview and measured target/safety statistics. Rejects changed project/revision, discarded or incomplete previews.',
+  volume_leveling_path:
+    'Resolve original or leveled preview WAV for the current completed levelling job. Read-only, before mixer listening controls.',
+  apply_volume_leveling:
+    'Explicitly apply a completed volume-levelling preview as an undoable replacement layer at the same timestamp. Requires the preview projectId and expectedRevision as well as current MCP context. Source audio, takes and subtitles are preserved; old revisions, duplicate application and discarded previews are rejected.',
+  discard_volume_leveling:
+    'Cancel a pending levelling preview and remove only its private cache files. Does not edit the project or delete saved audio.',
   dubbing_batch_history:
     'List durable root batch journals for the open project and current target language, newest first. Survives app restart and job-history pruning; groups retry runs with their original batch. Includes dates, outcomes, active job IDs and retry counts. Defaults: offset 0, limit 20 (maximum 100), problemsOnly false. Read-only; never restarts inference.',
   dubbing_batch_report:
@@ -242,6 +253,8 @@ const projectCommands = new Set(
 );
 projectCommands.add('preview_character_portrait');
 projectCommands.add('retry_dubbing_batch');
+projectCommands.add('prepare_volume_leveling');
+projectCommands.add('apply_volume_leveling');
 for (const command of [
   'transcribe_dialogue_source',
   'apply_source_transcription',

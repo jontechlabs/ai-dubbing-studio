@@ -5141,3 +5141,21 @@ pre {
     padding: 22px;
   }
 }
+.volume-leveling-modal {
+  width: min(560px, calc(100vw - 32px));
+}
+.leveling-preview {
+  margin-top: 12px;
+}
+.leveling-preview audio {
+  width: 100%;
+  min-width: 0;
+  height: 38px;
+}
+.leveling-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 14px;
+  flex-wrap: wrap;
+}

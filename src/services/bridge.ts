@@ -135,6 +135,34 @@ export async function voiceLibraryAudioUrl(characterId: string, referenceId: str
 export function applyAudioEffects(options: import('../domain/audioEffects').AudioEffectsOptions) {
   return invoke<string>('apply_audio_effects', { options });
 }
+export function prepareVolumeLeveling(
+  project: Project,
+  options: import('../domain/volumeLeveling').VolumeLevelingOptions,
+) {
+  return invoke<string>('prepare_volume_leveling', {
+    projectId: project.id,
+    expectedRevision: project.revision,
+    options,
+  });
+}
+export function volumeLevelingResult(id: string) {
+  return invoke<import('../domain/volumeLeveling').VolumeLevelingResult>('volume_leveling_result', {
+    id,
+  });
+}
+export async function volumeLevelingUrl(id: string, role: 'original' | 'leveled') {
+  return convertFileSrc(await invoke<string>('volume_leveling_path', { id, role }));
+}
+export function applyVolumeLeveling(project: Project, id: string) {
+  return invoke<Project>('apply_volume_leveling', {
+    id,
+    projectId: project.id,
+    expectedRevision: project.revision,
+  });
+}
+export function discardVolumeLeveling(id: string) {
+  return invoke<void>('discard_volume_leveling', { id });
+}
 export function transferAudio(options: import('../domain/audioPatch').TransferOptions) {
   return invoke<string>('transfer_audio', { options });
 }

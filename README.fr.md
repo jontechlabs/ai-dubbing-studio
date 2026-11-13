@@ -1,5 +1,9 @@
 # AI Dubbing Studio
 
+## v0.47.0 — Égaliser le volume d’une sélection audio
+
+Clic droit sur une zone sélectionnée → **Égaliser le volume…**. Aligner les passages sonores sur le plus bas ou le plus haut, préécouter avant/après puis valider. Disponible aussi sur Doublage ; la sélection disparaît après application. Silences, durée, réglages du mix et essais conservés. Remplacement annulable ; format 27 à la validation. [Guide et capture](docs/VOLUME-LEVELING.md).
+
 ## v0.46.0 — Écouter les pistes d’un dialogue
 
 Clic droit → **Écouter les pistes…** : comparaison en solo des pistes Original, Voix, Musique, Effets, Doublage et audio ajouté, sur les créneaux du dialogue. Arrêt automatique, option avant volumes/muets et bouton pour isoler directement la piste concernée. Réglages du mix et essais conservés. [Guide et capture](docs/DIALOGUE-TRACK-AUDITION.md).

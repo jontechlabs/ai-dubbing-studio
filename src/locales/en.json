@@ -203,7 +203,9 @@
     "toolboxPrepare": "Preparing selected audio",
     "toolboxLoad": "Loading separation model",
     "speakerSeparationLoad": "Loading voice separator",
-    "speakerSeparationRun": "Separating voices"
+    "speakerSeparationRun": "Separating voices",
+    "levelingPrepare": "Preparing selection",
+    "levelingAnalyze": "Analysing and levelling volume"
   },
   "shortcuts": "Space: play · J/K/L: transport · O: original · Ctrl+S: save · Ctrl+Z/Y: undo/redo",
   "errors": {
@@ -435,7 +437,11 @@
     "PROJECT_RECOVERY_REQUIRED": "The project move needs checking. Files have been retained.",
     "INVALID_COVER_TIME": "Choose a position within the video.",
     "MICROPHONE_PENDING": "Save or discard the microphone take before leaving this project.",
-    "REVIEW_CHANGED": "The dialogue or its take changed during this confirmation. Close this window and start the review again."
+    "REVIEW_CHANGED": "The dialogue or its take changed during this confirmation. Close this window and start the review again.",
+    "VOLUME_LEVELING_OPTIONS": "Select a current-media audio track and a range of 0.1–120 seconds.",
+    "VOLUME_LEVELING_SILENT": "No sufficiently audible passage in this selection. Silence and signals below −60 dBFS RMS are not amplified.",
+    "VOLUME_LEVELING_NOT_READY": "The preview is unavailable, cancelled or already applied. Prepare it again.",
+    "VOLUME_LEVELING_INVALID_AUDIO": "Selection audio is incomplete or invalid. No changes were applied."
   },
   "preparingVideo": "Preparing video…",
   "loadingVideo": "Loading video…",
@@ -920,7 +926,8 @@
     "move": "Move",
     "swap": "Swap",
     "effects": "Audio effects",
-    "separation": "Local separation"
+    "separation": "Local separation",
+    "leveling": "Volume levelling"
   },
   "inpaintPreviewLabel": "Retouched lip preview",
   "inpaintTimeoutHint": "You can cancel processing in Jobs.",
@@ -1297,7 +1304,8 @@
     "toolboxInstall": "Audio tool installation",
     "audioToolbox": "Selected audio separation",
     "speakerSeparation": "Overlapping voice separation",
-    "speakerSeparationInstall": "Voice separator installation"
+    "speakerSeparationInstall": "Voice separator installation",
+    "volumeLeveling": "Volume levelling"
   },
   "fxRemoveTrack": "Remove processed copy · {{name}}",
   "transferEffects": "Audio effects",
@@ -1940,5 +1948,24 @@
     "retry": "Retry dialogue {{number}}, take {{take}}",
     "summary": "{{succeeded}} successful take(s) · {{failed}} failed · {{pending}} unprocessed",
     "progress": "{{completed}} / {{total}} takes processed · {{succeeded}} succeeded · {{failed}} failed · {{skipped}} excluded or already available"
+  },
+  "leveling": {
+    "context": "Level selection volume…",
+    "title": "Level selection volume",
+    "hint": "Evans out audible passages within the selection without changing timing or pitch. Silence is excluded from target selection.",
+    "target": "Target level",
+    "low": "Match the quietest passage",
+    "high": "Match the loudest passage",
+    "lowHint": "Attenuates louder passages towards the quietest audible passage.",
+    "highHint": "Raises quieter passages towards the loudest one. Boost is limited to +18 dB with peak protection.",
+    "prepare": "Prepare preview",
+    "preview": "Before / after comparison",
+    "original": "Before levelling",
+    "leveled": "After levelling",
+    "measurement": "Active levels: {{quiet}} to {{loud}} dBFS RMS · target: {{target}} dBFS RMS",
+    "limited": "Peak protection or the boost limit reduces the requested levelling.",
+    "stale": "The project has changed since preparation. Prepare a new preview before applying.",
+    "beforeLevels": "Preview is before mixer volume and muted regions. These controls are preserved on apply. Half-second analysis windows, smoothed transitions. Select 0.1–120 seconds.",
+    "apply": "Confirm and apply"
   }
 }

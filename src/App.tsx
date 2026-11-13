@@ -9,6 +9,7 @@ import { dubbingClips } from './domain/mix';
 import { speakerDubbingState } from './domain/speakerDubbing';
 import { Dialogues } from './components/Dialogues';
 import { DialogueTrackAudition } from './components/DialogueTrackAudition';
+import { VolumeLeveling } from './components/VolumeLeveling';
 import { SourceTranscription } from './components/SourceTranscription';
 import { Modal } from './components/Modal';
 import { formatTime } from './domain/time';
@@ -74,6 +75,10 @@ export default function App() {
   const openSourceTranscription = useCallback((line: Dialogue) => setSourceDialogueId(line.id), []);
   const [timelineNavigation, setTimelineNavigation] = useState<TimelineNavigation | null>(null);
   const [audioSelection, setAudioSelection] = useState<AudioSelection | null>(null);
+  const [levelingSelection, setLevelingSelection] = useState<{
+    projectId: string;
+    selection: AudioSelection;
+  } | null>(null);
   const [toolboxModel, setToolboxModel] = useState<string | null>(null);
   const openDialogueIsolation = useCallback(
     (line: Dialogue, trackId = 'original') => {
@@ -758,6 +763,16 @@ export default function App() {
             />
             <div className="timeline-container" style={{ height: timelineHeight, flexShrink: 0 }}>
               <Timeline
+                onVolumeLeveling={(selection) => {
+                  stopGeneration();
+                  transport.pause();
+                  document.dispatchEvent(new Event('studio-voice-preview'));
+                  document.querySelectorAll('audio').forEach((a) => a.pause());
+                  setLevelingSelection({
+                    projectId: studio.project!.id,
+                    selection: { ...selection },
+                  });
+                }}
                 onAudioToolbox={(model) => {
                   setToolboxModel(model);
                   setPanel('audio');
@@ -824,6 +839,32 @@ export default function App() {
           </button>
         </footer>
         <JobNotifications onOpen={showJobs} />
+        {studio.project &&
+          levelingSelection?.projectId === studio.project.id &&
+          levelingSelection.selection.mediaId === studio.project.media?.id && (
+            <VolumeLeveling
+              key={`${studio.project.id}:${levelingSelection.selection.trackId}:${levelingSelection.selection.startMs}:${levelingSelection.selection.endMs}`}
+              project={studio.project}
+              selection={levelingSelection.selection}
+              jobs={studio.jobs}
+              busy={busy}
+              snapshot={studio.snapshot}
+              onClose={() => setLevelingSelection(null)}
+              onSaved={(p) => {
+                studio.load(p);
+                selectAudio(null);
+                setLevelingSelection(null);
+              }}
+              onListen={(element) => {
+                stopGeneration();
+                transport.pause();
+                document.dispatchEvent(new Event('studio-voice-preview'));
+                document.querySelectorAll('audio').forEach((a) => {
+                  if (a !== element) a.pause();
+                });
+              }}
+            />
+          )}
         {studio.project && auditionDialogue && (
           <DialogueTrackAudition
             key={`${studio.project.id}:${auditionDialogue.id}`}

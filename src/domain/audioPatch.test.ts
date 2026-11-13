@@ -46,6 +46,34 @@ function patch(p: Project, id: string, mode: AudioPatch['mode'] = 'add'): AudioP
     gain: 1,
   };
 }
+it('levelled dubbing layers require format 27, replace only, and restore the base exactly outside the range', () => {
+  const p = fixture();
+  p.formatVersion = 27;
+  p.generations = [
+    {
+      ...patch(p, 'levelled', 'replace'),
+      operation: 'leveling',
+      trackId: 'dubbing',
+      sourceTrackId: 'dubbing',
+    },
+  ];
+  expect(validateProject(p)).toEqual(p);
+  const layers = trackPatches(p, 'dubbing');
+  expect([999, 1000, 1999, 2000].map((t) => layerGate(layers, t))).toEqual([1, 0, 0, 1]);
+  expect(layerGate(layers, 1500, 0)).toBe(1);
+  expect(removeTransfer(p, 'operation').generations).toEqual([]);
+  for (const changes of [
+    { mode: 'add' },
+    { sourceTrackId: 'music' },
+    { trackId: 'music' },
+    { endMs: 122000 },
+  ]) {
+    const bad = structuredClone(p);
+    Object.assign(bad.generations[0], changes);
+    expect(() => validateProject(bad)).toThrow();
+  }
+  expect(() => validateProject({ ...p, formatVersion: 26 })).toThrow();
+});
 it('later replacement gates prior layers while a later addition can play above a cut', () => {
   const p = fixture();
   p.generations = [patch(p, 'a'), patch(p, 'b', 'silence'), patch(p, 'c')];
