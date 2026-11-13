@@ -1,11 +1,11 @@
 {
-  "version": "0.47.0",
-  "notes": "Égaliser le volume… au clic droit sur une sélection : aligner sur le passage sonore le plus bas ou le plus haut, comparer avant/après puis valider. Silences, durée, réglages du mix et essais conservés ; sélection effacée après application. Original, pistes audio et Doublage ; 0,1–120 s. Ctrl+Z, 163 outils MCP et format projet 27 à la validation.",
-  "pub_date": "2026-11-13T15:03:08Z",
+  "version": "0.48.0",
+  "notes": "Clic droit → Égaliser toute la piste… : une cible globale, préécoutes Avant/Après puis validation explicite. Sélections de plus de 120 s, jusqu’à 24 h. Analyse par blocs, lecture par fragments de 30 s, espace disque vérifié. Silences, sources, SRT, essais et réglages du mix conservés ; Ctrl+Z. Format 28 pour les longues égalisations. 163 outils MCP.",
+  "pub_date": "2026-11-13T17:40:06Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSdFFyMUJGTFp3NkR0akhYSE5sWnRkOXoxQmJQVS9QSGZiQ3pPbmpBMVVIUFg0QWVwT2pHaHZqMk0wRlJzS000ZXdtREtnVzB5V3FsdG9DaEdnRDFQNHE4TjhPdnQ2U2dBPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk0NTgxNjM0CWZpbGU6QUkgRHViYmluZyBTdHVkaW9fMC40Ny4wX3g2NC1zZXR1cC5leGUJdmVyc2lvbjowLjQ3LjAKbkVyQ255L2xMcHBnRFR6YzNXbFhrRGdLTDNrWFVFRGJuYlU0eVE3eFR6YUtWQXlDRGROMjZwK2U3cnBiWGQvRWFLNmdaaCtQL3hzakQyVGVKUDZYQVE9PQo=",
-      "url": "https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.47.0/AI-Dubbing-Studio-0.47.0-Setup.exe"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSdFFyMUJGTFp3NkN0STEwaTNmKy9udDI5Q0dtNEFkZjZLV3F1aGorbGVsNWVLVlB2clJEZTRSeUFta09YY1A2U2FYc1VpOFJHVUtXWThHNCt3cE9EVkErL0g2SE8vekFFPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk0NTkxMzg1CWZpbGU6QUkgRHViYmluZyBTdHVkaW9fMC40OC4wX3g2NC1zZXR1cC5leGUJdmVyc2lvbjowLjQ4LjAKMEpxYWlVUGNHSUlSN0NkYTR1ZlJXVEYxSVRIcGxoSDVEc2xEbFVMekRtTE1VaGNEbUFkazNRZmllTTQycG5zN2NrdFdVR0ttK2FUOERTc3pJNzU5QUE9PQo=",
+      "url": "https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.48.0/AI-Dubbing-Studio-0.48.0-Setup.exe"
     }
   }
 }
