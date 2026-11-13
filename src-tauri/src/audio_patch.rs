@@ -27,6 +27,8 @@ pub struct Patch {
     pub mode: String,
     pub path: Option<String>,
     pub gain: f64,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub dubbing_scope: Option<serde_json::Value>,
 }
 #[derive(Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -56,7 +58,14 @@ pub fn layers(p: &Project, track_id: &str) -> Vec<Patch> {
         .unwrap_or_default()
         .into_iter()
         .filter(|e| {
-            e.track_id == track_id && p.media.as_ref().is_some_and(|m| m.path == e.source_path)
+            e.track_id == track_id
+                && p.media.as_ref().is_some_and(|m| m.path == e.source_path)
+                && (e.track_id != "dubbing"
+                    || e.operation != "leveling"
+                    || e.dubbing_scope.as_ref()
+                        == Some(&crate::volume_leveling::dubbing_scope(
+                            p, e.start_ms, e.end_ms,
+                        )))
         })
         .collect()
 }
@@ -100,7 +109,9 @@ pub fn validate(p: &Project) -> Result<(), String> {
             || (e.operation == "leveling"
                 && (p.format_version < 27
                     || e.mode != "replace"
-                    || e.track_id != e.source_track_id))
+                    || e.track_id != e.source_track_id
+                    || (e.track_id == "dubbing"
+                        && !e.dubbing_scope.as_ref().is_some_and(|v| v.is_array()))))
             || (e.operation == "separation" && p.format_version < 20)
             || (e.operation == "effects" && p.format_version < 18)
             || p.generations.iter().filter(|g| g["id"] == e.id).count() != 1
@@ -530,6 +541,7 @@ pub async fn transfer<R: tauri::Runtime>(
                 mode: mode.into(),
                 path,
                 gain: 1.0,
+                dubbing_scope: None,
             })
             .map_err(io_error)?,
         );

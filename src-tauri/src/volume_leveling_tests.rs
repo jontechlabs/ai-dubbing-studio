@@ -207,6 +207,22 @@ async fn preview_apply_undo_and_reopen_keep_sources_and_every_take() {
                 < 0.05
         );
         discard(&core, &again).unwrap();
+        if track == "dubbing" {
+            let mut changed = current.clone();
+            let mut take = changed
+                .generations
+                .iter()
+                .find(|g| g["kind"] == "tts")
+                .unwrap()
+                .clone();
+            take["id"] = json!("other-voice-take");
+            changed.generations.push(take);
+            changed.dialogues[0]
+                .selected_generation_ids
+                .insert("fr".into(), "other-voice-take".into());
+            assert!(audio_patch::layers(&changed, "dubbing").is_empty());
+            assert_eq!(audio_patch::layers(&current, "dubbing").len(), 1);
+        }
     }
 }
 #[tokio::test]

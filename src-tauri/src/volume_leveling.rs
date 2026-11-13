@@ -34,6 +34,14 @@ pub struct Request {
     pub revision: u64,
     pub options: Options,
 }
+pub fn dubbing_scope(p: &Project, start: u64, end: u64) -> Value {
+    let mut clips: Vec<_> = mix::clips(p)
+        .into_iter()
+        .filter(|c| c.slot_ms > 0 && c.start_ms() < end && c.start_ms() + c.slot_ms > start)
+        .collect();
+    clips.sort_by_cached_key(|c| c.id.clone());
+    Value::Array(clips.into_iter().map(|c|json!({"id":c.id,"startMs":c.start_ms(),"slotMs":c.slot_ms,"durationMs":c.duration_ms(),"exactDuration":c.exact_duration,"edit":p.voice_edits.get(&c.id)})).collect())
+}
 fn validate(p: &Project, o: &Options) -> Result<(), String> {
     p.validate()?;
     let media = p.media.as_ref().ok_or("MEDIA_MISSING")?;
@@ -361,7 +369,16 @@ pub fn apply<R: tauri::Runtime>(
         }
         let mut next = s.project.clone();
         next.format_version = next.format_version.max(27);
-        next.generations.push(json!({"kind":"audioPatch","id":patch_id,"operationId":id,"operation":"leveling","sourcePath":p.media.as_ref().unwrap().path,"trackId":r.options.track_id,"sourceTrackId":r.options.track_id,"startMs":r.options.start_ms,"endMs":r.options.end_ms,"mode":"replace","path":relative,"gain":1.0,"volumeLeveling":details,"createdAt":crate::domain::now()}));
+        let scope = if r.options.track_id == "dubbing" {
+            Some(dubbing_scope(&p, r.options.start_ms, r.options.end_ms))
+        } else {
+            None
+        };
+        let mut layer = json!({"kind":"audioPatch","id":patch_id,"operationId":id,"operation":"leveling","sourcePath":p.media.as_ref().unwrap().path,"trackId":r.options.track_id,"sourceTrackId":r.options.track_id,"startMs":r.options.start_ms,"endMs":r.options.end_ms,"mode":"replace","path":relative,"gain":1.0,"volumeLeveling":details,"createdAt":crate::domain::now()});
+        if let Some(scope) = scope {
+            layer["dubbingScope"] = scope;
+        }
+        next.generations.push(layer);
         s.replace(next, expected_revision)
     })();
     match saved {

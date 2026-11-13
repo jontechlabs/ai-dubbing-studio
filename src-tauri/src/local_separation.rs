@@ -101,6 +101,7 @@ pub fn plan(
             .into(),
             path: Some(paths.get(role).ok_or("SEPARATION_FAILED")?.clone()),
             gain: 1.0,
+            dubbing_scope: None,
         });
     }
     if source.kind != "original" && !targets.values().any(|id| id == &source.id) {
@@ -117,6 +118,7 @@ pub fn plan(
             mode: "silence".into(),
             path: None,
             gain: 1.0,
+            dubbing_scope: None,
         });
     }
     if audio_patch::all(p)?.len() + result.len() > 128 {

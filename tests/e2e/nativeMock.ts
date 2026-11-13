@@ -1537,6 +1537,9 @@ export async function nativeMock(page: Page, large = false, seededProject?: Proj
               id: patch,
               operationId: args.id,
               operation: 'leveling',
+              ...(o.trackId === 'dubbing'
+                ? { dubbingScope: host.__levelingDubbingScope ?? [] }
+                : {}),
               sourcePath: project.media.path,
               sourceTrackId: o.trackId,
               trackId: o.trackId,

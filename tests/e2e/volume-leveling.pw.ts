@@ -1,5 +1,6 @@
 import { test, expect, type Page } from '@playwright/test';
 import { nativeMock } from './nativeMock';
+import { dubbingLevelingScope } from '../../src/domain/volumeLeveling';
 test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => {
     localStorage.setItem('studio.timelineHeight', '420');
@@ -155,6 +156,12 @@ test('changed projects and failed preparation cannot apply an old result', async
 test('dubbing selections are supported without replacing any generated take', async ({ page }) => {
   const before = await saved(page),
     modal = await open(page, 'dubbing');
+  await page.evaluate(
+    (scope) => {
+      (window as any).__levelingDubbingScope = scope;
+    },
+    dubbingLevelingScope(before, 1200, 3000),
+  );
   await modal.getByRole('combobox', { name: 'Niveau cible' }).selectOption('high');
   await modal.getByRole('button', { name: 'Préparer la préécoute' }).click();
   await page.evaluate(() => (window as any).__completeLeveling());
@@ -167,6 +174,39 @@ test('dubbing selections are supported without replacing any generated take', as
     before.generations.filter((g: any) => g.kind === 'tts'),
   );
   expect(after.generations.at(-1).trackId).toBe('dubbing');
+  const patches = page.locator('.timeline-track[data-track-id="dubbing"] .audio-patch');
+  await expect(patches).toHaveCount(1);
+  await page.evaluate(async () => {
+    const w = window as any;
+    const s = await w.__mcp('studio_get_state', {}),
+      p = w.__getMockProject();
+    const g = p.generations.find(
+      (g: any) => g.kind === 'tts' && g.dialogueId === p.dialogues[0].id,
+    );
+    const r = await w.__mcp('studio_project_patch', {
+      context: s.context,
+      patches: [
+        { op: 'add', path: '/generations/-', value: { ...g, id: 'other-leveling-take' } },
+        {
+          op: 'replace',
+          path: '/dialogues/0/selectedGenerationIds/fr',
+          value: 'other-leveling-take',
+        },
+      ],
+    });
+    if (r?.isError) throw Error(JSON.stringify(r));
+  });
+  await expect(patches).toHaveCount(0);
+  await page.evaluate(async (id) => {
+    const w = window as any;
+    const s = await w.__mcp('studio_get_state', {});
+    const r = await w.__mcp('studio_project_patch', {
+      context: s.context,
+      patches: [{ op: 'replace', path: '/dialogues/0/selectedGenerationIds/fr', value: id }],
+    });
+    if (r?.isError) throw Error(JSON.stringify(r));
+  }, before.dialogues[0].selectedGenerationIds.fr);
+  await expect(patches).toHaveCount(1);
 });
 test('right click inside a larger muted region retains the smaller selected range and saved mixer settings', async ({
   page,

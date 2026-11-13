@@ -1,6 +1,7 @@
 import type { Project, Track } from '../domain/types';
 import {
   audioPatches,
+  activeAudioPatch,
   trackPatches,
   layerGate,
   layerChanges,
@@ -25,7 +26,7 @@ export class AudioPatchBus {
     if (this.project !== project) {
       this.project = project;
       this.clips = audioPatches(project).filter(
-        (e) => e.sourcePath === project.media?.path && e.mode !== 'silence',
+        (e) => activeAudioPatch(project, e) && e.mode !== 'silence',
       );
       const signature = this.clips
         .map((c) => `${c.id}:${c.startMs}:${c.endMs}:${c.gain}`)

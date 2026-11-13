@@ -55,6 +55,7 @@ it('levelled dubbing layers require format 27, replace only, and restore the bas
       operation: 'leveling',
       trackId: 'dubbing',
       sourceTrackId: 'dubbing',
+      dubbingScope: [],
     },
   ];
   expect(validateProject(p)).toEqual(p);

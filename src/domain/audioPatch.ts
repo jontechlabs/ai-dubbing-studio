@@ -1,5 +1,6 @@
 import type { Project, Track } from './types';
 import { audioTracks, regionGain, gainChanges } from './audio';
+import { dubbingLevelingScope, sameDubbingLevelingScope } from './volumeLeveling';
 export interface AudioPatch {
   [key: string]: unknown;
   kind: 'audioPatch';
@@ -14,6 +15,7 @@ export interface AudioPatch {
   mode: 'add' | 'replace' | 'silence';
   path: string | null;
   gain: number;
+  dubbingScope?: unknown[];
 }
 export interface TransferOptions {
   sourceTrackId: string;
@@ -26,7 +28,15 @@ export function audioPatches(p: Project): AudioPatch[] {
   return p.generations.filter((g) => g.kind === 'audioPatch') as unknown as AudioPatch[];
 }
 export function trackPatches(p: Project, id: string) {
-  return audioPatches(p).filter((e) => e.trackId === id && e.sourcePath === p.media?.path);
+  return audioPatches(p).filter((e) => e.trackId === id && activeAudioPatch(p, e));
+}
+export function activeAudioPatch(p: Project, e: AudioPatch) {
+  return (
+    e.sourcePath === p.media?.path &&
+    (e.trackId !== 'dubbing' ||
+      e.operation !== 'leveling' ||
+      sameDubbingLevelingScope(e.dubbingScope, dubbingLevelingScope(p, e.startMs, e.endMs)))
+  );
 }
 export function layerGate(patches: AudioPatch[], time: number, index = -1) {
   return patches.some(
@@ -112,6 +122,7 @@ export function validateAudioPatches(p: Project) {
       !['copy', 'move', 'swap', 'effects', 'separation', 'leveling'].includes(e.operation) ||
       (e.operation === 'leveling' &&
         (p.formatVersion < 27 || e.mode !== 'replace' || e.trackId !== e.sourceTrackId)) ||
+      (e.operation === 'leveling' && e.trackId === 'dubbing' && !Array.isArray(e.dubbingScope)) ||
       (e.operation === 'separation' && p.formatVersion < 20) ||
       (e.operation === 'effects' && p.formatVersion < 18) ||
       !['add', 'replace', 'silence'].includes(e.mode) ||
