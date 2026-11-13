@@ -167,10 +167,14 @@ export class AudioPatchBus {
           gain.disconnect();
           if (this.voices.get(id)?.source === source) this.voices.delete(id);
         };
-        const offset = Math.max(0, position - clip.startMs) / 1000;
+        // Consecutive fragments share one clock anchor. Recomputing their start
+        // from each video tick would turn small video-clock jitter into audible
+        // gaps or overlaps at every 30-second boundary.
+        const scheduled = this.anchor.time + (clip.startMs - this.anchor.position) / 1000 / rate;
+        const begin = Math.max(now, scheduled);
+        const offset = Math.max(0, begin - scheduled) * rate;
         const length = Math.min(buffer.duration, (clip.endMs - clip.startMs) / 1000) - offset;
-        if (length > 0)
-          source.start(now + Math.max(0, clip.startMs - position) / 1000 / rate, offset, length);
+        if (length > 0) source.start(begin, offset, length);
       }
       this.gains(
         voice.gain,
