@@ -18,4 +18,6 @@ Les niveaux RMS sont mesurés par fenêtres de 0,5 seconde avec un gain lié ent
 
 La validation ajoute une couche audio indépendante et annulable avec **Ctrl+Z**. Les fichiers source, sous-titres et essais ne sont jamais écrasés. Le format du projet passe à **27** lors de la première application ; utilisez v0.47.0 ou ultérieure pour rouvrir ce projet. Un aperçu d’un projet modifié entre-temps est refusé : préparez-le à nouveau. Les fichiers temporaires de préécoute sont retirés à l’annulation ou après application.
 
+Une nouvelle application qui couvre entièrement des égalisations actives les regroupe dans le nouveau résultat, pour éviter d’accumuler des couches redondantes. Leurs WAV restent disponibles pour l’annulation ; les égalisations liées à d’autres essais restent conservées.
+
 Le MCP expose le même parcours : `studio_prepare_volume_leveling` → `studio_list_jobs` → `studio_volume_leveling_result` / `studio_volume_leveling_path` (rôle `original` ou `leveled`) → `studio_apply_volume_leveling` ou `studio_discard_volume_leveling`. La préparation et l’application exigent le projet et la révision courants ; aucune application automatique après redémarrage.

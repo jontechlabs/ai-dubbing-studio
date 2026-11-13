@@ -1531,6 +1531,19 @@ export async function nativeMock(page: Page, large = false, seededProject?: Proj
             undoStack.push(structuredClone(project));
             const patch = crypto.randomUUID(),
               o = r.options;
+            project.generations = project.generations.filter(
+              (g: any) =>
+                !(
+                  g.kind === 'audioPatch' &&
+                  g.operation === 'leveling' &&
+                  g.trackId === o.trackId &&
+                  g.startMs >= o.startMs &&
+                  g.endMs <= o.endMs &&
+                  (o.trackId !== 'dubbing' ||
+                    JSON.stringify(g.dubbingScope) ===
+                      JSON.stringify(host.__levelingDubbingScope ?? []))
+                ),
+            );
             project.formatVersion = 27;
             project.generations.push({
               kind: 'audioPatch',

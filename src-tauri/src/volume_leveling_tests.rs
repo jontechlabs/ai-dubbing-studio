@@ -206,6 +206,9 @@ async fn preview_apply_undo_and_reopen_keep_sources_and_every_take() {
             .abs()
                 < 0.05
         );
+        let reapplied = apply(&core, app.handle(), &again, &current.id, current.revision).unwrap();
+        assert_eq!(reapplied.generations.len(), p.generations.len() + 1);
+        assert!(asset.is_file());
         discard(&core, &again).unwrap();
         if track == "dubbing" {
             let mut changed = current.clone();

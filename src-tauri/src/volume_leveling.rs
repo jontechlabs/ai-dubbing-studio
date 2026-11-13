@@ -42,6 +42,13 @@ pub fn dubbing_scope(p: &Project, start: u64, end: u64) -> Value {
     clips.sort_by_cached_key(|c| c.id.clone());
     Value::Array(clips.into_iter().map(|c|json!({"id":c.id,"startMs":c.start_ms(),"slotMs":c.slot_ms,"durationMs":c.duration_ms(),"exactDuration":c.exact_duration,"edit":p.voice_edits.get(&c.id)})).collect())
 }
+fn replaced_layers(p: &Project, o: &Options) -> std::collections::HashSet<String> {
+    audio_patch::layers(p, &o.track_id)
+        .into_iter()
+        .filter(|e| e.operation == "leveling" && e.start_ms >= o.start_ms && e.end_ms <= o.end_ms)
+        .map(|e| e.id)
+        .collect()
+}
 fn validate(p: &Project, o: &Options) -> Result<(), String> {
     p.validate()?;
     let media = p.media.as_ref().ok_or("MEDIA_MISSING")?;
@@ -59,7 +66,7 @@ fn validate(p: &Project, o: &Options) -> Result<(), String> {
     {
         return Err("VOLUME_LEVELING_OPTIONS".into());
     }
-    if audio_patch::all(p)?.len() >= 128 {
+    if audio_patch::all(p)?.len() + 1 - replaced_layers(p, o).len() > 128 {
         return Err("AUDIO_TRANSFER_LIMIT".into());
     }
     Ok(())
@@ -369,6 +376,11 @@ pub fn apply<R: tauri::Runtime>(
         }
         let mut next = s.project.clone();
         next.format_version = next.format_version.max(27);
+        // The prepared audio already contains these active lower layers.
+        // Consolidate full coverage; undo still owns their immutable WAVs.
+        let replaced = replaced_layers(&p, &r.options);
+        next.generations
+            .retain(|g| g["id"].as_str().is_none_or(|id| !replaced.contains(id)));
         let scope = if r.options.track_id == "dubbing" {
             Some(dubbing_scope(&p, r.options.start_ms, r.options.end_ms))
         } else {
