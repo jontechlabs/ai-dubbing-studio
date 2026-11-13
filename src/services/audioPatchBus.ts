@@ -128,6 +128,8 @@ export class AudioPatchBus {
     const now = this.context.currentTime,
       position = video.currentTime * 1000,
       rate = video.playbackRate;
+    // A changed layer signature stops old voices and resets the clock anchor.
+    const allClips = this.getClips(project);
     if (
       this.anchor &&
       (rate !== this.anchor.rate ||
@@ -135,7 +137,7 @@ export class AudioPatchBus {
     )
       this.stop();
     this.anchor ??= { time: now, position, rate };
-    const clips = patchSegments(this.getClips(project), position, position + 500 * rate);
+    const clips = patchSegments(allClips, position, position + 500 * rate);
     const desired = new Set(clips.map((c) => c.cacheKey));
     for (const [id, voice] of this.voices)
       if (!desired.has(id)) {
@@ -154,6 +156,13 @@ export class AudioPatchBus {
       if (!buffer || position >= clip.startMs + buffer.duration * 1000) continue;
       let voice = this.voices.get(id);
       if (!voice) {
+        // Consecutive fragments share one clock anchor. Video-clock jitter must
+        // not create gaps at boundaries. A late load may already be expired.
+        const scheduled = this.anchor.time + (clip.startMs - this.anchor.position) / 1000 / rate;
+        const begin = Math.max(now, scheduled);
+        const offset = Math.max(0, begin - scheduled) * rate;
+        const length = Math.min(buffer.duration, (clip.endMs - clip.startMs) / 1000) - offset;
+        if (length <= 0) continue;
         const source = this.context.createBufferSource(),
           gain = this.context.createGain();
         source.buffer = buffer;
@@ -167,14 +176,7 @@ export class AudioPatchBus {
           gain.disconnect();
           if (this.voices.get(id)?.source === source) this.voices.delete(id);
         };
-        // Consecutive fragments share one clock anchor. Recomputing their start
-        // from each video tick would turn small video-clock jitter into audible
-        // gaps or overlaps at every 30-second boundary.
-        const scheduled = this.anchor.time + (clip.startMs - this.anchor.position) / 1000 / rate;
-        const begin = Math.max(now, scheduled);
-        const offset = Math.max(0, begin - scheduled) * rate;
-        const length = Math.min(buffer.duration, (clip.endMs - clip.startMs) / 1000) - offset;
-        if (length > 0) source.start(begin, offset, length);
+        source.start(begin, offset, length);
       }
       this.gains(
         voice.gain,
