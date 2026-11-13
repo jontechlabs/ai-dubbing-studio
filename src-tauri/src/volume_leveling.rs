@@ -46,6 +46,7 @@ fn validate(p: &Project, o: &Options) -> Result<(), String> {
         || o.end_ms <= o.start_ms
         || !(100..=120000).contains(&(o.end_ms - o.start_ms))
         || o.end_ms > media.info.duration_ms
+        || o.end_ms > 86_400_000
         || o.end_ms > track.duration_ms.unwrap_or(media.info.duration_ms)
     {
         return Err("VOLUME_LEVELING_OPTIONS".into());

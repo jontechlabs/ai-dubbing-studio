@@ -29,12 +29,22 @@ fn low_and_high_even_out_real_sample_levels_keep_silence_stereo_and_duration() {
         assert!(output[192000 * 2..].iter().all(|s| *s == 0));
         assert!(output.as_chunks::<2>().0.iter().all(|p| p[0] == -p[1]));
         assert!(stats.target_db.is_finite() && stats.active_windows == 8);
+        // Levelling must not create an overshoot at the quiet/loud boundary.
+        let original_peak = input.iter().map(|v| v.unsigned_abs()).max().unwrap();
+        assert!(output.iter().all(|v| v.unsigned_abs() <= original_peak + 1));
         if mode == "low" {
             assert!(output
                 .iter()
                 .zip(&input)
                 .all(|(a, b)| a.unsigned_abs() <= b.unsigned_abs()));
         }
+    }
+    let reverse = tone(&[0.4, 0.05, 0.0]);
+    for mode in ["low", "high"] {
+        let (audio, _) = dsp::process(&reverse, mode, &cancel).unwrap();
+        assert!((rms(&audio, 48000, 72000) / rms(&audio, 144000, 168000) - 1.0).abs() < 0.01);
+        let peak = reverse.iter().map(|v| v.unsigned_abs()).max().unwrap();
+        assert!(audio.iter().all(|v| v.unsigned_abs() <= peak + 1));
     }
 }
 #[test]

@@ -118,13 +118,25 @@ pub fn process(
         .collect();
     let frames = samples.len() / 2;
     let gain_at = |frame: usize| {
-        let position = frame as f64 / WINDOW as f64 - 0.5;
-        let left = position.floor().max(0.0) as usize;
-        let right = (position.floor() + 1.0).max(0.0) as usize;
-        let fraction = position - position.floor();
-        let a = gains[left.min(gains.len() - 1)].ln();
-        let b = gains[right.min(gains.len() - 1)].ln();
-        let smooth = (a + (b - a) * fraction).exp();
+        let block = frame / WINDOW;
+        let offset = frame % WINDOW;
+        let length = WINDOW.min(frames - block * WINDOW);
+        let width = 2400.min(length / 2).max(1);
+        let gain = gains[block];
+        let previous = gains[block.saturating_sub(1)];
+        let following = gains[(block + 1).min(gains.len() - 1)];
+        // Anticipate a gain reduction BEFORE a louder window starts. Release
+        // upward AFTER a quieter window starts. Centred interpolation would
+        // wrongly boost the first loud samples and create a new volume spike.
+        let smooth = if gain > previous && offset < width {
+            let fraction = offset as f64 / width as f64;
+            (previous.ln() + (gain.ln() - previous.ln()) * fraction).exp()
+        } else if gain > following && offset >= length - width {
+            let fraction = (offset - (length - width)) as f64 / width as f64;
+            (gain.ln() + (following.ln() - gain.ln()) * fraction).exp()
+        } else {
+            gain
+        };
         // Join the unchanged adjacent audio without a hard gain jump.
         let edge = (frame.min(frames - 1 - frame) as f64 / 480.0).min(1.0);
         1.0 + (smooth - 1.0) * edge
