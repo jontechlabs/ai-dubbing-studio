@@ -117,6 +117,7 @@ try {
           value: {
             id: 'level-test',
             kind: 'audio',
+            role: 'speech',
             name: 'Level test',
             path: 'stems/level-test.wav',
             durationMs: 5000,

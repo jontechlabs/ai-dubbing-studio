@@ -1,0 +1,57 @@
+name: Volume levelling immutable package SDK continuation
+on:
+  workflow_dispatch:
+  push:
+    branches: [codex/volume-leveling-sdk]
+permissions:
+  contents: read
+  actions: read
+jobs:
+  validate:
+    runs-on: windows-latest
+    timeout-minutes: 20
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+      PYTHONUTF8: '1'
+      PYTHONIOENCODING: utf-8
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
+        with:
+          node-version: '24'
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12.10'
+      - name: Authenticate unchanged signed package and fixture-only correction
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python scripts/verify-volume-leveling-continuation.py
+      - name: Install pinned SDK dependencies
+        run: |
+          npm install --global pnpm@11.25.0
+          pnpm install --frozen-lockfile
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+      - name: Actual packaged desktop through official MCP SDK
+        run: |
+          $portable = @(Get-ChildItem -LiteralPath .cache/leveling-sdk/input -Recurse -Filter AI-Dubbing-Studio-Windows-Portable.zip)
+          if ($portable.Count -ne 1) { throw 'Expected one authenticated portable package' }
+          ./scripts/test-volume-leveling.ps1 -PortablePath $portable[0].FullName
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: volume-leveling-sdk-proof
+          path: |
+            artifacts/mcp-native-validation.json
+            artifacts/volume-leveling-continuation.json
+          if-no-files-found: error
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: failure()
+        with:
+          name: volume-leveling-sdk-diagnostics
+          path: |
+            .cache/volume-leveling-native/**/*.stdout.log
+            .cache/volume-leveling-native/**/*.stderr.log
+          include-hidden-files: true
+          if-no-files-found: ignore
