@@ -35,12 +35,12 @@ export function VolumeLeveling({
   const [urls, setUrls] = useState<{ original: string; leveled: string } | null>(null);
   const [working, setWorking] = useState(false);
   const [error, setError] = useState('');
-  const owner = useRef(0),
+  const owner = useRef({ token: 0 }),
     preview = useRef<string | null>(null),
     container = useRef<HTMLDivElement>(null);
   const stop = () => container.current?.querySelectorAll('audio').forEach((a) => a.pause());
   const clear = () => {
-    ++owner.current;
+    ++owner.current.token;
     stop();
     const old = preview.current;
     preview.current = null;
@@ -50,15 +50,16 @@ export function VolumeLeveling({
     setError('');
     if (old) void bridge.discardVolumeLeveling(old).catch(() => {});
   };
-  useEffect(
-    () => () => {
-      ++owner.current;
-      container.current?.querySelectorAll('audio').forEach((a) => a.pause());
+  useEffect(() => {
+    const element = container.current;
+    const lifetime = owner.current;
+    return () => {
+      ++lifetime.token;
+      element?.querySelectorAll('audio').forEach((a) => a.pause());
       if (preview.current) void bridge.discardVolumeLeveling(preview.current).catch(() => {});
       preview.current = null;
-    },
-    [],
-  );
+    };
+  }, []);
   const job = jobs.find((j) => j.id === id);
   useEffect(() => {
     if (!id || job?.status !== 'succeeded') return;
@@ -83,11 +84,11 @@ export function VolumeLeveling({
   }, [id, job?.status]);
   const launch = async () => {
     clear();
-    const token = owner.current;
+    const token = owner.current.token;
     setWorking(true);
     try {
       const p = await snapshot();
-      if (token !== owner.current) return;
+      if (token !== owner.current.token) return;
       const key = await bridge.prepareVolumeLeveling(p, {
         mediaId: selection.mediaId,
         trackId: selection.trackId,
@@ -95,21 +96,21 @@ export function VolumeLeveling({
         endMs: selection.endMs,
         mode,
       });
-      if (token !== owner.current) {
+      if (token !== owner.current.token) {
         await bridge.discardVolumeLeveling(key);
         return;
       }
       preview.current = key;
       setId(key);
     } catch (e) {
-      if (token === owner.current) setError(String(e));
+      if (token === owner.current.token) setError(String(e));
     } finally {
-      if (token === owner.current) setWorking(false);
+      if (token === owner.current.token) setWorking(false);
     }
   };
   const apply = async () => {
     if (!result || !id) return;
-    const token = owner.current;
+    const token = owner.current.token;
     stop();
     setWorking(true);
     setError('');
@@ -117,7 +118,7 @@ export function VolumeLeveling({
       const p = await snapshot();
       const saved = await bridge.applyVolumeLeveling(p, id);
       preview.current = null;
-      if (token === owner.current) onSaved(saved);
+      if (token === owner.current.token) onSaved(saved);
     } catch (e) {
       setError(String(e));
     } finally {
@@ -127,6 +128,10 @@ export function VolumeLeveling({
   const active = working || (!!job && ['queued', 'running', 'paused'].includes(job.status));
   const stale =
     !!result && (result.projectId !== project.id || result.revision !== project.revision);
+  useEffect(() => {
+    const elements = [...(container.current?.querySelectorAll('audio') ?? [])];
+    return () => elements.forEach((a) => a.pause());
+  }, [urls, stale]);
   const track = audioTracks(project).find((tr) => tr.id === selection.trackId);
   return (
     <Modal title={t('leveling.title')} className="volume-leveling-modal" onClose={onClose}>

@@ -125,6 +125,13 @@ test('changed projects and failed preparation cannot apply an old result', async
   await modal.getByRole('button', { name: 'Préparer la préécoute' }).click();
   await page.evaluate(() => (window as any).__completeLeveling());
   await expect(modal.locator('audio')).toHaveCount(2);
+  await modal
+    .locator('audio')
+    .last()
+    .evaluate((e: HTMLAudioElement) => {
+      (window as any).__levelingAudio = e;
+      return e.play();
+    });
   await page.evaluate(async () => {
     const w = window as any;
     const s = await w.__mcp('studio_get_state', {});
@@ -135,6 +142,7 @@ test('changed projects and failed preparation cannot apply an old result', async
     if (response?.isError) throw Error(JSON.stringify(response));
   });
   await expect(modal.getByRole('alert')).toContainText('Le projet a changé');
+  await expect.poll(() => page.evaluate(() => (window as any).__levelingAudio.paused)).toBe(true);
   await expect(modal.getByRole('button', { name: 'Valider et appliquer' })).toBeDisabled();
   await modal.getByRole('button', { name: 'Préparer la préécoute' }).click();
   await page.evaluate(() => (window as any).__completeLeveling('VOLUME_LEVELING_SILENT'));
@@ -197,4 +205,24 @@ test('right click inside a larger muted region retains the smaller selected rang
   await modal.getByRole('button', { name: 'Valider et appliquer' }).click();
   await expect(modal).not.toBeVisible();
   expect((await saved(page)).tracks).toEqual(before.tracks);
+});
+test('closing a completed preview stops its detached audio without applying it', async ({
+  page,
+}) => {
+  const modal = await open(page),
+    before = await saved(page);
+  await modal.getByRole('button', { name: 'Préparer la préécoute' }).click();
+  await page.evaluate(() => (window as any).__completeLeveling());
+  const audio = modal.locator('audio').last();
+  await expect(audio).toBeVisible();
+  await audio.evaluate((e: HTMLAudioElement) => {
+    (window as any).__closedLevelingAudio = e;
+    return e.play();
+  });
+  await modal.getByRole('button', { name: 'Fermer', exact: true }).click();
+  await expect(modal).not.toBeVisible();
+  await expect
+    .poll(() => page.evaluate(() => (window as any).__closedLevelingAudio.paused))
+    .toBe(true);
+  expect((await saved(page)).generations).toEqual(before.generations);
 });
