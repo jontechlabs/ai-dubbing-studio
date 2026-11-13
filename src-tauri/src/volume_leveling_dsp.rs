@@ -38,7 +38,9 @@ pub fn read(path: &Path, frames: u64) -> Result<Vec<i16>, String> {
             let mut bytes = vec![0; size as usize];
             file.read_exact(&mut bytes).map_err(io_error)?;
             return Ok(bytes
-                .chunks_exact(2)
+                .as_chunks::<2>()
+                .0
+                .iter()
                 .map(|v| i16::from_le_bytes([v[0], v[1]]))
                 .collect());
         }
@@ -128,7 +130,7 @@ pub fn process(
         1.0 + (smooth - 1.0) * edge
     };
     let mut peak: f64 = 0.0;
-    for (i, frame) in samples.chunks_exact(2).enumerate() {
+    for (i, frame) in samples.as_chunks::<2>().0.iter().enumerate() {
         if i.is_multiple_of(RATE) && cancel.load(Ordering::Relaxed) {
             return Err("CANCELLED".into());
         }
@@ -138,7 +140,7 @@ pub fn process(
     // One common safety attenuation preserves the waveform and stereo image.
     let safety = if peak > CEILING { CEILING / peak } else { 1.0 };
     let mut output = Vec::with_capacity(samples.len());
-    for (i, frame) in samples.chunks_exact(2).enumerate() {
+    for (i, frame) in samples.as_chunks::<2>().0.iter().enumerate() {
         if i.is_multiple_of(RATE) && cancel.load(Ordering::Relaxed) {
             return Err("CANCELLED".into());
         }

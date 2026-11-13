@@ -27,7 +27,7 @@ fn low_and_high_even_out_real_sample_levels_keep_silence_stereo_and_duration() {
         assert_eq!(output.len(), input.len());
         assert!((rms(&output, 48000, 72000) / rms(&output, 144000, 168000) - 1.0).abs() < 0.01);
         assert!(output[192000 * 2..].iter().all(|s| *s == 0));
-        assert!(output.chunks_exact(2).all(|p| p[0] == -p[1]));
+        assert!(output.as_chunks::<2>().0.iter().all(|p| p[0] == -p[1]));
         assert!(stats.target_db.is_finite() && stats.active_windows == 8);
         if mode == "low" {
             assert!(output
@@ -48,7 +48,7 @@ fn safety_is_linked_attenuation_and_boost_is_bounded() {
     assert!(output
         .iter()
         .all(|v| f64::from(*v).abs() / 32768.0 <= 0.98004));
-    assert!(output.chunks_exact(2).all(|p| p[0] == -p[1]));
+    assert!(output.as_chunks::<2>().0.iter().all(|p| p[0] == -p[1]));
 }
 #[test]
 fn silence_noise_invalid_modes_and_cancel_never_create_fake_audio() {
