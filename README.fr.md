@@ -1,5 +1,9 @@
 # AI Dubbing Studio
 
+## v0.48.0 — Égaliser une piste entière
+
+Clic droit sur une piste → **Égaliser toute la piste…**, puis comparer Avant / Après et valider. Les sélections dépassent également 120 secondes, jusqu’à 24 h. Analyse par blocs avec une cible globale, lecture par fragments de 30 s, conservation des silences et des essais, Ctrl+Z. Format 28 pour les longues égalisations. [Guide et capture](docs/WHOLE-TRACK-LEVELING.md).
+
 ## v0.47.0 — Égaliser le volume d’une sélection audio
 
 Clic droit sur une zone sélectionnée → **Égaliser le volume…**. Aligner les passages sonores sur le plus bas ou le plus haut, préécouter avant/après puis valider. Disponible aussi sur Doublage ; la sélection disparaît après application. Silences, durée, réglages du mix et essais conservés. Remplacement annulable ; format 27 à la validation. [Guide et capture](docs/VOLUME-LEVELING.md).

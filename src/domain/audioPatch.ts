@@ -118,7 +118,12 @@ export function validateAudioPatches(p: Project) {
       e.startMs < 0 ||
       e.endMs > 86400000 ||
       e.endMs - e.startMs < 10 ||
-      e.endMs - e.startMs > (['effects', 'leveling'].includes(e.operation) ? 120000 : 60000) ||
+      e.endMs - e.startMs >
+        (e.operation === 'leveling' && p.formatVersion >= 28
+          ? 86400000
+          : ['effects', 'leveling'].includes(e.operation)
+            ? 120000
+            : 60000) ||
       !['copy', 'move', 'swap', 'effects', 'separation', 'leveling'].includes(e.operation) ||
       (e.operation === 'leveling' &&
         (p.formatVersion < 27 || e.mode !== 'replace' || e.trackId !== e.sourceTrackId)) ||

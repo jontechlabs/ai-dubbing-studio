@@ -10,6 +10,184 @@ fn tone(amplitudes: &[f64]) -> Vec<i16> {
     }
     audio
 }
+
+#[test]
+fn bounded_passes_keep_one_global_target_past_two_minutes_and_cancel_during_analysis() {
+    use std::io::{BufWriter, Write};
+    let dir = tempfile::tempdir().unwrap();
+    let input = dir.path().join("long.wav");
+    let output = dir.path().join("result.wav");
+    let duration = 130250;
+    let mut file = BufWriter::new(std::fs::File::create(&input).unwrap());
+    dsp::header(&mut file, duration * 48).unwrap();
+    let quiet = tone(&[0.05]);
+    let loud = tone(&[0.4]);
+    for block in 0..65 {
+        for sample in if block < 30 { &quiet } else { &loud } {
+            file.write_all(&sample.to_le_bytes()).unwrap();
+        }
+    }
+    file.write_all(&vec![0; 250 * 192]).unwrap();
+    file.flush().unwrap();
+    drop(file);
+    let flag = AtomicBool::new(false);
+    let mut values = vec![];
+    for mode in ["low", "high"] {
+        let stats = dsp::process_file(&input, &output, duration * 48, mode, &flag, |v| {
+            values.push(v)
+        })
+        .unwrap();
+        assert!(stats.target_db.is_finite());
+        assert_eq!(
+            crate::audio_files::wav_frames(&output).unwrap(),
+            duration * 48
+        );
+        assert!(values.windows(2).all(|v| v[0] <= v[1]));
+        assert_eq!(values.last(), Some(&1.0));
+        values.clear();
+        let a = dir.path().join("a.wav");
+        let b = dir.path().join("b.wav");
+        let silence = dir.path().join("silence.wav");
+        dsp::copy_range(&output, &a, 1000, 2000).unwrap();
+        dsp::copy_range(&output, &b, 125000, 126000).unwrap();
+        let a = dsp::read(&a, 48000).unwrap();
+        let b = dsp::read(&b, 48000).unwrap();
+        assert!((rms(&a, 0, 48000) / rms(&b, 0, 48000) - 1.0).abs() < 0.01);
+        dsp::copy_range(&output, &silence, 130000, 130250).unwrap();
+        assert!(dsp::read(&silence, 12000).unwrap().iter().all(|v| *v == 0));
+    }
+    assert_eq!(
+        dsp::process_file(&input, &output, duration * 48, "high", &flag, |v| {
+            if v > 0.4 {
+                flag.store(true, Ordering::Relaxed);
+            }
+        })
+        .unwrap_err(),
+        "CANCELLED"
+    );
+}
+
+#[test]
+fn rf64_sizes_are_64_bit_and_small_rf64_ranges_are_exact_pcm() {
+    use std::io::Write;
+    let frames = u64::from(u32::MAX) / 4 + 100;
+    let mut header = vec![];
+    dsp::header(&mut header, frames).unwrap();
+    assert_eq!(&header[..4], b"RF64");
+    assert_eq!(header.len(), 80);
+    assert_eq!(
+        u64::from_le_bytes(header[28..36].try_into().unwrap()),
+        frames * 4
+    );
+    assert_eq!(
+        u64::from_le_bytes(header[36..44].try_into().unwrap()),
+        frames
+    );
+    // Exercise the same parser without allocating or writing a multi-GB fixture.
+    let data = tone(&[0.2]);
+    let frames = (data.len() / 2) as u64;
+    header[20..28].copy_from_slice(&(frames * 4 + 72).to_le_bytes());
+    header[28..36].copy_from_slice(&(frames * 4).to_le_bytes());
+    header[36..44].copy_from_slice(&frames.to_le_bytes());
+    let dir = tempfile::tempdir().unwrap();
+    let input = dir.path().join("rf64.wav");
+    let output = dir.path().join("part.wav");
+    let mut file = std::io::BufWriter::new(std::fs::File::create(&input).unwrap());
+    file.write_all(&header).unwrap();
+    for value in &data {
+        file.write_all(&value.to_le_bytes()).unwrap();
+    }
+    file.flush().unwrap();
+    drop(file);
+    assert_eq!(crate::audio_files::wav_frames(&input).unwrap(), frames);
+    dsp::copy_range(&input, &output, 100, 1100).unwrap();
+    assert_eq!(dsp::read(&output, 48000).unwrap(), data[9600..105600]);
+    assert!(dsp::copy_range(&input, &output, 0, u64::MAX).is_err());
+}
+
+#[tokio::test]
+async fn whole_track_apply_reopen_and_random_access_do_not_change_sources() {
+    let (_dir, root, mut p) = crate::mix::tests::fixture().await;
+    p.media.as_mut().unwrap().info.duration_ms = 130250;
+    let track = p.tracks.iter_mut().find(|t| t.id == "music").unwrap();
+    track.duration_ms = Some(130250);
+    // FFmpeg generates a long fixture without retaining the track in test memory.
+    crate::mix::tests::ffmpeg(
+        &[
+            "-f",
+            "lavfi",
+            "-i",
+            "aevalsrc=if(lt(t\\,60)\\,0.05\\,0.4):s=48000:d=130.25",
+            "-ac",
+            "2",
+            "-c:a",
+            "pcm_s16le",
+        ],
+        &root.join("stems/music.wav"),
+    )
+    .await;
+    let movie = std::fs::read(root.join("media/source.mkv")).unwrap();
+    let app = tauri::test::mock_app();
+    let core = crate::mix::tests::core(&root, p.clone());
+    let mut o = options(&p, "music");
+    o.start_ms = 0;
+    o.end_ms = 130250;
+    let id = enqueue(
+        core.clone(),
+        app.handle().clone(),
+        p.id.clone(),
+        p.revision,
+        o.clone(),
+    )
+    .unwrap();
+    assert_eq!(finish(&core, &id).await.status, "succeeded");
+    assert_eq!(
+        core.session
+            .lock()
+            .unwrap()
+            .as_ref()
+            .unwrap()
+            .project
+            .generations,
+        p.generations
+    );
+    let next = apply(&core, app.handle(), &id, &p.id, p.revision).unwrap();
+    assert_eq!(next.format_version, 28);
+    let layer = next.generations.last().unwrap();
+    let patch = layer["id"].as_str().unwrap();
+    for (start, end) in [
+        (0, 30000),
+        (30000, 60000),
+        (120000, 130250),
+        (120000, 130250),
+    ] {
+        let path = audio_patch::segment_path(&core, patch, start, end).unwrap();
+        assert_eq!(
+            crate::audio_files::wav_frames(std::path::Path::new(&path)).unwrap(),
+            (end - start) * 48
+        );
+    }
+    assert!(audio_patch::segment_path(&core, patch, 0, 30001).is_err());
+    assert!(audio_patch::segment_path(&core, patch, 130000, 131000).is_err());
+    assert_eq!(project::load(&root).unwrap().generations, next.generations);
+    assert_eq!(std::fs::read(root.join("media/source.mkv")).unwrap(), movie);
+    assert_eq!(
+        core.session
+            .lock()
+            .unwrap()
+            .as_mut()
+            .unwrap()
+            .history(false)
+            .unwrap()
+            .generations,
+        p.generations
+    );
+    let mut bad = next.clone();
+    bad.format_version = 27;
+    assert!(bad.validate().is_err());
+    o.end_ms = 130251;
+    assert!(validate(&p, &o).is_err());
+}
 fn rms(data: &[i16], start: usize, end: usize) -> f64 {
     (data[start * 2..end * 2]
         .iter()
@@ -140,13 +318,13 @@ async fn preview_apply_undo_and_reopen_keep_sources_and_every_take() {
         let details = result(&core, &id).unwrap();
         assert!(details["stats"]["targetDb"].as_f64().unwrap().is_finite());
         for role in ["original", "leveled"] {
-            let file = path(&core, app.handle(), &id, role).unwrap();
+            let file = path(&core, app.handle(), &id, role, false).unwrap();
             assert_eq!(
                 crate::audio_files::wav_frames(std::path::Path::new(&file)).unwrap(),
                 48000
             );
         }
-        assert!(path(&core, app.handle(), &id, "../../project.json").is_err());
+        assert!(path(&core, app.handle(), &id, "../../project.json", false).is_err());
         let next = apply(&core, app.handle(), &id, &p.id, p.revision).unwrap();
         next.validate().unwrap();
         assert_eq!(next.format_version, 27);

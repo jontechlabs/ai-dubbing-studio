@@ -634,6 +634,25 @@ export const Timeline = memo(function Timeline({
                           },
                         ]
                       : []),
+                    {
+                      label: t('leveling.wholeTrack'),
+                      disabled:
+                        busy ||
+                        Math.min(
+                          track.durationMs ?? project.media.durationMs,
+                          project.media.durationMs,
+                        ) < 100,
+                      run: () =>
+                        onVolumeLeveling({
+                          mediaId: project.media!.id,
+                          trackId: track.id,
+                          startMs: 0,
+                          endMs: Math.min(
+                            track.durationMs ?? project.media!.durationMs,
+                            project.media!.durationMs,
+                          ),
+                        }),
+                    },
                     ...(selection
                       ? [
                           {
@@ -654,7 +673,7 @@ export const Timeline = memo(function Timeline({
                             disabled:
                               busy ||
                               selection.endMs - selection.startMs < 100 ||
-                              selection.endMs - selection.startMs > 120000,
+                              selection.endMs - selection.startMs > 86400000,
                             run: () => onVolumeLeveling(selection),
                           },
                           ...audioTracks(project)

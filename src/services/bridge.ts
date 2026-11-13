@@ -151,7 +151,7 @@ export function volumeLevelingResult(id: string) {
   });
 }
 export async function volumeLevelingUrl(id: string, role: 'original' | 'leveled') {
-  return convertFileSrc(await invoke<string>('volume_leveling_path', { id, role }));
+  return convertFileSrc(await invoke<string>('volume_leveling_path', { id, role, preview: true }));
 }
 export function applyVolumeLeveling(project: Project, id: string) {
   return invoke<Project>('apply_volume_leveling', {
@@ -166,8 +166,8 @@ export function discardVolumeLeveling(id: string) {
 export function transferAudio(options: import('../domain/audioPatch').TransferOptions) {
   return invoke<string>('transfer_audio', { options });
 }
-export async function audioPatchUrl(id: string) {
-  return convertFileSrc(await invoke<string>('audio_patch_path', { id }));
+export async function audioPatchUrl(id: string, startMs?: number, endMs?: number) {
+  return convertFileSrc(await invoke<string>('audio_patch_path', { id, startMs, endMs }));
 }
 export interface InpaintStatus {
   modelId?: import('../domain/inpaint').InpaintModelId;

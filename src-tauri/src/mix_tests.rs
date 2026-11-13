@@ -858,7 +858,7 @@ pub(crate) fn tool(name: &str) -> PathBuf {
         PathBuf::from(name)
     }
 }
-async fn ffmpeg(args: &[&str], output: &Path) {
+pub(crate) async fn ffmpeg(args: &[&str], output: &Path) {
     let result = media::command(&tool("ffmpeg"))
         .args([
             "-hide_banner",

@@ -205,7 +205,8 @@
     "speakerSeparationLoad": "Chargement du séparateur de voix",
     "speakerSeparationRun": "Isolation des voix",
     "levelingPrepare": "Préparation de la sélection",
-    "levelingAnalyze": "Analyse et homogénéisation des niveaux"
+    "levelingAnalyze": "Analyse et homogénéisation des niveaux",
+    "levelingPreview": "Préparation des préécoutes longue durée"
   },
   "shortcuts": "Espace : lecture · J/K/L : transport · O : original · Ctrl+S : sauvegarde · Ctrl+Z/Y : annuler/rétablir",
   "errors": {
@@ -438,7 +439,7 @@
     "INVALID_COVER_TIME": "Choisissez un instant situé dans la vidéo.",
     "MICROPHONE_PENDING": "Enregistrez ou supprimez la prise microphone avant de quitter ce projet.",
     "REVIEW_CHANGED": "La réplique ou son essai a changé pendant cette confirmation. Fermez cette fenêtre et recommencez la validation.",
-    "VOLUME_LEVELING_OPTIONS": "Sélectionnez une piste du média actuel et une zone de 0,1 à 120 secondes.",
+    "VOLUME_LEVELING_OPTIONS": "Choisissez une piste du média actuel et une zone comprise entre 0,1 seconde et la fin de la piste (24 h maximum).",
     "VOLUME_LEVELING_SILENT": "Aucun passage assez audible dans cette sélection. Les silences et signaux sous −60 dBFS RMS ne sont pas amplifiés.",
     "VOLUME_LEVELING_NOT_READY": "La préécoute est indisponible, annulée ou déjà appliquée. Préparez-la à nouveau.",
     "VOLUME_LEVELING_INVALID_AUDIO": "Le son de la sélection est incomplet ou invalide. Aucun changement n’a été appliqué."
@@ -1965,7 +1966,9 @@
     "measurement": "Niveaux actifs : {{quiet}} à {{loud}} dBFS RMS · cible : {{target}} dBFS RMS",
     "limited": "La protection contre la saturation ou la limite de gain réduit l’alignement demandé.",
     "stale": "Le projet a changé depuis la préparation. Préparez une nouvelle préécoute avant de valider.",
-    "beforeLevels": "Préécoute avant les volumes et zones muettes du mix. Ces réglages restent conservés après application. Analyse par fenêtres de 0,5 s, transitions lissées. Sélection de 0,1 à 120 secondes.",
-    "apply": "Valider et appliquer"
+    "beforeLevels": "Préécoute avant les volumes et zones muettes du mix. Ces réglages restent conservés après application. Analyse par fenêtres de 0,5 s, transitions lissées. Sélection ou piste entière, de 0,1 s à 24 h ; traitement par blocs et lecture progressive.",
+    "apply": "Valider et appliquer",
+    "wholeTrack": "Égaliser toute la piste…",
+    "applying": "Application en cours…"
   }
 }

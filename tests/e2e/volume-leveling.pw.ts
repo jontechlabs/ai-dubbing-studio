@@ -21,6 +21,66 @@ test.beforeEach(async ({ page }) => {
   });
 });
 const saved = (page: Page) => page.evaluate(() => (window as any).__getMockProject());
+
+test('whole-track levelling works without a selection and remains an explicit reversible edit', async ({
+  page,
+}) => {
+  await page.evaluate(() => (window as any).__longFilm());
+  const row = page.locator('.timeline-track.audio[data-track-id="original"]');
+  await row.click({ button: 'right', position: { x: 20, y: 10 } });
+  await page.getByRole('menuitem', { name: 'Égaliser toute la piste…', exact: true }).click();
+  const modal = page.getByRole('dialog', {
+    name: 'Égaliser le volume de la sélection',
+    exact: true,
+  });
+  const before = await saved(page);
+  await modal.getByRole('button', { name: 'Préparer la préécoute', exact: true }).click();
+  await modal.screenshot({ path: 'docs/screenshots/whole-track-leveling-fr.png' });
+  await page.evaluate(() => (window as any).__completeLeveling());
+  await expect(modal.locator('audio')).toHaveCount(2);
+  expect((await saved(page)).generations).toEqual(before.generations);
+  await modal.getByRole('button', { name: 'Valider et appliquer', exact: true }).click();
+  const after = await saved(page);
+  expect(after.generations.at(-1)).toMatchObject({
+    operation: 'leveling',
+    trackId: 'original',
+    startMs: 0,
+    endMs: 7200000,
+  });
+  expect(after.formatVersion).toBe(28);
+  expect(after.tracks).toEqual(before.tracks);
+  await page.getByRole('button', { name: 'Activer Audio original', exact: true }).click();
+  await page.getByRole('button', { name: 'Lecture', exact: true }).click();
+  await expect
+    .poll(() => page.evaluate(() => (window as any).__patchReads ?? []))
+    .toEqual(expect.arrayContaining([expect.objectContaining({ startMs: 0, endMs: 30000 })]));
+  expect(
+    await page.evaluate(() =>
+      (window as any).__patchReads.every((r: any) => r.endMs - r.startMs <= 30000),
+    ),
+  ).toBe(true);
+});
+
+test('a selection longer than 120 seconds can be previewed and abandoned without edits', async ({
+  page,
+}) => {
+  await page.evaluate(() => (window as any).__longFilm());
+  await select(page, 'original', 1000, 181000);
+  await page.getByRole('menuitem', { name: 'Égaliser le volume…', exact: true }).click();
+  const modal = page.getByRole('dialog', {
+    name: 'Égaliser le volume de la sélection',
+    exact: true,
+  });
+  const before = await saved(page);
+  await modal.getByRole('button', { name: 'Préparer la préécoute', exact: true }).click();
+  await page.evaluate(() => (window as any).__completeLeveling());
+  await expect(modal.locator('audio')).toHaveCount(2);
+  await modal.getByRole('button', { name: 'Annuler', exact: true }).click();
+  expect((await saved(page)).generations).toEqual(before.generations);
+  await expect(
+    page.getByRole('group', { name: 'Réglage de la sélection audio', exact: true }),
+  ).toBeVisible();
+});
 async function select(page: Page, id = 'speech', start = 1200, end = 3000) {
   const tool = page.getByRole('button', {
     name: 'Sélectionner une zone audio (ou Maj + glisser)',
@@ -30,14 +90,17 @@ async function select(page: Page, id = 'speech', start = 1200, end = 3000) {
   const row = page.locator(`.timeline-track.audio[data-track-id="${id}"]`);
   await row.scrollIntoViewIfNeeded();
   const b = (await row.boundingBox())!;
-  await page.mouse.move(b.x + b.width * 0.1, b.y + b.height / 2);
+  const viewport = (await page.locator('.timeline-scroll').boundingBox())!;
+  const x = Math.max(viewport.x, b.x) + 20;
+  await page.mouse.move(x, b.y + b.height / 2);
   await page.mouse.down();
-  await page.mouse.move(b.x + b.width * 0.2, b.y + b.height / 2);
+  await page.mouse.move(x + 30, b.y + b.height / 2);
   await page.mouse.up();
   const controls = page.getByRole('group', { name: 'Réglage de la sélection audio', exact: true });
   for (const [name, v] of [
-    ['Début de la zone audio (ms)', start],
+    ['Début de la zone audio (ms)', 0],
     ['Fin de la zone audio (ms)', end],
+    ['Début de la zone audio (ms)', start],
   ] as const) {
     const input = controls.getByRole('spinbutton', { name, exact: true });
     await input.fill(String(v));

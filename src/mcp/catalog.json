@@ -1425,7 +1425,11 @@
       "description": "audio patch path. Uses the current desktop session. Local file paths must be absolute; long operations return job IDs. Existing native validation applies.",
       "inputSchema": {
         "type": "object",
-        "properties": { "id": { "type": "string" } },
+        "properties": {
+          "id": { "type": "string" },
+          "startMs": { "anyOf": [{ "type": "integer", "minimum": 0 }, { "type": "null" }] },
+          "endMs": { "anyOf": [{ "type": "integer", "minimum": 0 }, { "type": "null" }] }
+        },
         "required": ["id"],
         "additionalProperties": false
       },
@@ -3958,7 +3962,7 @@
     {
       "name": "studio_prepare_volume_leveling",
       "command": "prepare_volume_leveling",
-      "description": "Prepare an immutable local RMS volume-levelling preview for a 100 ms–120 s selection on any audio track, including dubbing. mode low attenuates louder passages to the quietest active half-second window; high raises quieter passages to the loudest. Silence is excluded, boost is capped at 18 dB and sample peaks are protected. Input includes existing patches before mixer gains/mutes. Returns a job ID; poll jobs then inspect volume_leveling_result and preview original/leveled audio through volume_leveling_path. No project edit until apply.",
+      "description": "Prepare an immutable local RMS volume-levelling preview for a 100 ms–24 h selection or an entire track on any audio track, including dubbing. mode low attenuates louder passages to the quietest active half-second window; high raises quieter passages to the loudest. Silence is excluded, boost is capped at 18 dB and sample peaks are protected. Input includes existing patches before mixer gains/mutes. Returns a job ID; poll jobs then inspect volume_leveling_result and preview original/leveled audio through volume_leveling_path. No project edit until apply.",
       "inputSchema": {
         "type": "object",
         "properties": {
@@ -4017,7 +4021,11 @@
       "description": "Resolve original or leveled preview WAV for the current completed levelling job. Read-only, before mixer listening controls.",
       "inputSchema": {
         "type": "object",
-        "properties": { "id": { "type": "string" }, "role": { "type": "string" } },
+        "properties": {
+          "id": { "type": "string" },
+          "role": { "type": "string" },
+          "preview": { "anyOf": [{ "type": "boolean" }, { "type": "null" }] }
+        },
         "required": ["id", "role"],
         "additionalProperties": false
       },

@@ -24,19 +24,29 @@ pub(crate) fn pcm_frames(
     let length = file.metadata().map_err(io_error)?.len();
     let mut header = [0_u8; 12];
     file.read_exact(&mut header).map_err(io_error)?;
-    if &header[..4] != b"RIFF" || &header[8..] != b"WAVE" {
+    if (&header[..4] != b"RIFF" && &header[..4] != b"RF64") || &header[8..] != b"WAVE" {
         return Err(error.into());
     }
     let mut valid = false;
+    let mut extended_size = None;
     loop {
         let mut chunk = [0_u8; 8];
         if file.read_exact(&mut chunk).is_err() {
             break;
         }
-        let size = u32::from_le_bytes(chunk[4..].try_into().unwrap()) as u64;
+        let mut size = u32::from_le_bytes(chunk[4..].try_into().unwrap()) as u64;
+        if &chunk[..4] == b"data" && size == u64::from(u32::MAX) {
+            size = extended_size.ok_or(error)?;
+        }
         let start = file.stream_position().map_err(io_error)?;
-        if start + size > length {
+        let end = start.checked_add(size).ok_or(error)?;
+        if end > length {
             return Err(error.into());
+        }
+        if &chunk[..4] == b"ds64" && size >= 28 && &header[..4] == b"RF64" {
+            let mut sizes = [0_u8; 24];
+            file.read_exact(&mut sizes).map_err(io_error)?;
+            extended_size = Some(u64::from_le_bytes(sizes[8..16].try_into().unwrap()));
         }
         if &chunk[..4] == b"fmt " && size >= 16 {
             let mut format = [0_u8; 16];
@@ -53,7 +63,7 @@ pub(crate) fn pcm_frames(
             }
             return Err(error.into());
         }
-        file.seek(SeekFrom::Start(start + size + size % 2))
+        file.seek(SeekFrom::Start(end.checked_add(size % 2).ok_or(error)?))
             .map_err(io_error)?;
     }
     Err(error.into())

@@ -1,5 +1,9 @@
 # AI Dubbing Studio
 
+## v0.48.0 — Level an entire audio track
+
+Right-click an audio track → **Level the entire track…**, compare Before / After, then explicitly apply. Selections also extend beyond 120 seconds, up to 24 h. Bounded-memory analysis with one global target, 30-second playback chunks, preserved silence and takes, undo. Long levelling uses project format 28. [Guide and screenshot](docs/WHOLE-TRACK-LEVELING.md).
+
 ## v0.47.0 — Level volume within an audio selection
 
 Right-click a selected audio range → **Level selection volume…**. Match the quietest or loudest audible passage, compare before/after, then explicitly apply. Works on source tracks and Dubbing; clears the selection on success. Silence, timing, saved mixer controls and existing takes are preserved. Undoable replacement layers; project format 27 on apply. [Guide and screenshot](docs/VOLUME-LEVELING.md).
@@ -221,9 +225,9 @@ Audio regions with independent silence and volume, timeline range selection, fas
 
 | Package | Purpose |
 | --- | --- |
-| [Windows x64 setup](https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.47.0/AI-Dubbing-Studio-0.47.0-Setup.exe) | NSIS installer for the current user, with English/French installer interface |
-| [Portable ZIP](https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.47.0/AI-Dubbing-Studio-Windows-Portable.zip) | Extract the whole folder and launch `AI Dubbing Studio.exe` |
-| [SHA-256 checksums](https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.47.0/SHA256SUMS.txt) | Verify the setup and ZIP downloads |
+| [Windows x64 setup](https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.48.0/AI-Dubbing-Studio-0.48.0-Setup.exe) | NSIS installer for the current user, with English/French installer interface |
+| [Portable ZIP](https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.48.0/AI-Dubbing-Studio-Windows-Portable.zip) | Extract the whole folder and launch `AI Dubbing Studio.exe` |
+| [SHA-256 checksums](https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.48.0/SHA256SUMS.txt) | Verify the setup and ZIP downloads |
 
 Target: **Windows 10/11 x64**, with **Microsoft Edge WebView2 Runtime**. FFmpeg and FFprobe are included. Python, CUDA and AI model downloads are not required for editing and playback. Installation may need Internet access if WebView2 is missing; local project editing does not require a cloud account.
 

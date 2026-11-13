@@ -205,7 +205,8 @@
     "speakerSeparationLoad": "Loading voice separator",
     "speakerSeparationRun": "Separating voices",
     "levelingPrepare": "Preparing selection",
-    "levelingAnalyze": "Analysing and levelling volume"
+    "levelingAnalyze": "Analysing and levelling volume",
+    "levelingPreview": "Preparing long-form previews"
   },
   "shortcuts": "Space: play · J/K/L: transport · O: original · Ctrl+S: save · Ctrl+Z/Y: undo/redo",
   "errors": {
@@ -438,7 +439,7 @@
     "INVALID_COVER_TIME": "Choose a position within the video.",
     "MICROPHONE_PENDING": "Save or discard the microphone take before leaving this project.",
     "REVIEW_CHANGED": "The dialogue or its take changed during this confirmation. Close this window and start the review again.",
-    "VOLUME_LEVELING_OPTIONS": "Select a current-media audio track and a range of 0.1–120 seconds.",
+    "VOLUME_LEVELING_OPTIONS": "Choose a current-media audio track and a range from 0.1 second to the end of the track (24 h maximum).",
     "VOLUME_LEVELING_SILENT": "No sufficiently audible passage in this selection. Silence and signals below −60 dBFS RMS are not amplified.",
     "VOLUME_LEVELING_NOT_READY": "The preview is unavailable, cancelled or already applied. Prepare it again.",
     "VOLUME_LEVELING_INVALID_AUDIO": "Selection audio is incomplete or invalid. No changes were applied."
@@ -1965,7 +1966,9 @@
     "measurement": "Active levels: {{quiet}} to {{loud}} dBFS RMS · target: {{target}} dBFS RMS",
     "limited": "Peak protection or the boost limit reduces the requested levelling.",
     "stale": "The project has changed since preparation. Prepare a new preview before applying.",
-    "beforeLevels": "Preview is before mixer volume and muted regions. These controls are preserved on apply. Half-second analysis windows, smoothed transitions. Select 0.1–120 seconds.",
-    "apply": "Confirm and apply"
+    "beforeLevels": "Preview before mixer volumes and muted regions, which are kept after application. Half-second analysis windows, smoothed transitions. Selection or entire track, 0.1 s–24 h; block processing and progressive playback.",
+    "apply": "Confirm and apply",
+    "wholeTrack": "Level the entire track…",
+    "applying": "Applying…"
   }
 }

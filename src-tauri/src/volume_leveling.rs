@@ -59,7 +59,7 @@ fn validate(p: &Project, o: &Options) -> Result<(), String> {
     if media.id != o.media_id
         || !["low", "high"].contains(&o.mode.as_str())
         || o.end_ms <= o.start_ms
-        || !(100..=120000).contains(&(o.end_ms - o.start_ms))
+        || !(100..=dsp::MAX_MS).contains(&(o.end_ms - o.start_ms))
         || o.end_ms > media.info.duration_ms
         || o.end_ms > 86_400_000
         || o.end_ms > track.duration_ms.unwrap_or(media.info.duration_ms)
@@ -109,7 +109,7 @@ pub fn enqueue<R: tauri::Runtime>(
         validate(&s.project, &options)?;
         #[cfg(windows)]
         if crate::voice_space::available(&s.root)?
-            < (options.end_ms - options.start_ms) * 768 + 32 * 1024 * 1024
+            < (options.end_ms - options.start_ms) * 1152 + 32 * 1024 * 1024
         {
             return Err("AUDIO_EFFECTS_DISK_REQUIRED".into());
         }
@@ -173,14 +173,58 @@ async fn execute<R: tauri::Runtime>(
     let frames = (r.options.end_ms - r.options.start_ms) * 48;
     let mode = r.options.mode.clone();
     let cancel = flag.clone();
+    let job_core = core.clone();
+    let job_app = app.clone();
+    let job_key = key.to_owned();
     let stats = tauri::async_runtime::spawn_blocking(move || {
-        let data = dsp::read(&a, frames)?;
-        let (audio, stats) = dsp::process(&data, &mode, &cancel)?;
-        dsp::write(&b, &audio)?;
-        Ok::<_, String>(stats)
+        dsp::process_file(&a, &b, frames, &mode, &cancel, |value| {
+            jobs::update(&job_core, &job_app, &job_key, |j| j.progress = Some(value))
+        })
     })
     .await
     .map_err(io_error)??;
+    // Chromium cannot reliably seek RF64. Lossless FLAC previews cover the same
+    // full range; the canonical result and applied patch remain exact PCM WAV/RF64.
+    if frames * 4 > u64::from(u32::MAX) - 36 {
+        jobs::update(core, app, key, |j| {
+            j.stage = "levelingPreview".into();
+            j.progress = Some(0.0);
+        });
+        for role in ["original", "leveled"] {
+            let args = vec![
+                "-nostdin".into(),
+                "-hide_banner".into(),
+                "-v".into(),
+                "warning".into(),
+                "-i".into(),
+                temporary
+                    .path()
+                    .join(format!("{role}.wav"))
+                    .to_string_lossy()
+                    .into_owned(),
+                "-c:a".into(),
+                "flac".into(),
+                "-compression_level".into(),
+                "0".into(),
+                "-y".into(),
+                temporary
+                    .path()
+                    .join(format!("{role}.flac"))
+                    .to_string_lossy()
+                    .into_owned(),
+            ];
+            mix::run(
+                core,
+                app,
+                key,
+                &media::binary(app, "ffmpeg")?,
+                &args,
+                r.options.end_ms - r.options.start_ms,
+                flag,
+            )
+            .await?;
+        }
+    }
     current(core, r)?;
     project::atomic_write(
         &temporary.path().join("result.json"),
@@ -282,6 +326,8 @@ async fn extract<R: tauri::Runtime>(
         "48000".into(),
         "-c:a".into(),
         "pcm_s16le".into(),
+        "-rf64".into(),
+        "auto".into(),
         "-f".into(),
         "wav".into(),
         "-y".into(),
@@ -317,13 +363,23 @@ pub fn path<R: tauri::Runtime>(
     app: &tauri::AppHandle<R>,
     id: &str,
     role: &str,
+    preview: bool,
 ) -> Result<String, String> {
     result(core, id)?;
     let r = request(core, id)?;
     if !["original", "leveled"].contains(&role) {
         return Err("VOLUME_LEVELING_OPTIONS".into());
     }
-    let path = project::asset(&r.root, &format!("cache/volume-leveling/{id}/{role}.wav"))?;
+    let extension =
+        if preview && r.options.end_ms - r.options.start_ms > (u64::from(u32::MAX) - 36) / 192 {
+            "flac"
+        } else {
+            "wav"
+        };
+    let path = project::asset(
+        &r.root,
+        &format!("cache/volume-leveling/{id}/{role}.{extension}"),
+    )?;
     app.asset_protocol_scope()
         .allow_file(&path)
         .map_err(io_error)?;
@@ -347,6 +403,12 @@ pub fn apply<R: tauri::Runtime>(
     let source = project::asset(&r.root, &format!("cache/volume-leveling/{id}/leveled.wav"))?;
     if crate::audio_files::wav_frames(&source)? != (r.options.end_ms - r.options.start_ms) * 48 {
         return Err("VOLUME_LEVELING_INVALID_AUDIO".into());
+    }
+    #[cfg(windows)]
+    if crate::voice_space::available(&r.root)?
+        < (r.options.end_ms - r.options.start_ms) * 192 + 32 * 1024 * 1024
+    {
+        return Err("AUDIO_EFFECTS_DISK_REQUIRED".into());
     }
     let patch_id = crate::domain::id();
     let relative = format!("stems/patch-{patch_id}.wav");
@@ -375,7 +437,13 @@ pub fn apply<R: tauri::Runtime>(
             return Err("STALE_REVISION".into());
         }
         let mut next = s.project.clone();
-        next.format_version = next.format_version.max(27);
+        next.format_version =
+            next.format_version
+                .max(if r.options.end_ms - r.options.start_ms > 120000 {
+                    28
+                } else {
+                    27
+                });
         // The prepared audio already contains these active lower layers.
         // Consolidate full coverage; undo still owns their immutable WAVs.
         let replaced = replaced_layers(&p, &r.options);

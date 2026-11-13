@@ -56,13 +56,18 @@ export async function nativeMock(page: Page, large = false, seededProject?: Proj
   });
   await page.route('**/*.wav', async (route) => {
     const data = wav(
-      /cache\/volume-leveling\//.test(route.request().url())
-        ? 1.8
-        : /reference-source/.test(route.request().url())
-          ? 60
-          : /\/(speech|music|sfx)\.wav$/.test(new URL(route.request().url()).pathname)
-            ? 16
-            : 4,
+      /cache\/patch-segment-/.test(route.request().url())
+        ? (() => {
+            const match = new URL(route.request().url()).pathname.match(/-(\d+)-(\d+)\.wav$/)!;
+            return (Number(match[2]) - Number(match[1])) / 1000;
+          })()
+        : /cache\/volume-leveling\//.test(route.request().url())
+          ? 1.8
+          : /reference-source/.test(route.request().url())
+            ? 60
+            : /\/(speech|music|sfx)\.wav$/.test(new URL(route.request().url()).pathname)
+              ? 16
+              : 4,
     );
     const range = route
       .request()
@@ -1464,7 +1469,12 @@ export async function nativeMock(page: Page, large = false, seededProject?: Proj
             emit('job-changed', job);
             return job.id;
           }
-          if (command === 'audio_patch_path') return `stems/patch-${args.id}.wav`;
+          if (command === 'audio_patch_path') {
+            host.__patchReads = [...(host.__patchReads ?? []), args];
+            return args.startMs === undefined
+              ? `stems/patch-${args.id}.wav`
+              : `cache/patch-segment-${args.id}-${args.startMs}-${args.endMs}.wav`;
+          }
           if (command === 'prepare_volume_leveling') {
             if (args.projectId !== project.id || args.expectedRevision !== project.revision)
               throw Error('STALE_REVISION');
@@ -1544,7 +1554,10 @@ export async function nativeMock(page: Page, large = false, seededProject?: Proj
                       JSON.stringify(host.__levelingDubbingScope ?? []))
                 ),
             );
-            project.formatVersion = 27;
+            project.formatVersion =
+              r.options.endMs - r.options.startMs > 120000
+                ? 28
+                : Math.max(27, project.formatVersion);
             project.generations.push({
               kind: 'audioPatch',
               id: patch,

@@ -46,7 +46,7 @@ const rms = (bytes, start, end) => {
   return Math.sqrt(sum / ((end - start) * 2));
 };
 function fixture() {
-  const b = Buffer.alloc(44 + 5 * 48000 * 4);
+  const b = Buffer.alloc(44 + 130250 * 192);
   b.write('RIFF');
   b.writeUInt32LE(b.length - 8, 4);
   b.write('WAVEfmt ', 8);
@@ -59,8 +59,8 @@ function fixture() {
   b.writeUInt16LE(16, 34);
   b.write('data', 36);
   b.writeUInt32LE(b.length - 44, 40);
-  for (let i = 0; i < 5 * 48000; i++) {
-    const a = i < 2 * 48000 ? 0.05 : i < 4 * 48000 ? 0.4 : 0;
+  for (let i = 0; i < 130250 * 48; i++) {
+    const a = i < 60 * 48000 ? 0.05 : i < 120 * 48000 ? 0.4 : 0;
     const v = Math.round(Math.sin((i / 48000) * 440 * 2 * Math.PI) * 32767 * a);
     b.writeInt16LE(v, 44 + i * 4);
     b.writeInt16LE(-v, 46 + i * 4);
@@ -77,7 +77,7 @@ async function job(id) {
 }
 try {
   await client.connect(transport);
-  assert.equal(client.getServerVersion().version, '0.47.0');
+  assert.equal(client.getServerVersion().version, '0.48.0');
   assert.equal((await client.listTools()).tools.length, 163);
   await until(async () => {
     try {
@@ -111,6 +111,7 @@ try {
     await call('studio_project_patch', {
       context: await context(),
       patches: [
+        { op: 'replace', path: '/media/durationMs', value: 130250 },
         {
           op: 'add',
           path: '/tracks/-',
@@ -120,7 +121,7 @@ try {
             role: 'speech',
             name: 'Level test',
             path: 'stems/level-test.wav',
-            durationMs: 5000,
+            durationMs: 130250,
             sourcePath: p.media.path,
             language: 'ja',
             mute: false,
@@ -138,7 +139,13 @@ try {
       );
     for (const mode of ['low', 'high']) {
       const c = await context();
-      const options = { mediaId: p.media.id, trackId: 'level-test', startMs: 0, endMs: 5000, mode };
+      const options = {
+        mediaId: p.media.id,
+        trackId: 'level-test',
+        startMs: 0,
+        endMs: 130250,
+        mode,
+      };
       const id = await call('studio_prepare_volume_leveling', {
         context: c,
         projectId: c.projectId,
@@ -152,9 +159,9 @@ try {
       const audio = pcm(
         await fs.readFile(await call('studio_volume_leveling_path', { id, role: 'leveled' })),
       );
-      assert.equal(audio.length, 5000 * 192);
-      assert(Math.abs(rms(audio, 48000, 72000) / rms(audio, 144000, 168000) - 1) < 0.02);
-      assert(audio.subarray(192000 * 4).every((v) => v === 0));
+      assert.equal(audio.length, 130250 * 192);
+      assert(Math.abs(rms(audio, 48000, 72000) / rms(audio, 70 * 48000, 71 * 48000) - 1) < 0.02);
+      assert(audio.subarray(120 * 48000 * 4).every((v) => v === 0));
       assert.deepEqual((await call('studio_get_project')).generations, before.generations);
       if (mode === 'low') await call('studio_discard_volume_leveling', { id });
       else
@@ -166,7 +173,7 @@ try {
         });
     }
     p = await call('studio_get_project');
-    assert.equal(p.formatVersion, 27);
+    assert.equal(p.formatVersion, 28);
     assert.equal(p.generations.length, before.generations.length + 1);
     assert.deepEqual(p.tracks, before.tracks);
     assert.deepEqual(p.dialogues, before.dialogues);
@@ -237,16 +244,33 @@ try {
     );
     const layers = p.generations.filter((g) => g.operation === 'leveling');
     assert.equal(layers.length, 2);
+    const longLayer = layers.find((l) => l.trackId === 'level-test');
+    assert.equal(longLayer.endMs, 130250);
+    for (const [startMs, endMs] of [
+      [0, 30000],
+      [30000, 60000],
+      [120000, 130250],
+    ]) {
+      const segment = pcm(
+        await fs.readFile(
+          await call('studio_audio_patch_path', { id: longLayer.id, startMs, endMs }),
+        ),
+      );
+      assert.equal(segment.length, (endMs - startMs) * 192);
+      if (startMs === 120000) assert(segment.every((v) => v === 0));
+    }
     for (const layer of layers)
       assert(
         pcm(await fs.readFile(await call('studio_audio_patch_path', { id: layer.id }))).length > 0,
       );
     const proof = {
-      version: '0.47.0',
+      version: '0.48.0',
       officialSdk: true,
       toolCount: 163,
       actualApplicationRestart: true,
       realPcmLowAndHigh: true,
+      fullTrackBeyond120s: true,
+      boundedPlaybackRanges: true,
       exactRangeAndSilence: true,
       explicitApply: true,
       dubbingSelection: true,

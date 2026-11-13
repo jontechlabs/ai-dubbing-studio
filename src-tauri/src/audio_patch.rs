@@ -94,7 +94,9 @@ pub fn validate(p: &Project) -> Result<(), String> {
             || e.track_id.is_empty()
             || e.source_track_id.is_empty()
             || e.end_ms <= e.start_ms
-            || !(10..=if ["effects", "leveling"].contains(&e.operation.as_str()) {
+            || !(10..=if e.operation == "leveling" && p.format_version >= 28 {
+                crate::volume_leveling_dsp::MAX_MS
+            } else if ["effects", "leveling"].contains(&e.operation.as_str()) {
                 120000
             } else {
                 60000
@@ -342,6 +344,8 @@ pub async fn snippet<R: tauri::Runtime>(
         options.rate.to_string(),
         "-c:a".into(),
         "pcm_s16le".into(),
+        "-rf64".into(),
+        "auto".into(),
         "-f".into(),
         "wav".into(),
         "-y".into(),
@@ -588,4 +592,66 @@ pub fn path(core: &Core, id: &str) -> Result<String, String> {
         patch.path.as_deref().ok_or("INVALID_AUDIO_TRANSFER")?,
     )
     .map(|p| p.to_string_lossy().into_owned())
+}
+
+// Seek a short exact-PCM range for the Web Audio scheduler. Never decode an
+// hours-long layer in the browser. These disposable files cannot edit a source.
+pub fn segment_path(core: &Core, id: &str, start: u64, end: u64) -> Result<String, String> {
+    use sha2::{Digest, Sha256};
+    if end <= start || end - start > 30000 {
+        return Err("INVALID_AUDIO_TRANSFER".into());
+    }
+    let (root, source, patch) = {
+        let guard = core.session.lock().map_err(io_error)?;
+        let session = guard.as_ref().ok_or("NO_PROJECT")?;
+        let patch = all(&session.project)?
+            .into_iter()
+            .find(|e| {
+                e.id == id
+                    && session
+                        .project
+                        .media
+                        .as_ref()
+                        .is_some_and(|m| m.path == e.source_path)
+            })
+            .ok_or("INVALID_AUDIO_TRANSFER")?;
+        if end > patch.end_ms - patch.start_ms || patch.operation != "leveling" {
+            return Err("INVALID_AUDIO_TRANSFER".into());
+        }
+        let source = project::asset(
+            &session.root,
+            patch.path.as_deref().ok_or("INVALID_AUDIO_TRANSFER")?,
+        )?;
+        (session.root.clone(), source, patch)
+    };
+    project::ensure_directory(&root, "cache")?;
+    let cache = project::ensure_directory(&root, "cache/audio-patch-segments")?;
+    let mut hash = Sha256::new();
+    hash.update(b"patch-pcm-range-v1");
+    hash.update(patch.id.as_bytes());
+    hash.update(patch.path.as_deref().unwrap().as_bytes());
+    hash.update(start.to_le_bytes());
+    hash.update(end.to_le_bytes());
+    let relative = format!("cache/audio-patch-segments/{:x}.wav", hash.finalize());
+    let target = root.join(&relative);
+    let frames = (end - start) * 48;
+    if target.exists() {
+        let verified = project::asset(&root, &relative)?;
+        if crate::audio_files::wav_frames(&verified).ok() == Some(frames) {
+            return Ok(verified.to_string_lossy().into_owned());
+        }
+        return Err("VOLUME_LEVELING_INVALID_AUDIO".into());
+    }
+    let temporary = tempfile::NamedTempFile::new_in(&cache).map_err(io_error)?;
+    crate::volume_leveling_dsp::copy_range(&source, temporary.path(), start, end)?;
+    match temporary.persist_noclobber(&target) {
+        Ok(_) => {}
+        Err(e) if e.error.kind() == std::io::ErrorKind::AlreadyExists => {}
+        Err(e) => return Err(io_error(e)),
+    }
+    let verified = project::asset(&root, &relative)?;
+    if crate::audio_files::wav_frames(&verified)? != frames {
+        return Err("VOLUME_LEVELING_INVALID_AUDIO".into());
+    }
+    Ok(verified.to_string_lossy().into_owned())
 }

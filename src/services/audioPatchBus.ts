@@ -9,6 +9,7 @@ import {
 } from '../domain/audioPatch';
 import { audioTracks, effectiveGain, regionGain } from '../domain/audio';
 import { audioPatchUrl } from './bridge';
+import { patchSegments, type PlaybackPatch } from '../domain/audioPatchSegments';
 
 // Decode only the nearby takes; schedule them against the video clock, never a UI timer.
 export class AudioPatchBus {
@@ -42,11 +43,15 @@ export class AudioPatchBus {
     private onError: (error: string) => void,
     private output: (trackId: string) => AudioNode,
   ) {}
-  private load(clip: AudioPatch) {
-    const id = clip.id;
+  private load(clip: PlaybackPatch) {
+    const id = clip.cacheKey;
     let promise = this.cache.get(id);
     if (!promise) {
-      promise = audioPatchUrl(clip.id)
+      promise = audioPatchUrl(
+        clip.id,
+        clip.offsetMs,
+        clip.offsetMs === undefined ? undefined : clip.offsetMs + clip.endMs - clip.startMs,
+      )
         .then(async (url) => {
           const response = await fetch(url, { signal: this.controller.signal });
           if (!response.ok) throw Error('AUDIO_PLAYBACK_FAILED');
@@ -65,7 +70,7 @@ export class AudioPatchBus {
   async prepare(project: Project | null, time: number, volume: number) {
     if (!project || this.disposed) return;
     const tracks = audioTracks(project);
-    const nearby = this.getClips(project).filter((c) => {
+    const nearby = patchSegments(this.getClips(project), time, time + 3000).filter((c) => {
       const track = tracks.find((t) => t.id === c.trackId);
       return (
         c.endMs > time &&
@@ -83,13 +88,13 @@ export class AudioPatchBus {
         128 * 1024 * 1024
     )
       throw Error('AUDIO_TRANSFER_LIMIT');
-    const keep = new Set([...nearby.map((c) => c.id), ...this.voices.keys()]);
+    const keep = new Set([...nearby.map((c) => c.cacheKey), ...this.voices.keys()]);
     for (const id of this.cache.keys()) {
       if (
-        this.cache.size + nearby.filter((c) => !this.cache.has(c.id)).length <= 8 &&
+        this.cache.size + nearby.filter((c) => !this.cache.has(c.cacheKey)).length <= 8 &&
         [...this.decoded.entries()].reduce((n, [, b]) => n + b.length * b.numberOfChannels * 4, 0) +
           nearby
-            .filter((c) => !this.decoded.has(c.id))
+            .filter((c) => !this.decoded.has(c.cacheKey))
             .reduce(
               (n, c) => n + (c.endMs - c.startMs) * (this.context.sampleRate / 1000) * 2 * 4,
               0,
@@ -130,10 +135,8 @@ export class AudioPatchBus {
     )
       this.stop();
     this.anchor ??= { time: now, position, rate };
-    const clips = this.getClips(project).filter(
-      (c) => c.endMs > position && c.startMs < position + 500 * rate,
-    );
-    const desired = new Set(clips.map((c) => c.id));
+    const clips = patchSegments(this.getClips(project), position, position + 500 * rate);
+    const desired = new Set(clips.map((c) => c.cacheKey));
     for (const [id, voice] of this.voices)
       if (!desired.has(id)) {
         voice.source.onended = null;
@@ -146,7 +149,7 @@ export class AudioPatchBus {
       const track = tracks.find((t) => t.id === clip.trackId);
       if (!track) continue;
       const base = effectiveGain(track, tracks, volume) * clip.gain;
-      const id = clip.id,
+      const id = clip.cacheKey,
         buffer = this.decoded.get(id);
       if (!buffer || position >= clip.startMs + buffer.duration * 1000) continue;
       let voice = this.voices.get(id);

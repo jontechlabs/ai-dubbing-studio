@@ -507,8 +507,20 @@ fn transfer_audio(
     audio_patch::enqueue(core.inner().clone(), app, options)
 }
 #[tauri::command]
-fn audio_patch_path(core: State<'_, Shared>, id: String) -> Result<String, String> {
-    audio_patch::path(&core, &id)
+async fn audio_patch_path(
+    core: State<'_, Shared>,
+    id: String,
+    start_ms: Option<u64>,
+    end_ms: Option<u64>,
+) -> Result<String, String> {
+    let core = core.inner().clone();
+    tauri::async_runtime::spawn_blocking(move || match (start_ms, end_ms) {
+        (None, None) => audio_patch::path(&core, &id),
+        (Some(start), Some(end)) => audio_patch::segment_path(&core, &id, start, end),
+        _ => Err("INVALID_AUDIO_TRANSFER".into()),
+    })
+    .await
+    .map_err(io_error)?
 }
 #[tauri::command]
 fn lip_analysis_result(
@@ -1705,18 +1717,24 @@ fn volume_leveling_path(
     core: State<'_, Shared>,
     id: String,
     role: String,
+    preview: Option<bool>,
 ) -> Result<String, String> {
-    volume_leveling::path(&core, &app, &id, &role)
+    volume_leveling::path(&core, &app, &id, &role, preview.unwrap_or(false))
 }
 #[tauri::command]
-fn apply_volume_leveling(
+async fn apply_volume_leveling(
     app: tauri::AppHandle,
     core: State<'_, Shared>,
     id: String,
     project_id: String,
     expected_revision: u64,
 ) -> Result<Project, String> {
-    volume_leveling::apply(core.inner(), &app, &id, &project_id, expected_revision)
+    let core = core.inner().clone();
+    tauri::async_runtime::spawn_blocking(move || {
+        volume_leveling::apply(&core, &app, &id, &project_id, expected_revision)
+    })
+    .await
+    .map_err(io_error)?
 }
 #[tauri::command]
 fn discard_volume_leveling(core: State<'_, Shared>, id: String) -> Result<(), String> {

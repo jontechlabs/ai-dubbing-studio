@@ -1,5 +1,7 @@
 # Égaliser le volume d’une sélection — v0.47.0
 
+**Depuis v0.48.0 :** [égaliser une piste entière ou une sélection de plus de 120 secondes](WHOLE-TRACK-LEVELING.md), avec la même préécoute et la même validation. Les limites ci-dessous décrivent v0.47.0.
+
 ![Comparaison avant/après](screenshots/volume-leveling-fr.png)
 
 1. Sélectionnez une zone sur une piste audio dans la timeline (outil de sélection, ou Maj + glisser).

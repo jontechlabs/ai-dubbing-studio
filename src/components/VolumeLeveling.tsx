@@ -207,7 +207,7 @@ export function VolumeLeveling({
             onClick={() => void apply()}
           >
             <Check size={15} />
-            {t('leveling.apply')}
+            {t(working && result ? 'leveling.applying' : 'leveling.apply')}
           </button>
         </div>
       </div>
