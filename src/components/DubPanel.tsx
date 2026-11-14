@@ -204,6 +204,7 @@ function ReferenceAudio({
 }
 
 export function DubPanel({
+  onQueue,
   active = true,
   batch,
   run: runProject,
@@ -223,6 +224,7 @@ export function DubPanel({
   activeGenerationId,
   onChooseLine,
 }: {
+  onQueue: () => void;
   active?: boolean;
   batch?: { selectedIds: string[] };
   run: (operation: () => Promise<Project | null>) => Promise<void>;
@@ -351,8 +353,8 @@ export function DubPanel({
       disposed = true;
     };
   }, [completion, onError, variantId]);
-  const busy =
-    task.pending || working || jobs.some((j) => ['queued', 'running', 'paused'].includes(j.status));
+  const engineBusy = jobs.some((j) => ['queued', 'running', 'paused'].includes(j.status));
+  const busy = task.pending || working || (!batch && engineBusy);
   const takeReview = useTakeReview(project, onEdit, busy);
   if (!line) return <div className="panel-body">{t('selectLine')}</div>;
   const preferred = voiceVariant(project.modelPreferences?.voiceVariantId);
@@ -1146,6 +1148,8 @@ export function DubPanel({
       {tools}
       {batch ? (
         <BatchDubbingAction
+          engineBusy={engineBusy}
+          onQueue={onQueue}
           takeCount={takeCount}
           onTakeCount={setTakeCount}
           project={project}

@@ -781,6 +781,7 @@ mod tests {
             session: Mutex::new(None),
             jobs: Mutex::new(HashMap::new()),
             gate: Arc::new(tokio::sync::Semaphore::new(1)),
+            queue: Mutex::new(crate::task_queue::State::default()),
             data_dir: dir.path().into(),
             model_dir: Mutex::new(dir.path().into()),
         };
@@ -846,6 +847,7 @@ else:
             session: Mutex::new(Some(project::Session::new(dir.path().into(), p))),
             jobs: Mutex::new(HashMap::new()),
             gate: Arc::new(tokio::sync::Semaphore::new(1)),
+            queue: Mutex::new(crate::task_queue::State::default()),
             data_dir: dir.path().into(),
             model_dir: Mutex::new(storage),
         });

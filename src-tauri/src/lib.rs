@@ -38,6 +38,7 @@ mod speaker_dubbing;
 mod speaker_separation;
 mod speakers;
 mod subtitles;
+mod task_queue;
 mod transcription;
 mod translation_llm;
 mod tts;
@@ -379,6 +380,7 @@ pub struct Core {
     session: Mutex<Option<Session>>,
     jobs: Mutex<HashMap<String, Control>>,
     gate: Arc<tokio::sync::Semaphore>,
+    queue: Mutex<task_queue::State>,
     data_dir: PathBuf,
     model_dir: Mutex<PathBuf>,
 }
@@ -1061,6 +1063,44 @@ async fn reference_audio_info(
         .allow_file(&path)
         .map_err(io_error)?;
     Ok(serde_json::json!({"path":path,"durationMs":info.duration_ms}))
+}
+#[tauri::command]
+fn task_queue_status(core: State<'_, Shared>) -> Result<task_queue::View, String> {
+    task_queue::status(&core)
+}
+#[tauri::command]
+fn task_queue_entry(
+    core: State<'_, Shared>,
+    id: String,
+    offset: u32,
+    limit: u32,
+) -> Result<serde_json::Value, String> {
+    task_queue::details(&core, &id, offset, limit)
+}
+#[tauri::command]
+fn enqueue_workflow(
+    app: tauri::AppHandle,
+    core: State<'_, Shared>,
+    project_id: String,
+    expected_revision: u64,
+    spec: task_queue::Spec,
+) -> Result<String, String> {
+    task_queue::add(
+        core.inner().clone(),
+        app,
+        project_id,
+        expected_revision,
+        spec,
+    )
+}
+#[tauri::command]
+fn control_task_queue(
+    app: tauri::AppHandle,
+    core: State<'_, Shared>,
+    action: String,
+    id: Option<String>,
+) -> Result<task_queue::View, String> {
+    task_queue::control(core.inner().clone(), app, &action, id.as_deref())
 }
 #[tauri::command]
 fn preview_dubbing_batch(
@@ -2174,6 +2214,7 @@ pub fn run() {
                 session: Mutex::new(None),
                 jobs: Mutex::new(restored),
                 gate: Arc::new(tokio::sync::Semaphore::new(1)),
+                queue: Mutex::new(task_queue::restore(&data_dir)),
                 model_dir: Mutex::new(model_storage::load(&data_dir)?),
                 data_dir: data_dir.clone(),
             });
@@ -2318,6 +2359,10 @@ pub fn run() {
             import_voice_reference,
             import_dubbing_reference,
             reference_audio_info,
+            task_queue_status,
+            task_queue_entry,
+            enqueue_workflow,
+            control_task_queue,
             preview_dubbing_batch,
             generate_dubbing_batch,
             dubbing_batch_report,

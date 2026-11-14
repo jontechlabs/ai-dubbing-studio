@@ -102,6 +102,7 @@ const mapping = {
   'audio_fx_job::Options': 'AudioEffectsOptions',
   'volume_leveling::Options': 'VolumeLevelingOptions',
   'dubbing_audit::Options': 'DubbingAuditOptions',
+  'task_queue::Spec': 'WorkflowSpec',
   'mix::Options': 'MkvOptions',
 };
 const object = (properties) => ({
@@ -126,8 +127,12 @@ function rustSchema(type) {
   throw Error('Unknown native parameter type: ' + type);
 }
 const readOnly =
-  /^(?!apply_)(environment|graphics_info|.*_status|.*_result|latest_.*|audio_effects_catalog|.*_path|.*_paths|list_jobs|model_storage_info|model_storage_size|managed_models|current_project|list_projects|project_cover|voice_install_space|preview_.*|reference_audio_info|get_waveform|dubbing_batch_report|dubbing_batch_history)$/;
+  /^(?!apply_)(environment|graphics_info|.*_status|.*_result|latest_.*|audio_effects_catalog|.*_path|.*_paths|list_jobs|model_storage_info|model_storage_size|managed_models|current_project|list_projects|project_cover|voice_install_space|preview_.*|reference_audio_info|get_waveform|dubbing_batch_report|dubbing_batch_history|task_queue_entry)$/;
 const notes = {
+  task_queue_status: 'Read the compact persistent FIFO queue. Reports counts/current child IDs and up to 20 separation problems. No model probe, source mutation or automatic resume.',
+  task_queue_entry: 'Read one workflow configuration and paginated separation rows. offset >=0, limit 1–200. spec.selection.lineIds contains ONLY this page. dubbingRuns link to existing batch reports.',
+  enqueue_workflow: 'Enqueue a frozen dialogue selection/configuration, even while another job runs. separation optional supports Mel-Band Kim / BS-RoFormer Viperx with automatic vocals->speech and/or accompaniment->music replacement layers. dubbing true runs a retained-model 1–4 take TTS batch AFTER successful separation. Failed separation rows never enter TTS. Source files/takes remain intact. Returns a WORKFLOW ID, poll task_queue_status (not list_jobs). Requires current project/revision. Queue never auto-resumes after app restart.',
+  control_task_queue: 'Manage FIFO workflows: pause after current workflow, resume, cancel (propagates to child), up/down pending entries, remove inactive entry, retry incomplete steps, clear completed history. id required except pause/resume/clear. Retry requires unchanged captured media/text/reference context. This does not undo already committed audio/takes. Context required.',
   apply_volume_leveling_batch:'Atomically apply ONLY explicitly approved preview IDs on distinct tracks at the same current revision. Prelisten and approve each track first. All-or-nothing, one undo step. Unapproved previews must not be passed.',
   analyze_dubbing:'Analyze all dialogues locally without changing audio/takes. Persist missing/silent/quiet/clipping/possible-cut-end/long-silence/timing/invalid-audio hints. voices off/source/dubbing/both optionally uses the installed speaker model for conservative multi-voice hints, not reliable overlap detection. Missing model is explicitly reported. Poll jobs; read project.dubbingAudit and check its audio basis before using tags. Context required.',
 
@@ -261,6 +266,8 @@ projectCommands.add('prepare_volume_leveling');
 projectCommands.add('apply_volume_leveling');
 projectCommands.add('apply_volume_leveling_batch');
 projectCommands.add('analyze_dubbing');
+projectCommands.add('enqueue_workflow');
+projectCommands.add('control_task_queue');
 for (const command of [
   'transcribe_dialogue_source',
   'apply_source_transcription',
@@ -709,6 +716,7 @@ tool(
           'alignment',
           'dub',
           'batchDub',
+          'queue',
           'lips',
           'inpaint',
           'inpaintBatch',

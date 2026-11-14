@@ -8,6 +8,7 @@ import { jobProgress } from '../domain/batchProgress';
 import { JobDuration } from './JobDuration';
 import type { Panel } from './Header';
 import { ImportPanel } from './ImportPanel';
+import { TaskQueuePanel } from './TaskQueuePanel';
 import { IconButton } from './IconButton';
 import { SubtitleImportPanel } from './SubtitleImportPanel';
 import { AlignmentPanel } from './AlignmentPanel';
@@ -176,6 +177,20 @@ export function Panels({
           />
         )}
         {panel === 'jobs' && <JobsPanel jobs={jobs} onError={onError} />}
+        {panel === 'queue' && (
+          <TaskQueuePanel
+            project={project}
+            jobs={jobs}
+            snapshot={snapshot}
+            onChooseLine={(id) => {
+              const line = project?.dialogues.find((l) => l.id === id);
+              if (line) {
+                onSelectDialogue(line);
+                close();
+              }
+            }}
+          />
+        )}
         {panel === 'characters' && project && (
           <CharactersPanel
             key={project.id}

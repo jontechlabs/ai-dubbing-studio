@@ -80,6 +80,7 @@ async fn apply_creates_missing_tracks_at_original_timestamp_preserves_media_and_
         session: Mutex::new(Some(project::Session::new(root.clone(), p.clone()))),
         jobs: Mutex::new(HashMap::new()),
         gate: Arc::new(tokio::sync::Semaphore::new(1)),
+        queue: Mutex::new(crate::task_queue::State::default()),
     });
     let app = tauri::test::mock_app();
     let key = jobs::create(&core, app.handle(), "audioToolbox", p.id.clone(), None);

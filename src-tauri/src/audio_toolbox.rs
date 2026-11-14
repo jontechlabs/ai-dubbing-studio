@@ -225,7 +225,7 @@ pub fn start<R: tauri::Runtime>(
     };
     enqueue(core, app, r)
 }
-fn snapshot(p: &Project, root: &Path, o: &Options) -> Result<Value, String> {
+pub(crate) fn snapshot(p: &Project, root: &Path, o: &Options) -> Result<Value, String> {
     let track = audio_patch::source_track(p, Some(&o.source_track_id))?;
     let media = p.media.as_ref().ok_or("MEDIA_MISSING")?;
     let path = if track.kind == "original" {

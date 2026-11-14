@@ -262,6 +262,9 @@ pub fn remember(core: &Core, root: &Path, p: &Project, opened: bool) -> Result<(
     write(&core.data_dir, &v)
 }
 pub fn idle(core: &Core) -> Result<tokio::sync::OwnedSemaphorePermit, String> {
+    if crate::task_queue::active(core) {
+        return Err("BUSY".into());
+    }
     if core
         .jobs
         .lock()

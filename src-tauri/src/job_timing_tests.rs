@@ -91,6 +91,7 @@ fn fixture() -> (tempfile::TempDir, Arc<Core>) {
         session: Mutex::new(None),
         jobs: Mutex::new(HashMap::new()),
         gate: Arc::new(tokio::sync::Semaphore::new(1)),
+        queue: Mutex::new(crate::task_queue::State::default()),
     });
     (dir, core)
 }

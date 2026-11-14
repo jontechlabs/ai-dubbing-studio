@@ -2971,6 +2971,274 @@
       "annotations": { "readOnlyHint": true, "destructiveHint": false, "openWorldHint": false }
     },
     {
+      "name": "studio_task_queue_status",
+      "command": "task_queue_status",
+      "description": "Read the compact persistent FIFO queue. Reports counts/current child IDs and up to 20 separation problems. No model probe, source mutation or automatic resume.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "annotations": { "readOnlyHint": true, "destructiveHint": false, "openWorldHint": false }
+    },
+    {
+      "name": "studio_task_queue_entry",
+      "command": "task_queue_entry",
+      "description": "Read one workflow configuration and paginated separation rows. offset >=0, limit 1–200. spec.selection.lineIds contains ONLY this page. dubbingRuns link to existing batch reports.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "offset": { "type": "integer", "minimum": 0 },
+          "limit": { "type": "integer", "minimum": 0 }
+        },
+        "required": ["id", "offset", "limit"],
+        "additionalProperties": false
+      },
+      "annotations": { "readOnlyHint": true, "destructiveHint": false, "openWorldHint": false }
+    },
+    {
+      "name": "studio_enqueue_workflow",
+      "command": "enqueue_workflow",
+      "description": "Enqueue a frozen dialogue selection/configuration, even while another job runs. separation optional supports Mel-Band Kim / BS-RoFormer Viperx with automatic vocals->speech and/or accompaniment->music replacement layers. dubbing true runs a retained-model 1–4 take TTS batch AFTER successful separation. Failed separation rows never enter TTS. Source files/takes remain intact. Returns a WORKFLOW ID, poll task_queue_status (not list_jobs). Requires current project/revision. Queue never auto-resumes after app restart.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "projectId": { "type": "string" },
+          "expectedRevision": { "type": "integer", "minimum": 0 },
+          "spec": { "$ref": "#/$defs/spec_WorkflowSpec_0" },
+          "context": {
+            "type": "object",
+            "properties": {
+              "projectId": { "type": "string" },
+              "expectedRevision": { "type": "integer", "minimum": 0 }
+            },
+            "required": ["projectId", "expectedRevision"],
+            "additionalProperties": false
+          }
+        },
+        "required": ["projectId", "expectedRevision", "spec", "context"],
+        "additionalProperties": false,
+        "$defs": {
+          "spec_WorkflowSpec_0": {
+            "type": "object",
+            "properties": {
+              "name": { "type": "string" },
+              "selection": { "$ref": "#/$defs/spec_DubbingBatchSelection_1" },
+              "separation": {
+                "anyOf": [{ "type": "null" }, { "$ref": "#/$defs/spec_WorkflowSeparation_5" }]
+              },
+              "dubbing": { "type": "boolean" },
+              "continueOnError": { "type": "boolean" }
+            },
+            "required": ["name", "selection", "separation", "dubbing", "continueOnError"],
+            "additionalProperties": false
+          },
+          "spec_DubbingBatchSelection_1": {
+            "type": "object",
+            "properties": {
+              "takeCount": {
+                "anyOf": [
+                  { "type": "number", "const": 2 },
+                  { "type": "number", "const": 1 },
+                  { "type": "number", "const": 3 },
+                  { "type": "number", "const": 4 }
+                ]
+              },
+              "scope": {
+                "anyOf": [
+                  { "type": "string", "const": "all" },
+                  { "type": "string", "const": "selected" }
+                ]
+              },
+              "approvedOnly": {
+                "anyOf": [
+                  { "type": "boolean", "const": false },
+                  { "type": "boolean", "const": true }
+                ]
+              },
+              "unapprovedOnly": {
+                "anyOf": [
+                  { "type": "boolean", "const": false },
+                  { "type": "boolean", "const": true }
+                ]
+              },
+              "lineIds": { "type": "array", "items": { "type": "string" } },
+              "force": { "type": "boolean" },
+              "options": { "$ref": "#/$defs/spec_VoiceSettings_2" }
+            },
+            "required": ["scope", "lineIds", "force", "options"],
+            "additionalProperties": false
+          },
+          "spec_VoiceSettings_2": {
+            "type": "object",
+            "properties": {
+              "outputGain": { "anyOf": [{ "type": "number" }] },
+              "quality": { "anyOf": [{ "$ref": "#/$defs/spec_VoiceQuality_3" }] },
+              "mood": {
+                "anyOf": [
+                  { "type": "string", "const": "happy" },
+                  { "type": "string", "const": "excited" },
+                  { "type": "string", "const": "angry" },
+                  { "type": "string", "const": "sad" },
+                  { "type": "string", "const": "calm" },
+                  { "type": "string", "const": "surprised" },
+                  { "type": "string", "const": "whisper" },
+                  { "type": "string", "const": "shouting" },
+                  { "type": "string", "const": "default" },
+                  { "type": "string", "const": "enthusiastic" },
+                  { "type": "string", "const": "amused" },
+                  { "type": "string", "const": "laughing" },
+                  { "type": "string", "const": "proud" },
+                  { "type": "string", "const": "tender" },
+                  { "type": "string", "const": "relieved" },
+                  { "type": "string", "const": "stressed" },
+                  { "type": "string", "const": "anxious" },
+                  { "type": "string", "const": "panicked" },
+                  { "type": "string", "const": "afraid" },
+                  { "type": "string", "const": "irritated" },
+                  { "type": "string", "const": "furious" },
+                  { "type": "string", "const": "threatening" },
+                  { "type": "string", "const": "determined" },
+                  { "type": "string", "const": "impatient" },
+                  { "type": "string", "const": "crying" },
+                  { "type": "string", "const": "desperate" },
+                  { "type": "string", "const": "disappointed" },
+                  { "type": "string", "const": "regretful" },
+                  { "type": "string", "const": "nostalgic" },
+                  { "type": "string", "const": "dying" },
+                  { "type": "string", "const": "exhausted" },
+                  { "type": "string", "const": "breathless" },
+                  { "type": "string", "const": "in-pain" },
+                  { "type": "string", "const": "sleepy" },
+                  { "type": "string", "const": "weak" },
+                  { "type": "string", "const": "sarcastic" },
+                  { "type": "string", "const": "ironic" },
+                  { "type": "string", "const": "confused" },
+                  { "type": "string", "const": "doubtful" },
+                  { "type": "string", "const": "curious" },
+                  { "type": "string", "const": "serious" },
+                  { "type": "string", "const": "narration" },
+                  { "type": "string", "const": "disgusted" }
+                ]
+              },
+              "accent": {
+                "anyOf": [
+                  { "type": "string", "const": "auto" },
+                  { "type": "string", "const": "fr-FR" },
+                  { "type": "string", "const": "fr-CA" },
+                  { "type": "string", "const": "fr-BE" },
+                  { "type": "string", "const": "fr-CH" }
+                ]
+              },
+              "variantId": { "anyOf": [{ "type": "null" }, { "type": "string" }] },
+              "device": { "type": "string" },
+              "referenceMode": {
+                "anyOf": [
+                  { "type": "string", "const": "current" },
+                  { "type": "string", "const": "character" },
+                  { "type": "string", "const": "custom" },
+                  { "type": "string", "const": "file" },
+                  { "type": "string", "const": "library" }
+                ]
+              },
+              "intonationGuide": { "anyOf": [{ "$ref": "#/$defs/spec_IntonationGuide_4" }] },
+              "referenceTrackId": { "anyOf": [{ "type": "string" }] },
+              "referenceId": { "anyOf": [{ "type": "null" }, { "type": "string" }] },
+              "mode": {
+                "anyOf": [
+                  { "type": "string", "const": "zeroShot" },
+                  { "type": "string", "const": "crossLingual" }
+                ]
+              },
+              "speed": { "type": "number" },
+              "seed": { "type": "number" }
+            },
+            "required": ["device", "referenceMode", "referenceId", "mode", "speed", "seed"],
+            "additionalProperties": false
+          },
+          "spec_VoiceQuality_3": {
+            "type": "object",
+            "properties": {
+              "inferenceSteps": { "anyOf": [{ "type": "number" }] },
+              "cfgStrength": { "anyOf": [{ "type": "number" }] },
+              "temperature": { "anyOf": [{ "type": "number" }] },
+              "topP": { "anyOf": [{ "type": "number" }] },
+              "topK": { "anyOf": [{ "type": "number" }] },
+              "repetitionPenalty": { "anyOf": [{ "type": "number" }] },
+              "minP": { "anyOf": [{ "type": "number" }] },
+              "cfgWeight": { "anyOf": [{ "type": "number" }] },
+              "exaggeration": { "anyOf": [{ "type": "number" }] }
+            },
+            "required": [],
+            "additionalProperties": false
+          },
+          "spec_IntonationGuide_4": {
+            "type": "object",
+            "properties": {
+              "mode": {
+                "anyOf": [
+                  { "type": "string", "const": "style" },
+                  { "type": "string", "const": "hybrid" }
+                ]
+              },
+              "trackId": { "anyOf": [{ "type": "string" }] }
+            },
+            "required": ["mode"],
+            "additionalProperties": false
+          },
+          "spec_WorkflowSeparation_5": {
+            "type": "object",
+            "properties": {
+              "modelId": { "type": "string" },
+              "sourceTrackId": { "type": "string" },
+              "device": { "type": "string" },
+              "windowSeconds": { "type": "number" },
+              "vocals": { "type": "boolean" },
+              "music": { "type": "boolean" },
+              "muteSource": { "type": "boolean" }
+            },
+            "required": [
+              "modelId",
+              "sourceTrackId",
+              "device",
+              "windowSeconds",
+              "vocals",
+              "music",
+              "muteSource"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "annotations": { "readOnlyHint": false, "destructiveHint": true, "openWorldHint": false }
+    },
+    {
+      "name": "studio_control_task_queue",
+      "command": "control_task_queue",
+      "description": "Manage FIFO workflows: pause after current workflow, resume, cancel (propagates to child), up/down pending entries, remove inactive entry, retry incomplete steps, clear completed history. id required except pause/resume/clear. Retry requires unchanged captured media/text/reference context. This does not undo already committed audio/takes. Context required.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "action": { "type": "string" },
+          "id": { "anyOf": [{ "type": "string" }, { "type": "null" }] },
+          "context": {
+            "type": "object",
+            "properties": {
+              "projectId": { "type": "string" },
+              "expectedRevision": { "type": "integer", "minimum": 0 }
+            },
+            "required": ["projectId", "expectedRevision"],
+            "additionalProperties": false
+          }
+        },
+        "required": ["action", "context"],
+        "additionalProperties": false
+      },
+      "annotations": { "readOnlyHint": false, "destructiveHint": true, "openWorldHint": false }
+    },
+    {
       "name": "studio_preview_dubbing_batch",
       "command": "preview_dubbing_batch",
       "description": "Preview eligible dialogue IDs with current filters. Optional takeCount 1–4, default 1, is the number of new alternatives per eligible dialogue; existing usable dialogue takes are skipped unless force is true. Read-only.",
@@ -5483,6 +5751,7 @@
                   "alignment",
                   "dub",
                   "batchDub",
+                  "queue",
                   "lips",
                   "inpaint",
                   "inpaintBatch"
@@ -8161,6 +8430,200 @@
             "sourceTrackId": { "anyOf": [{ "type": "null" }, { "type": "string" }] }
           },
           "required": ["voices", "sourceTrackId"],
+          "additionalProperties": false
+        }
+      }
+    },
+    "WorkflowSpec": {
+      "$ref": "#/$defs/WorkflowSpec_0",
+      "$defs": {
+        "WorkflowSpec_0": {
+          "type": "object",
+          "properties": {
+            "name": { "type": "string" },
+            "selection": { "$ref": "#/$defs/DubbingBatchSelection_1" },
+            "separation": {
+              "anyOf": [{ "type": "null" }, { "$ref": "#/$defs/WorkflowSeparation_5" }]
+            },
+            "dubbing": { "type": "boolean" },
+            "continueOnError": { "type": "boolean" }
+          },
+          "required": ["name", "selection", "separation", "dubbing", "continueOnError"],
+          "additionalProperties": false
+        },
+        "DubbingBatchSelection_1": {
+          "type": "object",
+          "properties": {
+            "takeCount": {
+              "anyOf": [
+                { "type": "number", "const": 2 },
+                { "type": "number", "const": 1 },
+                { "type": "number", "const": 3 },
+                { "type": "number", "const": 4 }
+              ]
+            },
+            "scope": {
+              "anyOf": [
+                { "type": "string", "const": "all" },
+                { "type": "string", "const": "selected" }
+              ]
+            },
+            "approvedOnly": {
+              "anyOf": [
+                { "type": "boolean", "const": false },
+                { "type": "boolean", "const": true }
+              ]
+            },
+            "unapprovedOnly": {
+              "anyOf": [
+                { "type": "boolean", "const": false },
+                { "type": "boolean", "const": true }
+              ]
+            },
+            "lineIds": { "type": "array", "items": { "type": "string" } },
+            "force": { "type": "boolean" },
+            "options": { "$ref": "#/$defs/VoiceSettings_2" }
+          },
+          "required": ["scope", "lineIds", "force", "options"],
+          "additionalProperties": false
+        },
+        "VoiceSettings_2": {
+          "type": "object",
+          "properties": {
+            "outputGain": { "anyOf": [{ "type": "number" }] },
+            "quality": { "anyOf": [{ "$ref": "#/$defs/VoiceQuality_3" }] },
+            "mood": {
+              "anyOf": [
+                { "type": "string", "const": "happy" },
+                { "type": "string", "const": "excited" },
+                { "type": "string", "const": "angry" },
+                { "type": "string", "const": "sad" },
+                { "type": "string", "const": "calm" },
+                { "type": "string", "const": "surprised" },
+                { "type": "string", "const": "whisper" },
+                { "type": "string", "const": "shouting" },
+                { "type": "string", "const": "default" },
+                { "type": "string", "const": "enthusiastic" },
+                { "type": "string", "const": "amused" },
+                { "type": "string", "const": "laughing" },
+                { "type": "string", "const": "proud" },
+                { "type": "string", "const": "tender" },
+                { "type": "string", "const": "relieved" },
+                { "type": "string", "const": "stressed" },
+                { "type": "string", "const": "anxious" },
+                { "type": "string", "const": "panicked" },
+                { "type": "string", "const": "afraid" },
+                { "type": "string", "const": "irritated" },
+                { "type": "string", "const": "furious" },
+                { "type": "string", "const": "threatening" },
+                { "type": "string", "const": "determined" },
+                { "type": "string", "const": "impatient" },
+                { "type": "string", "const": "crying" },
+                { "type": "string", "const": "desperate" },
+                { "type": "string", "const": "disappointed" },
+                { "type": "string", "const": "regretful" },
+                { "type": "string", "const": "nostalgic" },
+                { "type": "string", "const": "dying" },
+                { "type": "string", "const": "exhausted" },
+                { "type": "string", "const": "breathless" },
+                { "type": "string", "const": "in-pain" },
+                { "type": "string", "const": "sleepy" },
+                { "type": "string", "const": "weak" },
+                { "type": "string", "const": "sarcastic" },
+                { "type": "string", "const": "ironic" },
+                { "type": "string", "const": "confused" },
+                { "type": "string", "const": "doubtful" },
+                { "type": "string", "const": "curious" },
+                { "type": "string", "const": "serious" },
+                { "type": "string", "const": "narration" },
+                { "type": "string", "const": "disgusted" }
+              ]
+            },
+            "accent": {
+              "anyOf": [
+                { "type": "string", "const": "auto" },
+                { "type": "string", "const": "fr-FR" },
+                { "type": "string", "const": "fr-CA" },
+                { "type": "string", "const": "fr-BE" },
+                { "type": "string", "const": "fr-CH" }
+              ]
+            },
+            "variantId": { "anyOf": [{ "type": "null" }, { "type": "string" }] },
+            "device": { "type": "string" },
+            "referenceMode": {
+              "anyOf": [
+                { "type": "string", "const": "current" },
+                { "type": "string", "const": "character" },
+                { "type": "string", "const": "custom" },
+                { "type": "string", "const": "file" },
+                { "type": "string", "const": "library" }
+              ]
+            },
+            "intonationGuide": { "anyOf": [{ "$ref": "#/$defs/IntonationGuide_4" }] },
+            "referenceTrackId": { "anyOf": [{ "type": "string" }] },
+            "referenceId": { "anyOf": [{ "type": "null" }, { "type": "string" }] },
+            "mode": {
+              "anyOf": [
+                { "type": "string", "const": "zeroShot" },
+                { "type": "string", "const": "crossLingual" }
+              ]
+            },
+            "speed": { "type": "number" },
+            "seed": { "type": "number" }
+          },
+          "required": ["device", "referenceMode", "referenceId", "mode", "speed", "seed"],
+          "additionalProperties": false
+        },
+        "VoiceQuality_3": {
+          "type": "object",
+          "properties": {
+            "inferenceSteps": { "anyOf": [{ "type": "number" }] },
+            "cfgStrength": { "anyOf": [{ "type": "number" }] },
+            "temperature": { "anyOf": [{ "type": "number" }] },
+            "topP": { "anyOf": [{ "type": "number" }] },
+            "topK": { "anyOf": [{ "type": "number" }] },
+            "repetitionPenalty": { "anyOf": [{ "type": "number" }] },
+            "minP": { "anyOf": [{ "type": "number" }] },
+            "cfgWeight": { "anyOf": [{ "type": "number" }] },
+            "exaggeration": { "anyOf": [{ "type": "number" }] }
+          },
+          "required": [],
+          "additionalProperties": false
+        },
+        "IntonationGuide_4": {
+          "type": "object",
+          "properties": {
+            "mode": {
+              "anyOf": [
+                { "type": "string", "const": "style" },
+                { "type": "string", "const": "hybrid" }
+              ]
+            },
+            "trackId": { "anyOf": [{ "type": "string" }] }
+          },
+          "required": ["mode"],
+          "additionalProperties": false
+        },
+        "WorkflowSeparation_5": {
+          "type": "object",
+          "properties": {
+            "modelId": { "type": "string" },
+            "sourceTrackId": { "type": "string" },
+            "device": { "type": "string" },
+            "windowSeconds": { "type": "number" },
+            "vocals": { "type": "boolean" },
+            "music": { "type": "boolean" },
+            "muteSource": { "type": "boolean" }
+          },
+          "required": [
+            "modelId",
+            "sourceTrackId",
+            "device",
+            "windowSeconds",
+            "vocals",
+            "music",
+            "muteSource"
+          ],
           "additionalProperties": false
         }
       }

@@ -284,6 +284,22 @@ pub fn enqueue<R: tauri::Runtime>(
     app: tauri::AppHandle<R>,
     selection: Selection,
 ) -> Result<String, String> {
+    enqueue_owned(core, app, selection, None)
+}
+pub(crate) fn enqueue_in_queue<R: tauri::Runtime>(
+    core: Arc<Core>,
+    app: tauri::AppHandle<R>,
+    selection: Selection,
+    token: &str,
+) -> Result<String, String> {
+    enqueue_owned(core, app, selection, Some(token))
+}
+fn enqueue_owned<R: tauri::Runtime>(
+    core: Arc<Core>,
+    app: tauri::AppHandle<R>,
+    selection: Selection,
+    token: Option<&str>,
+) -> Result<String, String> {
     let count = crate::tts_trials::count(selection.take_count)?;
     if tts::busy(&core) {
         return Err("BUSY".into());
@@ -291,7 +307,7 @@ pub fn enqueue<R: tauri::Runtime>(
     if !tts::runtime_installed(&core, &selection.options) {
         return Err("TTS_RUNTIME_REQUIRED".into());
     }
-    let (request, preview) = {
+    let (mut request, preview) = {
         let session = core.session.lock().map_err(io_error)?;
         let s = session.as_ref().ok_or("NO_PROJECT")?;
         let (preview, items) = plan(&s.project, &s.root, &selection)?;
@@ -319,10 +335,24 @@ pub fn enqueue<R: tauri::Runtime>(
             preview,
         )
     };
+    if let Some(token) = token {
+        queue_ids(&mut request, token);
+    }
     start(core, app, request, Some(preview))
 }
+pub(crate) fn queue_ids(request: &mut Request, token: &str) {
+    use sha2::{Digest, Sha256};
+    for item in &mut request.items {
+        item.request.batch_item_id = Some(format!(
+            "{:x}",
+            Sha256::digest(
+                format!("{token}:{}:{}", item.request.line_id, item.take_index).as_bytes()
+            )
+        ));
+    }
+}
 #[cfg(test)]
-fn resume_with_launch<R: tauri::Runtime>(
+pub(crate) fn resume_with_launch<R: tauri::Runtime>(
     core: Arc<Core>,
     app: tauri::AppHandle<R>,
     mut request: Request,

@@ -2,8 +2,11 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Project, VoiceSettings } from '../domain/types';
 import * as bridge from '../services/bridge';
+import { WorkflowComposer } from './WorkflowComposer';
 
 export function BatchDubbingAction({
+  engineBusy,
+  onQueue,
   project,
   selectedIds,
   settings,
@@ -15,6 +18,8 @@ export function BatchDubbingAction({
   startTask,
   onError,
 }: {
+  engineBusy: boolean;
+  onQueue: () => void;
   project: Project;
   selectedIds: string[];
   settings: VoiceSettings;
@@ -155,7 +160,7 @@ export function BatchDubbingAction({
       )}
       <button
         className="button accent wide"
-        disabled={!bridge.native || busy || working || !ready || !plan?.ready.length}
+        disabled={!bridge.native || engineBusy || busy || working || !ready || !plan?.ready.length}
         onClick={() => {
           setWorking(true);
           void startTask(async () => {
@@ -173,6 +178,13 @@ export function BatchDubbingAction({
             })
           : t('batchStart', { count: plan?.ready.length ?? 0 })}
       </button>
+      <WorkflowComposer
+        project={project}
+        selectionKey={selectionKey}
+        ready={ready && !busy}
+        snapshot={snapshot}
+        onQueue={onQueue}
+      />
     </section>
   );
 }

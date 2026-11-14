@@ -59,6 +59,7 @@ fn multilingual_profiles_survive_disk_reload_and_choose_their_isolated_worker() 
         session: Mutex::new(None),
         jobs: Mutex::new(HashMap::new()),
         gate: Arc::new(tokio::sync::Semaphore::new(1)),
+        queue: Mutex::new(crate::task_queue::State::default()),
         data_dir: temporary.path().into(),
         model_dir: Mutex::new(temporary.path().into()),
     };
@@ -183,6 +184,7 @@ async fn imported_mp3_is_copied_normalized_capped_and_undoable_without_a_charact
         session: Mutex::new(Some(project::Session::new(root.clone(), p))),
         jobs: Mutex::new(HashMap::new()),
         gate: Arc::new(tokio::sync::Semaphore::new(1)),
+        queue: Mutex::new(crate::task_queue::State::default()),
         data_dir: root.clone(),
         model_dir: Mutex::new(root.clone()),
     });
@@ -332,6 +334,7 @@ async fn worker_logs_keep_pipes_open_after_invalid_native_bytes_and_preserve_uni
         session: Mutex::new(None),
         jobs: Mutex::new(HashMap::new()),
         gate: Arc::new(tokio::sync::Semaphore::new(1)),
+        queue: Mutex::new(crate::task_queue::State::default()),
         data_dir: temporary.path().into(),
         model_dir: Mutex::new(temporary.path().into()),
     });
@@ -382,6 +385,7 @@ async fn engine_exit_keeps_last_stage_stderr_exit_status_and_protocol_error() {
         session: Mutex::new(None),
         jobs: Mutex::new(HashMap::new()),
         gate: Arc::new(tokio::sync::Semaphore::new(1)),
+        queue: Mutex::new(crate::task_queue::State::default()),
         data_dir: temporary.path().into(),
         model_dir: Mutex::new(temporary.path().into()),
     });
@@ -572,6 +576,7 @@ async fn reference_range_copies_the_requested_audio_after_twenty_seconds_and_rej
         session: Mutex::new(Some(project::Session::new(root.clone(), p))),
         jobs: Mutex::new(HashMap::new()),
         gate: Arc::new(tokio::sync::Semaphore::new(1)),
+        queue: Mutex::new(crate::task_queue::State::default()),
         data_dir: root.clone(),
         model_dir: Mutex::new(root.clone()),
     });
@@ -753,6 +758,7 @@ async fn tts_refuses_missing_runtime_without_job_or_project_changes() {
         session: Mutex::new(Some(project::Session::new(root.clone(), p))),
         jobs: Mutex::new(HashMap::new()),
         gate: Arc::new(tokio::sync::Semaphore::new(1)),
+        queue: Mutex::new(crate::task_queue::State::default()),
         data_dir: temp.path().to_path_buf(),
         model_dir: Mutex::new(temp.path().to_path_buf()),
     });
@@ -776,6 +782,7 @@ async fn generation_job_keeps_takes_and_cancellation_preserves_previous_audio() 
         session: Mutex::new(Some(project::Session::new(root.clone(), p.clone()))),
         jobs: Mutex::new(HashMap::new()),
         gate: Arc::new(tokio::sync::Semaphore::new(1)),
+        queue: Mutex::new(crate::task_queue::State::default()),
         data_dir: temp.path().to_path_buf(),
         model_dir: Mutex::new(temp.path().to_path_buf()),
     });

@@ -973,6 +973,7 @@ pub(crate) fn core(root: &Path, p: Project) -> Arc<Core> {
         session: Mutex::new(Some(project::Session::new(root.into(), p))),
         jobs: Mutex::new(std::collections::HashMap::new()),
         gate: Arc::new(tokio::sync::Semaphore::new(1)),
+        queue: Mutex::new(crate::task_queue::State::default()),
         data_dir: root.into(),
         model_dir: Mutex::new(root.join("models")),
     })

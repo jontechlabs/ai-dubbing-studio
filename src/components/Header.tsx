@@ -1,5 +1,6 @@
 import {
   Home,
+  ListOrdered,
   Pencil,
   AudioLines,
   Captions,
@@ -21,6 +22,7 @@ import type { Project } from '../domain/types';
 import { IconButton } from './IconButton';
 
 export type Panel =
+  | 'queue'
   | 'import'
   | 'audio'
   | 'characters'
@@ -37,6 +39,7 @@ export type Panel =
   | 'inpaintBatch'
   | null;
 export function Header({
+  queueCount = 0,
   onHome,
   onRename,
   projectLocked,
@@ -51,6 +54,7 @@ export function Header({
   busy,
   updateAvailable,
 }: {
+  queueCount?: number;
   onHome: () => void;
   onRename: () => void;
   projectLocked: boolean;
@@ -91,6 +95,13 @@ export function Header({
           <Pencil size={12} />
         </button>
         <div className="title-actions">
+          <IconButton
+            label={t('queue') + (queueCount ? ` (${queueCount})` : '')}
+            active={panel === 'queue'}
+            onClick={() => onPanel('queue')}
+          >
+            <ListOrdered size={17} />
+          </IconButton>
           {updateAvailable && (
             <IconButton label={t('updatesAvailableShort')} onClick={() => onPanel('settings')}>
               <DownloadCloud size={17} />

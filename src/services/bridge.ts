@@ -540,6 +540,25 @@ export function previewDubbingBatch(selection: DubbingBatchSelection) {
 export function generateDubbingBatch(selection: DubbingBatchSelection) {
   return invoke<string>('generate_dubbing_batch', { selection });
 }
+export function taskQueueStatus() {
+  return invoke<import('../domain/taskQueue').WorkflowQueue>('task_queue_status');
+}
+export function enqueueWorkflow(
+  project: Project,
+  spec: import('../domain/taskQueue').WorkflowSpec,
+) {
+  return invoke<string>('enqueue_workflow', {
+    projectId: project.id,
+    expectedRevision: project.revision,
+    spec,
+  });
+}
+export function controlTaskQueue(
+  action: 'pause' | 'resume' | 'cancel' | 'remove' | 'retry' | 'up' | 'down' | 'clear',
+  id: string | null = null,
+) {
+  return invoke<import('../domain/taskQueue').WorkflowQueue>('control_task_queue', { action, id });
+}
 export type DubbingBatchRetrySelection = {
   itemIndices?: number[];
   scope: 'failed' | 'unfinished' | 'selected';

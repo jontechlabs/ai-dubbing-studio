@@ -79,6 +79,7 @@ async fn speaker_identification_refuses_missing_runtime_without_creating_jobs() 
         session: Mutex::new(Some(project::Session::new(root.clone(), p))),
         jobs: Mutex::new(HashMap::new()),
         gate: Arc::new(tokio::sync::Semaphore::new(1)),
+        queue: Mutex::new(crate::task_queue::State::default()),
         model_dir: Mutex::new(temporary.path().to_path_buf()),
         data_dir: temporary.path().to_path_buf(),
     });
@@ -143,6 +144,7 @@ async fn separation_requires_installed_runtime_and_preserves_project() {
         session: Mutex::new(Some(project::Session::new(root.clone(), p))),
         jobs: Mutex::new(HashMap::new()),
         gate: Arc::new(tokio::sync::Semaphore::new(1)),
+        queue: Mutex::new(crate::task_queue::State::default()),
         model_dir: Mutex::new(temporary.path().to_path_buf()),
         data_dir: temporary.path().to_path_buf(),
     });
@@ -219,6 +221,7 @@ async fn waveform_uses_selected_track_preserves_delay_and_reuses_cache() {
         session: Mutex::new(Some(project::Session::new(root.clone(), p))),
         jobs: Mutex::new(HashMap::new()),
         gate: Arc::new(tokio::sync::Semaphore::new(1)),
+        queue: Mutex::new(crate::task_queue::State::default()),
         model_dir: Mutex::new(temporary.path().to_path_buf()),
         data_dir: temporary.path().to_path_buf(),
     });
@@ -308,6 +311,7 @@ async fn queued_waveform_can_be_cancelled_without_blocking_project_edits() {
         session: Mutex::new(Some(project::Session::new(root.clone(), p))),
         jobs: Mutex::new(HashMap::new()),
         gate: Arc::new(tokio::sync::Semaphore::new(1)),
+        queue: Mutex::new(crate::task_queue::State::default()),
         model_dir: Mutex::new(temporary.path().to_path_buf()),
         data_dir: temporary.path().to_path_buf(),
     });
@@ -427,6 +431,7 @@ async fn extracts_both_mkv_text_tracks_and_preserves_dialogue_edits() {
         session: Mutex::new(Some(project::Session::new(root.clone(), p))),
         jobs: Mutex::new(HashMap::new()),
         gate: Arc::new(tokio::sync::Semaphore::new(1)),
+        queue: Mutex::new(crate::task_queue::State::default()),
         model_dir: Mutex::new(temporary.path().to_owned()),
         data_dir: temporary.path().to_owned(),
     });
@@ -566,6 +571,7 @@ async fn cancels_queued_subtitle_extraction_without_changing_the_project() {
         session: Mutex::new(Some(project::Session::new(root.clone(), p))),
         jobs: Mutex::new(HashMap::new()),
         gate: Arc::new(tokio::sync::Semaphore::new(1)),
+        queue: Mutex::new(crate::task_queue::State::default()),
         model_dir: Mutex::new(temporary.path().to_owned()),
         data_dir: temporary.path().to_owned(),
     });
@@ -618,6 +624,7 @@ async fn job_queue_import_cancel_and_retry_preserve_the_project() {
         session: Mutex::new(Some(project::Session::new(root.clone(), p.clone()))),
         jobs: Mutex::new(HashMap::new()),
         gate: Arc::new(tokio::sync::Semaphore::new(1)),
+        queue: Mutex::new(crate::task_queue::State::default()),
         model_dir: Mutex::new(temporary.path().to_owned()),
         data_dir: temporary.path().to_owned(),
     });
@@ -801,6 +808,7 @@ async fn model_storage_command_refuses_busy_and_reuses_moved_speaker_installatio
         session: Mutex::new(None),
         jobs: Mutex::new(HashMap::new()),
         gate: Arc::new(tokio::sync::Semaphore::new(1)),
+        queue: Mutex::new(crate::task_queue::State::default()),
         model_dir: Mutex::new(data.clone()),
         data_dir: data.clone(),
     });

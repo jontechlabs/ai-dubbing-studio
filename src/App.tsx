@@ -35,6 +35,7 @@ import { selectedGeneration } from './domain/tts';
 import { useTakeReview } from './hooks/useTakeReview';
 import { useGenerationAudio } from './hooks/useGenerationAudio';
 import { useProject } from './hooks/useProject';
+import { useTaskQueue } from './hooks/useTaskQueue';
 import { useShortcuts } from './hooks/useShortcuts';
 import { useTransport } from './hooks/useTransport';
 import { AudioLevelsContext } from './hooks/useAudioLevels';
@@ -47,6 +48,7 @@ import { ContextMenu, type ContextRequest, type OpenContextMenu } from './compon
 export default function App() {
   const { t, i18n } = useTranslation();
   const studio = useProject();
+  const taskQueue = useTaskQueue();
   const updater = useUpdater(studio.flush);
   const [renaming, setRenaming] = useState(false),
     [nameWorking, setNameWorking] = useState(false),
@@ -134,7 +136,9 @@ export default function App() {
     window.addEventListener('resize', clamp);
     return () => window.removeEventListener('resize', clamp);
   }, []);
-  const projectLocked = studio.jobs.some((j) => ['queued', 'running', 'paused'].includes(j.status));
+  const projectLocked =
+    !!taskQueue.data?.entries.some((e) => e.status === 'running') ||
+    studio.jobs.some((j) => ['queued', 'running', 'paused'].includes(j.status));
   const goHome = async () => {
     try {
       if (readMicrophone().phase !== 'idle') throw Error('MICROPHONE_PENDING');
@@ -505,6 +509,11 @@ export default function App() {
         />
         {studio.project && (
           <Header
+            queueCount={
+              taskQueue.data?.entries.filter((e) =>
+                ['pending', 'running', 'interrupted'].includes(e.status),
+              ).length ?? 0
+            }
             onHome={() => void goHome()}
             onRename={() => {
               setNameError('');
@@ -693,6 +702,7 @@ export default function App() {
                             </IconButton>
                           </div>
                           <DubPanel
+                            onQueue={() => setPanel('queue')}
                             active={dubbingActive && dubbingMode === mode && !panel}
                             onChooseLine={select}
                             onReferencePlay={() => {

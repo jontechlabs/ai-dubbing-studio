@@ -42,6 +42,7 @@ fn stage_checkpoint_preserves_prior_takes_and_rejects_unexpected_edits_or_revisi
         session: Mutex::new(Some(project::Session::new(root.clone(), p.clone()))),
         jobs: Mutex::new(HashMap::new()),
         gate: Arc::new(tokio::sync::Semaphore::new(1)),
+        queue: Mutex::new(crate::task_queue::State::default()),
         data_dir: root.clone(),
         model_dir: Mutex::new(root.join("models")),
     });
@@ -104,6 +105,7 @@ async fn cancellation_before_first_stage_never_loads_models_or_changes_the_proje
         session: Mutex::new(Some(project::Session::new(root.clone(), p.clone()))),
         jobs: Mutex::new(HashMap::new()),
         gate: Arc::new(tokio::sync::Semaphore::new(1)),
+        queue: Mutex::new(crate::task_queue::State::default()),
         data_dir: root.clone(),
         model_dir: Mutex::new(root.join("models")),
     });
