@@ -77,8 +77,8 @@ async function job(id) {
 }
 try {
   await client.connect(transport);
-  assert.equal(client.getServerVersion().version, '0.49.0');
-  assert.equal((await client.listTools()).tools.length, 166);
+  assert.equal(client.getServerVersion().version, '0.50.0');
+  assert.equal((await client.listTools()).tools.length, 170);
   await until(async () => {
     try {
       return (await state()).screen === 'home';
@@ -271,6 +271,91 @@ try {
     assert(
       (await call('studio_get_dialogues', { qualityTags: ['missing'], limit: 200 })).total > 0,
     );
+    await call('studio_control_task_queue', {
+      context: await context(),
+      action: 'pause',
+      id: null,
+    });
+    const workflowOptions = {
+      variantId: 'cosy3-official',
+      device: 'cpu',
+      referenceMode: 'current',
+      referenceId: null,
+      mode: 'crossLingual',
+      speed: 1,
+      seed: 17,
+    };
+    const workflowSpec = {
+      name: 'Fixture dubbing',
+      selection: {
+        takeCount: 4,
+        scope: 'selected',
+        lineIds: [p.dialogues[0].id],
+        approvedOnly: false,
+        unapprovedOnly: false,
+        force: true,
+        options: workflowOptions,
+      },
+      separation: null,
+      dubbing: true,
+      continueOnError: true,
+    };
+    const firstQueue = await call('studio_enqueue_workflow', {
+      context: await context(),
+      projectId: p.id,
+      expectedRevision: p.revision,
+      spec: workflowSpec,
+    });
+    const secondQueue = await call('studio_enqueue_workflow', {
+      context: await context(),
+      projectId: p.id,
+      expectedRevision: p.revision,
+      spec: {
+        ...workflowSpec,
+        name: 'Fixture separation',
+        separation: {
+          modelId: 'mel-band-roformer-kim',
+          sourceTrackId: 'original',
+          device: 'cpu',
+          windowSeconds: 4,
+          vocals: true,
+          music: true,
+          muteSource: false,
+        },
+        dubbing: false,
+      },
+    });
+    await call('studio_control_task_queue', {
+      context: await context(),
+      action: 'up',
+      id: secondQueue,
+    });
+    await call('studio_control_task_queue', {
+      context: await context(),
+      action: 'cancel',
+      id: firstQueue,
+    });
+    await call('studio_control_task_queue', {
+      context: await context(),
+      action: 'retry',
+      id: firstQueue,
+    });
+    const queue = await call('studio_task_queue_status');
+    assert(queue.paused);
+    assert.equal(queue.entries[0].id, secondQueue);
+    assert(queue.entries.every((e) => e.status === 'pending'));
+    const queuePage = await call('studio_task_queue_entry', {
+      id: firstQueue,
+      offset: 0,
+      limit: 1,
+    });
+    assert.equal(queuePage.spec.selection.takeCount, 4);
+    assert.equal(queuePage.rows.length, 1);
+    assert.equal(queuePage.spec.selection.lineIds.length, 1);
+    assert(!('basis' in queue.entries[0]));
+    assert(!('rows' in queue.entries[0]));
+    assert(!('root' in queue.entries[0]));
+    assert.deepEqual(await call('studio_get_project'), p);
     await fs.writeFile(
       checkpoint,
       JSON.stringify({
@@ -281,6 +366,9 @@ try {
         original: hash(original),
         project: p,
         desktopPid: Number(args['desktop-pid']),
+        queue,
+        firstQueue,
+        secondQueue,
       }),
     );
     console.log('VOLUME_LEVELING_SDK_PREPARED');
@@ -312,6 +400,44 @@ try {
       ),
       saved.take,
     );
+    const resumedQueue = await call('studio_task_queue_status');
+    assert(resumedQueue.paused);
+    assert.equal(resumedQueue.entries.length, 2);
+    assert.equal(resumedQueue.entries[0].id, saved.secondQueue);
+    assert.equal(resumedQueue.entries[0].status, 'interrupted');
+    assert.equal(resumedQueue.entries[0].error, 'QUEUE_RESTARTED');
+    await call('studio_control_task_queue', {
+      context: await context(),
+      action: 'retry',
+      id: saved.secondQueue,
+    });
+    const recoveredQueue = await call('studio_task_queue_status');
+    assert(recoveredQueue.paused);
+    assert.deepEqual(recoveredQueue.entries, saved.queue.entries);
+    const detail = await call('studio_task_queue_entry', {
+      id: saved.firstQueue,
+      offset: 0,
+      limit: 1,
+    });
+    assert.equal(detail.spec.selection.options.seed, 17);
+    assert.equal(detail.spec.selection.takeCount, 4);
+    assert.equal(detail.rows.length, 1);
+    await call('studio_control_task_queue', {
+      context: await context(),
+      action: 'remove',
+      id: saved.secondQueue,
+    });
+    await call('studio_control_task_queue', {
+      context: await context(),
+      action: 'cancel',
+      id: saved.firstQueue,
+    });
+    await call('studio_control_task_queue', {
+      context: await context(),
+      action: 'clear',
+      id: null,
+    });
+    assert.equal((await call('studio_task_queue_status')).entries.length, 0);
     const layers = p.generations.filter((g) => g.operation === 'leveling');
     assert.equal(layers.length, 3);
     const longLayer = layers.find((l) => l.trackId === 'level-test');
@@ -334,10 +460,13 @@ try {
         pcm(await fs.readFile(await call('studio_audio_patch_path', { id: layer.id }))).length > 0,
       );
     const proof = {
-      version: '0.49.0',
+      version: '0.50.0',
       officialSdk: true,
-      toolCount: 166,
+      toolCount: 170,
       actualApplicationRestart: true,
+      persistedQueueAndFrozenWorkflow: true,
+      queueControlsAndBoundedRead: true,
+      noAutomaticQueueResume: true,
       realPcmLowAndHigh: true,
       fullTrackBeyond120s: true,
       atomicMultiTrackApply: true,

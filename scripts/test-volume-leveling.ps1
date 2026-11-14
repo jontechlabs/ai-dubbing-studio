@@ -38,4 +38,11 @@ foreach($phase in @('before','after')) {
     } finally {
         if(-not $desktop.HasExited){$desktop.Kill();$null=$desktop.WaitForExit(5000)}
     }
+    if($phase -eq 'before') {
+        # Isolated fixture fault injection: simulate shutdown during an unpaused
+        # workflow. Restart must pause the queue, retain rows, and require retry.
+        $queueFile=Join-Path $dataRoot 'task-queue.json'
+        python (Join-Path $PSScriptRoot 'simulate-queue-interruption.py') $queueFile
+        if($LASTEXITCODE){throw 'Isolated queue restart fixture failed'}
+    }
 }

@@ -63,6 +63,9 @@ test('queues a frozen selected separation/dubbing workflow with exact routing an
   expect(q.entries[0].status).toBe('pending');
   expect((await saved(page)).generations).toEqual(before.generations);
   expect((await saved(page)).sourceCues).toEqual(before.sourceCues);
+  await page.setViewportSize({ width: 1440, height: 1800 });
+  await c.evaluate((e) => e.scrollIntoView({ block: 'center' }));
+  await expect(c).toBeInViewport({ ratio: 0.99 });
   await c.screenshot({ path: 'docs/screenshots/workflow-composer-fr.png' });
 });
 test('another batch can be configured and queued while a workflow runs, preserving each configuration', async ({
@@ -71,6 +74,9 @@ test('another batch can be configured and queued while a workflow runs, preservi
   await setup(page);
   const p = await batch(page),
     c = p.locator('.workflow-composer');
+  await p.getByRole('checkbox', { name: /Forcer un nouvel essai/ }).check();
+  await p.getByRole('button', { name: /^Doubler \d+ répliques$/ }).click();
+  await expect(p.locator('.current-job-progress')).toBeVisible();
   await c.getByRole('button', { name: 'Ajouter à la file', exact: true }).click();
   await expect(c).toContainText('Tâche ajoutée');
   await page.evaluate(() => {
@@ -123,7 +129,12 @@ test('queue controls reorder, cancel and clear tasks, persist across reload and 
     .getByRole('button', { name: 'Annuler cette tâche', exact: true })
     .click();
   await expect(modal.locator('[data-queue-id="workflow-1"]')).toContainText('Annulé');
-  await modal.screenshot({ path: 'docs/screenshots/task-queue-fr.png' });
+  const box = await modal.boundingBox(),
+    last = await modal.locator('.queue-entry').last().boundingBox();
+  await page.screenshot({
+    path: 'docs/screenshots/task-queue-fr.png',
+    clip: { x: box!.x, y: box!.y, width: box!.width, height: last!.y + last!.height - box!.y + 20 },
+  });
   await page.reload();
   await expect(page.locator('.dialogue-card').first()).toBeVisible();
   await page.getByRole('button', { name: /^File des tâches/ }).click();

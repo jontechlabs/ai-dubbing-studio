@@ -1,5 +1,61 @@
 use super::*;
 use crate::jobs;
+struct BrokenJournal<R: tauri::Runtime>(Protocol<R>);
+impl<R: tauri::Runtime> Clone for BrokenJournal<R> {
+    fn clone(&self) -> Self {
+        Self(self.0.clone())
+    }
+}
+impl<R: tauri::Runtime> Engine for BrokenJournal<R> {
+    async fn separate(&self, e: &Entry, row: &Row) -> Result<String, String> {
+        self.0.separate(e, row).await
+    }
+    async fn apply(&self, e: &Entry, key: &str) -> Result<(), String> {
+        self.0.apply(e, key).await
+    }
+    async fn dub(&self, e: &Entry, run: &DubRun) -> Result<Option<String>, String> {
+        self.0.dub(e, run).await
+    }
+    async fn wait(&self, e: &Entry, key: &str) -> Result<(), String> {
+        self.0.wait(e, key).await?;
+        // This isolated fixture's next atomic checkpoint must fail on both OSes.
+        let path = self.0.native.core.data_dir.join("task-queue.json");
+        std::fs::remove_file(&path).unwrap();
+        std::fs::create_dir(&path).unwrap();
+        std::fs::write(path.join("occupied"), b"fixture").unwrap();
+        Ok(())
+    }
+}
+#[tokio::test]
+async fn failed_checkpoint_after_child_completion_never_dispatches_the_next_workflow() {
+    let (_dir, core) = fixture().await;
+    let app = tauri::test::mock_app();
+    add_paused(&core, app.handle(), spec("first", false, true));
+    add_paused(&core, app.handle(), spec("next", false, true));
+    let events = Arc::new(std::sync::Mutex::new(vec![]));
+    let engine = BrokenJournal(Protocol {
+        native: Native {
+            core: core.clone(),
+            app: app.handle().clone(),
+        },
+        events: events.clone(),
+        fail_line: None,
+        real_tts: false,
+    });
+    {
+        let mut state = core.queue.lock().unwrap();
+        state.data.paused = false;
+        state.worker = true;
+    }
+    pump(core.clone(), app.handle().clone(), engine).await;
+    let view = status(&core).unwrap();
+    assert!(view.paused);
+    assert_eq!(view.entries[0].status, "interrupted");
+    assert_eq!(view.entries[0].error.as_deref(), Some("QUEUE_SAVE_FAILED"));
+    assert_eq!(view.entries[1].status, "pending");
+    assert_eq!(events.lock().unwrap().len(), 1);
+    assert!(!core.queue.lock().unwrap().worker);
+}
 use std::{path::Path, sync::Mutex};
 fn spec(name: &str, separate: bool, dub: bool) -> Spec {
     Spec{name:name.into(),selection:tts_batch::Selection{take_count:Some(2),scope:"all".into(),approved_only:false,unapproved_only:false,line_ids:vec![],force:true,
@@ -403,6 +459,7 @@ async fn stale_text_prevents_dispatch_but_manual_tags_do_not_change_the_captured
         let p = &mut guard.as_mut().unwrap().project;
         p.format_version = 29;
         p.dialogues[0].review_tags = vec!["retranslate".into()];
+        p.voice_references.push(serde_json::from_value(json!({"id":"unrelated","label":"Next batch reference","path":"characters/next.wav","durationMs":2000,"transcript":"Bonjour"})).unwrap());
     }
     checked(&core, &e).unwrap();
     core.session

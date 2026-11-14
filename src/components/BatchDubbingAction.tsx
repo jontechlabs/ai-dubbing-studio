@@ -89,7 +89,7 @@ export function BatchDubbingAction({
       <label className="field">
         <span>{t('batchScope')}</span>
         <select value={scope} disabled={busy || working} onChange={(e) => setScope(e.target.value)}>
-          <option value="all">{t('batchAllTranslated')}</option>
+          <option value="all">{t('workflow.allDialogues')}</option>
           <option value="selected">{t('batchSelected', { count: selectedIds.length })}</option>
         </select>
       </label>

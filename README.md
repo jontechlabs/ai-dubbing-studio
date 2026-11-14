@@ -1,5 +1,9 @@
 # AI Dubbing Studio
 
+## v0.50.0 — Queued separation and dubbing workflows
+
+Separate vocals/accompaniment across selected dialogues or the project, route outputs to Voice/Music, then dub successfully separated dialogues. Persistent FIFO queue with frozen configurations, enqueue while running, ordering, pause, cancellation and explicit recovery after restart. Source files and existing takes remain intact. **170 MCP tools / 33 schemas**. [Guide et captures](docs/TASK-QUEUE.md).
+
 ## v0.49.0 — Multi-track levelling and dubbing review
 
 Per-track previews and approval, atomic application of approved results and one undo step. Local project-wide checks of selected takes: missing/silent/quiet/clipping/possible abrupt endings/silence/timing and conservative multi-voice hints. Manual **Needs retranslation** and **Voice needs improvement** tags are available in the context menu. Persistent tags combine with translation filters; stale findings are excluded. Optional speaker module; audio and takes remain intact. [Guide and screenshots](docs/BATCH-LEVELING-AUDIT.md).

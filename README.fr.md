@@ -1,5 +1,9 @@
 # AI Dubbing Studio
 
+## v0.50.0 — File de traitements et isolation en lot
+
+Isolation Voix/Accompagnement sur les répliques sélectionnées ou tout le projet, attribution automatique aux pistes Voix/Musique, puis doublage des isolations réussies. File FIFO persistante : configurations figées, ajout pendant l’exécution, ordre, pause, annulation et reprise explicite après redémarrage. Les fichiers source et les essais existants restent conservés. **170 outils MCP / 33 schémas**. [Guide et captures](docs/TASK-QUEUE.md).
+
 ## v0.49.0 — Égalisation multi-pistes et contrôle du doublage
 
 Préécoutes par piste, validation individuelle, application atomique des résultats choisis et annulation commune. Analyse générale locale des essais sélectionnés : doublages manquants/muets, niveaux faibles, saturation, fins/silences/durées à vérifier et indices de plusieurs voix. Tags manuels **À retraduire** et **Voix à améliorer**, disponibles au clic droit. Tags persistants, filtres cumulables avec le statut de traduction, résultats périmés exclus. Module de locuteurs facultatif ; aucun son ni essai écrasé. [Guide et captures](docs/BATCH-LEVELING-AUDIT.md).

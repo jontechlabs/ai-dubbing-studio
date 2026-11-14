@@ -1,7 +1,7 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "AI Dubbing Studio",
-  "version": "0.49.0",
+  "version": "0.50.0",
   "identifier": "studio.local.dubbing",
   "build": {
     "beforeDevCommand": "pnpm dev",
@@ -31,9 +31,7 @@
   },
   "bundle": {
     "active": true,
-    "targets": [
-      "nsis"
-    ],
+    "targets": ["nsis"],
     "resources": {
       "../public/demo.mp4": "demo/demo.mp4",
       "binaries/": "binaries/",
@@ -109,18 +107,12 @@
       "../workers/vendor/speaker-separation/README.md": "workers/vendor/speaker-separation/README.md",
       "../workers/dubbing_audit_worker.py": "workers/dubbing_audit_worker.py"
     },
-    "icon": [
-      "icons/icon.ico",
-      "icons/icon.png"
-    ],
+    "icon": ["icons/icon.ico", "icons/icon.png"],
     "windows": {
       "nsis": {
         "installMode": "currentUser",
         "displayLanguageSelector": true,
-        "languages": [
-          "French",
-          "English"
-        ]
+        "languages": ["French", "English"]
       }
     },
     "createUpdaterArtifacts": true

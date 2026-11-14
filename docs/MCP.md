@@ -1,6 +1,12 @@
 # Piloter le studio avec une IA via MCP
 
-Le studio fournit **155 outils MCP** en v0.40.0 : 120 commandes natives et 35 commandes d’édition, d’état et de lecture. Le serveur utilise **stdio** et le même exécutable que l’application. Cette intégration pilote **l’application ouverte** ; aucun environnement Node.js ou Python supplémentaire n’est requis pour la connexion.
+Le studio fournit **170 outils MCP** en v0.50.0 : 135 commandes natives et 35 commandes d’édition, d’état et de lecture, avec **33 schémas partagés**. Le serveur utilise **stdio** et le même exécutable que l’application. Cette intégration pilote **l’application ouverte** ; aucun environnement Node.js ou Python supplémentaire n’est requis pour la connexion.
+
+## File de traitements
+
+`studio_enqueue_workflow` enregistre une sélection figée et ses réglages, même pendant un autre traitement. Il renvoie un **ID de workflow**, à suivre avec `studio_task_queue_status`, plutôt qu’un ID de tâche à chercher dans `studio_list_jobs`. Les IDs des traitements enfants restent disponibles dans le résumé. `studio_task_queue_entry` donne les réglages et les lignes par pages de 1 à 200 ; `spec.selection.lineIds` y contient seulement les IDs de la page demandée.
+
+`studio_control_task_queue` accepte `pause`, `resume`, `cancel`, `up`, `down`, `remove`, `retry` et `clear`. Les modifications demandent le contexte courant. La pause attend la fin du lot courant. L’annulation se propage au traitement enfant ; les sons et essais déjà enregistrés restent conservés. Après redémarrage, la file est en pause et les workflows actifs sont signalés interrompus. Aucune reprise ni ouverture de projet n’est automatique. Les lots utilisent les outils de séparation et les moteurs vocaux déjà installés ; ils n’installent rien implicitement. [Réglages, attribution et reprise](TASK-QUEUE.md).
 
 `studio_audio_levels` mesure les niveaux stéréo en dBFS et permet d’effacer les crêtes maximales/voyants, sans modifier le projet. Les valeurs sont aussi dans `studio_get_state.audioLevels`. [Mesure, mix final et limites](AUDIO-LEVELS.md).
 

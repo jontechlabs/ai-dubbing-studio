@@ -357,7 +357,7 @@ export function DubPanel({
   }, [completion, onError, variantId]);
   const engineBusy =
     queueActive || jobs.some((j) => ['queued', 'running', 'paused'].includes(j.status));
-  const busy = task.pending || working || (!batch && engineBusy);
+  const busy = working || (!batch && (task.pending || engineBusy));
   const takeReview = useTakeReview(project, onEdit, busy);
   if (!line) return <div className="panel-body">{t('selectLine')}</div>;
   const preferred = voiceVariant(project.modelPreferences?.voiceVariantId);

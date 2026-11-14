@@ -447,6 +447,7 @@
     "VOLUME_LEVELING_INVALID_AUDIO": "Le son de la sélection est incomplet ou invalide. Aucun changement n’a été appliqué.",
     "INVALID_DUBBING_AUDIT": "Résultat ou options d’analyse invalides.",
     "QUEUE_OPTIONS": "Les réglages de ce lot sont invalides.",
+    "QUEUE_SAVE_FAILED": "Impossible d’enregistrer la file. Elle est en pause ; libérez de l’espace disque puis reprenez ses étapes inachevées. Les sons déjà enregistrés sont conservés.",
     "QUEUE_EMPTY": "Aucune réplique admissible dans cette sélection.",
     "QUEUE_RANGE": "L’isolation par réplique demande des créneaux de 0,1 à 60 secondes. Corrigez les répliques trop longues ou retirez-les de la sélection.",
     "QUEUE_LIMIT": "La file est trop volumineuse. Retirez des tâches ou l’historique terminé.",
@@ -2044,6 +2045,7 @@
   },
   "queue": "File des tâches",
   "workflow": {
+    "allDialogues": "Toutes les répliques",
     "composer": "File et actions enchaînées",
     "actions": "Actions du lot",
     "name": "Nom de la tâche (facultatif)",

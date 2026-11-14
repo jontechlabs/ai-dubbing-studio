@@ -309,7 +309,8 @@ fn current(core: &Core, e: &Entry) -> Result<Project, String> {
     }
     Ok(s.project.clone())
 }
-fn basis(p: &Project, root: &std::path::Path, ids: &[String]) -> Result<Value, String> {
+fn basis(p: &Project, root: &std::path::Path, spec: &Spec) -> Result<Value, String> {
+    let ids = &spec.selection.line_ids;
     let media = p.media.as_ref().ok_or("MEDIA_MISSING")?;
     let mut selected: HashSet<_> = ids.iter().cloned().collect();
     for g in p
@@ -323,16 +324,33 @@ fn basis(p: &Project, root: &std::path::Path, ids: &[String]) -> Result<Value, S
         .dialogues
         .iter()
         .filter(|l| selected.contains(&l.id))
-        .filter_map(|l| l.character_id.as_ref())
+        .filter_map(|l| l.character_id.clone())
         .collect();
     let lines:Vec<_>=p.dialogues.iter().filter(|l|selected.contains(&l.id)).map(|l|json!({"id":l.id,"startMs":l.start_ms,"endMs":l.end_ms,"excluded":l.excluded_from_dubbing,"characterId":l.character_id,"ttsText":l.tts_text,"source":crate::speaker_dubbing::text(p,l,true),"target":crate::speaker_dubbing::text(p,l,false)})).collect();
+    let options = &spec.selection.options;
+    let references:Vec<_>=p.voice_references.iter().filter(|r|spec.dubbing&&options.reference_mode=="file"&&options.reference_id.as_deref()==Some(&r.id)).map(|r|json!({"reference":r,"stamp":crate::source_transcription::stamp(root,&r.path).ok()})).collect();
+    let profiles = p
+        .character_profiles
+        .iter()
+        .filter(|(key, _)| {
+            spec.dubbing && options.reference_mode == "library" && chars.contains(*key)
+        })
+        .collect::<std::collections::BTreeMap<_, _>>();
+    let groups: Vec<_> = p
+        .speaker_dubbings
+        .iter()
+        .filter(|g| {
+            selected.contains(&g.parent_id)
+                || g.voices.iter().any(|v| selected.contains(&v.line_id))
+        })
+        .collect();
     Ok(
-        json!({"media":media,"stamp":crate::source_transcription::stamp(root,&media.path)?,"languages":p.languages,"lines":lines,"characters":p.characters.iter().filter(|c|chars.contains(&c.id)).collect::<Vec<_>>(),"references":p.voice_references,"pronunciation":p.pronunciation,"groups":p.speaker_dubbings}),
+        json!({"media":media,"stamp":crate::source_transcription::stamp(root,&media.path)?,"languages":p.languages,"lines":lines,"characters":p.characters.iter().filter(|c|chars.contains(&c.id)).collect::<Vec<_>>(),"references":references,"profiles":profiles,"pronunciation":p.pronunciation,"groups":groups}),
     )
 }
 fn checked(core: &Core, e: &Entry) -> Result<Project, String> {
     let p = current(core, e)?;
-    if basis(&p, &e.root, &e.spec.selection.line_ids)? != e.basis {
+    if basis(&p, &e.root, &e.spec)? != e.basis {
         return Err("STALE_REVISION".into());
     }
     Ok(p)
@@ -419,7 +437,7 @@ fn capture(p: &Project, root: PathBuf, mut spec: Spec) -> Result<Entry, String> 
         created_at: now(),
         project_id: p.id.clone(),
         project_name: p.name.clone(),
-        basis: basis(p, &root, &spec.selection.line_ids)?,
+        basis: basis(p, &root, &spec)?,
         root,
         rows: lines
             .iter()
@@ -627,15 +645,23 @@ impl<R: tauri::Runtime> Engine for Native<R> {
         let cancel = flag(&self.core, &e.id)?;
         idle(&self.core, &cancel).await?;
         if let Some(job) = &row.job_id {
-            if self
+            let succeeded = self
                 .core
                 .jobs
                 .lock()
                 .map_err(io_error)?
                 .get(job)
-                .is_some_and(|j| j.saved.record.status == "succeeded")
-            {
-                return Ok(job.clone());
+                .is_some_and(|j| j.saved.record.status == "succeeded");
+            if succeeded {
+                let p = checked(&self.core, e)?;
+                if p.generations
+                    .iter()
+                    .any(|g| g["kind"] == "audioPatch" && g["operationId"] == *job)
+                    || audio_toolbox::result(&self.core, &self.app, job)
+                        .is_ok_and(|r| r["stale"] == false)
+                {
+                    return Ok(job.clone());
+                }
             }
         }
         checked(&self.core, e)?;
@@ -927,6 +953,27 @@ fn kick<R: tauri::Runtime>(core: Arc<Core>, app: tauri::AppHandle<R>) {
     };
     tauri::async_runtime::spawn(pump(core, app, engine));
 }
+fn halt_in_memory<R: tauri::Runtime>(
+    core: &Core,
+    app: &tauri::AppHandle<R>,
+    key: &str,
+    interrupted: bool,
+) {
+    if let Ok(mut q) = core.queue.lock() {
+        q.data.paused = true;
+        q.worker = false;
+        q.active = None;
+        if let Some(e) = q.data.entries.iter_mut().find(|e| e.id == key) {
+            if interrupted {
+                e.status = "interrupted".into();
+            }
+            e.error = Some("QUEUE_SAVE_FAILED".into());
+        }
+    }
+    if let Ok(view) = status(core) {
+        let _ = app.emit("task-queue-changed", &view);
+    }
+}
 async fn pump<R: tauri::Runtime, E: Engine>(core: Arc<Core>, app: tauri::AppHandle<R>, engine: E) {
     loop {
         let next = {
@@ -981,11 +1028,7 @@ async fn pump<R: tauri::Runtime, E: Engine>(core: Arc<Core>, app: tauri::AppHand
         })
         .is_err()
         {
-            if let Ok(mut q) = core.queue.lock() {
-                q.data.paused = true;
-                q.worker = false;
-                q.active = None;
-            }
+            halt_in_memory(&core, &app, &key, false);
             return;
         }
         let result = execute(&core, &app, &key, &engine).await;
@@ -1008,15 +1051,22 @@ async fn pump<R: tauri::Runtime, E: Engine>(core: Arc<Core>, app: tauri::AppHand
             }
             e.stage = "done".into();
         });
-        let stop = saved.is_err()
-            || entry(&core, &key).is_ok_and(|e| {
-                !e.spec.continue_on_error && ["failed", "partial"].contains(&e.status.as_str())
-            });
-        if stop {
-            let _ = change(&core, &app, |q| {
+        if saved.is_err() {
+            halt_in_memory(&core, &app, &key, true);
+            return;
+        }
+        let stop = entry(&core, &key).is_ok_and(|e| {
+            !e.spec.continue_on_error && ["failed", "partial"].contains(&e.status.as_str())
+        });
+        if stop
+            && change(&core, &app, |q| {
                 q.paused = true;
                 Ok(())
-            });
+            })
+            .is_err()
+        {
+            halt_in_memory(&core, &app, &key, false);
+            return;
         }
     }
 }

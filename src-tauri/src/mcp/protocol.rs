@@ -164,7 +164,7 @@ impl Session {
             return ok(
                 json!({"protocolVersion":version,"capabilities":{"tools":{},"resources":{}},
                 "serverInfo":{"name":"ai-dubbing-studio","version":env!("CARGO_PKG_VERSION")},
-                "instructions":"Controls the open local desktop after MCP is enabled in Settings. Start with studio_get_state and studio://guide. Saved mutations require the current context. Heavy operations return job IDs: poll studio_list_jobs; use studio_cancel_job to cancel. No remote service, shell or code evaluation."}),
+                "instructions":"Controls the open local desktop after MCP is enabled in Settings. Start with studio_get_state and studio://guide. Saved mutations require the current context. Heavy operations return job IDs: poll studio_list_jobs; use studio_cancel_job to cancel. enqueue_workflow instead returns a workflow ID: poll studio_task_queue_status and manage it with studio_control_task_queue. No remote service, shell or code evaluation."}),
             );
         }
         if method == "ping" {

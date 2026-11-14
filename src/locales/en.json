@@ -447,6 +447,7 @@
     "VOLUME_LEVELING_INVALID_AUDIO": "Selection audio is incomplete or invalid. No changes were applied.",
     "INVALID_DUBBING_AUDIT": "Invalid audit options or results.",
     "QUEUE_OPTIONS": "Invalid workflow settings.",
+    "QUEUE_SAVE_FAILED": "The queue could not be saved and is paused. Free disk space, then resume incomplete steps. Committed audio remains intact.",
     "QUEUE_EMPTY": "No eligible dialogue in this selection.",
     "QUEUE_RANGE": "Per-dialogue separation requires 0.1–60-second ranges. Correct long dialogues or remove them from the selection.",
     "QUEUE_LIMIT": "Queue limit reached. Remove tasks or finished history.",
@@ -2044,6 +2045,7 @@
   },
   "queue": "Task queue",
   "workflow": {
+    "allDialogues": "All dialogues",
     "composer": "Queue and chained actions",
     "actions": "Batch actions",
     "name": "Task name (optional)",
