@@ -241,6 +241,13 @@ try {
     );
     assert.deepEqual(p.sourceCues, before.sourceCues);
     assert.deepEqual(p.targetCues, before.targetCues);
+    await call('studio_project_patch', {
+      context: await context(),
+      patches: [
+        { op: 'replace', path: '/formatVersion', value: 29 },
+        { op: 'add', path: '/dialogues/0/reviewTags', value: ['retranslate', 'improveVoice'] },
+      ],
+    });
     assert.equal((await call('studio_dubbing_audit_status')).speakersInstalled, false);
     const auditContext = await context();
     const auditId = await call('studio_analyze_dubbing', {
@@ -256,6 +263,8 @@ try {
     });
     assert.equal(p.formatVersion, 29);
     assert.equal(p.dubbingAudit.voicesStatus, 'unavailable');
+    assert.deepEqual(p.dialogues[0].reviewTags, ['retranslate', 'improveVoice']);
+    assert.equal((await call('studio_get_dialogues', { qualityTags: ['retranslate'] })).total, 1);
     assert(p.dubbingAudit.rows.some((r) => r.tags.includes('missing')));
     const listed = await call('studio_get_dialogues', { limit: 200 });
     assert(listed.rows.every((r) => r.qualityCurrent));
@@ -283,6 +292,8 @@ try {
     assert.deepEqual(p.generations, saved.project.generations);
     assert.deepEqual(p.tracks, saved.project.tracks);
     assert.deepEqual(p.dubbingAudit, saved.project.dubbingAudit);
+    assert.deepEqual(p.dialogues[0].reviewTags, ['retranslate', 'improveVoice']);
+    assert.equal((await call('studio_get_dialogues', { qualityTags: ['improveVoice'] })).total, 1);
     assert(
       (await call('studio_get_dialogues', { qualityTags: ['missing'], limit: 200 })).total > 0,
     );

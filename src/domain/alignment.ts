@@ -225,6 +225,9 @@ export function applyAlignment(project: Project, proposal: Alignment): Project {
       {
         id,
         excludedFromDubbing: previous.some((l) => l.excludedFromDubbing) || undefined,
+        reviewTags: previous.some((l) => l.reviewTags?.length)
+          ? [...new Set(previous.flatMap((l) => l.reviewTags ?? []))]
+          : undefined,
         ...bounds,
         sourceCueIds,
         targetCueIds,

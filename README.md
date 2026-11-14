@@ -2,7 +2,7 @@
 
 ## v0.49.0 — Multi-track levelling and dubbing review
 
-Per-track previews and approval, atomic application of approved results and one undo step. Local project-wide checks of selected takes: missing/silent/quiet/clipping/possible abrupt endings/silence/timing and conservative multi-voice hints. Persistent tags combine with translation filters; stale findings are excluded. Optional speaker module; audio and takes remain intact. [Guide and screenshots](docs/BATCH-LEVELING-AUDIT.md).
+Per-track previews and approval, atomic application of approved results and one undo step. Local project-wide checks of selected takes: missing/silent/quiet/clipping/possible abrupt endings/silence/timing and conservative multi-voice hints. Manual **Needs retranslation** and **Voice needs improvement** tags are available in the context menu. Persistent tags combine with translation filters; stale findings are excluded. Optional speaker module; audio and takes remain intact. [Guide and screenshots](docs/BATCH-LEVELING-AUDIT.md).
 
 ## v0.48.0 — Level an entire audio track
 

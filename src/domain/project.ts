@@ -324,6 +324,14 @@ export function validateProject(value: unknown): Project {
   }
   for (const dialogue of project.dialogues) {
     if (
+      dialogue.reviewTags !== undefined &&
+      (project.formatVersion < 29 ||
+        !Array.isArray(dialogue.reviewTags) ||
+        dialogue.reviewTags.some((tag) => !['retranslate', 'improveVoice'].includes(tag)) ||
+        new Set(dialogue.reviewTags).size !== dialogue.reviewTags.length)
+    )
+      throw Error('INVALID_PROJECT');
+    if (
       dialogue.excludedFromDubbing !== undefined &&
       (typeof dialogue.excludedFromDubbing !== 'boolean' || project.formatVersion < 24)
     )

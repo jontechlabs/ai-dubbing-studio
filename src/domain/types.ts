@@ -27,6 +27,7 @@ export interface MediaAsset extends MediaInfo {
   audioStreamIndex: number | null;
 }
 export interface Dialogue {
+  reviewTags?: import('./dubbingAudit').ManualReviewTag[];
   excludedFromDubbing?: boolean;
   id: string;
   startMs: number;

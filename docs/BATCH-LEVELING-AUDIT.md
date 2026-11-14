@@ -42,11 +42,13 @@ Le module compare des empreintes vocales issues de fenêtres de parole disjointe
 
 ### Filtrer et corriger
 
+Deux tags manuels sont disponibles sans lancer d’analyse : **À retraduire** et **Voix à améliorer**. Clic droit sur une réplique → **Ajouter le tag…** / **Retirer le tag…**. Ils s’affichent sur la carte et dans les filtres du doublage, restent conservés après redémarrage, réanalyse ou modification de la réplique, et se retirent explicitement lorsque le point est résolu. Ils ne changent pas les validations de traduction ou d’essai. Les opérations de fusion et de recalage conservent ces annotations.
+
 Ouvrez **Filtres du doublage** et cochez les tags. Une réplique correspond si elle possède **au moins un** des tags cochés ; ce filtre se cumule avec le statut de traduction, la recherche et le filtre principal. Vous pouvez ensuite sélectionner les résultats visibles et utiliser les outils de doublage par lot existants.
 
 Les cartes affichent leurs tags. Le rapport permet de rejoindre une réplique. Le clic droit sur une réplique permet de retirer ses tags après vérification, avec annulation possible. Modifier un texte/essai/montage rend ses résultats périmés ; les résultats des autres répliques restent utilisables quand leur contexte audio est inchangé. Des modifications globales de pistes, groupes ou calage peuvent nécessiter une nouvelle analyse. Les résultats périmés restent consultables, mais leurs tags sont exclus des filtres.
 
-Le rapport utilise le **format projet 29**. Les projets antérieurs restent lisibles ; utilisez v0.49.0 ou ultérieure pour rouvrir un projet contenant ce rapport.
+Le rapport et les tags manuels utilisent le **format projet 29**. Les projets antérieurs restent lisibles ; utilisez v0.49.0 ou ultérieure pour rouvrir un projet contenant ces données.
 
 ## Contrôle IA
 

@@ -33,7 +33,15 @@ import { formatTime } from '../domain/time';
 import type { Dialogue, Project } from '../domain/types';
 import { assignCharacter } from '../domain/characters';
 import { CharacterAvatar } from './CharacterTools';
-import { currentAuditRows, auditTags, type AuditTag, type AuditRow } from '../domain/dubbingAudit';
+import {
+  currentAuditRows,
+  qualityTags,
+  dialogueQualityTags,
+  manualReviewTags,
+  setManualReviewTag,
+  type QualityTag,
+  type AuditRow,
+} from '../domain/dubbingAudit';
 import { selectedGeneration, staleGeneration } from '../domain/tts';
 import { canApproveJointReview, reviewIndex, indexedTake } from '../domain/jointReview';
 import { useTakeReview } from '../hooks/useTakeReview';
@@ -103,7 +111,7 @@ function DialoguesPane({
 }) {
   const { t } = useTranslation();
   const takeReview = useTakeReview(project, onEdit, busy);
-  const [tagFilter, setTagFilter] = useState<AuditTag[]>([]);
+  const [tagFilter, setTagFilter] = useState<QualityTag[]>([]);
   const audit = useMemo(
     () => (project ? currentAuditRows(project) : new Map<string, AuditRow>()),
     [project],
@@ -159,7 +167,8 @@ function DialoguesPane({
       (d) =>
         (!d.excludedFromDubbing || showExcluded) &&
         (translationFilter === 'all' || states.get(d.id) === translationFilter) &&
-        (!tagFilter.length || tagFilter.some((tag) => audit.get(d.id)?.tags.includes(tag))) &&
+        (!tagFilter.length ||
+          tagFilter.some((tag) => dialogueQualityTags(d, audit.get(d.id)).includes(tag))) &&
         (!review ||
           d.warnings.length > 0 ||
           d.status === 'review' ||
@@ -268,7 +277,7 @@ function DialoguesPane({
         {project?.dubbingAudit && audit.size < project.dubbingAudit.rows.length && (
           <p role="status">{t('audit.stale')}</p>
         )}
-        {auditTags.map((tag) => (
+        {qualityTags.map((tag) => (
           <label className="checkbox-field" key={tag}>
             <input
               type="checkbox"
@@ -280,7 +289,9 @@ function DialoguesPane({
               }
             />
             {t('audit.tag.' + tag)} (
-            {[...audit.values()].filter((r) => r.tags.includes(tag)).length})
+            {project?.dialogues.filter((l) => dialogueQualityTags(l, audit.get(l.id)).includes(tag))
+              .length ?? 0}
+            )
           </label>
         ))}
         <button className="text-button" onClick={() => setTagFilter([])}>
@@ -457,11 +468,24 @@ function DialoguesPane({
                   }}
                 >
                   <DialogueCard
-                    auditTags={audit.get(line.id)?.tags ?? []}
+                    auditTags={dialogueQualityTags(line, audit.get(line.id))}
                     onRestore={() => onEdit((p) => setDialogueExclusion(p, [line.id], false))}
                     onDelete={() => onDelete([line.id])}
                     openContext={(event) =>
                       openContext(event, t('dialogueContext'), [
+                        ...manualReviewTags.map((tag) => ({
+                          label: t(
+                            line.reviewTags?.includes(tag)
+                              ? 'audit.removeManual'
+                              : 'audit.addManual',
+                            { tag: t('audit.tag.' + tag) },
+                          ),
+                          disabled: busy,
+                          run: () =>
+                            onEdit((p) =>
+                              setManualReviewTag(p, line.id, tag, !line.reviewTags?.includes(tag)),
+                            ),
+                        })),
                         {
                           label: t('dialogueAudio.open'),
                           disabled: busy || !project?.media,
@@ -605,7 +629,7 @@ function DialogueCard({
   onPlayDub,
   onApprove,
 }: {
-  auditTags: AuditTag[];
+  auditTags: QualityTag[];
   onRestore: () => void;
   onDelete: () => void;
   openContext: (event: import('react').MouseEvent<HTMLElement>) => void;
@@ -793,7 +817,14 @@ function DialogueCard({
       {qualityTags.length > 0 && (
         <div className="audit-badges">
           {qualityTags.map((tag) => (
-            <span key={tag} title={t('audit.caveats')}>
+            <span
+              key={tag}
+              title={t(
+                manualReviewTags.includes(tag as (typeof manualReviewTags)[number])
+                  ? 'audit.manualHint'
+                  : 'audit.caveats',
+              )}
+            >
               {t('audit.tag.' + tag)}
             </span>
           ))}

@@ -577,7 +577,9 @@ mod tests {
     }
     #[tokio::test]
     async fn audit_persists_findings_but_never_changes_sources_or_takes() {
-        let (_dir, root, p) = crate::mix::tests::fixture().await;
+        let (_dir, root, mut p) = crate::mix::tests::fixture().await;
+        p.format_version = 29;
+        p.dialogues[0].review_tags = vec!["retranslate".into(), "improveVoice".into()];
         let core = crate::mix::tests::core(&root, p.clone());
         let app = tauri::test::mock_app();
         let before = std::fs::read(root.join("generations/voice.wav")).unwrap();
@@ -606,6 +608,10 @@ mod tests {
         assert_eq!(saved.format_version, 29);
         assert_eq!(saved.generations, p.generations);
         assert_eq!(saved.dialogues.len(), p.dialogues.len());
+        assert_eq!(saved.dialogues[0].review_tags, p.dialogues[0].review_tags);
+        let mut manual_only = saved.clone();
+        manual_only.dialogues[0].review_tags.clear();
+        assert_eq!(basis(&manual_only), basis(&saved));
         assert_eq!(saved.dubbing_audit.as_ref().unwrap().basis, basis(&saved));
         assert_eq!(
             std::fs::read(root.join("generations/voice.wav")).unwrap(),

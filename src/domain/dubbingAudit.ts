@@ -1,4 +1,6 @@
-import type { Project } from './types';
+import type { Dialogue, Project } from './types';
+export const manualReviewTags = ['retranslate', 'improveVoice'] as const;
+export type ManualReviewTag = (typeof manualReviewTags)[number];
 export interface DubbingAuditOptions {
   voices: 'off' | 'source' | 'dubbing' | 'both';
   sourceTrackId: string | null;
@@ -15,6 +17,34 @@ export const auditTags = [
   'invalidAudio',
 ] as const;
 export type AuditTag = (typeof auditTags)[number];
+export const qualityTags = [...manualReviewTags, ...auditTags] as const;
+export type QualityTag = (typeof qualityTags)[number];
+export function dialogueQualityTags(line: Dialogue, row?: AuditRow): QualityTag[] {
+  return [...(line.reviewTags ?? []), ...(row?.tags ?? [])];
+}
+export function setManualReviewTag(
+  p: Project,
+  lineId: string,
+  tag: ManualReviewTag,
+  enabled: boolean,
+): Project {
+  const line = p.dialogues.find((l) => l.id === lineId);
+  if (!line || !manualReviewTags.includes(tag)) throw Error('INVALID_PROJECT');
+  const tags = new Set(line.reviewTags ?? []);
+  if (enabled) tags.add(tag);
+  else tags.delete(tag);
+  return {
+    ...p,
+    formatVersion: Math.max(29, p.formatVersion),
+    dialogues: p.dialogues.map((l) => {
+      if (l.id !== lineId) return l;
+      const next = { ...l };
+      if (tags.size) next.reviewTags = [...tags];
+      else delete next.reviewTags;
+      return next;
+    }),
+  };
+}
 export interface AuditRow {
   lineId: string;
   takeId: string | null;

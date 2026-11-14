@@ -51,6 +51,8 @@ pub struct MediaAsset {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Dialogue {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub review_tags: Vec<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub excluded_from_dubbing: Option<bool>,
     pub id: String,
@@ -410,6 +412,20 @@ impl Project {
         }
         let mut ids = std::collections::HashSet::new();
         for d in &self.dialogues {
+            if !d.review_tags.is_empty()
+                && (self.format_version < 29
+                    || d.review_tags.len() > 2
+                    || d.review_tags
+                        .iter()
+                        .any(|t| !["retranslate", "improveVoice"].contains(&t.as_str()))
+                    || d.review_tags
+                        .iter()
+                        .collect::<std::collections::HashSet<_>>()
+                        .len()
+                        != d.review_tags.len())
+            {
+                return Err("INVALID_PROJECT".into());
+            }
             if d.excluded_from_dubbing.is_some() && self.format_version < 24 {
                 return Err("INVALID_PROJECT".into());
             }

@@ -12,7 +12,7 @@ import catalog from '../mcp/catalog.json';
 import qualityCatalog from '../../workers/voice-quality.json';
 import { dialogueText } from '../domain/subtitles';
 import { translationState } from '../domain/translation';
-import { currentAuditRows } from '../domain/dubbingAudit';
+import { currentAuditRows, dialogueQualityTags } from '../domain/dubbingAudit';
 import { validateProject } from '../domain/project';
 import { dubbingClips } from '../domain/mix';
 import { speakerDubbingState } from '../domain/speakerDubbing';
@@ -223,7 +223,7 @@ export function useMcpControl(control: Control) {
               translated: dialogueText(project, line, 'target'),
               translationStatus: translationState(project, line),
               qualityCurrent: quality.has(line.id),
-              qualityTags: quality.get(line.id)?.tags ?? [],
+              qualityTags: dialogueQualityTags(line, quality.get(line.id)),
             }))
             .filter(
               (line) =>

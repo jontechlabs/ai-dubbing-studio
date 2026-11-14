@@ -174,3 +174,61 @@ test('missing speaker module is explicit; audio-only checks stay available', asy
     .selectOption('off');
   await expect(modal).not.toContainText('Module de locuteurs absent');
 });
+test('manual retranslation and voice tags filter without analysis and survive analysis, edits and reload', async ({
+  page,
+}) => {
+  const card = page.locator('[data-dialogue-row]').first();
+  const lineId = await card.getAttribute('data-dialogue-row');
+  for (const tag of ['À retraduire', 'Voix à améliorer']) {
+    await card.click({ button: 'right' });
+    await page.getByRole('menuitem', { name: `Ajouter le tag « ${tag} »`, exact: true }).click();
+    await expect(card.locator('.audit-badges')).toContainText(tag);
+  }
+  await expect
+    .poll(async () => (await saved(page)).dialogues.find((l: any) => l.id === lineId).reviewTags)
+    .toEqual(['retranslate', 'improveVoice']);
+  const listed = await page.evaluate(
+    async () =>
+      await (window as any).__mcp('studio_get_dialogues', { qualityTags: ['retranslate'] }),
+  );
+  expect(listed.total).toBe(1);
+  expect(listed.rows[0].qualityCurrent).toBe(false);
+  const modal = await audit(page);
+  await modal.getByRole('button', { name: 'Fermer', exact: true }).click();
+  await page.reload();
+  await expect(page.getByRole('button', { name: 'Lecture', exact: true })).toBeEnabled();
+  await page.getByText('Filtres du doublage', { exact: true }).click();
+  await page.getByRole('checkbox', { name: 'À retraduire (1)', exact: true }).check();
+  await expect(page.locator('[data-dialogue-row]')).toHaveCount(1);
+  await page.evaluate(async () => {
+    const w = window as any,
+      s = await w.__mcp('studio_get_state', {});
+    await w.__mcp('studio_project_patch', {
+      context: s.context,
+      patches: [{ op: 'replace', path: '/dialogues/0/ttsText', value: 'Texte corrigé' }],
+    });
+  });
+  const stale = await page.evaluate(
+    async () =>
+      await (window as any).__mcp('studio_get_dialogues', { qualityTags: ['improveVoice'] }),
+  );
+  expect(stale.total).toBe(1);
+  expect(stale.rows[0].qualityCurrent).toBe(false);
+  await page
+    .getByRole('combobox', { name: 'Statut de traduction', exact: true })
+    .selectOption('translated');
+  await expect(page.locator('[data-dialogue-row]')).toHaveCount(1);
+  const p = await saved(page);
+  expect(p.dialogues.find((l: any) => l.id === lineId).reviewTags).toEqual([
+    'retranslate',
+    'improveVoice',
+  ]);
+  await page.locator('[data-dialogue-row]').first().click({ button: 'right' });
+  await page
+    .getByRole('menuitem', { name: 'Retirer le tag « À retraduire »', exact: true })
+    .click();
+  await expect(page.locator('[data-dialogue-row]')).toHaveCount(0);
+  await expect
+    .poll(async () => (await saved(page)).dialogues.find((l: any) => l.id === lineId).reviewTags)
+    .toEqual(['improveVoice']);
+});

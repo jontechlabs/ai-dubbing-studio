@@ -432,12 +432,12 @@ tool(
 );
 tool(
   'studio_get_dialogues',
-  'Read paginated dialogue texts, translation statuses, selected takes, timing and current audit tags. qualityTags matches ANY supplied tag, combined with status and IDs. Stale or absent audits return qualityCurrent=false and no tags. Maximum 200 rows.',
+  'Read paginated dialogue texts, translation statuses, selected takes, timing and review/audit tags. qualityTags matches ANY supplied tag, combined with status and IDs. Manual retranslate/improveVoice tags always remain available; stale or absent audits set qualityCurrent=false and omit automated tags. Change manual tags via dialogue.reviewTags with project_patch. Maximum 200 rows.',
   {
     offset: integer,
     limit: { type: 'integer', minimum: 1, maximum: 200 },
     status: choice('all', 'untranslated', 'translated', 'approved'),
-    qualityTags:{type:'array',items:choice('missing','silent','multipleVoices','quiet','clipping','cutEnd','longSilence','timing','invalidAudio')},
+    qualityTags:{type:'array',items:choice('retranslate','improveVoice','missing','silent','multipleVoices','quiet','clipping','cutEnd','longSilence','timing','invalidAudio')},
     ids: { type: 'array', items: string },
   },
   [],
