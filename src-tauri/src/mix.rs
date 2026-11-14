@@ -705,27 +705,6 @@ pub(crate) async fn bake_tracks<R: tauri::Runtime>(
     }
     Ok(files)
 }
-#[cfg(test)]
-fn arguments(
-    root: &Path,
-    p: &Project,
-    options: &Options,
-    tracks: &[Track],
-    temp: &Path,
-    voices: &Path,
-    output: &Path,
-) -> Result<Vec<String>, String> {
-    arguments_with_baked(
-        root,
-        p,
-        options,
-        tracks,
-        temp,
-        voices,
-        output,
-        &std::collections::HashMap::new(),
-    )
-}
 #[allow(clippy::too_many_arguments)]
 fn arguments_with_baked(
     root: &Path,

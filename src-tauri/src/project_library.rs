@@ -138,7 +138,7 @@ fn read_project(root: &Path) -> Result<Project, String> {
     let parse = |path: &Path| -> Result<Project, String> {
         let value: serde_json::Value = serde_json::from_slice(&fs::read(path).map_err(io_error)?)
             .map_err(|_| "INVALID_PROJECT")?;
-        if !matches!(value["formatVersion"].as_u64(), Some(1..=29)) {
+        if !matches!(value["formatVersion"].as_u64(), Some(1..=30)) {
             return Err("UNSUPPORTED_PROJECT_VERSION".into());
         }
         let mut p: Project = serde_json::from_value(value).map_err(|_| "INVALID_PROJECT")?;
