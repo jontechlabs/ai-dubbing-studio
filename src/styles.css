@@ -5236,3 +5236,78 @@ pre {
   margin: 8px 0 4px;
   font-size: 13px;
 }
+.compact-toolbar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.workflow-composer {
+  border-top: 1px solid var(--border);
+  margin-top: 12px;
+  padding-top: 12px;
+  min-width: 0;
+}
+.workflow-composer summary {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  margin-bottom: 10px;
+}
+.workflow-composer fieldset {
+  min-width: 0;
+  margin: 10px 0;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+.workflow-composer select,
+.workflow-composer input {
+  min-width: 0;
+  max-width: 100%;
+}
+.queue-entry {
+  min-width: 0;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px;
+  margin-top: 12px;
+}
+.queue-entry-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.queue-entry-heading strong {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.queue-entry small,
+.queue-entry p,
+.queue-entry li {
+  overflow-wrap: anywhere;
+}
+.queue-entry .compact-toolbar {
+  margin-top: 8px;
+}
+.queue-state {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+.queue-state.running {
+  color: var(--accent);
+}
+.queue-state.succeeded {
+  color: #8ed5ab;
+}
+.queue-state.partial,
+.queue-state.failed,
+.queue-state.interrupted {
+  color: #eab86b;
+}

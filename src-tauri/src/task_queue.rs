@@ -3,7 +3,7 @@
 use crate::{
     audio_toolbox,
     domain::{id, io_error, now, Project},
-    jobs, project, tts, tts_batch, Core,
+    project, tts, tts_batch, Core,
 };
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
@@ -174,12 +174,8 @@ pub fn status(core: &Core) -> Result<View, String> {
             .entries
             .iter()
             .map(|e| {
-                let row = e.rows.iter().find(|r| r.status != "succeeded");
-                let dub = e
-                    .dubbing_runs
-                    .iter()
-                    .rev()
-                    .find(|r| !["succeeded", "skipped"].contains(&r.status.as_str()));
+                let row = e.rows.iter().find(|r| r.status == "running");
+                let dub = e.dubbing_runs.iter().rev().find(|r| r.status == "running");
                 Summary {
                     id: e.id.clone(),
                     name: e.spec.name.clone(),
@@ -807,6 +803,8 @@ async fn execute<R: tauri::Runtime, E: Engine>(
             if e.rows[index].status == "succeeded" {
                 continue;
             }
+            e.rows[index].status = "running".into();
+            update(core, app, key, |v| v.rows[index] = e.rows[index].clone())?;
             let result = async {
                 let job = engine.separate(&e, &e.rows[index]).await?;
                 e.rows[index].job_id = Some(job.clone());
@@ -870,6 +868,10 @@ async fn execute<R: tauri::Runtime, E: Engine>(
             if ["succeeded", "skipped"].contains(&e.dubbing_runs[index].status.as_str()) {
                 continue;
             }
+            e.dubbing_runs[index].status = "running".into();
+            update(core, app, key, |v| {
+                v.dubbing_runs[index] = e.dubbing_runs[index].clone()
+            })?;
             let outcome = async {
                 let job = engine.dub(&e, &e.dubbing_runs[index]).await?;
                 if let Some(job) = job {

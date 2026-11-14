@@ -702,6 +702,9 @@ export default function App() {
                             </IconButton>
                           </div>
                           <DubPanel
+                            queueActive={
+                              !!taskQueue.data?.entries.some((e) => e.status === 'running')
+                            }
                             onQueue={() => setPanel('queue')}
                             active={dubbingActive && dubbingMode === mode && !panel}
                             onChooseLine={select}
@@ -941,6 +944,7 @@ export default function App() {
           </Modal>
         )}
         <Panels
+          taskQueue={taskQueue}
           toolboxModel={toolboxModel}
           onSelectDialogue={select}
           batchIds={batchIds}

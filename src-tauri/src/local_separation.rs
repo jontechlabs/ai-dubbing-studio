@@ -420,7 +420,7 @@ mod tests {
             session: std::sync::Mutex::new(Some(project::Session::new(root, p.clone()))),
             jobs: std::sync::Mutex::new(HashMap::new()),
             gate: Arc::new(tokio::sync::Semaphore::new(1)),
-            queue: Mutex::new(crate::task_queue::State::default()),
+            queue: std::sync::Mutex::new(crate::task_queue::State::default()),
         };
         let core = Arc::new(core);
         let id = jobs::create(&core, app.handle(), "separation", p.id.clone(), None);
@@ -441,7 +441,7 @@ mod tests {
             session: std::sync::Mutex::new(Some(project::Session::new(root.clone(), p.clone()))),
             jobs: std::sync::Mutex::new(HashMap::new()),
             gate: Arc::new(tokio::sync::Semaphore::new(1)),
-            queue: Mutex::new(crate::task_queue::State::default()),
+            queue: std::sync::Mutex::new(crate::task_queue::State::default()),
         });
         let app = tauri::test::mock_app();
         let id = jobs::create(&core, app.handle(), "separation", p.id.clone(), None);

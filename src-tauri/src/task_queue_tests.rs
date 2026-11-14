@@ -1,4 +1,5 @@
 use super::*;
+use crate::jobs;
 use std::{path::Path, sync::Mutex};
 fn spec(name: &str, separate: bool, dub: bool) -> Spec {
     Spec{name:name.into(),selection:tts_batch::Selection{take_count:Some(2),scope:"all".into(),approved_only:false,unapproved_only:false,line_ids:vec![],force:true,

@@ -9,6 +9,7 @@ import { JobDuration } from './JobDuration';
 import type { Panel } from './Header';
 import { ImportPanel } from './ImportPanel';
 import { TaskQueuePanel } from './TaskQueuePanel';
+import type { useTaskQueue } from '../hooks/useTaskQueue';
 import { IconButton } from './IconButton';
 import { SubtitleImportPanel } from './SubtitleImportPanel';
 import { AlignmentPanel } from './AlignmentPanel';
@@ -27,6 +28,7 @@ import * as bridge from '../services/bridge';
 import { downloadText } from '../services/browserStore';
 
 export function Panels({
+  taskQueue,
   panel,
   project,
   jobs,
@@ -53,6 +55,7 @@ export function Panels({
   toolboxModel,
   onSelectDialogue,
 }: {
+  taskQueue: ReturnType<typeof useTaskQueue>;
   onSelectDialogue: (line: Dialogue) => void;
   panel: Panel;
   project: Project | null;
@@ -179,6 +182,7 @@ export function Panels({
         {panel === 'jobs' && <JobsPanel jobs={jobs} onError={onError} />}
         {panel === 'queue' && (
           <TaskQueuePanel
+            queue={taskQueue}
             project={project}
             jobs={jobs}
             snapshot={snapshot}

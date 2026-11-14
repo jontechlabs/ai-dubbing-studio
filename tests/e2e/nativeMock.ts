@@ -143,6 +143,34 @@ export async function nativeMock(page: Page, large = false, seededProject?: Proj
         );
       };
       host.__getLibrary = () => structuredClone(lib());
+      const savedQueue = localStorage.getItem('nativeMockQueue');
+      let workflowQueue: any = JSON.parse(savedQueue || 'null') || {
+        revision: 0,
+        paused: false,
+        warning: null,
+        entries: [],
+      };
+      if (savedQueue) {
+        workflowQueue.paused = true;
+        workflowQueue.entries = workflowQueue.entries.map((e: any) =>
+          e.status === 'running' ? { ...e, status: 'interrupted', error: 'QUEUE_RESTARTED' } : e,
+        );
+      }
+      const workflowSpecs: any = JSON.parse(
+        localStorage.getItem('nativeMockWorkflowSpecs') || '{}',
+      );
+      const saveQueue = () => {
+        workflowQueue.revision++;
+        localStorage.setItem('nativeMockQueue', JSON.stringify(workflowQueue));
+        localStorage.setItem('nativeMockWorkflowSpecs', JSON.stringify(workflowSpecs));
+        emit('task-queue-changed', structuredClone(workflowQueue));
+      };
+      host.__getWorkflowQueue = () => structuredClone(workflowQueue);
+      host.__workflowSpecs = workflowSpecs;
+      host.__setWorkflowQueue = (q: any) => {
+        workflowQueue = { ...workflowQueue, ...structuredClone(q) };
+        saveQueue();
+      };
       const leveling = new Map<string, any>();
       host.__completeAudit = (report: any) => {
         project.formatVersion = 29;
@@ -1486,6 +1514,85 @@ export async function nativeMock(page: Page, large = false, seededProject?: Proj
           }
           if (command === 'dubbing_audit_status')
             return { speakersInstalled: host.__auditSpeakersInstalled ?? true };
+          if (command === 'task_queue_status') return structuredClone(workflowQueue);
+          if (command === 'task_queue_entry') {
+            const e = workflowQueue.entries.find((e: any) => e.id === args.id),
+              spec = workflowSpecs[args.id];
+            return {
+              id: e.id,
+              total: e.total,
+              offset: args.offset,
+              spec: {
+                ...structuredClone(spec),
+                selection: {
+                  ...spec.selection,
+                  lineIds: spec.selection.lineIds.slice(args.offset, args.offset + args.limit),
+                },
+              },
+              rows: spec.selection.lineIds
+                .slice(args.offset, args.offset + args.limit)
+                .map((id: string) => ({ lineId: id, status: 'pending', error: null })),
+              dubbingRuns: [],
+            };
+          }
+          if (command === 'enqueue_workflow') {
+            if (args.projectId !== project.id || args.expectedRevision !== project.revision)
+              throw Error('STALE_REVISION');
+            const key = 'workflow-' + (workflowQueue.entries.length + 1),
+              spec = structuredClone(args.spec);
+            spec.selection.lineIds = project.dialogues
+              .filter(
+                (l: any) =>
+                  !l.excludedFromDubbing &&
+                  (spec.selection.scope === 'all' || spec.selection.lineIds.includes(l.id)),
+              )
+              .map((l: any) => l.id);
+            spec.selection.scope = 'selected';
+            workflowSpecs[key] = spec;
+            workflowQueue.entries.push({
+              id: key,
+              name: spec.name,
+              createdAt: new Date().toISOString(),
+              projectId: project.id,
+              projectName: project.name,
+              status: 'pending',
+              stage: 'waiting',
+              error: null,
+              separation: !!spec.separation,
+              dubbing: spec.dubbing,
+              total: spec.selection.lineIds.length,
+              completed: 0,
+              failed: 0,
+              currentLineId: null,
+              currentJobId: null,
+              problems: [],
+              batchIds: [],
+            });
+            saveQueue();
+            return key;
+          }
+          if (command === 'control_task_queue') {
+            const index = workflowQueue.entries.findIndex((e: any) => e.id === args.id);
+            if (args.action === 'pause') workflowQueue.paused = true;
+            else if (args.action === 'resume') workflowQueue.paused = false;
+            else if (args.action === 'clear')
+              workflowQueue.entries = workflowQueue.entries.filter((e: any) =>
+                ['pending', 'running'].includes(e.status),
+              );
+            else if (args.action === 'remove') workflowQueue.entries.splice(index, 1);
+            else if (args.action === 'cancel') workflowQueue.entries[index].status = 'cancelled';
+            else if (args.action === 'retry') workflowQueue.entries[index].status = 'pending';
+            else if (['up', 'down'].includes(args.action)) {
+              const next = args.action === 'up' ? index - 1 : index + 1;
+              if (next >= 0 && next < workflowQueue.entries.length)
+                [workflowQueue.entries[index], workflowQueue.entries[next]] = [
+                  workflowQueue.entries[next],
+                  workflowQueue.entries[index],
+                ];
+            }
+            saveQueue();
+            return structuredClone(workflowQueue);
+          }
           if (command === 'analyze_dubbing') {
             if (args.projectId !== project.id || args.expectedRevision !== project.revision)
               throw Error('STALE_REVISION');

@@ -10,25 +10,27 @@ import {
   Trash2,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { useTaskQueue } from '../hooks/useTaskQueue';
+import type { WorkflowQueue } from '../domain/taskQueue';
 import type { Job, Project } from '../domain/types';
 import { IconButton } from './IconButton';
 import { CurrentJobProgress } from './CurrentJobProgress';
 import { BatchRecovery } from './BatchRecovery';
 import * as bridge from '../services/bridge';
 export function TaskQueuePanel({
+  queue,
   project,
   jobs,
   snapshot,
   onChooseLine,
 }: {
+  queue: { data: WorkflowQueue | null; error: string; refresh: () => Promise<void> };
   project: Project | null;
   jobs: Job[];
   snapshot: () => Promise<Project>;
   onChooseLine: (id: string) => void;
 }) {
   const { t } = useTranslation(),
-    { data, error, refresh } = useTaskQueue();
+    { data, error, refresh } = queue;
   const [working, setWorking] = useState(false),
     [localError, setError] = useState('');
   const [dismissed, setDismissed] = useState<string[]>([]);

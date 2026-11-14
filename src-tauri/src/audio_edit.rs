@@ -304,7 +304,7 @@ mod tests {
             session: std::sync::Mutex::new(Some(project::Session::new(root.clone(), p))),
             jobs: std::sync::Mutex::new(std::collections::HashMap::new()),
             gate: Arc::new(tokio::sync::Semaphore::new(1)),
-            queue: Mutex::new(crate::task_queue::State::default()),
+            queue: std::sync::Mutex::new(crate::task_queue::State::default()),
             data_dir: root.clone(),
             model_dir: std::sync::Mutex::new(root.clone()),
         });
