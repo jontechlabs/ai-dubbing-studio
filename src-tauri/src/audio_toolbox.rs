@@ -387,6 +387,26 @@ pub async fn apply<R: tauri::Runtime>(
     destinations: Vec<Destination>,
     mute_source: bool,
 ) -> Result<Project, String> {
+    apply_internal(core, app, key, destinations, mute_source, None).await
+}
+pub(crate) async fn apply_workflow<R: tauri::Runtime>(
+    core: Arc<Core>,
+    app: tauri::AppHandle<R>,
+    key: String,
+    destinations: Vec<Destination>,
+    mute_source: bool,
+    workflow: &str,
+) -> Result<Project, String> {
+    apply_internal(core, app, key, destinations, mute_source, Some(workflow)).await
+}
+async fn apply_internal<R: tauri::Runtime>(
+    core: Arc<Core>,
+    app: tauri::AppHandle<R>,
+    key: String,
+    destinations: Vec<Destination>,
+    mute_source: bool,
+    workflow: Option<&str>,
+) -> Result<Project, String> {
     if jobs::active_processing(&core) {
         return Err("BUSY".into());
     }
@@ -403,6 +423,7 @@ pub async fn apply<R: tauri::Runtime>(
         return Err("AUDIO_TOOLBOX_ALREADY_APPLIED".into());
     }
     let m = model(&app, &r.options.model_id)?;
+    let first_new = p.generations.len();
     if destinations.is_empty() || destinations.len() > m.outputs.len() {
         return Err("AUDIO_TOOLBOX_OPTIONS".into());
     }
@@ -471,6 +492,12 @@ pub async fn apply<R: tauri::Runtime>(
     }
     if mute_source && !targets.contains(&r.options.source_track_id) {
         next.generations.push(json!({"kind":"audioPatch","id":id(),"operationId":key,"operation":"separation","sourcePath":r.source_path,"sourceTrackId":r.options.source_track_id,"trackId":r.options.source_track_id,"startMs":r.options.start_ms,"endMs":r.options.end_ms,"mode":"silence","path":null,"gain":1}));
+    }
+    if let Some(workflow) = workflow {
+        next.format_version = next.format_version.max(30);
+        for g in next.generations.iter_mut().skip(first_new) {
+            g["queueWorkflowId"] = json!(workflow);
+        }
     }
     next.validate()?;
     let mut guard = core.session.lock().map_err(io_error)?;

@@ -159,7 +159,11 @@ test('Vox batch restores Standard accent selection and dispatches the explicit a
     accent: 'fr-BE',
   });
   expect(pending.options.intonationGuide).toBeUndefined();
-  await expect(panel.locator('.voice-accent').getByRole('combobox')).toBeDisabled();
+  // Keep settings editable for the next queued batch; only immediate dispatch is busy.
+  await expect(panel.locator('.voice-accent').getByRole('combobox')).toBeEnabled();
+  await expect(
+    panel.getByRole('button', { name: /Doubler \d+ répliques/, exact: true }),
+  ).toBeDisabled();
 });
 
 test('a non-French project gets a language-specific explanation instead of incompatible accent choices', async ({

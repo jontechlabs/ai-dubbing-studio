@@ -706,12 +706,13 @@ impl<R: tauri::Runtime> Engine for Native<R> {
                 role: Some("music".into()),
             });
         }
-        audio_toolbox::apply(
+        audio_toolbox::apply_workflow(
             self.core.clone(),
             self.app.clone(),
             job.into(),
             targets,
             s.mute_source,
+            &e.id,
         )
         .await?;
         Ok(())

@@ -600,7 +600,18 @@ async fn export<R: tauri::Runtime>(
     let output = tempfile::NamedTempFile::new_in(temporary.path())
         .map_err(io_error)?
         .into_temp_path();
-    let args = arguments(
+    let baked = bake_tracks(
+        core,
+        app,
+        key,
+        p,
+        &request.root,
+        &tracks,
+        temporary.path(),
+        flag,
+    )
+    .await?;
+    let args = arguments_with_baked(
         &request.root,
         p,
         &request.options,
@@ -608,6 +619,7 @@ async fn export<R: tauri::Runtime>(
         temporary.path(),
         &voices,
         &output,
+        &baked,
     )?;
     jobs::update(core, app, key, |j| {
         j.stage = "mixEncode".into();
@@ -648,6 +660,52 @@ async fn export<R: tauri::Runtime>(
     });
     Ok(())
 }
+// Render dense per-dialogue layers with bounded input fan-in before the final
+// encode. These disposable bus files retain RAW levels; the graph applies the
+// track fader, regions and master only once after baking.
+#[allow(clippy::too_many_arguments)]
+pub(crate) async fn bake_tracks<R: tauri::Runtime>(
+    core: &Arc<Core>,
+    app: &tauri::AppHandle<R>,
+    key: &str,
+    p: &Project,
+    root: &Path,
+    tracks: &[Track],
+    temp: &Path,
+    flag: &AtomicBool,
+) -> Result<std::collections::HashMap<String, PathBuf>, String> {
+    let mut files = std::collections::HashMap::new();
+    for (index, track) in tracks.iter().enumerate() {
+        if !["audio", "original"].contains(&track.kind.as_str())
+            || gain(track, tracks) == 0.0
+            || crate::audio_patch::layers(p, &track.id).len() <= 32
+        {
+            continue;
+        }
+        let file = temp.join(format!("baked-bus-{index}.wav"));
+        crate::audio_patch::snippet(
+            core,
+            app,
+            key,
+            p,
+            root,
+            crate::audio_patch::Snippet {
+                track_id: &track.id,
+                start_ms: 0,
+                end_ms: p.media.as_ref().ok_or("MEDIA_MISSING")?.info.duration_ms,
+                channels: 2,
+                rate: 48000,
+                levels: crate::audio_patch::SnippetLevels::Reference,
+            },
+            &file,
+            flag,
+        )
+        .await?;
+        files.insert(track.id.clone(), file);
+    }
+    Ok(files)
+}
+#[cfg(test)]
 fn arguments(
     root: &Path,
     p: &Project,
@@ -657,6 +715,36 @@ fn arguments(
     voices: &Path,
     output: &Path,
 ) -> Result<Vec<String>, String> {
+    arguments_with_baked(
+        root,
+        p,
+        options,
+        tracks,
+        temp,
+        voices,
+        output,
+        &std::collections::HashMap::new(),
+    )
+}
+#[allow(clippy::too_many_arguments)]
+fn arguments_with_baked(
+    root: &Path,
+    p: &Project,
+    options: &Options,
+    tracks: &[Track],
+    temp: &Path,
+    voices: &Path,
+    output: &Path,
+    baked: &std::collections::HashMap<String, PathBuf>,
+) -> Result<Vec<String>, String> {
+    let mut clean = p.clone();
+    clean.generations.retain(|g| {
+        g["kind"] != "audioPatch"
+            || !g["trackId"]
+                .as_str()
+                .is_some_and(|id| baked.contains_key(id))
+    });
+    let p = &clean;
     let media = p.media.as_ref().ok_or("MEDIA_MISSING")?;
     let duration = media.info.duration_ms as f64 / 1000.0;
     let source = project::asset(root, &media.path)?;
@@ -672,40 +760,49 @@ fn arguments(
         if base == 0.0 {
             continue;
         }
-        let input = match track.kind.as_str() {
-            "original" => {
-                let Some(stream) = media.audio_stream_index else {
-                    continue;
-                };
-                format!("0:{stream}")
+        let input = if let Some(file) = baked.get(&track.id) {
+            args.extend(["-i".into(), file.to_string_lossy().into_owned()]);
+            let value = format!("{index}:a:0");
+            index += 1;
+            value
+        } else {
+            match track.kind.as_str() {
+                "original" => {
+                    let Some(stream) = media.audio_stream_index else {
+                        continue;
+                    };
+                    format!("0:{stream}")
+                }
+                "audio" => {
+                    args.push("-i".into());
+                    args.push(
+                        project::asset(root, track.path.as_deref().ok_or("INVALID_PATH")?)?
+                            .to_string_lossy()
+                            .into_owned(),
+                    );
+                    let value = format!("{index}:a:0");
+                    index += 1;
+                    value
+                }
+                "dubbing" => {
+                    args.extend(
+                        ["-f", "f32le", "-ar", "24000", "-ac", "1", "-i"].map(str::to_owned),
+                    );
+                    args.push(voices.to_string_lossy().into_owned());
+                    let value = format!("{index}:a:0");
+                    index += 1;
+                    value
+                }
+                _ => continue,
             }
-            "audio" => {
-                args.push("-i".into());
-                args.push(
-                    project::asset(root, track.path.as_deref().ok_or("INVALID_PATH")?)?
-                        .to_string_lossy()
-                        .into_owned(),
-                );
-                let value = format!("{index}:a:0");
-                index += 1;
-                value
-            }
-            "dubbing" => {
-                args.extend(["-f", "f32le", "-ar", "24000", "-ac", "1", "-i"].map(str::to_owned));
-                args.push(voices.to_string_lossy().into_owned());
-                let value = format!("{index}:a:0");
-                index += 1;
-                value
-            }
-            _ => continue,
         };
         let label = format!("bus{}", labels.len());
-        let mono =
-            track.kind == "dubbing"
+        let mono = !baked.contains_key(&track.id)
+            && (track.kind == "dubbing"
                 || (track.kind == "original"
                     && media.info.streams.iter().any(|s| {
                         Some(s.index) == media.audio_stream_index && s.channels == Some(1)
-                    }));
+                    })));
         crate::audio_patch::graph(
             root,
             p,

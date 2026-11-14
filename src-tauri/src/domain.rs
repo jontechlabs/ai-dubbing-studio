@@ -272,7 +272,7 @@ impl Project {
         references.iter().find(|r| r.id == id)
     }
     pub fn validate(&self) -> Result<(), String> {
-        if !(1..=29).contains(&self.format_version) {
+        if !(1..=30).contains(&self.format_version) {
             return Err("UNSUPPORTED_PROJECT_VERSION".into());
         }
         crate::speaker_dubbing::validate(self)?;

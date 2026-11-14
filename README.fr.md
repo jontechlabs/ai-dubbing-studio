@@ -2,7 +2,7 @@
 
 ## v0.50.0 — File de traitements et isolation en lot
 
-Isolation Voix/Accompagnement sur les répliques sélectionnées ou tout le projet, attribution automatique aux pistes Voix/Musique, puis doublage des isolations réussies. File FIFO persistante : configurations figées, ajout pendant l’exécution, ordre, pause, annulation et reprise explicite après redémarrage. Les fichiers source et les essais existants restent conservés. **170 outils MCP / 33 schémas**. [Guide et captures](docs/TASK-QUEUE.md).
+Isolation Voix/Accompagnement sur les répliques sélectionnées ou tout le projet, attribution automatique aux pistes Voix/Musique, puis doublage des isolations réussies. File FIFO persistante : configurations figées, ajout pendant l’exécution, ordre, pause, annulation et reprise explicite après redémarrage. Les fichiers source et les essais existants restent conservés. Les couches d’isolation en file utilisent le format projet 30 et un rendu par fragments pour les grands lots. **170 outils MCP / 33 schémas**. [Guide et captures](docs/TASK-QUEUE.md).
 
 ## v0.49.0 — Égalisation multi-pistes et contrôle du doublage
 

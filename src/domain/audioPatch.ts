@@ -3,6 +3,7 @@ import { audioTracks, regionGain, gainChanges } from './audio';
 import { dubbingLevelingScope, sameDubbingLevelingScope } from './volumeLeveling';
 export interface AudioPatch {
   [key: string]: unknown;
+  queueWorkflowId?: string;
   kind: 'audioPatch';
   id: string;
   operationId: string;
@@ -101,11 +102,19 @@ export function patchGain(p: Project, id: string, gain: number): Project {
 }
 export function validateAudioPatches(p: Project) {
   const patches = audioPatches(p);
-  if (patches.length > 128) throw Error('AUDIO_TRANSFER_LIMIT');
+  const queued = patches.filter((e) => e.queueWorkflowId !== undefined).length;
+  if (patches.length - queued > 128 || queued > 32768) throw Error('AUDIO_TRANSFER_LIMIT');
+  const counts = new Map<string, number>();
+  for (const g of p.generations) counts.set(g.id, (counts.get(g.id) ?? 0) + 1);
   const safe = (s: unknown) =>
     typeof s === 'string' && !!s && !s.includes('..') && !/[\\:]/.test(s) && !s.startsWith('/');
   for (const e of patches)
     if (
+      (e.queueWorkflowId !== undefined &&
+        (p.formatVersion < 30 ||
+          e.operation !== 'separation' ||
+          typeof e.queueWorkflowId !== 'string' ||
+          !/^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(e.queueWorkflowId))) ||
       p.formatVersion < 8 ||
       !e.id ||
       !e.operationId ||
@@ -134,7 +143,7 @@ export function validateAudioPatches(p: Project) {
       !Number.isFinite(e.gain) ||
       e.gain < 0 ||
       e.gain > 2 ||
-      p.generations.filter((g) => g.id === e.id).length !== 1 ||
+      counts.get(e.id) !== 1 ||
       (e.mode === 'silence'
         ? e.path != null
         : !safe(e.path) || !e.path?.startsWith('stems/patch-') || !e.path.endsWith('.wav'))

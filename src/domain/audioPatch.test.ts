@@ -46,6 +46,29 @@ function patch(p: Project, id: string, mode: AudioPatch['mode'] = 'add'): AudioP
     gain: 1,
   };
 }
+it('supports large queued separation batches without relaxing ordinary patch limits or format guards', () => {
+  const p = fixture();
+  p.formatVersion = 30;
+  p.generations = Array.from({ length: 140 }, (_, i) => ({
+    ...patch(p, `queued-${i}`, 'replace'),
+    operation: 'separation' as const,
+    queueWorkflowId: '9d825c13-b970-49ad-b014-bcf2c2cfab2f',
+  }));
+  expect(validateProject(p)).toEqual(p);
+  expect(() => validateProject({ ...p, formatVersion: 29 })).toThrow();
+  for (const changes of [
+    { queueWorkflowId: undefined },
+    { queueWorkflowId: 'invalid' },
+    { operation: 'move' },
+  ]) {
+    const bad = structuredClone(p);
+    bad.generations.forEach((g) => Object.assign(g, changes));
+    expect(() => validateProject(bad)).toThrow();
+  }
+  expect(() =>
+    validateProject({ ...p, generations: [...p.generations, p.generations[0]] }),
+  ).toThrow();
+});
 it('levelled dubbing layers require format 27, replace only, and restore the base exactly outside the range', () => {
   const p = fixture();
   p.formatVersion = 27;

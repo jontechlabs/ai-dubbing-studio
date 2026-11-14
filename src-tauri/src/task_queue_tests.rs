@@ -239,6 +239,158 @@ fn add_paused<R: tauri::Runtime>(core: &Arc<Core>, app: &tauri::AppHandle<R>, s:
         .clone();
     add(core.clone(), app.clone(), p.id, p.revision, s).unwrap()
 }
+#[tokio::test]
+async fn large_separation_batch_routes_140_layers_and_renders_and_exports_late_audio_with_bounded_inputs(
+) {
+    let (_dir, core) = fixture().await;
+    let app = tauri::test::mock_app();
+    let root = core.session.lock().unwrap().as_ref().unwrap().root.clone();
+    let source = std::fs::read(root.join("media/source.mkv")).unwrap();
+    let original_take = std::fs::read(root.join("generations/voice.wav")).unwrap();
+    {
+        let mut lock = core.session.lock().unwrap();
+        let p = &mut lock.as_mut().unwrap().project;
+        let template = p.dialogues[0].clone();
+        p.media.as_mut().unwrap().info.duration_ms = 20000;
+        p.dialogues.clear();
+        p.source_cues.clear();
+        p.target_cues.clear();
+        p.generations.clear();
+        p.tracks.retain(|t| t.kind != "dubbing");
+        for n in 0..70 {
+            let mut line = template.clone();
+            line.id = format!("bulk-{n}");
+            line.start_ms = n * 250;
+            line.end_ms = line.start_ms + 200;
+            line.source_cue_ids = vec![format!("source-{n}")];
+            line.target_cue_ids = vec![format!("target-{n}")];
+            line.selected_generation_ids.clear();
+            line.status = "ungenerated".into();
+            p.source_cues.push(serde_json::from_value(json!({"id":format!("source-{n}"),"startMs":line.start_ms,"endMs":line.end_ms,"text":"Hello"})).unwrap());
+            p.target_cues.push(serde_json::from_value(json!({"id":format!("target-{n}"),"startMs":line.start_ms,"endMs":line.end_ms,"text":"Bonjour"})).unwrap());
+            p.dialogues.push(line);
+        }
+        p.validate().unwrap();
+    }
+    let id = add_paused(&core, app.handle(), spec("large", true, false));
+    let engine = Protocol {
+        native: Native {
+            core: core.clone(),
+            app: app.handle().clone(),
+        },
+        events: Arc::new(Mutex::new(vec![])),
+        fail_line: None,
+        real_tts: false,
+    };
+    run(core.clone(), app.handle().clone(), engine).await;
+    assert_eq!(entry(&core, &id).unwrap().status, "succeeded");
+    let p = core
+        .session
+        .lock()
+        .unwrap()
+        .as_ref()
+        .unwrap()
+        .project
+        .clone();
+    assert_eq!(p.format_version, 30);
+    let patches = crate::audio_patch::all(&p).unwrap();
+    assert_eq!(patches.len(), 140);
+    assert!(patches
+        .iter()
+        .all(|g| g.queue_workflow_id.as_deref() == Some(id.as_str())));
+    let voice = p
+        .tracks
+        .iter()
+        .find(|t| t.role.as_deref() == Some("speech"))
+        .unwrap();
+    let key = jobs::create(&core, app.handle(), "fixtureRender", p.id.clone(), None);
+    let output = root.join("exports/large.wav");
+    let flag = AtomicBool::new(false);
+    for (channels, rate) in [(2, 48000), (1, 24000)] {
+        crate::audio_patch::snippet(
+            &core,
+            app.handle(),
+            &key,
+            &p,
+            &root,
+            crate::audio_patch::Snippet {
+                track_id: &voice.id,
+                start_ms: 0,
+                end_ms: 20000,
+                channels,
+                rate,
+                levels: crate::audio_patch::SnippetLevels::Reference,
+            },
+            &output,
+            &flag,
+        )
+        .await
+        .unwrap();
+        assert_eq!(
+            crate::audio_files::pcm_frames(&output, channels.into(), rate, "fixture").unwrap(),
+            20 * u64::from(rate)
+        );
+        let bytes = std::fs::read(&output).unwrap();
+        let data = bytes.windows(4).position(|w| w == b"data").unwrap() + 8;
+        let sample = |ms: usize| {
+            let at = data + ms * rate as usize / 1000 * usize::from(channels) * 2;
+            i16::from_le_bytes(bytes[at..at + 2].try_into().unwrap())
+        };
+        // Late output survives the one-second silent base and chunk boundaries;
+        // fifty-millisecond gaps are retained without carrying a previous voice.
+        assert!(sample(17260) > 1000);
+        assert_eq!(sample(17220), 0);
+        assert_eq!(sample(19000), 0);
+    }
+    let mkv = root.join("exports/large.mkv");
+    let key = crate::mix::enqueue(
+        core.clone(),
+        app.handle().clone(),
+        mkv.clone(),
+        crate::mix::Options {
+            include_retouched: false,
+            include_original: false,
+            source_subtitles: false,
+            target_subtitles: false,
+            codec: "flac".into(),
+            allow_incomplete: true,
+        },
+    )
+    .unwrap();
+    let done = tokio::time::timeout(Duration::from_secs(60), async {
+        loop {
+            let record = core
+                .jobs
+                .lock()
+                .unwrap()
+                .get(&key)
+                .unwrap()
+                .saved
+                .record
+                .clone();
+            if ["succeeded", "failed", "cancelled"].contains(&record.status.as_str()) {
+                break record;
+            }
+            tokio::time::sleep(Duration::from_millis(20)).await;
+        }
+    })
+    .await
+    .unwrap();
+    assert_eq!(done.status, "succeeded", "{:?} {:?}", done.error, done.logs);
+    let info = crate::media::probe_executable(&crate::mix::tests::tool("ffprobe"), &mkv)
+        .await
+        .unwrap();
+    assert_eq!(info.streams.iter().filter(|s| s.kind == "audio").count(), 1);
+    assert!(info.duration_ms.abs_diff(20000) < 50);
+    assert_eq!(
+        std::fs::read(root.join("media/source.mkv")).unwrap(),
+        source
+    );
+    assert_eq!(
+        std::fs::read(root.join("generations/voice.wav")).unwrap(),
+        original_take
+    );
+}
 async fn run<R: tauri::Runtime>(core: Arc<Core>, app: tauri::AppHandle<R>, engine: Protocol<R>) {
     {
         let mut q = core.queue.lock().unwrap();

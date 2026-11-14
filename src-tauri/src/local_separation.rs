@@ -84,6 +84,7 @@ pub fn plan(
     for role in ["speech", "music", "sfx"] {
         let track_id = targets.get(role).unwrap();
         result.push(audio_patch::Patch {
+            queue_workflow_id: None,
             kind: "audioPatch".into(),
             id: crate::domain::id(),
             operation_id: operation_id.into(),
@@ -106,6 +107,7 @@ pub fn plan(
     }
     if source.kind != "original" && !targets.values().any(|id| id == &source.id) {
         result.push(audio_patch::Patch {
+            queue_workflow_id: None,
             kind: "audioPatch".into(),
             id: crate::domain::id(),
             operation_id: operation_id.into(),

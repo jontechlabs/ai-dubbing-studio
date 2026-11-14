@@ -936,7 +936,7 @@ mod tests {
         let (_temporary, data, root, p, mut i, key) = fixture();
         project::save(&root, &p).unwrap();
         let mut next = serde_json::to_value(&p).unwrap();
-        next["formatVersion"] = serde_json::json!(30);
+        next["formatVersion"] = serde_json::json!(31);
         project::atomic_write(
             &root.join("project.json"),
             &serde_json::to_vec(&next).unwrap(),

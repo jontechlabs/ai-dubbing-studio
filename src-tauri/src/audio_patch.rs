@@ -15,6 +15,8 @@ use tauri::Emitter;
 #[derive(Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Patch {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub queue_workflow_id: Option<String>,
     pub kind: String,
     pub id: String,
     pub operation_id: String,
@@ -82,10 +84,29 @@ pub fn validate(p: &Project) -> Result<(), String> {
         }
     }
     let patches = all(p)?;
-    if patches.len() > 128 {
+    let queued = patches
+        .iter()
+        .filter(|e| e.queue_workflow_id.is_some())
+        .count();
+    if patches.len() - queued > 128 || queued > 32768 {
         return Err("AUDIO_TRANSFER_LIMIT".into());
     }
+    let mut counts = std::collections::HashMap::new();
+    for g in &p.generations {
+        if let Some(id) = g["id"].as_str() {
+            *counts.entry(id).or_insert(0usize) += 1;
+        }
+    }
     for e in patches {
+        if let Some(key) = &e.queue_workflow_id {
+            if p.format_version < 30
+                || e.operation != "separation"
+                || key.len() != 36
+                || uuid::Uuid::parse_str(key).is_err()
+            {
+                return Err("INVALID_AUDIO_TRANSFER".into());
+            }
+        }
         if p.format_version < 8
             || e.kind != "audioPatch"
             || e.id.is_empty()
@@ -116,7 +137,7 @@ pub fn validate(p: &Project) -> Result<(), String> {
                         && !e.dubbing_scope.as_ref().is_some_and(|v| v.is_array()))))
             || (e.operation == "separation" && p.format_version < 20)
             || (e.operation == "effects" && p.format_version < 18)
-            || p.generations.iter().filter(|g| g["id"] == e.id).count() != 1
+            || counts.get(e.id.as_str()) != Some(&1)
         {
             return Err("INVALID_AUDIO_TRANSFER".into());
         }
@@ -191,7 +212,15 @@ pub fn graph(
     origin: u64,
     end: u64,
 ) -> Result<(), String> {
-    let patches = layers(p, &track.id);
+    let patches: Vec<_> = layers(p, &track.id)
+        .into_iter()
+        .filter(|e| e.start_ms < end && e.end_ms > origin)
+        .collect();
+    let mut scoped = track.clone();
+    scoped
+        .regions
+        .retain(|r| r.start_ms < end && r.end_ms > origin);
+    let track = &scoped;
     let time = format!("(t+{:.6})", origin as f64 / 1000.0);
     let reg = region(track, base, &time);
     let mut labels = vec![format!("[{label}_base]")];
@@ -249,6 +278,7 @@ pub enum SnippetLevels {
     /// Voice reference: before all listening controls, keeping audio patches.
     Reference,
 }
+#[derive(Clone, Copy)]
 pub struct Snippet<'a> {
     pub track_id: &'a str,
     pub start_ms: u64,
@@ -259,6 +289,105 @@ pub struct Snippet<'a> {
 }
 #[allow(clippy::too_many_arguments)]
 pub async fn snippet<R: tauri::Runtime>(
+    core: &Arc<Core>,
+    app: &tauri::AppHandle<R>,
+    key: &str,
+    p: &Project,
+    root: &Path,
+    options: Snippet<'_>,
+    output: &Path,
+    flag: &AtomicBool,
+) -> Result<(), String> {
+    let patches = layers(p, options.track_id);
+    let count = |a: u64, b: u64| {
+        patches
+            .iter()
+            .filter(|e| e.start_ms < b && e.end_ms > a)
+            .count()
+    };
+    if count(options.start_ms, options.end_ms) <= 32 {
+        return snippet_direct(core, app, key, p, root, options, output, flag).await;
+    }
+    let temp = tempfile::tempdir().map_err(io_error)?;
+    let mut files = String::from("ffconcat version 1.0\n");
+    let mut cursor = options.start_ms;
+    let mut index = 0;
+    while cursor < options.end_ms {
+        if flag.load(Ordering::Relaxed) {
+            return Err("CANCELLED".into());
+        }
+        let mut end = options.end_ms.min(cursor + 30000);
+        while count(cursor, end) > 32 {
+            if end - cursor <= 10 {
+                return Err("AUDIO_TRANSFER_LIMIT".into());
+            }
+            end = cursor + (end - cursor) / 2;
+        }
+        let name = format!("chunk-{index}.wav");
+        snippet_direct(
+            core,
+            app,
+            key,
+            p,
+            root,
+            Snippet {
+                start_ms: cursor,
+                end_ms: end,
+                ..options
+            },
+            &temp.path().join(&name),
+            flag,
+        )
+        .await?;
+        files.push_str(&format!("file {name}\n"));
+        cursor = end;
+        index += 1;
+    }
+    let list = temp.path().join("chunks.ffconcat");
+    project::atomic_write(&list, files.as_bytes())?;
+    let args = vec![
+        "-nostdin".into(),
+        "-hide_banner".into(),
+        "-v".into(),
+        "warning".into(),
+        "-f".into(),
+        "concat".into(),
+        "-safe".into(),
+        "1".into(),
+        "-i".into(),
+        list.to_string_lossy().into_owned(),
+        "-map".into(),
+        "0:a:0".into(),
+        "-c:a".into(),
+        "copy".into(),
+        "-rf64".into(),
+        "auto".into(),
+        "-y".into(),
+        output.to_string_lossy().into_owned(),
+    ];
+    crate::mix::run(
+        core,
+        app,
+        key,
+        &media::binary(app, "ffmpeg")?,
+        &args,
+        options.end_ms - options.start_ms,
+        flag,
+    )
+    .await?;
+    if crate::audio_files::pcm_frames(
+        output,
+        u16::from(options.channels),
+        options.rate,
+        "AUDIO_TRANSFER_FAILED",
+    )? != (options.end_ms - options.start_ms) * u64::from(options.rate) / 1000
+    {
+        return Err("AUDIO_TRANSFER_FAILED".into());
+    }
+    Ok(())
+}
+#[allow(clippy::too_many_arguments)]
+async fn snippet_direct<R: tauri::Runtime>(
     core: &Arc<Core>,
     app: &tauri::AppHandle<R>,
     key: &str,
@@ -533,6 +662,7 @@ pub async fn transfer<R: tauri::Runtime>(
         }
         added.push(
             serde_json::to_value(Patch {
+                queue_workflow_id: None,
                 kind: "audioPatch".into(),
                 id,
                 operation_id: operation_id.clone(),
