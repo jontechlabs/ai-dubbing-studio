@@ -206,7 +206,9 @@
     "speakerSeparationRun": "Separating voices",
     "levelingPrepare": "Preparing selection",
     "levelingAnalyze": "Analysing and levelling volume",
-    "levelingPreview": "Preparing long-form previews"
+    "levelingPreview": "Preparing long-form previews",
+    "auditAudio": "Checking audio files and levels",
+    "auditVoices": "Checking for multiple-voice hints"
   },
   "shortcuts": "Space: play · J/K/L: transport · O: original · Ctrl+S: save · Ctrl+Z/Y: undo/redo",
   "errors": {
@@ -442,7 +444,8 @@
     "VOLUME_LEVELING_OPTIONS": "Choose a current-media audio track and a range from 0.1 second to the end of the track (24 h maximum).",
     "VOLUME_LEVELING_SILENT": "No sufficiently audible passage in this selection. Silence and signals below −60 dBFS RMS are not amplified.",
     "VOLUME_LEVELING_NOT_READY": "The preview is unavailable, cancelled or already applied. Prepare it again.",
-    "VOLUME_LEVELING_INVALID_AUDIO": "Selection audio is incomplete or invalid. No changes were applied."
+    "VOLUME_LEVELING_INVALID_AUDIO": "Selection audio is incomplete or invalid. No changes were applied.",
+    "INVALID_DUBBING_AUDIT": "Invalid audit options or results."
   },
   "preparingVideo": "Preparing video…",
   "loadingVideo": "Loading video…",
@@ -1306,7 +1309,8 @@
     "audioToolbox": "Selected audio separation",
     "speakerSeparation": "Overlapping voice separation",
     "speakerSeparationInstall": "Voice separator installation",
-    "volumeLeveling": "Volume levelling"
+    "volumeLeveling": "Volume levelling",
+    "dubbingAudit": "Dubbing analysis"
   },
   "fxRemoveTrack": "Remove processed copy · {{name}}",
   "transferEffects": "Audio effects",
@@ -1969,6 +1973,61 @@
     "beforeLevels": "Preview before mixer volumes and muted regions, which are kept after application. Half-second analysis windows, smoothed transitions. Selection or entire track, 0.1 s–24 h; block processing and progressive playback.",
     "apply": "Confirm and apply",
     "wholeTrack": "Level the entire track…",
-    "applying": "Applying…"
+    "applying": "Applying…",
+    "multi": "Level multiple tracks…",
+    "batchTitle": "Multi-track levelling",
+    "batchHint": "Tracks are prepared sequentially. Compare and approve each result; only approved tracks are applied together in one undo step.",
+    "tracks": "Tracks to prepare",
+    "wholeTracks": "Entire tracks",
+    "prepareAll": "Prepare previews",
+    "approveTrack": "Approve this track",
+    "resetBatch": "Reset previews",
+    "applyApproved": "Apply {{count}} approved tracks",
+    "applyApproved_zero": "Approve at least one track",
+    "applyApproved_one": "Apply approved track",
+    "applyApproved_other": "Apply {{count}} approved tracks"
+  },
+  "audit": {
+    "title": "Analyze dubbing",
+    "hint": "Analyze selected takes after edits/fitting, before mixer levels/mutes. Does not change audio or approve translations.",
+    "voices": "Multiple-voice scan",
+    "mode": {
+      "both": "Source and dubbing",
+      "source": "Source only",
+      "dubbing": "Dubbing only",
+      "off": "Audio checks only"
+    },
+    "loading": "Checking speaker model…",
+    "modelReady": "CAMPPlus / Silero installed · local CPU.",
+    "modelMissing": "Install the speaker module in Characters for multi-voice hints. Audio checks remain available; the voice scan is marked unavailable.",
+    "sourceTrack": "Source track to analyze",
+    "run": "Run full analysis",
+    "results": "Analysis results",
+    "stale": "Some audio inputs changed. Outdated tags are ignored; rerun analysis to refresh them.",
+    "engine": {
+      "unavailable": "Multi-voice scan not performed: model unavailable.",
+      "failed": "Multi-voice scan failed. Audio measurements remain available."
+    },
+    "tag": {
+      "missing": "Missing dubbing",
+      "silent": "Silent dubbing",
+      "multipleVoices": "Possible multiple voices",
+      "quiet": "Quiet voice",
+      "clipping": "Clipping",
+      "cutEnd": "Possible abrupt ending",
+      "longSilence": "Long silence",
+      "timing": "Check timing",
+      "invalidAudio": "Invalid audio"
+    },
+    "peak": "peak",
+    "fileError": "Missing or unreadable file; take retained.",
+    "more": "Show 50 more results",
+    "caveats": "Tags are listening-review hints. Speaker grouping can miss short/overlapping voices and confuse highly different deliveries. No automatic isolation or correction.",
+    "filters": "Dubbing filters",
+    "filterHint": "Match any checked tag. Combined with translation status, search and the main filter.",
+    "clearFilters": "Clear dubbing filters",
+    "dismiss": "Clear this dialogue’s tags",
+    "outdatedRow": "Outdated result · reanalyze this dialogue",
+    "voiceCounts": "Voices: source {{source}} · dubbing {{dubbing}}"
   }
 }

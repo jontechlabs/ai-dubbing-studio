@@ -8,6 +8,7 @@ mod character_match;
 mod character_review;
 mod domain;
 mod downloads;
+mod dubbing_audit;
 mod dubbing_pipeline;
 mod embedded;
 mod face_detection;
@@ -1737,6 +1738,41 @@ async fn apply_volume_leveling(
     .map_err(io_error)?
 }
 #[tauri::command]
+async fn apply_volume_leveling_batch(
+    app: tauri::AppHandle,
+    core: State<'_, Shared>,
+    ids: Vec<String>,
+    project_id: String,
+    expected_revision: u64,
+) -> Result<Project, String> {
+    let core = core.inner().clone();
+    tauri::async_runtime::spawn_blocking(move || {
+        volume_leveling::apply_many(&core, &app, &ids, &project_id, expected_revision)
+    })
+    .await
+    .map_err(io_error)?
+}
+#[tauri::command]
+fn analyze_dubbing(
+    app: tauri::AppHandle,
+    core: State<'_, Shared>,
+    project_id: String,
+    expected_revision: u64,
+    options: dubbing_audit::Options,
+) -> Result<String, String> {
+    dubbing_audit::enqueue(
+        core.inner().clone(),
+        app,
+        project_id,
+        expected_revision,
+        options,
+    )
+}
+#[tauri::command]
+fn dubbing_audit_status(core: State<'_, Shared>) -> serde_json::Value {
+    serde_json::json!({"speakersInstalled":speakers::installed(&core)})
+}
+#[tauri::command]
 fn discard_volume_leveling(core: State<'_, Shared>, id: String) -> Result<(), String> {
     volume_leveling::discard(&core, &id)
 }
@@ -2252,6 +2288,9 @@ pub fn run() {
             volume_leveling_result,
             volume_leveling_path,
             apply_volume_leveling,
+            apply_volume_leveling_batch,
+            analyze_dubbing,
+            dubbing_audit_status,
             discard_volume_leveling,
             apply_audio_effects,
             cancel_job,

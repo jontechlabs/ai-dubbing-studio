@@ -2,6 +2,7 @@ import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useStat
 import { useVirtualizer } from '@tanstack/react-virtual';
 import {
   AlertTriangle,
+  ScanSearch,
   AudioLines,
   BadgeCheck,
   BadgeMinus,
@@ -32,6 +33,7 @@ import { formatTime } from '../domain/time';
 import type { Dialogue, Project } from '../domain/types';
 import { assignCharacter } from '../domain/characters';
 import { CharacterAvatar } from './CharacterTools';
+import { currentAuditRows, auditTags, type AuditTag, type AuditRow } from '../domain/dubbingAudit';
 import { selectedGeneration, staleGeneration } from '../domain/tts';
 import { canApproveJointReview, reviewIndex, indexedTake } from '../domain/jointReview';
 import { useTakeReview } from '../hooks/useTakeReview';
@@ -51,6 +53,7 @@ const translationIcons = {
 };
 
 function DialoguesPane({
+  onAudit,
   onAdd,
   onDelete,
   openContext,
@@ -74,6 +77,7 @@ function DialoguesPane({
   onDub,
   onPlayDub,
 }: {
+  onAudit: () => void;
   onAdd: (atMs?: number) => void;
   onDelete: (ids: string[]) => void;
   openContext: OpenContextMenu;
@@ -99,6 +103,11 @@ function DialoguesPane({
 }) {
   const { t } = useTranslation();
   const takeReview = useTakeReview(project, onEdit, busy);
+  const [tagFilter, setTagFilter] = useState<AuditTag[]>([]);
+  const audit = useMemo(
+    () => (project ? currentAuditRows(project) : new Map<string, AuditRow>()),
+    [project],
+  );
   const [search, setSearch] = useState('');
   const [review, setReview] = useState(false);
   const [showExcluded, setShowExcluded] = useState(false);
@@ -150,6 +159,7 @@ function DialoguesPane({
       (d) =>
         (!d.excludedFromDubbing || showExcluded) &&
         (translationFilter === 'all' || states.get(d.id) === translationFilter) &&
+        (!tagFilter.length || tagFilter.some((tag) => audit.get(d.id)?.tags.includes(tag))) &&
         (!review ||
           d.warnings.length > 0 ||
           d.status === 'review' ||
@@ -170,7 +180,7 @@ function DialoguesPane({
           .toLocaleLowerCase()
           .includes(search.toLocaleLowerCase()),
     );
-  }, [project, review, search, translationFilter, states, showExcluded]);
+  }, [project, review, search, translationFilter, states, showExcluded, tagFilter, audit]);
   const getItemKey = useCallback((index: number) => lines[index].id, [lines]);
   const virtual = useVirtualizer({
     count: lines.length,
@@ -218,6 +228,15 @@ function DialoguesPane({
           <h2>{t('dialogs')}</h2>
           <span className="count-badge">{project?.dialogues.length ?? 0}</span>
         </div>
+        <button
+          className="icon-button"
+          title={t('audit.title')}
+          aria-label={t('audit.title')}
+          disabled={busy || !project?.media}
+          onClick={onAudit}
+        >
+          <ScanSearch size={15} />
+        </button>
         <button className="filter-button" onClick={() => setReview(!review)}>
           {t(review ? 'reviewOnly' : 'all')}
           <ChevronDown size={13} />
@@ -241,6 +260,33 @@ function DialoguesPane({
           {lines.length} / {project?.dialogues.length ?? 0}
         </span>
       </label>
+      <details className="audit-filters">
+        <summary>
+          {t('audit.filters')} {tagFilter.length > 0 && '(' + tagFilter.length + ')'}
+        </summary>
+        <p className="panel-description">{t('audit.filterHint')}</p>
+        {project?.dubbingAudit && audit.size < project.dubbingAudit.rows.length && (
+          <p role="status">{t('audit.stale')}</p>
+        )}
+        {auditTags.map((tag) => (
+          <label className="checkbox-field" key={tag}>
+            <input
+              type="checkbox"
+              checked={tagFilter.includes(tag)}
+              onChange={(e) =>
+                setTagFilter((old) =>
+                  e.target.checked ? [...old, tag] : old.filter((t) => t !== tag),
+                )
+              }
+            />
+            {t('audit.tag.' + tag)} (
+            {[...audit.values()].filter((r) => r.tags.includes(tag)).length})
+          </label>
+        ))}
+        <button className="text-button" onClick={() => setTagFilter([])}>
+          {t('audit.clearFilters')}
+        </button>
+      </details>
       {project?.dialogues.some((l) => l.excludedFromDubbing) && (
         <label className="checkbox-field dialogue-excluded-toggle">
           <input
@@ -411,6 +457,7 @@ function DialoguesPane({
                   }}
                 >
                   <DialogueCard
+                    auditTags={audit.get(line.id)?.tags ?? []}
                     onRestore={() => onEdit((p) => setDialogueExclusion(p, [line.id], false))}
                     onDelete={() => onDelete([line.id])}
                     openContext={(event) =>
@@ -434,6 +481,26 @@ function DialoguesPane({
                           disabled: busy || !project?.media,
                           run: () => onTranscribe(line),
                         },
+                        ...(audit.get(line.id)?.tags.length
+                          ? [
+                              {
+                                label: t('audit.dismiss'),
+                                disabled: busy,
+                                run: () =>
+                                  onEdit((p) => ({
+                                    ...p,
+                                    dubbingAudit: p.dubbingAudit
+                                      ? {
+                                          ...p.dubbingAudit,
+                                          rows: p.dubbingAudit.rows.map((r) =>
+                                            r.lineId === line.id ? { ...r, tags: [] } : r,
+                                          ),
+                                        }
+                                      : undefined,
+                                  })),
+                              },
+                            ]
+                          : []),
                         { label: t('dialogueAdd'), disabled: busy, run: () => onAdd(line.endMs) },
                         {
                           label: t(
@@ -518,6 +585,7 @@ function DialoguesPane({
 }
 export const Dialogues = memo(DialoguesPane);
 function DialogueCard({
+  auditTags: qualityTags,
   onRestore,
   onDelete,
   openContext,
@@ -537,6 +605,7 @@ function DialogueCard({
   onPlayDub,
   onApprove,
 }: {
+  auditTags: AuditTag[];
   onRestore: () => void;
   onDelete: () => void;
   openContext: (event: import('react').MouseEvent<HTMLElement>) => void;
@@ -721,6 +790,15 @@ function DialogueCard({
           )}
         </div>
       </div>
+      {qualityTags.length > 0 && (
+        <div className="audit-badges">
+          {qualityTags.map((tag) => (
+            <span key={tag} title={t('audit.caveats')}>
+              {t('audit.tag.' + tag)}
+            </span>
+          ))}
+        </div>
+      )}
       <div className="card-footer">
         <button
           className="icon-button"

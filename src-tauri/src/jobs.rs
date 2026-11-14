@@ -106,6 +106,8 @@ pub struct PersistedJob {
     #[serde(default)]
     pub volume_leveling: Option<crate::volume_leveling::Request>,
     #[serde(default)]
+    pub dubbing_audit: Option<crate::dubbing_audit::Request>,
+    #[serde(default)]
     pub prosody: Option<crate::prosody::Request>,
     #[serde(default)]
     pub voice_conversion: Option<crate::voice_capture::Request>,
@@ -249,6 +251,7 @@ pub fn create<R: tauri::Runtime>(
                 saved: PersistedJob {
                     audio_effects: None,
                     volume_leveling: None,
+                    dubbing_audit: None,
                     prosody: None,
                     voice_conversion: None,
                     face_detection: None,

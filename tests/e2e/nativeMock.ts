@@ -144,6 +144,15 @@ export async function nativeMock(page: Page, large = false, seededProject?: Proj
       };
       host.__getLibrary = () => structuredClone(lib());
       const leveling = new Map<string, any>();
+      host.__completeAudit = (report: any) => {
+        project.formatVersion = 29;
+        project.dubbingAudit = structuredClone(report);
+        project.revision++;
+        localStorage.setItem('nativeMockProject', JSON.stringify(project));
+        emit('project-changed', structuredClone(project));
+        job = { ...job, status: 'succeeded', stage: 'done', progress: 1 };
+        emit('job-changed', job);
+      };
       host.__completeLeveling = (error = '') => {
         const r = leveling.get(host.__levelingId);
         if (!r || r.discarded) return;
@@ -1474,6 +1483,65 @@ export async function nativeMock(page: Page, large = false, seededProject?: Proj
             return args.startMs === undefined
               ? `stems/patch-${args.id}.wav`
               : `cache/patch-segment-${args.id}-${args.startMs}-${args.endMs}.wav`;
+          }
+          if (command === 'dubbing_audit_status')
+            return { speakersInstalled: host.__auditSpeakersInstalled ?? true };
+          if (command === 'analyze_dubbing') {
+            if (args.projectId !== project.id || args.expectedRevision !== project.revision)
+              throw Error('STALE_REVISION');
+            host.__lastAudit = args;
+            job = {
+              id: crypto.randomUUID(),
+              projectId: project.id,
+              kind: 'dubbingAudit',
+              status: 'running',
+              stage: 'auditAudio',
+              progress: 0.4,
+              logs: [],
+              error: null,
+            };
+            emit('job-changed', job);
+            return job.id;
+          }
+          if (command === 'apply_volume_leveling_batch') {
+            if (args.projectId !== project.id || args.expectedRevision !== project.revision)
+              throw Error('STALE_REVISION');
+            const previews = args.ids.map((id: string) => leveling.get(id));
+            if (
+              !previews.length ||
+              previews.some(
+                (r: any) => !r || !r.complete || r.discarded || r.revision !== project.revision,
+              )
+            )
+              throw Error('VOLUME_LEVELING_NOT_READY');
+            undoStack.push(structuredClone(project));
+            for (const r of previews) {
+              const o = r.options;
+              project.formatVersion = Math.max(
+                project.formatVersion,
+                o.endMs - o.startMs > 120000 ? 28 : 27,
+              );
+              project.generations.push({
+                kind: 'audioPatch',
+                id: crypto.randomUUID(),
+                operationId: r.id,
+                operation: 'leveling',
+                sourcePath: project.media.path,
+                trackId: o.trackId,
+                sourceTrackId: o.trackId,
+                startMs: o.startMs,
+                endMs: o.endMs,
+                mode: 'replace',
+                path: 'stems/patch-' + crypto.randomUUID() + '.wav',
+                gain: 1,
+                volumeLeveling: r,
+              });
+              r.discarded = true;
+            }
+            project.revision++;
+            localStorage.setItem('nativeMockProject', JSON.stringify(project));
+            emit('project-changed', structuredClone(project));
+            return structuredClone(project);
           }
           if (command === 'prepare_volume_leveling') {
             if (args.projectId !== project.id || args.expectedRevision !== project.revision)

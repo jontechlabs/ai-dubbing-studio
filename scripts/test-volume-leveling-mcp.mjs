@@ -77,8 +77,8 @@ async function job(id) {
 }
 try {
   await client.connect(transport);
-  assert.equal(client.getServerVersion().version, '0.48.0');
-  assert.equal((await client.listTools()).tools.length, 163);
+  assert.equal(client.getServerVersion().version, '0.49.0');
+  assert.equal((await client.listTools()).tools.length, 166);
   await until(async () => {
     try {
       return (await state()).screen === 'home';
@@ -164,18 +164,52 @@ try {
       assert(audio.subarray(120 * 48000 * 4).every((v) => v === 0));
       assert.deepEqual((await call('studio_get_project')).generations, before.generations);
       if (mode === 'low') await call('studio_discard_volume_leveling', { id });
-      else
-        await call('studio_apply_volume_leveling', {
+      else {
+        await call('studio_project_patch', {
           context: await context(),
+          patches: [
+            {
+              op: 'add',
+              path: '/tracks/-',
+              value: {
+                ...p.tracks.find((t) => t.id === 'level-test'),
+                id: 'level-companion',
+                name: 'Companion',
+              },
+            },
+          ],
+        });
+        // A project edit invalidates previous previews: explicitly reprepare both at one revision.
+        await call('studio_discard_volume_leveling', { id });
+        p = await call('studio_get_project');
+        const ids = [];
+        for (const trackId of ['level-test', 'level-companion']) {
+          const c = await context();
+          const key = await call('studio_prepare_volume_leveling', {
+            context: c,
+            projectId: c.projectId,
+            expectedRevision: c.expectedRevision,
+            options: { mediaId: p.media.id, trackId, startMs: 0, endMs: 130250, mode: 'high' },
+          });
+          await job(key);
+          ids.push(key);
+        }
+        const c = await context();
+        await call('studio_apply_volume_leveling_batch', {
+          context: c,
           projectId: c.projectId,
           expectedRevision: c.expectedRevision,
-          id,
+          ids,
         });
+      }
     }
     p = await call('studio_get_project');
     assert.equal(p.formatVersion, 28);
-    assert.equal(p.generations.length, before.generations.length + 1);
-    assert.deepEqual(p.tracks, before.tracks);
+    assert.equal(p.generations.length, before.generations.length + 2);
+    assert.deepEqual(
+      p.tracks.filter((t) => t.id !== 'level-companion'),
+      before.tracks,
+    );
     assert.deepEqual(p.dialogues, before.dialogues);
     const undo = await call('studio_history', { context: await context(), direction: 'undo' });
     assert.deepEqual(undo.generations, before.generations);
@@ -207,6 +241,27 @@ try {
     );
     assert.deepEqual(p.sourceCues, before.sourceCues);
     assert.deepEqual(p.targetCues, before.targetCues);
+    assert.equal((await call('studio_dubbing_audit_status')).speakersInstalled, false);
+    const auditContext = await context();
+    const auditId = await call('studio_analyze_dubbing', {
+      context: auditContext,
+      projectId: auditContext.projectId,
+      expectedRevision: auditContext.expectedRevision,
+      options: { voices: 'both', sourceTrackId: null },
+    });
+    await job(auditId);
+    await until(async () => {
+      p = await call('studio_get_project');
+      return p.dubbingAudit?.id === auditId;
+    });
+    assert.equal(p.formatVersion, 29);
+    assert.equal(p.dubbingAudit.voicesStatus, 'unavailable');
+    assert(p.dubbingAudit.rows.some((r) => r.tags.includes('missing')));
+    const listed = await call('studio_get_dialogues', { limit: 200 });
+    assert(listed.rows.every((r) => r.qualityCurrent));
+    assert(
+      (await call('studio_get_dialogues', { qualityTags: ['missing'], limit: 200 })).total > 0,
+    );
     await fs.writeFile(
       checkpoint,
       JSON.stringify({
@@ -227,6 +282,10 @@ try {
     const p = await call('studio_get_project');
     assert.deepEqual(p.generations, saved.project.generations);
     assert.deepEqual(p.tracks, saved.project.tracks);
+    assert.deepEqual(p.dubbingAudit, saved.project.dubbingAudit);
+    assert(
+      (await call('studio_get_dialogues', { qualityTags: ['missing'], limit: 200 })).total > 0,
+    );
     assert.equal(hash(await fs.readFile(path.join(saved.root, p.media.path))), saved.movie);
     assert.equal(
       hash(await fs.readFile(path.join(saved.root, 'stems/level-test.wav'))),
@@ -243,7 +302,7 @@ try {
       saved.take,
     );
     const layers = p.generations.filter((g) => g.operation === 'leveling');
-    assert.equal(layers.length, 2);
+    assert.equal(layers.length, 3);
     const longLayer = layers.find((l) => l.trackId === 'level-test');
     assert.equal(longLayer.endMs, 130250);
     for (const [startMs, endMs] of [
@@ -264,12 +323,15 @@ try {
         pcm(await fs.readFile(await call('studio_audio_patch_path', { id: layer.id }))).length > 0,
       );
     const proof = {
-      version: '0.48.0',
+      version: '0.49.0',
       officialSdk: true,
-      toolCount: 163,
+      toolCount: 166,
       actualApplicationRestart: true,
       realPcmLowAndHigh: true,
       fullTrackBeyond120s: true,
+      atomicMultiTrackApply: true,
+      persistedAuditAndFilters: true,
+      missingSpeakerModelExplicit: true,
       boundedPlaybackRanges: true,
       exactRangeAndSilence: true,
       explicitApply: true,

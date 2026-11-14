@@ -10,6 +10,7 @@ import { speakerDubbingState } from './domain/speakerDubbing';
 import { Dialogues } from './components/Dialogues';
 import { DialogueTrackAudition } from './components/DialogueTrackAudition';
 import { VolumeLeveling } from './components/VolumeLeveling';
+import { DubbingAuditPanel } from './components/DubbingAudit';
 import { SourceTranscription } from './components/SourceTranscription';
 import { Modal } from './components/Modal';
 import { formatTime } from './domain/time';
@@ -75,6 +76,7 @@ export default function App() {
   const openSourceTranscription = useCallback((line: Dialogue) => setSourceDialogueId(line.id), []);
   const [timelineNavigation, setTimelineNavigation] = useState<TimelineNavigation | null>(null);
   const [audioSelection, setAudioSelection] = useState<AudioSelection | null>(null);
+  const [auditOpen, setAuditOpen] = useState<string | null>(null);
   const [levelingSelection, setLevelingSelection] = useState<{
     projectId: string;
     selection: AudioSelection;
@@ -589,6 +591,7 @@ export default function App() {
           <main className="workspace">
             <WorkspacePanels dubbing={dubbingActive}>
               <Dialogues
+                onAudit={() => setAuditOpen(studio.project?.id ?? null)}
                 onAdd={(atMs) => {
                   const limit = studio.project?.media?.durationMs ?? 86_400_000;
                   const startMs = Math.max(
@@ -839,6 +842,20 @@ export default function App() {
           </button>
         </footer>
         <JobNotifications onOpen={showJobs} />
+        {studio.project && auditOpen === studio.project.id && (
+          <DubbingAuditPanel
+            key={studio.project.id}
+            project={studio.project}
+            jobs={studio.jobs}
+            busy={busy}
+            snapshot={studio.snapshot}
+            onClose={() => setAuditOpen(null)}
+            onSelect={(id) => {
+              const line = studio.project?.dialogues.find((l) => l.id === id);
+              if (line) select(line);
+            }}
+          />
+        )}
         {studio.project &&
           levelingSelection?.projectId === studio.project.id &&
           levelingSelection.selection.mediaId === studio.project.media?.id && (

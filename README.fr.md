@@ -1,5 +1,9 @@
 # AI Dubbing Studio
 
+## v0.49.0 — Égalisation multi-pistes et contrôle du doublage
+
+Préécoutes par piste, validation individuelle, application atomique des résultats choisis et annulation commune. Analyse générale locale des essais sélectionnés : doublages manquants/muets, niveaux faibles, saturation, fins/silences/durées à vérifier et indices de plusieurs voix. Tags persistants, filtres cumulables avec le statut de traduction, résultats périmés exclus. Module de locuteurs facultatif ; aucun son ni essai écrasé. [Guide et captures](docs/BATCH-LEVELING-AUDIT.md).
+
 ## v0.48.0 — Égaliser une piste entière
 
 Clic droit sur une piste → **Égaliser toute la piste…**, puis comparer Avant / Après et valider. Les sélections dépassent également 120 secondes, jusqu’à 24 h. Analyse par blocs avec une cible globale, lecture par fragments de 30 s, conservation des silences et des essais, Ctrl+Z. Format 28 pour les longues égalisations. [Guide et capture](docs/WHOLE-TRACK-LEVELING.md).

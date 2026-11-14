@@ -392,87 +392,129 @@ pub fn apply<R: tauri::Runtime>(
     project_id: &str,
     expected_revision: u64,
 ) -> Result<Project, String> {
+    apply_many(core, app, &[id.to_owned()], project_id, expected_revision)
+}
+pub fn apply_many<R: tauri::Runtime>(
+    core: &Arc<Core>,
+    app: &tauri::AppHandle<R>,
+    ids: &[String],
+    project_id: &str,
+    expected_revision: u64,
+) -> Result<Project, String> {
     let _permit = core.gate.clone().try_acquire_owned().map_err(|_| "BUSY")?;
-    let r = request(core, id)?;
-    if r.project_id != project_id || r.revision != expected_revision {
+    if ids.is_empty()
+        || ids.len() > 16
+        || ids.iter().collect::<std::collections::HashSet<_>>().len() != ids.len()
+    {
+        return Err("VOLUME_LEVELING_OPTIONS".into());
+    }
+    let mut prepared = vec![];
+    let mut tracks = std::collections::HashSet::new();
+    let mut bytes = 32 * 1024 * 1024;
+    for id in ids {
+        let r = request(core, id)?;
+        if r.project_id != project_id || r.revision != expected_revision {
+            return Err("STALE_REVISION".into());
+        }
+        let details = result(core, id)?;
+        let p = current(core, &r)?;
+        validate(&p, &r.options)?;
+        if !tracks.insert(r.options.track_id.clone()) {
+            return Err("VOLUME_LEVELING_OPTIONS".into());
+        }
+        let source = project::asset(&r.root, &format!("cache/volume-leveling/{id}/leveled.wav"))?;
+        if crate::audio_files::wav_frames(&source)? != (r.options.end_ms - r.options.start_ms) * 48
+        {
+            return Err("VOLUME_LEVELING_INVALID_AUDIO".into());
+        }
+        bytes += (r.options.end_ms - r.options.start_ms) * 192;
+        prepared.push((id.clone(), r, details, source));
+    }
+    let p = current(core, &prepared[0].1)?;
+    if prepared
+        .iter()
+        .any(|(_, r, _, _)| r.root != prepared[0].1.root)
+    {
         return Err("STALE_REVISION".into());
     }
-    let details = result(core, id)?;
-    let p = current(core, &r)?;
-    validate(&p, &r.options)?;
-    let source = project::asset(&r.root, &format!("cache/volume-leveling/{id}/leveled.wav"))?;
-    if crate::audio_files::wav_frames(&source)? != (r.options.end_ms - r.options.start_ms) * 48 {
-        return Err("VOLUME_LEVELING_INVALID_AUDIO".into());
+    let replaced: std::collections::HashSet<_> = prepared
+        .iter()
+        .flat_map(|(_, r, _, _)| replaced_layers(&p, &r.options))
+        .collect();
+    if audio_patch::all(&p)?.len() + ids.len() - replaced.len() > 128 {
+        return Err("AUDIO_TRANSFER_LIMIT".into());
     }
     #[cfg(windows)]
-    if crate::voice_space::available(&r.root)?
-        < (r.options.end_ms - r.options.start_ms) * 192 + 32 * 1024 * 1024
-    {
+    if crate::voice_space::available(&prepared[0].1.root)? < bytes {
         return Err("AUDIO_EFFECTS_DISK_REQUIRED".into());
     }
-    let patch_id = crate::domain::id();
-    let relative = format!("stems/patch-{patch_id}.wav");
-    let parent = project::ensure_directory(&r.root, "stems")?;
-    let target = parent.join(format!("patch-{patch_id}.wav"));
-    if let Err(e) = std::fs::copy(source, &target) {
-        let _ = std::fs::remove_file(&target);
-        return Err(io_error(e));
-    }
+    #[cfg(not(windows))]
+    let _ = bytes;
+    let mut copied = vec![];
+    let mut layers = vec![];
+    let mut version = p.format_version;
     let saved = (|| {
+        for (id, r, details, source) in &prepared {
+            let patch_id = crate::domain::id();
+            let relative = format!("stems/patch-{patch_id}.wav");
+            let target =
+                project::ensure_directory(&r.root, "stems")?.join(format!("patch-{patch_id}.wav"));
+            copied.push(target.clone());
+            std::fs::copy(source, &target).map_err(io_error)?;
+            version = version.max(if r.options.end_ms - r.options.start_ms > 120000 {
+                28
+            } else {
+                27
+            });
+            let mut layer = json!({"kind":"audioPatch","id":patch_id,"operationId":id,"operation":"leveling","sourcePath":p.media.as_ref().unwrap().path,"trackId":r.options.track_id,"sourceTrackId":r.options.track_id,"startMs":r.options.start_ms,"endMs":r.options.end_ms,"mode":"replace","path":relative,"gain":1.0,"volumeLeveling":details,"createdAt":crate::domain::now()});
+            if r.options.track_id == "dubbing" {
+                layer["dubbingScope"] = dubbing_scope(&p, r.options.start_ms, r.options.end_ms);
+            }
+            layers.push(layer);
+        }
         let jobs = core.jobs.lock().map_err(io_error)?;
-        if jobs
-            .get(id)
-            .ok_or("INVALID_JOB")?
-            .cancel
-            .load(Ordering::Relaxed)
-        {
-            return Err("CANCELLED".into());
+        for id in ids {
+            if jobs
+                .get(id)
+                .ok_or("INVALID_JOB")?
+                .cancel
+                .load(Ordering::Relaxed)
+            {
+                return Err("CANCELLED".into());
+            }
         }
         let mut guard = core.session.lock().map_err(io_error)?;
-        let s = guard.as_mut().ok_or("NO_PROJECT")?;
-        if s.root != r.root
-            || s.project.id != r.project_id
-            || s.project.revision != expected_revision
+        let session = guard.as_mut().ok_or("NO_PROJECT")?;
+        if session.root != prepared[0].1.root
+            || session.project.id != project_id
+            || session.project.revision != expected_revision
         {
             return Err("STALE_REVISION".into());
         }
-        let mut next = s.project.clone();
-        next.format_version =
-            next.format_version
-                .max(if r.options.end_ms - r.options.start_ms > 120000 {
-                    28
-                } else {
-                    27
-                });
-        // The prepared audio already contains these active lower layers.
-        // Consolidate full coverage; undo still owns their immutable WAVs.
-        let replaced = replaced_layers(&p, &r.options);
+        let mut next = session.project.clone();
+        next.format_version = version;
         next.generations
             .retain(|g| g["id"].as_str().is_none_or(|id| !replaced.contains(id)));
-        let scope = if r.options.track_id == "dubbing" {
-            Some(dubbing_scope(&p, r.options.start_ms, r.options.end_ms))
-        } else {
-            None
-        };
-        let mut layer = json!({"kind":"audioPatch","id":patch_id,"operationId":id,"operation":"leveling","sourcePath":p.media.as_ref().unwrap().path,"trackId":r.options.track_id,"sourceTrackId":r.options.track_id,"startMs":r.options.start_ms,"endMs":r.options.end_ms,"mode":"replace","path":relative,"gain":1.0,"volumeLeveling":details,"createdAt":crate::domain::now()});
-        if let Some(scope) = scope {
-            layer["dubbingScope"] = scope;
-        }
-        next.generations.push(layer);
-        s.replace(next, expected_revision)
+        next.generations.extend(layers);
+        session.replace(next, expected_revision)
     })();
     match saved {
         Ok(saved) => {
             let _ = app.emit("project-changed", &saved);
-            let _ = discard(core, id);
+            for id in ids {
+                let _ = discard(core, id);
+            }
             Ok(saved)
         }
-        Err(e) => {
-            let _ = std::fs::remove_file(target);
-            Err(e)
+        Err(error) => {
+            for file in copied {
+                let _ = std::fs::remove_file(file);
+            }
+            Err(error)
         }
     }
 }
+
 pub fn discard(core: &Core, id: &str) -> Result<(), String> {
     let r = request(core, id)?;
     {

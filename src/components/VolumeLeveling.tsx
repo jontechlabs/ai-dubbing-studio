@@ -7,6 +7,7 @@ import { audioTracks, trackLabel } from '../domain/audio';
 import { formatTime } from '../domain/time';
 import * as bridge from '../services/bridge';
 import { Modal } from './Modal';
+import { MultiVolumeLeveling } from './MultiVolumeLeveling';
 import { CurrentJobProgress } from './CurrentJobProgress';
 
 export function VolumeLeveling({
@@ -29,6 +30,7 @@ export function VolumeLeveling({
   onListen: (element: HTMLAudioElement) => void;
 }) {
   const { t } = useTranslation();
+  const [multi, setMulti] = useState(false);
   const [mode, setMode] = useState<'low' | 'high'>('low');
   const [id, setId] = useState<string | null>(null);
   const [result, setResult] = useState<VolumeLevelingResult | null>(null);
@@ -133,6 +135,19 @@ export function VolumeLeveling({
     return () => elements.forEach((a) => a.pause());
   }, [urls, stale]);
   const track = audioTracks(project).find((tr) => tr.id === selection.trackId);
+  if (multi)
+    return (
+      <MultiVolumeLeveling
+        project={project}
+        selection={selection}
+        jobs={jobs}
+        busy={busy}
+        snapshot={snapshot}
+        onSaved={onSaved}
+        onClose={onClose}
+        onListen={onListen}
+      />
+    );
   return (
     <Modal title={t('leveling.title')} className="volume-leveling-modal" onClose={onClose}>
       <div ref={container}>
@@ -141,6 +156,16 @@ export function VolumeLeveling({
           {formatTime(selection.endMs)}
         </p>
         <p className="panel-description">{t('leveling.hint')}</p>
+        <button
+          className="button subtle"
+          disabled={active}
+          onClick={() => {
+            clear();
+            setMulti(true);
+          }}
+        >
+          {t('leveling.multi')}
+        </button>
         <label className="field">
           <span>{t('leveling.target')}</span>
           <select

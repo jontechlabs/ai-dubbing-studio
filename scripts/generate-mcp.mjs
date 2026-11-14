@@ -101,6 +101,7 @@ const mapping = {
   'local_separation::Options': 'LocalSeparationOptions',
   'audio_fx_job::Options': 'AudioEffectsOptions',
   'volume_leveling::Options': 'VolumeLevelingOptions',
+  'dubbing_audit::Options': 'DubbingAuditOptions',
   'mix::Options': 'MkvOptions',
 };
 const object = (properties) => ({
@@ -127,6 +128,9 @@ function rustSchema(type) {
 const readOnly =
   /^(?!apply_)(environment|graphics_info|.*_status|.*_result|latest_.*|audio_effects_catalog|.*_path|.*_paths|list_jobs|model_storage_info|model_storage_size|managed_models|current_project|list_projects|project_cover|voice_install_space|preview_.*|reference_audio_info|get_waveform|dubbing_batch_report|dubbing_batch_history)$/;
 const notes = {
+  apply_volume_leveling_batch:'Atomically apply ONLY explicitly approved preview IDs on distinct tracks at the same current revision. Prelisten and approve each track first. All-or-nothing, one undo step. Unapproved previews must not be passed.',
+  analyze_dubbing:'Analyze all dialogues locally without changing audio/takes. Persist missing/silent/quiet/clipping/possible-cut-end/long-silence/timing/invalid-audio hints. voices off/source/dubbing/both optionally uses the installed speaker model for conservative multi-voice hints, not reliable overlap detection. Missing model is explicitly reported. Poll jobs; read project.dubbingAudit and check its audio basis before using tags. Context required.',
+
   prepare_volume_leveling:
     'Prepare an immutable local RMS volume-levelling preview for a 100 ms–24 h selection or an entire track on any audio track, including dubbing. mode low attenuates louder passages to the quietest active half-second window; high raises quieter passages to the loudest. Silence is excluded, boost is capped at 18 dB and sample peaks are protected. Input includes existing patches before mixer gains/mutes. Returns a job ID; poll jobs then inspect volume_leveling_result and preview original/leveled audio through volume_leveling_path. No project edit until apply.',
   volume_leveling_result:
@@ -255,6 +259,8 @@ projectCommands.add('preview_character_portrait');
 projectCommands.add('retry_dubbing_batch');
 projectCommands.add('prepare_volume_leveling');
 projectCommands.add('apply_volume_leveling');
+projectCommands.add('apply_volume_leveling_batch');
+projectCommands.add('analyze_dubbing');
 for (const command of [
   'transcribe_dialogue_source',
   'apply_source_transcription',
@@ -426,11 +432,12 @@ tool(
 );
 tool(
   'studio_get_dialogues',
-  'Read paginated dialogue texts, translation statuses, selected takes and timing. Maximum 200 rows per response.',
+  'Read paginated dialogue texts, translation statuses, selected takes, timing and current audit tags. qualityTags matches ANY supplied tag, combined with status and IDs. Stale or absent audits return qualityCurrent=false and no tags. Maximum 200 rows.',
   {
     offset: integer,
     limit: { type: 'integer', minimum: 1, maximum: 200 },
     status: choice('all', 'untranslated', 'translated', 'approved'),
+    qualityTags:{type:'array',items:choice('missing','silent','multipleVoices','quiet','clipping','cutEnd','longSilence','timing','invalidAudio')},
     ids: { type: 'array', items: string },
   },
   [],

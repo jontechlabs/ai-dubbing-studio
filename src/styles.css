@@ -5159,3 +5159,80 @@ pre {
   margin-top: 14px;
   flex-wrap: wrap;
 }
+.audit-filters {
+  padding: 4px 12px;
+  font-size: 11px;
+}
+.audit-filters summary {
+  cursor: pointer;
+  color: var(--muted);
+}
+.audit-filters[open] {
+  max-height: 280px;
+  overflow: auto;
+}
+.audit-filters .checkbox-field {
+  padding: 2px 0;
+}
+.audit-launch {
+  margin: 2px 12px 6px;
+  align-self: flex-start;
+}
+.audit-badges,
+.audit-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.audit-badges span,
+.audit-summary span {
+  border-radius: 4px;
+  padding: 2px 5px;
+  background: #6c542a33;
+  color: #dfbb75;
+  font-size: 10px;
+}
+.audit-row {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  width: 100%;
+  gap: 4px;
+  text-align: left;
+  padding: 8px;
+  margin: 5px 0;
+  background: var(--surface);
+  color: inherit;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+.dubbing-audit-modal {
+  width: min(680px, 94vw);
+}
+.volume-leveling-modal fieldset {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  margin-bottom: 10px;
+}
+.multi-leveling-modal summary {
+  cursor: pointer;
+  margin: 8px 0;
+  font-size: 12px;
+}
+.multi-leveling-modal fieldset .checkbox-field {
+  display: inline-flex;
+  margin: 4px 12px 4px 0;
+  min-width: 95px;
+}
+.multi-leveling-modal .leveling-actions {
+  position: sticky;
+  bottom: -20px;
+  background: #17171f;
+  padding: 12px 0;
+  border-top: 1px solid var(--border);
+  z-index: 2;
+}
+.multi-leveling-modal .leveling-preview h3 {
+  margin: 8px 0 4px;
+  font-size: 13px;
+}

@@ -163,6 +163,26 @@ export function applyVolumeLeveling(project: Project, id: string) {
 export function discardVolumeLeveling(id: string) {
   return invoke<void>('discard_volume_leveling', { id });
 }
+export function applyVolumeLevelingBatch(project: Project, ids: string[]) {
+  return invoke<Project>('apply_volume_leveling_batch', {
+    ids,
+    projectId: project.id,
+    expectedRevision: project.revision,
+  });
+}
+export function analyzeDubbing(
+  project: Project,
+  options: { voices: string; sourceTrackId: string | null },
+) {
+  return invoke<string>('analyze_dubbing', {
+    projectId: project.id,
+    expectedRevision: project.revision,
+    options,
+  });
+}
+export function dubbingAuditStatus() {
+  return invoke<{ speakersInstalled: boolean }>('dubbing_audit_status');
+}
 export function transferAudio(options: import('../domain/audioPatch').TransferOptions) {
   return invoke<string>('transfer_audio', { options });
 }

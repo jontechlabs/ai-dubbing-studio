@@ -206,7 +206,9 @@
     "speakerSeparationRun": "Isolation des voix",
     "levelingPrepare": "Préparation de la sélection",
     "levelingAnalyze": "Analyse et homogénéisation des niveaux",
-    "levelingPreview": "Préparation des préécoutes longue durée"
+    "levelingPreview": "Préparation des préécoutes longue durée",
+    "auditAudio": "Vérification des fichiers et des niveaux audio",
+    "auditVoices": "Recherche de plusieurs voix possibles"
   },
   "shortcuts": "Espace : lecture · J/K/L : transport · O : original · Ctrl+S : sauvegarde · Ctrl+Z/Y : annuler/rétablir",
   "errors": {
@@ -442,7 +444,8 @@
     "VOLUME_LEVELING_OPTIONS": "Choisissez une piste du média actuel et une zone comprise entre 0,1 seconde et la fin de la piste (24 h maximum).",
     "VOLUME_LEVELING_SILENT": "Aucun passage assez audible dans cette sélection. Les silences et signaux sous −60 dBFS RMS ne sont pas amplifiés.",
     "VOLUME_LEVELING_NOT_READY": "La préécoute est indisponible, annulée ou déjà appliquée. Préparez-la à nouveau.",
-    "VOLUME_LEVELING_INVALID_AUDIO": "Le son de la sélection est incomplet ou invalide. Aucun changement n’a été appliqué."
+    "VOLUME_LEVELING_INVALID_AUDIO": "Le son de la sélection est incomplet ou invalide. Aucun changement n’a été appliqué.",
+    "INVALID_DUBBING_AUDIT": "Résultat ou options d’analyse invalides."
   },
   "preparingVideo": "Préparation de la vidéo…",
   "loadingVideo": "Chargement de la vidéo…",
@@ -1306,7 +1309,8 @@
     "audioToolbox": "Séparation de la sélection",
     "speakerSeparation": "Séparation des voix superposées",
     "speakerSeparationInstall": "Installation du séparateur de voix",
-    "volumeLeveling": "Égalisation du volume"
+    "volumeLeveling": "Égalisation du volume",
+    "dubbingAudit": "Analyse des doublages"
   },
   "fxRemoveTrack": "Retirer la copie avec effets · {{name}}",
   "transferEffects": "Effets audio",
@@ -1969,6 +1973,61 @@
     "beforeLevels": "Préécoute avant les volumes et zones muettes du mix. Ces réglages restent conservés après application. Analyse par fenêtres de 0,5 s, transitions lissées. Sélection ou piste entière, de 0,1 s à 24 h ; traitement par blocs et lecture progressive.",
     "apply": "Valider et appliquer",
     "wholeTrack": "Égaliser toute la piste…",
-    "applying": "Application en cours…"
+    "applying": "Application en cours…",
+    "multi": "Égaliser plusieurs pistes…",
+    "batchTitle": "Égalisation multi-pistes",
+    "batchHint": "Prépare les pistes successivement. Comparez chaque résultat et cochez sa validation ; seules les pistes validées seront appliquées ensemble, avec un seul Ctrl+Z.",
+    "tracks": "Pistes à préparer",
+    "wholeTracks": "Pistes entières",
+    "prepareAll": "Préparer les préécoutes",
+    "approveTrack": "Valider cette piste",
+    "resetBatch": "Réinitialiser les préécoutes",
+    "applyApproved": "Appliquer les {{count}} pistes validées",
+    "applyApproved_zero": "Validez au moins une piste",
+    "applyApproved_one": "Appliquer la piste validée",
+    "applyApproved_other": "Appliquer les {{count}} pistes validées"
+  },
+  "audit": {
+    "title": "Analyser les doublages",
+    "hint": "Analyse les essais sélectionnés, après montage et adaptation à leur durée, avant les volumes/muets du mix. Ne modifie aucun son et ne valide aucune traduction.",
+    "voices": "Recherche de plusieurs voix",
+    "mode": {
+      "both": "Source et doublage",
+      "source": "Source uniquement",
+      "dubbing": "Doublage uniquement",
+      "off": "Contrôles audio seulement"
+    },
+    "loading": "Vérification du modèle de locuteurs…",
+    "modelReady": "Module CAMPPlus / Silero installé · CPU local.",
+    "modelMissing": "Module de locuteurs absent : installez-le dans Personnages pour rechercher plusieurs voix. Les autres contrôles restent disponibles ; cette recherche sera marquée non effectuée.",
+    "sourceTrack": "Piste source à analyser",
+    "run": "Lancer l’analyse générale",
+    "results": "Résultats de l’analyse",
+    "stale": "Certaines entrées audio ont changé. Les tags périmés sont ignorés ; relancez l’analyse pour les actualiser.",
+    "engine": {
+      "unavailable": "Recherche multi-voix non effectuée : modèle absent.",
+      "failed": "Recherche multi-voix échouée. Les mesures audio restent disponibles."
+    },
+    "tag": {
+      "missing": "Doublage manquant",
+      "silent": "Doublage muet",
+      "multipleVoices": "Plusieurs voix possibles",
+      "quiet": "Voix faible",
+      "clipping": "Saturation",
+      "cutEnd": "Fin possiblement coupée",
+      "longSilence": "Silence prolongé",
+      "timing": "Durée à vérifier",
+      "invalidAudio": "Audio inexploitable"
+    },
+    "peak": "crête",
+    "fileError": "Fichier absent ou illisible ; essai conservé.",
+    "more": "Afficher 50 résultats supplémentaires",
+    "caveats": "Les tags sont des indices à confirmer à l’écoute. Le regroupement vocal peut manquer les répliques courtes ou les voix superposées, et confondre des interprétations très différentes. Aucune isolation ni correction automatique.",
+    "filters": "Filtres du doublage",
+    "filterHint": "Tags cochés : correspond à au moins un tag. Se cumule avec le statut de traduction, la recherche et le filtre principal.",
+    "clearFilters": "Retirer les filtres de doublage",
+    "dismiss": "Retirer les tags de cette réplique",
+    "outdatedRow": "Résultat périmé · réplique à réanalyser",
+    "voiceCounts": "Voix : source {{source}} · doublage {{dubbing}}"
   }
 }

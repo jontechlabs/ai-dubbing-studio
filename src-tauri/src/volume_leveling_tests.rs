@@ -267,6 +267,98 @@ fn options(p: &Project, track: &str) -> Options {
         mode: "low".into(),
     }
 }
+
+#[tokio::test]
+async fn multiple_previews_apply_atomically_and_undo_together_without_losing_unapproved_previews() {
+    let (_dir, root, p) = crate::mix::tests::fixture().await;
+    let core = crate::mix::tests::core(&root, p.clone());
+    let app = tauri::test::mock_app();
+    let mut ids = vec![];
+    for track in ["music", "original"] {
+        let id = enqueue(
+            core.clone(),
+            app.handle().clone(),
+            p.id.clone(),
+            p.revision,
+            options(&p, track),
+        )
+        .unwrap();
+        assert_eq!(finish(&core, &id).await.status, "succeeded");
+        ids.push(id);
+    }
+    assert!(apply_many(
+        &core,
+        app.handle(),
+        &[ids[0].clone(), ids[0].clone()],
+        &p.id,
+        p.revision
+    )
+    .is_err());
+    assert!(apply_many(
+        &core,
+        app.handle(),
+        &[ids[0].clone(), crate::domain::id()],
+        &p.id,
+        p.revision
+    )
+    .is_err());
+    assert_eq!(
+        core.session
+            .lock()
+            .unwrap()
+            .as_ref()
+            .unwrap()
+            .project
+            .generations,
+        p.generations
+    );
+    let next = apply_many(&core, app.handle(), &ids, &p.id, p.revision).unwrap();
+    assert_eq!(next.revision, p.revision + 1);
+    assert_eq!(audio_patch::all(&next).unwrap().len(), 2);
+    assert_eq!(project::load(&root).unwrap().generations, next.generations);
+    assert_eq!(
+        core.session
+            .lock()
+            .unwrap()
+            .as_mut()
+            .unwrap()
+            .history(false)
+            .unwrap()
+            .generations,
+        p.generations
+    );
+    let current = core
+        .session
+        .lock()
+        .unwrap()
+        .as_ref()
+        .unwrap()
+        .project
+        .clone();
+    let mut previews = vec![];
+    for track in ["music", "original"] {
+        let id = enqueue(
+            core.clone(),
+            app.handle().clone(),
+            current.id.clone(),
+            current.revision,
+            options(&current, track),
+        )
+        .unwrap();
+        assert_eq!(finish(&core, &id).await.status, "succeeded");
+        previews.push(id);
+    }
+    let first = apply_many(&core, app.handle(), &previews[..1], &p.id, current.revision).unwrap();
+    assert_eq!(audio_patch::all(&first).unwrap().len(), 1);
+    assert!(folder(&request(&core, &previews[1]).unwrap(), &previews[1])
+        .unwrap()
+        .join("leveled.wav")
+        .is_file());
+    assert_eq!(
+        apply_many(&core, app.handle(), &previews[1..], &p.id, first.revision).unwrap_err(),
+        "STALE_REVISION"
+    );
+}
 async fn finish(core: &Core, id: &str) -> jobs::Job {
     let deadline = std::time::Instant::now() + std::time::Duration::from_secs(40);
     loop {

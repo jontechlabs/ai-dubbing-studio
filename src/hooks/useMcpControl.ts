@@ -12,6 +12,7 @@ import catalog from '../mcp/catalog.json';
 import qualityCatalog from '../../workers/voice-quality.json';
 import { dialogueText } from '../domain/subtitles';
 import { translationState } from '../domain/translation';
+import { currentAuditRows } from '../domain/dubbingAudit';
 import { validateProject } from '../domain/project';
 import { dubbingClips } from '../domain/mix';
 import { speakerDubbingState } from '../domain/speakerDubbing';
@@ -212,6 +213,8 @@ export function useMcpControl(control: Control) {
         else if (tool === 'studio_get_dialogues') {
           if (!project) throw Error('NO_PROJECT');
           const ids = new Set((args.ids as string[] | undefined) ?? []);
+          const quality = currentAuditRows(project);
+          const qualityTags = (args.qualityTags as string[] | undefined) ?? [];
           const rows = project.dialogues
             .map((line, index) => ({
               ...line,
@@ -219,11 +222,17 @@ export function useMcpControl(control: Control) {
               original: dialogueText(project, line, 'source'),
               translated: dialogueText(project, line, 'target'),
               translationStatus: translationState(project, line),
+              qualityCurrent: quality.has(line.id),
+              qualityTags: quality.get(line.id)?.tags ?? [],
             }))
             .filter(
               (line) =>
                 (!ids.size || ids.has(line.id)) &&
-                (!args.status || args.status === 'all' || line.translationStatus === args.status),
+                (!args.status || args.status === 'all' || line.translationStatus === args.status) &&
+                (!qualityTags.length ||
+                  qualityTags.some((t) =>
+                    line.qualityTags.includes(t as (typeof line.qualityTags)[number]),
+                  )),
             );
           const offset = (args.offset as number) ?? 0,
             limit = (args.limit as number) ?? 50;

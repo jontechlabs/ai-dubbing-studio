@@ -1,4 +1,5 @@
 import type { Project } from './types';
+import { validateDubbingAudit } from './dubbingAudit';
 import { validateSpeakerDubbings } from './speakerDubbing';
 import { alignCues } from './subtitles';
 import { validVoiceVariant } from './modelVariants';
@@ -114,7 +115,7 @@ export function validateProject(value: unknown): Project {
   if (
     !Number.isInteger(project.formatVersion) ||
     project.formatVersion < 1 ||
-    project.formatVersion > 28
+    project.formatVersion > 29
   )
     throw new Error('UNSUPPORTED_PROJECT_VERSION');
   if (project.voiceEdits !== undefined) {
@@ -415,5 +416,6 @@ export function validateProject(value: unknown): Project {
   validateProsody(project);
   validateLipVideos(project);
   validateAudioPatches(project);
+  validateDubbingAudit(project);
   return project;
 }
