@@ -1,11 +1,11 @@
 {
-  "version": "0.49.0",
-  "notes": "Égalisation multi-pistes : préécoute et validation par piste, application atomique des seules pistes approuvées, Ctrl+Z commun. Analyse locale des doublages : manquants/muets, niveaux, saturation, fins/silences/durées à vérifier, plusieurs voix possibles. Tags manuels À retraduire / Voix à améliorer, tags persistants, filtres cumulables, résultats périmés exclus par réplique. Aucun audio ni essai remplacé. Rapport format 29 ; 166 outils MCP.",
-  "pub_date": "2026-11-14T05:44:22Z",
+  "version": "0.50.0",
+  "notes": "File de traitements persistante : isolation des voix en lot, attribution aux pistes Voix/Musique, puis doublage des isolations réussies. Configurations figées par lot, ajout pendant l’exécution, 1 à 4 essais, ordre, pause, annulation et reprise sans doublons. Aucun redémarrage de tâche automatique après réouverture. Sources et anciens essais conservés. 170 outils MCP / 33 schémas ; format 30 pour les isolations en file.",
+  "pub_date": "2026-11-14T08:21:32Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSdFFyMUJGTFp3NkpEZjlJWis3TmpMdE9TcEdFKzlNMXVidnhNRjJnUEV4djR1U29rOXJmTThVTjlSN1hMRWk0SlJLeHZzODFvWDB2cWdBWC9IdHlPMk9Dek1Ca3JwbFFrPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk0NjM0ODM2CWZpbGU6QUkgRHViYmluZyBTdHVkaW9fMC40OS4wX3g2NC1zZXR1cC5leGUJdmVyc2lvbjowLjQ5LjAKU1BzMnFRaXpsU0xGOE9oOWdnQ044U1U5RmZQYUFSa01BcHpaUnhKKzVhZm5qc1pWeXkycVUrTi9SU2YxZDh0dTVuYmhJbFQ1alEvZTZTMEREWXFlQVE9PQo=",
-      "url": "https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.49.0/AI-Dubbing-Studio-0.49.0-Setup.exe"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSdFFyMUJGTFp3NkMrb0hCUmhlL3lPbmJFcGhNQzQxVEM0N1hhWWlBK3Y4N0hpNGdxVWMrOHJaVGtFUUJKT2lrQ1QxeGZSOVV5NG1taUZxcUxyMy9FOS9OK3cxbUNPNGdVPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk0NjQ0Mjc2CWZpbGU6QUkgRHViYmluZyBTdHVkaW9fMC41MC4wX3g2NC1zZXR1cC5leGUJdmVyc2lvbjowLjUwLjAKNXcyaGt1NiszV2Y3ZkY5U085ZDFoc252Z2RZWEp0STltV0V0MWd5UzhjT1dEd0R1a2RNdnk0WnJ1Y0wyZW9lMXJlcTNaMWYvL2hqYTIxNU1rVUphQlE9PQo=",
+      "url": "https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.50.0/AI-Dubbing-Studio-0.50.0-Setup.exe"
     }
   }
 }
