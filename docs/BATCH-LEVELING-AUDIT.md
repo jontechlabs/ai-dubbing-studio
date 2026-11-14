@@ -12,6 +12,8 @@
 
 Les résultats non validés sont abandonnés à la fermeture. Si le projet change après préparation, préparez les préécoutes à nouveau. Les sources, essais de voix, SRT, volumes, zones muettes et autres pistes restent conservés. Les limites et le traitement progressif de [l’égalisation longue](WHOLE-TRACK-LEVELING.md) restent applicables.
 
+La lecture des égalisations utilise des fragments de 10 secondes et un mix à 48 kHz. Le cache reste limité à 128 Mio, y compris pour 16 pistes stéréo au passage entre deux fragments.
+
 ## Analyse générale à la demande
 
 ![Résultats et indices de contrôle](screenshots/dubbing-audit-fr.png)

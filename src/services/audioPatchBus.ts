@@ -80,7 +80,7 @@ export class AudioPatchBus {
       );
     });
     if (
-      nearby.length > 8 ||
+      nearby.length > 32 ||
       nearby.reduce(
         (n, c) => n + (c.endMs - c.startMs) * (this.context.sampleRate / 1000) * 2 * 4,
         0,
@@ -91,7 +91,7 @@ export class AudioPatchBus {
     const keep = new Set([...nearby.map((c) => c.cacheKey), ...this.voices.keys()]);
     for (const id of this.cache.keys()) {
       if (
-        this.cache.size + nearby.filter((c) => !this.cache.has(c.cacheKey)).length <= 8 &&
+        this.cache.size + nearby.filter((c) => !this.cache.has(c.cacheKey)).length <= 32 &&
         [...this.decoded.entries()].reduce((n, [, b]) => n + b.length * b.numberOfChannels * 4, 0) +
           nearby
             .filter((c) => !this.decoded.has(c.cacheKey))

@@ -75,7 +75,7 @@ export function useAudioMix(
     let active = graphs.get(video);
     try {
       if (!active) {
-        const context = new AudioContext();
+        const context = new AudioContext({ sampleRate: 48000 });
         try {
           const gain = context.createGain();
           gain.gain.value = 0;

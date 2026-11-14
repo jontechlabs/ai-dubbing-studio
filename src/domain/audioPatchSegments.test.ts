@@ -20,16 +20,18 @@ it('only schedules nearby exact chunks; joins have no gaps, preserve layer ident
   expect(patchSegments([clip], 0, 500)).toEqual([]);
   const both = patchSegments([clip], 29999, 33000);
   expect(both.map((c) => [c.cacheKey, c.startMs, c.endMs, c.offsetMs, c.id])).toEqual([
-    ['long:0', 1000, 31000, 0, 'long'],
-    ['long:1', 31000, 61000, 30000, 'long'],
+    ['long:2', 21000, 31000, 20000, 'long'],
+    ['long:3', 31000, 41000, 30000, 'long'],
   ]);
-  expect(patchSegments([clip], 31000, 34000).map((c) => c.cacheKey)).toEqual(['long:1']);
+  expect(patchSegments([clip], 31000, 34000).map((c) => c.cacheKey)).toEqual(['long:3']);
   const end = patchSegments([{ ...clip, endMs: 131250 }], 130000, 140000);
-  expect(end).toHaveLength(1);
-  expect(end[0]).toMatchObject({ startMs: 121000, endMs: 131250, offsetMs: 120000 });
+  expect(end).toHaveLength(2);
+  expect(end[1]).toMatchObject({ startMs: 131000, endMs: 131250, offsetMs: 130000 });
   expect(patchSegments([clip], 7199000, 7205000)).toHaveLength(1);
-  const short = { ...clip, endMs: 121000 };
+  const short = { ...clip, endMs: 11000 };
   expect(patchSegments([short], 2000, 4000)[0]).toEqual({ ...short, cacheKey: 'long' });
+  const other = { ...clip, operation: 'copy' as const, endMs: 121000 };
+  expect(patchSegments([other], 2000, 4000)[0]).toEqual({ ...other, cacheKey: 'long' });
 });
 it('long replacements require format 28; unrelated transfer/effects limits remain in force', () => {
   const p = demoProject();

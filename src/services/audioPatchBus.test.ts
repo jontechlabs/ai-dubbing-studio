@@ -2,6 +2,52 @@ import { expect, it, vi } from 'vitest';
 import { AudioPatchBus } from './audioPatchBus';
 import { demoProject } from '../domain/project';
 vi.mock('./bridge', () => ({ audioPatchUrl: vi.fn(async () => 'local-fragment.wav') }));
+it('prepares all sixteen equalized tracks across a fragment boundary within the cache budget', async () => {
+  const p = demoProject();
+  p.formatVersion = 28;
+  p.media!.durationMs = 180000;
+  p.tracks = Array.from({ length: 16 }, (_, index) => ({
+    id: `track-${index}`,
+    kind: 'audio' as const,
+    language: 'fr',
+    mute: false,
+    solo: false,
+    gain: 1,
+  }));
+  p.generations = p.tracks.map((track) => ({
+    kind: 'audioPatch',
+    id: track.id,
+    operationId: track.id,
+    operation: 'leveling',
+    sourcePath: p.media!.path,
+    trackId: track.id,
+    sourceTrackId: track.id,
+    startMs: 0,
+    endMs: 180000,
+    mode: 'replace',
+    path: `stems/${track.id}.wav`,
+    gain: 1,
+  }));
+  const decode = vi.fn(async () => ({ duration: 10, length: 480000, numberOfChannels: 2 }));
+  const bus = new AudioPatchBus(
+    { sampleRate: 48000, decodeAudioData: decode } as unknown as AudioContext,
+    vi.fn(),
+    vi.fn(),
+  );
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async () => ({ ok: true, arrayBuffer: async () => new ArrayBuffer(8) })),
+  );
+  try {
+    await expect(bus.prepare(p, 29500, 1)).resolves.toBeUndefined();
+    expect(decode).toHaveBeenCalledTimes(32);
+    await bus.prepare(p, 39500, 1);
+    expect(decode).toHaveBeenCalledTimes(48);
+  } finally {
+    bus.dispose();
+    vi.unstubAllGlobals();
+  }
+});
 it.each([false, true])(
   'clock continuity and safe pause with a delayed fragment=%s',
   async (delayed) => {
@@ -15,7 +61,7 @@ it.each([false, true])(
     const context = {
       currentTime: 10,
       sampleRate: 48000,
-      decodeAudioData: vi.fn(async () => ({ duration: 30, length: 1440000, numberOfChannels: 2 })),
+      decodeAudioData: vi.fn(async () => ({ duration: 10, length: 480000, numberOfChannels: 2 })),
       createGain: () => gain,
       createBufferSource: () => {
         let started = false;

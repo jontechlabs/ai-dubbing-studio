@@ -53,7 +53,7 @@ test('whole-track levelling works without a selection and remains an explicit re
   await page.getByRole('button', { name: 'Lecture', exact: true }).click();
   await expect
     .poll(() => page.evaluate(() => (window as any).__patchReads ?? []))
-    .toEqual(expect.arrayContaining([expect.objectContaining({ startMs: 0, endMs: 30000 })]));
+    .toEqual(expect.arrayContaining([expect.objectContaining({ startMs: 0, endMs: 10000 })]));
   expect(
     await page.evaluate(() =>
       (window as any).__patchReads.every((r: any) => r.endMs - r.startMs <= 30000),
