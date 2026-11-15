@@ -31,8 +31,12 @@ export function VoiceQualityControls({
           value={qualityPreset(variant, value)}
           disabled={disabled}
           onChange={(e) => {
-            if (e.target.value === 'standard') onChange(undefined);
-            else if (e.target.value !== 'custom') onChange({ ...spec.presets[e.target.value] });
+            const accent =
+              value?.accentStrength === undefined ? {} : { accentStrength: value.accentStrength };
+            if (e.target.value === 'standard')
+              onChange(value?.accentStrength === undefined ? undefined : accent);
+            else if (e.target.value !== 'custom')
+              onChange({ ...spec.presets[e.target.value], ...accent });
           }}
         >
           <option value="standard">{t('quality.presets.standard')}</option>
@@ -60,24 +64,26 @@ export function VoiceQualityControls({
       )}
       <details>
         <summary>{t('quality.advanced')}</summary>
-        {Object.entries(spec.parameters).map(([key, bounds]) => (
-          <label className="field" key={key}>
-            <span>
-              {t(`quality.params.${key}`)} · {resolved[key as QualityParameter]}
-            </span>
-            <input
-              type="range"
-              aria-label={t(`quality.params.${key}`)}
-              min={bounds.min}
-              max={bounds.max}
-              step={bounds.step}
-              value={resolved[key as QualityParameter]}
-              disabled={disabled}
-              onChange={(e) => onChange({ ...value, [key]: Number(e.target.value) })}
-            />
-            <small className="panel-description">{t(`quality.hints.${key}`)}</small>
-          </label>
-        ))}
+        {Object.entries(spec.parameters)
+          .filter(([key]) => key !== 'accentStrength')
+          .map(([key, bounds]) => (
+            <label className="field" key={key}>
+              <span>
+                {t(`quality.params.${key}`)} · {resolved[key as QualityParameter]}
+              </span>
+              <input
+                type="range"
+                aria-label={t(`quality.params.${key}`)}
+                min={bounds.min}
+                max={bounds.max}
+                step={bounds.step}
+                value={resolved[key as QualityParameter]}
+                disabled={disabled}
+                onChange={(e) => onChange({ ...value, [key]: Number(e.target.value) })}
+              />
+              <small className="panel-description">{t(`quality.hints.${key}`)}</small>
+            </label>
+          ))}
       </details>
       <p className="panel-description">{t('quality.referenceHint')}</p>
     </section>

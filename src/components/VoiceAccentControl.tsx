@@ -62,6 +62,28 @@ export function VoiceAccentControl({
               ))}
         </select>
       </label>
+      {variant === 'zonos3-mini-gguf' && supported && settings.accent === 'fr-FR' && (
+        <label className="field">
+          <span>
+            {t('quality.params.accentStrength')} ·{' '}
+            {(settings.quality?.accentStrength ?? 1).toFixed(2)}
+          </span>
+          <input
+            type="range"
+            aria-label={t('quality.params.accentStrength')}
+            min={0}
+            max={1.5}
+            step={0.05}
+            disabled={busy}
+            value={settings.quality?.accentStrength ?? 1}
+            onChange={(event) =>
+              onChange({
+                quality: { ...settings.quality, accentStrength: Number(event.target.value) },
+              })
+            }
+          />
+        </label>
+      )}
       <p id={hintId} className="panel-description">
         {t(hint)}
       </p>

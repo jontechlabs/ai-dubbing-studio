@@ -7,6 +7,25 @@ on:
 permissions:
   contents: read
 jobs:
+  runtime:
+    runs-on: windows-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - name: Verified native runtime starts on a Windows machine without a GPU
+        run: |
+          $ErrorActionPreference='Stop'
+          $ProgressPreference='SilentlyContinue'
+          $spec=(Get-Content workers/voice-engines.json -Raw | ConvertFrom-Json).engineV095
+          $folder=Join-Path $env:RUNNER_TEMP 'studio-native-runtime-check'
+          New-Item -ItemType Directory -Force $folder | Out-Null
+          $archive=Join-Path $folder 'runtime.zip'
+          Invoke-WebRequest -Uri $spec.url -OutFile $archive
+          if((Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash.ToLowerInvariant() -ne $spec.sha256){throw 'Native runtime checksum mismatch'}
+          $runtime=Join-Path $folder 'runtime'
+          Expand-Archive -LiteralPath $archive -DestinationPath $runtime
+          & (Join-Path $runtime 'audiocpp_cli.exe') --list-devices
+          if($LASTEXITCODE){throw "Native runtime device inventory failed: $LASTEXITCODE"}
   native:
     runs-on: windows-latest
     timeout-minutes: 30

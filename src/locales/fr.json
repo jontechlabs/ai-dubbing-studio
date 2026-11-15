@@ -2102,6 +2102,6 @@
   "nativeGgufHardwareHint": "Moteur natif Vulkan / CPU, sans environnement Python supplémentaire. Choisissez explicitement la carte NVIDIA si nécessaire. Le modèle reste chargé pendant un lot, puis son processus est fermé.",
   "nativeCloneHint": "Clonage à partir de la référence choisie, sans transcription exacte. Le texte cible est envoyé tel quel ; la langue cible est précisée au moteur.",
   "zonos3FrenchAccent": "Français · orientation de l’empreinte vocale",
-  "ttsAccentZonosHint": "Direction française officielle appliquée à l’empreinte vocale. Intensité réglable ci-dessous dans Qualité → Réglages avancés. Ce contrôle expérimental peut modifier le timbre ; il ne garantit ni un accent régional ni la disparition complète de l’accent source.",
+  "ttsAccentZonosHint": "Direction française officielle appliquée à l’empreinte vocale. 0 désactive la direction ; 1 applique son déplacement complet. Ce contrôle expérimental peut modifier le timbre ; il ne garantit ni un accent régional ni la disparition complète de l’accent source.",
   "nativeStyleHint": "Le port natif intégré ne prend pas encore en charge les humeurs ni les instructions d’émotion. Le style peut venir de la référence ; aucun réglage non pris en charge n’est envoyé."
 }

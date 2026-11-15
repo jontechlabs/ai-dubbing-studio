@@ -814,12 +814,13 @@ mod tests {
                 .validate()
                 .is_err());
             let dir = tempfile::tempdir().unwrap();
+            let root = crate::project::create_root(dir.path(), "Native voice").unwrap();
             let mut p = Project::new("Native voice".into(), "ja".into(), "fr".into());
             p.format_version = 31;
             p.model_preferences =
                 Some(serde_json::json!({"ttsProviderId":provider,"voiceVariantId":variant}));
-            crate::project::save(dir.path(), &p).unwrap();
-            assert_eq!(crate::project::load(dir.path()).unwrap().format_version, 31);
+            crate::project::save(&root, &p).unwrap();
+            assert_eq!(crate::project::load(&root).unwrap().format_version, 31);
             p.format_version = 30;
             assert!(p.validate().is_err());
         }

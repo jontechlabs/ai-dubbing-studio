@@ -57,12 +57,15 @@ export function resolvedQuality(variant: string, value?: VoiceQuality): VoiceQua
   );
 }
 export function qualityPreset(variant: string, value?: VoiceQuality) {
-  if (value === undefined) return 'standard';
+  if (value === undefined || Object.keys(value).every((key) => key === 'accentStrength'))
+    return 'standard';
   const resolved = resolvedQuality(variant, value);
   for (const [id, preset] of Object.entries(qualitySpec(variant)?.presets ?? {})) {
     const other = resolvedQuality(variant, preset);
     if (
-      Object.entries(resolved).every(([key, number]) => other[key as QualityParameter] === number)
+      Object.entries(resolved)
+        .filter(([key]) => key !== 'accentStrength')
+        .every(([key, number]) => other[key as QualityParameter] === number)
     )
       return id;
   }

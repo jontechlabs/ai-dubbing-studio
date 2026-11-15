@@ -900,15 +900,19 @@ export async function nativeMock(page: Page, large = false, seededProject?: Proj
           kind: 'tts',
           dialogueId: lineId,
           providerId:
-            options.variantId === 'audio8-realistic-06b-gguf-q8'
-              ? 'audio8-tts'
-              : options.variantId === 'drama3-comfy-fp8'
-                ? 'fish-drama3'
-                : options.variantId?.startsWith('fish')
-                  ? 'fish-s2'
-                  : options.variantId?.startsWith('qwen')
-                    ? 'qwen3-tts'
-                    : 'cosyvoice3',
+            options.variantId === 'zonos3-mini-gguf'
+              ? 'zonos3'
+              : options.variantId === 'moss-local-v15-gguf-q8'
+                ? 'moss-tts-local'
+                : options.variantId === 'audio8-realistic-06b-gguf-q8'
+                  ? 'audio8-tts'
+                  : options.variantId === 'drama3-comfy-fp8'
+                    ? 'fish-drama3'
+                    : options.variantId?.startsWith('fish')
+                      ? 'fish-s2'
+                      : options.variantId?.startsWith('qwen')
+                        ? 'qwen3-tts'
+                        : 'cosyvoice3',
           modelId: options.variantId ?? 'cosy3-official',
           path: `generations/${id}.wav`,
           createdAt: new Date().toISOString(),
@@ -937,7 +941,11 @@ export async function nativeMock(page: Page, large = false, seededProject?: Proj
         project.generations.push(generation);
         project.formatVersion = Math.max(
           project.formatVersion,
-          ['voxcpm2-bf16', 'chatterbox-multilingual-v3'].includes(options.variantId) ? 16 : 5,
+          ['zonos3-mini-gguf', 'moss-local-v15-gguf-q8'].includes(options.variantId)
+            ? 31
+            : ['voxcpm2-bf16', 'chatterbox-multilingual-v3'].includes(options.variantId)
+              ? 16
+              : 5,
           options.mood && options.mood !== 'default'
             ? ['angry', 'happy', 'sad', 'calm', 'surprised', 'whisper'].includes(options.mood)
               ? 7
@@ -1455,11 +1463,15 @@ export async function nativeMock(page: Page, large = false, seededProject?: Proj
           if (command === 'voice_install_space') {
             if (host.__spaceError) throw Error('disk unavailable');
             const modelBytes =
-              args.variantId === 'voxcpm2-bf16'
-                ? 4960722408
-                : args.variantId === 'chatterbox-multilingual-v3'
-                  ? 3243411693
-                  : 40144065412;
+              args.variantId === 'zonos3-mini-gguf'
+                ? 1160861792
+                : args.variantId === 'moss-local-v15-gguf-q8'
+                  ? 7512224256
+                  : args.variantId === 'voxcpm2-bf16'
+                    ? 4960722408
+                    : args.variantId === 'chatterbox-multilingual-v3'
+                      ? 3243411693
+                      : 40144065412;
             return (
               host.__dramaSpace ?? {
                 path: 'F:/Models/voice-engines',
@@ -1922,6 +1934,8 @@ export async function nativeMock(page: Page, large = false, seededProject?: Proj
           if (command === 'voice_status')
             return {
               variants: Object.entries({
+                'zonos3-mini-gguf': 1160861792,
+                'moss-local-v15-gguf-q8': 7512224256,
                 'audio8-realistic-06b-gguf-q8': 1429472157,
                 'fish-s2-gguf-q8': 6317911232,
                 'qwen3-06b-gguf-q8': 1991211136,
@@ -1933,8 +1947,9 @@ export async function nativeMock(page: Page, large = false, seededProject?: Proj
                 'chatterbox-vc': 1056484620,
               }).map(([id, sizeBytes]) => ({
                 id,
-                installed:
-                  id === 'drama3-comfy-fp8'
+                installed: ['zonos3-mini-gguf', 'moss-local-v15-gguf-q8'].includes(id)
+                  ? host.__native095Ready !== false
+                  : id === 'drama3-comfy-fp8'
                     ? host.__dramaReady !== false
                     : ['voxcpm2-bf16', 'chatterbox-multilingual-v3'].includes(id)
                       ? host.__multilingualReady !== false
@@ -1948,7 +1963,10 @@ export async function nativeMock(page: Page, large = false, seededProject?: Proj
               ],
               cudaDevices: [{ id: 'cuda:0', name: 'RTX 5060 Ti (simulation)' }],
             };
-          if (command === 'install_voice_runtime') return 'install-voice';
+          if (command === 'install_voice_runtime') {
+            host.__lastVoiceInstall = args.variantId;
+            return 'install-voice';
+          }
           if (command === 'prosody_status')
             return {
               available: true,

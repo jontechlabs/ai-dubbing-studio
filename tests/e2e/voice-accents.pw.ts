@@ -34,7 +34,16 @@ for (const variant of installedVoiceVariants) {
       .selectOption(variant.id);
     const control = panel.locator('.voice-accent');
     const select = control.getByRole('combobox');
-    if (['audio8-tts', 'qwen3-tts', 'chatterbox'].includes(variant.providerId)) {
+    if (variant.providerId === 'zonos3') {
+      await expect(select).toBeEnabled();
+      await expect(select.locator('option')).toHaveCount(2);
+      await select.selectOption('fr-FR');
+      await expect(select).toHaveValue('fr-FR');
+      await expect(control).toContainText('ne garantit ni un accent régional');
+    } else if (variant.providerId === 'moss-tts-local') {
+      await expect(select).toBeDisabled();
+      await expect(select.locator('option')).toHaveCount(1);
+    } else if (['audio8-tts', 'qwen3-tts', 'chatterbox'].includes(variant.providerId)) {
       await expect(select).toBeDisabled();
       await expect(select.locator('option')).toHaveCount(1);
       await expect(select.locator('option:checked')).toHaveText(

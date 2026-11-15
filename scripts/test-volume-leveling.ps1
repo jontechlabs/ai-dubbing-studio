@@ -1,5 +1,5 @@
 [CmdletBinding()]
-param([string]$PortablePath)
+param([string]$PortablePath, [switch]$NativeVoices)
 $ErrorActionPreference='Stop'
 $repoRoot=Split-Path -Parent $PSScriptRoot
 if(-not $PortablePath){$PortablePath=Join-Path $repoRoot 'artifacts/AI-Dubbing-Studio-Windows-Portable.zip'}
@@ -31,6 +31,10 @@ foreach($phase in @('before','after')) {
         }
         node (Join-Path $PSScriptRoot 'test-volume-leveling-mcp.mjs') --exe $executable --endpoint $endpoint --test-root $testRoot --phase $phase --desktop-pid $desktop.Id --proof (Join-Path $repoRoot 'artifacts/mcp-native-validation.json')
         if($LASTEXITCODE){throw 'Official SDK volume levelling diagnostic failed'}
+        if($phase -eq 'after' -and $NativeVoices) {
+            node (Join-Path $PSScriptRoot 'test-native-voices-mcp.mjs') --exe $executable --endpoint $endpoint --test-root $testRoot --proof (Join-Path $repoRoot 'artifacts/native-voices-validation.json')
+            if($LASTEXITCODE){throw 'Official SDK real native voice models diagnostic failed'}
+        }
     } catch {
         if(Test-Path -LiteralPath $stderr){Get-Content -LiteralPath $stderr -Tail 15}
         if(Test-Path -LiteralPath $stdout){Get-Content -LiteralPath $stdout -Tail 10}
