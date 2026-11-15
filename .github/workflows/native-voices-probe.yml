@@ -38,6 +38,20 @@ jobs:
           $prefix="  await call('studio_project_patch', { patches: [{ op: 'replace', path: '/formatVersion', value: 31 }] });`n"
           $at=$text.IndexOf($first)
           [IO.File]::WriteAllText($file,$text.Insert($at,$prefix))
+          $probe=[IO.File]::ReadAllText($file)
+          $old="  const r = await client.callTool({ name, arguments: input });"
+          $new=@'
+            let r;
+            try { r = await client.callTool({ name, arguments: input }); }
+            catch (e) {
+              if (name !== 'studio_list_jobs' || !String(e).includes('Connection closed')) throw e;
+              console.log('DIAGNOSTIC: reconnecting read-only job polling after relay exit');
+              await client.connect(new StdioClientTransport({ command: args.exe, args: ['--mcp', '--endpoint', args.endpoint], stderr: 'inherit' }));
+              r = await client.callTool({ name, arguments: input });
+            }
+          '@
+          if(-not $probe.Contains($old)){throw 'Read-only reconnect anchor missing'}
+          [IO.File]::WriteAllText($file,$probe.Replace($old,$new))
           $baseline=Join-Path $PWD 'scripts/test-volume-leveling-mcp.mjs'
           $fixture=[IO.File]::ReadAllText($baseline)
           $gate="    for (const mode of ['low', 'high']) {"
@@ -46,10 +60,25 @@ jobs:
           [IO.File]::WriteAllText($baseline,$fixture.Replace($gate,$wait+$gate))
           $portable=@(Get-ChildItem -LiteralPath .probe -Recurse -Filter AI-Dubbing-Studio-Windows-Portable.zip)
           if($portable.Count -ne 1){throw 'Expected one authenticated Actions package'}
+          $test=Join-Path $PWD 'scripts/test-volume-leveling.ps1'
+          $testSource=[IO.File]::ReadAllText($test)
+          $audit=@'
+            } catch {
+                Write-Host "DIAGNOSTIC desktop exited: $($desktop.HasExited)"
+                if($desktop.HasExited){Write-Host "DIAGNOSTIC desktop exit code: $($desktop.ExitCode)"}
+                Get-CimInstance Win32_OperatingSystem | Select-Object TotalVisibleMemorySize,FreePhysicalMemory,TotalVirtualMemorySize,FreeVirtualMemory | Format-List
+                Get-Process | Where-Object { $_.ProcessName -match '^(audiocpp|AI Dubbing Studio|ai-dubbing-studio|msedgewebview2)' } | Select-Object Id,ProcessName,WorkingSet64,PrivateMemorySize64 | Format-Table
+                Get-Content -LiteralPath (Join-Path $dataRoot 'jobs.json') -Tail 1 -ErrorAction SilentlyContinue
+          '@
+          [IO.File]::WriteAllText($test,$testSource.Replace('    } catch {',$audit))
           ./scripts/test-volume-leveling.ps1 -PortablePath $portable[0].FullName -NativeVoices
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
         with:
           name: native-voices-probe-diagnostic
-          path: artifacts/*validation.json
+          path: |
+            artifacts/*validation.json
+            .cache/volume-leveling-native/**/session/jobs.json
+            .cache/volume-leveling-native/**/*.stderr.log
+            .cache/volume-leveling-native/**/*.stdout.log
           if-no-files-found: ignore
