@@ -1,11 +1,11 @@
 {
-  "version": "0.51.0",
-  "notes": "ZONOS3-Mini GGUF Q4/Q8 et MOSS-TTS Local v1.5 Q8_0 : installation et synthèse locales Vulkan/CPU, références sans transcription et modèle gardé chargé pendant le lot. Orientation française officielle de l’empreinte ZONOS3 à intensité réglable, avec effet possible sur le timbre. Humeurs non prises en charge désactivées. Anciens essais et sources conservés. 170 outils MCP / 33 schémas ; format projet 31 pour ces moteurs.",
-  "pub_date": "2026-11-15T13:48:20Z",
+  "version": "0.52.0",
+  "notes": "Durée de calcul conservée sur chaque nouvel essai TTS, changement de timbre et transfert d’intonation. Estimation indicative du temps restant pour l’essai ou l’étape en cours à partir de mesures comparables sur ce PC ; modèles à froid et déjà chargés séparés. Les anciennes durées restent non mesurées. Essais, vidéo et fichiers audio conservés. 170 outils MCP / 33 schémas ; métadonnées facultatives, aucun nouveau format projet.",
+  "pub_date": "2026-11-15T17:45:55Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSdFFyMUJGTFp3NkxLcndNeDBRTy9CYlpHUFBhS01wdk1tUTliQ3hmWDlQMFJLNThVWjJNbHZuaU51QitGYUsxQW03eDNwclY5MlZ2dXE5NVFVUkYxT3VibTNFNEFQK1FvPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk0NzQ4OTA4CWZpbGU6QUkgRHViYmluZyBTdHVkaW9fMC41MS4wX3g2NC1zZXR1cC5leGUJdmVyc2lvbjowLjUxLjAKaFV5M1htZ1lvcTV0cWR1Y0kyaDY4ZktPZXQwOUQ1OWtsVE5NejM1aHduTHQzdkFkbTNZSk1pdTZVbkozaXBYTlBSUG5xSklzUkFjNkdJMXlLa2kwQlE9PQo=",
-      "url": "https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.51.0/AI-Dubbing-Studio-0.51.0-Setup.exe"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSdFFyMUJGTFp3Nkl0ZmNVUDRRdTB2eG1lSFVMTG9yZ21keWpDL2VPTDVYWEVpT21VNnMra1FnVmUwTmVtVVRvZW1rOEhBK3VLTkl2ZG1TRVRaYnM1RGpSekR6SkV2VFFFPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk0NzY0NDgwCWZpbGU6QUkgRHViYmluZyBTdHVkaW9fMC41Mi4wX3g2NC1zZXR1cC5leGUJdmVyc2lvbjowLjUyLjAKTk10YzJDZUN2V3lvc08wRE5jL012NVZJVXh1QjlteWlJTDBEazI0dzdSK2drcW4xSENCQTE3VndPa1VZQVRQN3J0dW1HNUF0Q25DT1ZpdnBZUjJTREE9PQo=",
+      "url": "https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.52.0/AI-Dubbing-Studio-0.52.0-Setup.exe"
     }
   }
 }
