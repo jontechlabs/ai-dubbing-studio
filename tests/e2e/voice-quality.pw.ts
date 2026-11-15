@@ -68,6 +68,8 @@ test('batch generation accepts quality and MCP discovers every supported bound',
   await page.getByRole('checkbox', { name: 'Activer le pilotage MCP local', exact: true }).check();
   await expect.poll(() => page.evaluate(() => (window as any).__mcpReady)).toBe(true);
   const catalog = await page.evaluate(() => (window as any).__mcp('studio_voice_quality_catalog', {}));
-  expect(Object.keys(catalog.variants)).toHaveLength(9);
+  expect(Object.keys(catalog.variants)).toHaveLength(11);
   expect(catalog.variants['voxcpm2-bf16'].parameters.inferenceSteps.max).toBe(30);
+  expect(catalog.variants['zonos3-mini-gguf'].parameters.accentStrength.max).toBe(1.5);
+  expect(catalog.variants['moss-local-v15-gguf-q8'].parameters.temperature.default).toBe(1.7);
 });
