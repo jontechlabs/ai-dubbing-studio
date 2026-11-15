@@ -867,6 +867,7 @@ json.dump({'device':r['device'],'deviceName':'Protocol test','peakVramMb':0,'com
     };
     for index in 0..2 {
         let key = jobs::create(&core, app.handle(), "tts", p.id.clone(), None);
+        jobs::update(&core, app.handle(), &key, |j| j.status = "running".into());
         execute_with_launch(
             &core,
             app.handle(),
@@ -881,6 +882,8 @@ json.dump({'device':r['device'],'deviceName':'Protocol test','peakVramMb':0,'com
         let estimate = jobs[&key].saved.record.estimate.as_ref().unwrap();
         assert_eq!(estimate.sample_count, index);
         assert_eq!(estimate.estimated_ms.is_some(), index > 0);
+        drop(jobs);
+        jobs::update(&core, app.handle(), &key, |j| j.status = "succeeded".into());
     }
     let loaded = project::load(&root).unwrap();
     for generation in &loaded.generations {

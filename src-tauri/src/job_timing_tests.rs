@@ -105,6 +105,12 @@ fn checkpoint_measures_silent_work_and_restart_never_counts_closed_app_time() {
         let mut jobs = core.jobs.lock().unwrap();
         let c = jobs.get_mut(&key).unwrap();
         c.saved.record.status = "running".into();
+        c.saved.record.estimate = Some(crate::generation_timing::Estimate {
+            operation: "tts".into(),
+            estimated_ms: Some(10000),
+            baseline_elapsed_ms: 0,
+            sample_count: 2,
+        });
         c.clock.elapsed = Duration::from_millis(1250);
         c.clock.running_since = Some(Instant::now() - Duration::from_millis(500));
         assert!(c.snapshot().timing.unwrap().elapsed_ms >= 1750);
@@ -118,6 +124,7 @@ fn checkpoint_measures_silent_work_and_restart_never_counts_closed_app_time() {
     let restored = Control::restore(saved);
     let snapshot = restored.snapshot_at(Instant::now() + Duration::from_secs(86400), u64::MAX);
     assert_eq!(snapshot.status, "interrupted");
+    assert!(snapshot.estimate.is_none());
     assert_eq!(snapshot.timing.unwrap().elapsed_ms, measured);
 }
 
@@ -140,7 +147,13 @@ fn retry_has_its_own_zero_clock_and_keeps_previous_duration() {
     let app = tauri::test::mock_app();
     let first = create(&core, app.handle(), "ttsBatch", "project".into(), None);
     update(&core, app.handle(), &first, |job| {
-        job.status = "running".into()
+        job.status = "running".into();
+        job.estimate = Some(crate::generation_timing::Estimate {
+            operation: "tts".into(),
+            estimated_ms: Some(10000),
+            baseline_elapsed_ms: 0,
+            sample_count: 2,
+        });
     });
     {
         let mut jobs = core.jobs.lock().unwrap();
@@ -153,5 +166,6 @@ fn retry_has_its_own_zero_clock_and_keeps_previous_duration() {
     let retry = create(&core, app.handle(), "ttsBatch", "project".into(), None);
     let jobs = core.jobs.lock().unwrap();
     assert!(jobs[&first].snapshot().timing.unwrap().elapsed_ms >= 3000);
+    assert!(jobs[&first].snapshot().estimate.is_none());
     assert_eq!(jobs[&retry].snapshot().timing.unwrap().elapsed_ms, 0);
 }

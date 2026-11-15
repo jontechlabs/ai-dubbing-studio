@@ -177,6 +177,7 @@ pub struct Control {
 
 impl Control {
     pub fn restore(mut saved: PersistedJob) -> Self {
+        saved.record.estimate = None;
         // A stopped application cannot execute work. Keep the last checkpoint,
         // never add the time spent closed, and leave legacy durations unknown.
         if ["queued", "running", "paused"].contains(&saved.record.status.as_str()) {
@@ -323,6 +324,9 @@ pub fn update<R: tauri::Runtime>(
     let record = core.jobs.lock().ok().and_then(|mut jobs| {
         jobs.get_mut(key).map(|c| {
             change(&mut c.saved.record);
+            if c.saved.record.status != "running" {
+                c.saved.record.estimate = None;
+            }
             c.clock.transition(&c.saved.record.status, Instant::now());
             if c.saved.record.timing.is_some() {
                 c.saved.record.timing = Some(c.clock.snapshot(Instant::now(), timestamp_ms()));
