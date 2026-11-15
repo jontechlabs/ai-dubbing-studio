@@ -1,0 +1,49 @@
+name: Real native voice diagnostic on existing signed package
+on:
+  push:
+    branches: [codex/native-voices-probe]
+permissions:
+  contents: read
+  actions: read
+jobs:
+  neural:
+    runs-on: windows-latest
+    timeout-minutes: 50
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+      PYTHONUTF8: '1'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
+        with:
+          node-version: '24'
+      - name: Prepare SDK and exact previously compiled package
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          npm install --global pnpm@11.25.0
+          pnpm install --frozen-lockfile
+          if($LASTEXITCODE){exit $LASTEXITCODE}
+          gh run download 43713690440 --repo jontechlabs/ai-dubbing-studio --name native-voices-windows-packages-and-validation --dir .probe
+          if($LASTEXITCODE){exit $LASTEXITCODE}
+      - name: Test neural paths while final reference-import fix compiles separately
+        run: |
+          # The old binary's one known import-format bug is bypassed in this
+          # isolated fixture only. Full release CI tests the real source fix.
+          $file=Join-Path $PWD 'scripts/test-native-voices-mcp.mjs'
+          $text=[IO.File]::ReadAllText($file)
+          $anchor="  const options = { ...base, referenceMode: 'file', referenceId: ref.id };"
+          $first="  await call('studio_import_dubbing_reference', {"
+          if(-not $text.Contains($first)){throw 'Probe fixture anchor missing'}
+          $prefix="  await call('studio_project_patch', { patches: [{ op: 'replace', path: '/formatVersion', value: 31 }] });`n"
+          $at=$text.IndexOf($first)
+          [IO.File]::WriteAllText($file,$text.Insert($at,$prefix))
+          $portable=@(Get-ChildItem -LiteralPath .probe -Recurse -Filter AI-Dubbing-Studio-Windows-Portable.zip)
+          if($portable.Count -ne 1){throw 'Expected one authenticated Actions package'}
+          ./scripts/test-volume-leveling.ps1 -PortablePath $portable[0].FullName -NativeVoices
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: native-voices-probe-diagnostic
+          path: artifacts/*validation.json
+          if-no-files-found: ignore
