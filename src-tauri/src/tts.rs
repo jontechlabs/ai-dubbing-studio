@@ -697,6 +697,26 @@ pub(crate) async fn execute_with_session<R: tauri::Runtime>(
         .iter()
         .find(|l| l.id == request.line_id)
         .ok_or("NO_DIALOGUES")?;
+    let reference_ms = if request.options.reference_mode == "current" {
+        (line.end_ms - line.start_ms).min(20000)
+    } else {
+        reference(&p, line, &request.options)?
+            .duration_ms
+            .min(20000)
+    };
+    let measurement = crate::generation_timing::begin(
+        core,
+        app,
+        key,
+        &p,
+        "tts",
+        serde_json::json!({"options":request.options,"language":p.languages.target,"referenceBucket":reference_ms.div_ceil(5000)}),
+        text(&p, line)
+            .chars()
+            .filter(|c| c.is_alphanumeric())
+            .count() as u64,
+        hot.as_ref().is_some_and(|s| s.is_loaded()),
+    );
     let directory = project::ensure_directory(&request.root, "generations")?;
     let generation_id = id();
     let destination = directory.join(format!("{generation_id}.wav"));
@@ -867,7 +887,7 @@ pub(crate) async fn execute_with_session<R: tauri::Runtime>(
         }
         .into());
     }
-    let generation = serde_json::json!({"id":generation_id,"kind":"tts","dialogueId":line.id,"providerId":if request.options.variant()=="cosy3-official"{"cosyvoice3"}else if request.options.variant()=="voxcpm2-bf16"{"voxcpm2"}else if request.options.variant()=="chatterbox-multilingual-v3"{"chatterbox"}else if request.options.variant()=="drama3-comfy-fp8"{"fish-drama3"}else if request.options.variant()=="zonos3-mini-gguf"{"zonos3"}else if request.options.variant()=="moss-local-v15-gguf-q8"{"moss-tts-local"}else if crate::voice_engines::audio8(request.options.variant()){"audio8-tts"}else if request.options.variant().starts_with("fish"){"fish-s2"}else{"qwen3-tts"},"modelId":request.options.variant(),"path":format!("generations/{generation_id}.wav"),"createdAt":now(),"sourcePath":p.media.as_ref().map(|m|&m.path),"startMs":line.start_ms,"endMs":line.end_ms,"text":text(&p,line),"language":p.languages.target,"characterId":line.character_id,"durationMs":duration,"sampleRate":24000,"options":request.options,"referenceTranscript":transcript,"qwenRecovery":metadata["qwenRecovery"],"guideAnalysis":metadata["guideAnalysis"],"guideTranscript":if request.options.intonation_guide.is_some(){Some(&guide_transcript)}else{None},"referenceId":if request.options.reference_mode=="current"{None}else{reference(&p,line,&request.options).ok().map(|r|&r.id)},"device":metadata["device"],"deviceName":metadata["deviceName"],"peakVramMb":metadata["peakVramMb"],"expertsInRam":metadata["expertsInRam"],"expertCacheGiB":metadata["expertCacheGiB"],"expertMemoryMode":metadata["expertMemoryMode"],"compatibilityMode":metadata["compatibilityMode"].as_bool().unwrap_or(false),"batchItemId":request.batch_item_id,"inputHash":request.fingerprint});
+    let mut generation = serde_json::json!({"id":generation_id,"kind":"tts","dialogueId":line.id,"providerId":if request.options.variant()=="cosy3-official"{"cosyvoice3"}else if request.options.variant()=="voxcpm2-bf16"{"voxcpm2"}else if request.options.variant()=="chatterbox-multilingual-v3"{"chatterbox"}else if request.options.variant()=="drama3-comfy-fp8"{"fish-drama3"}else if request.options.variant()=="zonos3-mini-gguf"{"zonos3"}else if request.options.variant()=="moss-local-v15-gguf-q8"{"moss-tts-local"}else if crate::voice_engines::audio8(request.options.variant()){"audio8-tts"}else if request.options.variant().starts_with("fish"){"fish-s2"}else{"qwen3-tts"},"modelId":request.options.variant(),"path":format!("generations/{generation_id}.wav"),"createdAt":now(),"sourcePath":p.media.as_ref().map(|m|&m.path),"startMs":line.start_ms,"endMs":line.end_ms,"text":text(&p,line),"language":p.languages.target,"characterId":line.character_id,"durationMs":duration,"sampleRate":24000,"options":request.options,"referenceTranscript":transcript,"qwenRecovery":metadata["qwenRecovery"],"guideAnalysis":metadata["guideAnalysis"],"guideTranscript":if request.options.intonation_guide.is_some(){Some(&guide_transcript)}else{None},"referenceId":if request.options.reference_mode=="current"{None}else{reference(&p,line,&request.options).ok().map(|r|&r.id)},"device":metadata["device"],"deviceName":metadata["deviceName"],"peakVramMb":metadata["peakVramMb"],"expertsInRam":metadata["expertsInRam"],"expertCacheGiB":metadata["expertCacheGiB"],"expertMemoryMode":metadata["expertMemoryMode"],"compatibilityMode":metadata["compatibilityMode"].as_bool().unwrap_or(false),"batchItemId":request.batch_item_id,"inputHash":request.fingerprint});
     let output_edit = request
         .options
         .output_gain
@@ -893,6 +913,7 @@ pub(crate) async fn execute_with_session<R: tauri::Runtime>(
         )
         .await?;
     }
+    generation["generationTiming"] = measurement.finish(&generation_id);
     let mut session = core.session.lock().map_err(io_error)?;
     let s = session.as_mut().ok_or("NO_PROJECT")?;
     if s.root != request.root || s.project.id != request.project_id {
@@ -933,6 +954,7 @@ pub fn validate_generations(p: &Project) -> Result<(), String> {
         if g["kind"] != "tts" {
             continue;
         }
+        crate::generation_timing::validate(g)?;
         for name in [
             "dialogueId",
             "language",

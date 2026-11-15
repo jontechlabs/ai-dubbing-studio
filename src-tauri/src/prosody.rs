@@ -228,6 +228,16 @@ pub(crate) async fn execute<R: tauri::Runtime>(
         s.project.clone()
     };
     let (source, line) = inputs(&p, &request.options)?;
+    let measurement = crate::generation_timing::begin(
+        core,
+        app,
+        key,
+        &p,
+        "prosody",
+        json!({"options":request.options,"language":p.languages.target}),
+        crate::generation_timing::audio_units(&p, source),
+        false,
+    );
     let ffmpeg = media::binary(app, "ffmpeg")?;
     let source_path = crate::voice_edit::render(
         &request.root,
@@ -329,6 +339,7 @@ pub(crate) async fn execute<R: tauri::Runtime>(
     derived["path"] = json!(relative);
     derived["createdAt"] = json!(now());
     derived["durationMs"] = json!(duration);
+    derived["generationTiming"] = measurement.finish(&generation_id);
     derived["device"] = json!("cpu");
     derived["deviceName"] = json!("CPU · Praat");
     derived["peakVramMb"] = json!(0);

@@ -2104,5 +2104,15 @@
   "zonos3FrenchAccent": "French · speaker-embedding orientation",
   "ttsAccentZonosHint": "Official French direction applied to the speaker embedding. 0 disables it; 1 applies the full shift. This experimental control can change identity; regional accents and removal of the source accent are not guaranteed.",
   "nativeStyleHint": "The integrated native port does not yet support mood or emotion instructions. The reference can guide style; unsupported controls are never silently sent.",
-  "zonos3AccentTitle": "Accent orientation"
+  "zonos3AccentTitle": "Accent orientation",
+  "generationTiming": {
+    "saved": "Compute: {{time}}",
+    "unknown": "Duration not measured",
+    "savedHint": "Measured creation time for this take, from preparation to ready WAV, excluding queue time. Saved in the project; audio length is shown separately.",
+    "unknownHint": "No computation time was measured for this take. Older durations are not invented.",
+    "remaining": "Estimated time remaining: ≈ {{time}}",
+    "learning": "Estimate unavailable · insufficient comparable history",
+    "overrun": "Estimate exceeded · still processing",
+    "estimateHint": "Estimate for the current take or step, not the entire batch. Based on {{count}} similarly sized measurement(s), using the same engine, settings and device on this PC. Initial loading and resident models are kept separate. Approximate value."
+  }
 }

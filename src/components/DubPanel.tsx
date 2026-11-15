@@ -54,6 +54,7 @@ import { isolatedVoice, speakerDubbingState } from '../domain/speakerDubbing';
 import { useDubbingTask } from '../hooks/useDubbingTask';
 import { useTakeReview } from '../hooks/useTakeReview';
 import { TakeDate } from './TakeDate';
+import { TakeDuration } from './TakeDuration';
 import { BatchRecovery } from './BatchRecovery';
 import { BatchHistory } from './BatchHistory';
 import { translationState, hasTranslation } from '../domain/translation';
@@ -1307,7 +1308,10 @@ export function DubPanel({
                   {t('ttsGenerationNumber', { number: generations.length - index })} ·{' '}
                   {(generation.durationMs / 1000).toFixed(2)} s {active && <Check size={13} />}
                 </strong>
-                <TakeDate value={generation.createdAt} />
+                <div className="take-creation-meta">
+                  <TakeDate value={generation.createdAt} />
+                  <TakeDuration generation={generation} />
+                </div>
                 <small>
                   {voiceVariant(generation.options.variantId)?.name ?? generation.modelId} ·{' '}
                   {generation.deviceName} · {generation.options.speed.toFixed(2)}× · {t('ttsSeed')}{' '}

@@ -2104,5 +2104,15 @@
   "zonos3FrenchAccent": "Français · orientation de l’empreinte vocale",
   "ttsAccentZonosHint": "Direction française officielle appliquée à l’empreinte vocale. 0 désactive la direction ; 1 applique son déplacement complet. Ce contrôle expérimental peut modifier le timbre ; il ne garantit ni un accent régional ni la disparition complète de l’accent source.",
   "nativeStyleHint": "Le port natif intégré ne prend pas encore en charge les humeurs ni les instructions d’émotion. Le style peut venir de la référence ; aucun réglage non pris en charge n’est envoyé.",
-  "zonos3AccentTitle": "Orientation d’accent"
+  "zonos3AccentTitle": "Orientation d’accent",
+  "generationTiming": {
+    "saved": "Calcul : {{time}}",
+    "unknown": "Durée non mesurée",
+    "savedHint": "Temps mesuré pour l’opération ayant créé cet essai, de la préparation au WAV prêt, hors attente dans la file. Conservé dans le projet ; la durée du son est indiquée séparément.",
+    "unknownHint": "Cet essai ne possède pas de mesure de calcul. Les durées anciennes ne sont pas inventées.",
+    "remaining": "Temps restant estimé : ≈ {{time}}",
+    "learning": "Estimation indisponible · historique comparable insuffisant",
+    "overrun": "Estimation dépassée · traitement en cours",
+    "estimateHint": "Estimation de l’essai ou de l’étape en cours, pas de tout le lot. Basée sur {{count}} mesure(s) de taille proche, avec le même moteur, les mêmes réglages et le même périphérique sur ce PC. Chargement initial et modèle déjà chargé sont séparés. Valeur indicative."
+  }
 }

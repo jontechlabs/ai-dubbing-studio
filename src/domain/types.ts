@@ -57,6 +57,7 @@ export interface VoiceSettings {
   seed: number;
 }
 export interface Generation {
+  generationTiming?: import('./generationTiming').GenerationTiming;
   dubbingPipeline?: import('./voiceCapture').DubbingPipelineRecord;
   takeOrigin?: import('./voiceCapture').TakeOrigin;
   prosodyTransfer?: import('./prosody').ProsodyTransfer;
@@ -199,6 +200,7 @@ export interface Project {
   pronunciation: Record<string, string>;
 }
 export interface Job {
+  estimate?: import('./generationTiming').GenerationEstimate;
   /** Active execution, excluding queue and pauses; absent on older job records. */
   timing?: { elapsedMs: number; observedAtMs: number };
   batch?: {

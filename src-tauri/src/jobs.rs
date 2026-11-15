@@ -21,6 +21,8 @@ mod timing_tests;
 #[derive(Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Job {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub estimate: Option<crate::generation_timing::Estimate>,
     pub id: String,
     pub project_id: String,
     pub kind: String,
@@ -230,6 +232,7 @@ pub fn create<R: tauri::Runtime>(
 ) -> String {
     let key = id();
     let record = Job {
+        estimate: None,
         id: key.clone(),
         project_id,
         kind: kind.into(),

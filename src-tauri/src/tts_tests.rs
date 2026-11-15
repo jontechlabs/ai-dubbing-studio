@@ -835,6 +835,7 @@ async fn generation_job_keeps_takes_and_cancellation_preserves_previous_audio() 
     let script = temp.path().join("worker.py");
     std::fs::write(&script,r#"import json,sys,wave,struct,time,os
 r=json.load(open(sys.argv[-1],encoding='utf-8'))
+time.sleep(0.04)
 open(r['preparedReferenceAudio'],'wb').write(b'normalized reference fixture')
 if r['seed']==88 and not r.get('compatibilityMode'):
     open(r['outputPath'],'wb').write(b'partial from failed CUDA attempt')
@@ -864,7 +865,7 @@ json.dump({'device':r['device'],'deviceName':'Protocol test','peakVramMb':0,'com
         option_fingerprint: None,
         batch_item_id: None,
     };
-    for _ in 0..2 {
+    for index in 0..2 {
         let key = jobs::create(&core, app.handle(), "tts", p.id.clone(), None);
         execute_with_launch(
             &core,
@@ -876,8 +877,20 @@ json.dump({'device':r['device'],'deviceName':'Protocol test','peakVramMb':0,'com
         )
         .await
         .unwrap();
+        let jobs = core.jobs.lock().unwrap();
+        let estimate = jobs[&key].saved.record.estimate.as_ref().unwrap();
+        assert_eq!(estimate.sample_count, index);
+        assert_eq!(estimate.estimated_ms.is_some(), index > 0);
     }
     let loaded = project::load(&root).unwrap();
+    for generation in &loaded.generations {
+        let time = &generation["generationTiming"];
+        assert_eq!(time["takeId"], generation["id"]);
+        assert_eq!(time["operation"], "tts");
+        assert!(time["elapsedMs"].as_u64().unwrap() >= 40);
+        assert_eq!(time["warmModel"], false);
+        assert_eq!(time["contextKey"].as_str().unwrap().len(), 64);
+    }
     assert_eq!(loaded.format_version, 5);
     assert_eq!(loaded.generations.len(), 2);
     assert_ne!(loaded.generations[0]["path"], loaded.generations[1]["path"]);

@@ -1,4 +1,5 @@
 import type { Project } from './types';
+import { validGenerationTiming } from './generationTiming';
 import { validateDubbingAudit } from './dubbingAudit';
 import { validateSpeakerDubbings } from './speakerDubbing';
 import { alignCues } from './subtitles';
@@ -366,6 +367,11 @@ export function validateProject(value: unknown): Project {
   const generations = new Set<string>();
   for (const generation of project.generations) {
     if (generation.kind !== 'tts') continue;
+    if (
+      generation.generationTiming !== undefined &&
+      !validGenerationTiming(generation.generationTiming)
+    )
+      throw Error('INVALID_GENERATION');
     if (
       !validVoiceSettings(generation.options) ||
       (project.formatVersion < 9 &&

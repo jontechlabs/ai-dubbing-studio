@@ -3761,7 +3761,7 @@ pre {
 }
 .speaker-candidate small {
   display: block;
-  color: var(--text-muted);
+  color: var(--muted);
   font-size: 10px;
 }
 .speaker-candidate button {
@@ -5298,7 +5298,7 @@ pre {
 }
 .queue-state {
   font-size: 11px;
-  color: var(--text-muted);
+  color: var(--muted);
 }
 .queue-state.running {
   color: var(--accent);
@@ -5311,3 +5311,27 @@ pre {
 .queue-state.interrupted {
   color: #eab86b;
 }
+
+.take-creation-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem 0.65rem;
+  min-width: 0;
+}
+.take-duration {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  color: var(--muted);
+  font-size: 0.7rem;
+}
+.job-estimate {
+  display: block;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  color: var(--muted);
+  font-size: 0.72rem;
+}
+
+.statusbar .job-estimate { display: none; }

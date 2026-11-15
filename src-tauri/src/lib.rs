@@ -12,6 +12,7 @@ mod dubbing_audit;
 mod dubbing_pipeline;
 mod embedded;
 mod face_detection;
+mod generation_timing;
 mod graphics;
 mod inpaint;
 mod inpaint_batch;

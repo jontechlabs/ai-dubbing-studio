@@ -213,6 +213,9 @@ fn publish<R: tauri::Runtime>(
     generation["id"] = json!(key);
     generation["path"] = json!(format!("generations/{key}.wav"));
     generation["createdAt"] = json!(now());
+    if generation["generationTiming"]["takeId"].as_str() == Some("") {
+        generation["generationTiming"]["takeId"] = json!(key);
+    }
     generation["durationMs"] = json!(duration);
     generation["batchItemId"] = Value::Null;
     let mut session = core.session.lock().map_err(io_error)?;
@@ -369,6 +372,16 @@ pub(crate) async fn execute<R: tauri::Runtime>(
         s.project.clone()
     };
     let source = inputs(&p, &request.options)?;
+    let measurement = crate::generation_timing::begin(
+        core,
+        app,
+        key,
+        &p,
+        "voiceConversion",
+        json!({"options":request.options,"language":p.languages.target}),
+        crate::generation_timing::audio_units(&p, source),
+        false,
+    );
     let wav = crate::voice_edit::render(
         &request.root,
         source["path"].as_str().ok_or("INVALID_GENERATION")?,
@@ -446,6 +459,7 @@ pub(crate) async fn execute<R: tauri::Runtime>(
         .as_object_mut()
         .ok_or("INVALID_GENERATION")?
         .remove("prosodyTransfer");
+    generation["generationTiming"] = measurement.finish("");
     generation["providerId"] = json!("chatterbox-vc");
     generation["modelId"] = json!("chatterbox-vc");
     for field in ["device", "deviceName", "peakVramMb"] {

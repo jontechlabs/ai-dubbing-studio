@@ -34,6 +34,9 @@ struct Gguf {
     _config: tempfile::NamedTempFile,
 }
 impl Session {
+    pub fn is_loaded(&self) -> bool {
+        self.child.is_some()
+    }
     pub fn gguf_device(&self) -> Option<serde_json::Value> {
         self.gguf.as_ref().map(|s| s.device.clone())
     }

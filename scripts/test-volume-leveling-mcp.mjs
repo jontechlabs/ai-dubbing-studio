@@ -77,7 +77,7 @@ async function job(id) {
 }
 try {
   await client.connect(transport);
-  assert.equal(client.getServerVersion().version, '0.51.0');
+  assert.equal(client.getServerVersion().version, '0.52.0');
   assert.equal((await client.listTools()).tools.length, 170);
   await until(async () => {
     try {
@@ -460,7 +460,7 @@ try {
         pcm(await fs.readFile(await call('studio_audio_patch_path', { id: layer.id }))).length > 0,
       );
     const proof = {
-      version: '0.51.0',
+      version: '0.52.0',
       officialSdk: true,
       toolCount: 170,
       actualApplicationRestart: true,
