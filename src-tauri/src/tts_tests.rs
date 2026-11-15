@@ -266,6 +266,9 @@ async fn imported_mp3_is_copied_normalized_capped_and_undoable_without_a_charact
     ] {
         let mut selected = options();
         selected.variant_id = Some(variant.into());
+        if crate::voice_engines::audio8(variant) {
+            selected.mode = "zeroShot".into();
+        }
         let upgraded = crate::speakers::reference(
             core.clone(),
             app.handle().clone(),
