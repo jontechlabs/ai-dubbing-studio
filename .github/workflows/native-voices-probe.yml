@@ -38,6 +38,12 @@ jobs:
           $prefix="  await call('studio_project_patch', { patches: [{ op: 'replace', path: '/formatVersion', value: 31 }] });`n"
           $at=$text.IndexOf($first)
           [IO.File]::WriteAllText($file,$text.Insert($at,$prefix))
+          $baseline=Join-Path $PWD 'scripts/test-volume-leveling-mcp.mjs'
+          $fixture=[IO.File]::ReadAllText($baseline)
+          $gate="    for (const mode of ['low', 'high']) {"
+          $wait="    await new Promise((r) => setTimeout(r, 1000));`n    await until(async () => !(await call('studio_list_jobs')).some((j) => ['queued', 'running'].includes(j.status)));`n"
+          if(-not $fixture.Contains($gate)){throw 'Baseline fixture anchor missing'}
+          [IO.File]::WriteAllText($baseline,$fixture.Replace($gate,$wait+$gate))
           $portable=@(Get-ChildItem -LiteralPath .probe -Recurse -Filter AI-Dubbing-Studio-Windows-Portable.zip)
           if($portable.Count -ne 1){throw 'Expected one authenticated Actions package'}
           ./scripts/test-volume-leveling.ps1 -PortablePath $portable[0].FullName -NativeVoices
