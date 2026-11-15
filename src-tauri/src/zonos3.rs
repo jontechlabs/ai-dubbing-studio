@@ -22,8 +22,10 @@ fn decode(bytes: &[u8]) -> Result<Vec<f32>, String> {
         return Err("TTS_ACCENT_EMBEDDING_FAILED".into());
     }
     let values: Vec<_> = bytes[offset..]
-        .chunks_exact(4)
-        .map(|s| f32::from_le_bytes(s.try_into().unwrap()))
+        .as_chunks::<4>()
+        .0
+        .iter()
+        .map(|s| f32::from_le_bytes(*s))
         .collect();
     if values.iter().any(|v| !v.is_finite())
         || values.iter().map(|v| f64::from(*v).powi(2)).sum::<f64>() < 1e-12
@@ -171,7 +173,7 @@ mod tests {
     use super::*;
     fn fixture() -> Vec<u8> {
         let mut header = "{'descr': '<f4', 'fortran_order': False, 'shape': (192,), }".to_owned();
-        while (10 + header.len() + 1) % 64 != 0 {
+        while !(10 + header.len() + 1).is_multiple_of(64) {
             header.push(' ');
         }
         header.push('\n');

@@ -173,7 +173,9 @@ try {
   const b = wav(await fs.readFile(await call('studio_generation_path', { id: french.id })));
   assert.notEqual(a.sha256, b.sha256);
   await call('studio_project_patch', {
-    patches: [{ op: 'add', path: '/dialogues/0/ttsText', value: 'Bonjour à tous.' }],
+    patches: [
+      { op: 'add', path: '/dialogues/0/ttsText', value: 'Bonjour à tous. Je parle français.' },
+    ],
   });
   await job(
     await call('studio_generate_line', {
@@ -187,6 +189,40 @@ try {
   const moss = p.generations.at(-1);
   assert.equal(moss.providerId, 'moss-tts-local');
   const c = wav(await fs.readFile(await call('studio_generation_path', { id: moss.id })));
+  const transcripts = [];
+  for (const [generation, word] of [
+    [french, 'voix'],
+    [moss, 'francais'],
+  ]) {
+    await call('studio_import_dubbing_reference', {
+      lineId: null,
+      path: await call('studio_generation_path', { id: generation.id }),
+      options: base,
+      range: null,
+    });
+    let project = await call('studio_get_project');
+    const referenceId = project.voiceReferences.at(-1).id;
+    await job(
+      await call('studio_transcribe_voice_reference', {
+        characterId: null,
+        referenceId,
+        language: 'auto',
+      }),
+      300000,
+    );
+    project = await call('studio_get_project');
+    const transcript = project.voiceReferences.find((r) => r.id === referenceId).transcript;
+    const normalized = transcript
+      .normalize('NFD')
+      .replace(/\p{Diacritic}/gu, '')
+      .toLowerCase();
+    assert(
+      normalized.includes('bonjour') && normalized.includes(word),
+      JSON.stringify({ model: generation.modelId, transcript }),
+    );
+    transcripts.push({ model: generation.modelId, text: transcript });
+  }
+  p = await call('studio_get_project');
   assert.equal(p.formatVersion, 31);
   assert.equal(p.generations.length, old.length + 4);
   for (const g of old)
@@ -216,6 +252,8 @@ try {
     retainedBatchModel: true,
     allOldTakesAndSourcePreserved: true,
     format31NativeReopen: true,
+    frenchLexicalContentCheckedWithWhisper: true,
+    transcripts,
     zonosNeutral: a,
     zonosFrench075: b,
     mossLocal: c,

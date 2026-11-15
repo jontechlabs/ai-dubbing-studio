@@ -1,5 +1,9 @@
 # AI Dubbing Studio
 
+## v0.51.0 — ZONOS3-Mini et MOSS-TTS Local en local
+
+Installation des poids officiels ZONOS3-Mini GGUF Q4/Q8 ou de MOSS-TTS Local v1.5 Q8_0 depuis le studio. Génération locale Vulkan/CPU, références sans transcription, GPU au choix, réglages de qualité et modèle conservé pendant un lot. ZONOS3 ajoute une direction française officielle d’empreinte vocale avec intensité réglable ; aucun accent régional ni contrôle émotionnel caché n’est promis. Essais existants conservés. **170 outils MCP / 33 schémas ; format 31 pour les nouveaux moteurs.** [Guide, limites et capture](docs/NATIVE-VOICES-51.md).
+
 ## v0.50.0 — File de traitements et isolation en lot
 
 Isolation Voix/Accompagnement sur les répliques sélectionnées ou tout le projet, attribution automatique aux pistes Voix/Musique, puis doublage des isolations réussies. File FIFO persistante : configurations figées, ajout pendant l’exécution, ordre, pause, annulation et reprise explicite après redémarrage. Les fichiers source et les essais existants restent conservés. Les couches d’isolation en file utilisent le format projet 30 et un rendu par fragments pour les grands lots. **170 outils MCP / 33 schémas**. [Guide et captures](docs/TASK-QUEUE.md).

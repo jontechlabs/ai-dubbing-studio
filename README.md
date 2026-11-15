@@ -1,5 +1,9 @@
 # AI Dubbing Studio
 
+## v0.51.0 — Local ZONOS3-Mini and MOSS-TTS Local
+
+Install ZONOS3-Mini official Q4/Q8 GGUF weights or MOSS-TTS Local v1.5 Q8_0 directly in the studio. Local Vulkan/CPU generation, transcript-free references, selected GPU, quality controls and retained-model batches. ZONOS3 adds an adjustable official French speaker-embedding direction; regional accents and hidden emotion controls are not claimed. Existing takes remain intact. **170 MCP tools / 33 schemas; format 31 for the new engines.** [Guide, limits and screenshot](docs/NATIVE-VOICES-51.md).
+
 ## v0.50.0 — Queued separation and dubbing workflows
 
 Separate vocals/accompaniment across selected dialogues or the project, route outputs to Voice/Music, then dub successfully separated dialogues. Persistent FIFO queue with frozen configurations, enqueue while running, ordering, pause, cancellation and explicit recovery after restart. Source files and existing takes remain intact. Queued separation layers use project format 30 and bounded rendering for large batches. **170 MCP tools / 33 schemas**. [Guide and screenshots](docs/TASK-QUEUE.md).

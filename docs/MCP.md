@@ -1,6 +1,12 @@
 # Piloter le studio avec une IA via MCP
 
-Le studio fournit **170 outils MCP** en v0.50.0 : 135 commandes natives et 35 commandes d’édition, d’état et de lecture, avec **33 schémas partagés**. Le serveur utilise **stdio** et le même exécutable que l’application. Cette intégration pilote **l’application ouverte** ; aucun environnement Node.js ou Python supplémentaire n’est requis pour la connexion.
+Le studio fournit **170 outils MCP** en v0.51.0 : 135 commandes natives et 35 commandes d’édition, d’état et de lecture, avec **33 schémas partagés**. Le serveur utilise **stdio** et le même exécutable que l’application. Cette intégration pilote **l’application ouverte** ; aucun environnement Node.js ou Python supplémentaire n’est requis pour la connexion.
+
+## Nouveaux moteurs natifs
+
+`zonos3-mini-gguf` et `moss-local-v15-gguf-q8` utilisent les commandes vocales existantes, avec `mode: "crossLingual"`, une référence sans transcription et `device: "cpu"` ou `"vulkan:N"`. Contrôlez l’espace via `studio_voice_install_space`, installez via `studio_install_voice_runtime`, puis attendez le résultat dans `studio_list_jobs`. `studio_voice_status` expose les périphériques. Le moteur 0.9.5 est isolé des installations 0.9.1 existantes.
+
+Pour ZONOS3 en français : `accent: "fr-FR"` active la direction d’empreinte française officielle, et `quality: { "accentStrength": 0.75 }` en règle l’intensité. La clé n’est pas un adaptateur d’accent régional ; `fr-CA`, `fr-BE` et `fr-CH` sont refusés pour ce moteur. MOSS Local accepte uniquement `accent: "auto"`. Les humeurs autres que `default` et les modes de clonage non pris en charge sont refusés. Les nouveaux réglages demandent le format projet 31 et sont conservés par les lots et la file. [Guide et limites](NATIVE-VOICES-51.md).
 
 ## File de traitements
 

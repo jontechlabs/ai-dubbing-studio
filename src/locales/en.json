@@ -2103,5 +2103,6 @@
   "nativeCloneHint": "Clone the chosen reference without an exact transcript. Target text is passed unchanged and the target language is sent explicitly.",
   "zonos3FrenchAccent": "French · speaker-embedding orientation",
   "ttsAccentZonosHint": "Official French direction applied to the speaker embedding. 0 disables it; 1 applies the full shift. This experimental control can change identity; regional accents and removal of the source accent are not guaranteed.",
-  "nativeStyleHint": "The integrated native port does not yet support mood or emotion instructions. The reference can guide style; unsupported controls are never silently sent."
+  "nativeStyleHint": "The integrated native port does not yet support mood or emotion instructions. The reference can guide style; unsupported controls are never silently sent.",
+  "zonos3AccentTitle": "Accent orientation"
 }

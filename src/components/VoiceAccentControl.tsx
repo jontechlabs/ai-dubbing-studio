@@ -40,7 +40,7 @@ export function VoiceAccentControl({
   return (
     <section className="voice-accent">
       <label className="field">
-        <span>{t('ttsAccent')}</span>
+        <span>{t(variant === 'zonos3-mini-gguf' ? 'zonos3AccentTitle' : 'ttsAccent')}</span>
         <select
           value={supported && !voxBlocked ? (settings.accent ?? 'auto') : 'auto'}
           disabled={busy || !supported || voxBlocked}
