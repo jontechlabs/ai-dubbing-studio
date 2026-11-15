@@ -247,14 +247,56 @@ async fn imported_mp3_is_copied_normalized_capped_and_undoable_without_a_charact
     let invalid = root.join("broken.wav");
     std::fs::write(&invalid, b"invalid").unwrap();
     assert!(import(invalid).await.is_err());
-    let mut session = core.session.lock().unwrap();
-    let s = session.as_mut().unwrap();
-    assert_eq!(s.project.revision, saved.revision);
-    assert!(s.history(false).unwrap().voice_references.is_empty());
-    assert_eq!(
-        s.history(true).unwrap().voice_references[0].id,
-        reference.id
-    );
+    {
+        let mut session = core.session.lock().unwrap();
+        let s = session.as_mut().unwrap();
+        assert_eq!(s.project.revision, saved.revision);
+        assert!(s.history(false).unwrap().voice_references.is_empty());
+        assert_eq!(
+            s.history(true).unwrap().voice_references[0].id,
+            reference.id
+        );
+    }
+    // Importing a file also stores the requested engine on the dialogue. Upgrade
+    // its format before validation, even when no model has been generated yet.
+    for (variant, version) in [
+        ("zonos3-mini-gguf", 31),
+        ("moss-local-v15-gguf-q8", 31),
+        ("audio8-realistic-06b-gguf-q8", 26),
+    ] {
+        let mut selected = options();
+        selected.variant_id = Some(variant.into());
+        let upgraded = crate::speakers::reference(
+            core.clone(),
+            app.handle().clone(),
+            crate::speakers::ReferenceTarget::Dialogue {
+                line_id: Some(line_id.clone()),
+                options: Box::new(selected),
+            },
+            None,
+            Some(owned.to_string_lossy().into_owned().into()),
+            "Engine-specific file reference".into(),
+        )
+        .await
+        .unwrap();
+        assert_eq!(upgraded.format_version, version);
+        assert_eq!(upgraded.voice_references.len(), 2);
+        let reopened = project::load(&root).unwrap();
+        assert_eq!(reopened.format_version, version);
+        assert_eq!(
+            reopened.dialogues[0]
+                .voice_settings
+                .as_ref()
+                .unwrap()
+                .variant(),
+            variant
+        );
+        assert!(reopened.generations.is_empty());
+        let mut session = core.session.lock().unwrap();
+        let previous = session.as_mut().unwrap().history(false).unwrap();
+        assert_eq!(previous.format_version, 9);
+        assert_eq!(previous.voice_references.len(), 1);
+    }
 }
 #[test]
 fn expanded_moods_roundtrip_with_format_15_without_touching_existing_takes() {

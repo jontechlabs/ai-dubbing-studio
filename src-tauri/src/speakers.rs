@@ -566,6 +566,7 @@ pub async fn reference<R: tauri::Runtime>(
                 options.reference_id = Some(key);
                 next.voice_references.push(reference);
                 if let Some(line_id) = line_id {
+                    next.format_version = next.format_version.max(options.required_format());
                     next.dialogues
                         .iter_mut()
                         .find(|l| l.id == line_id)
