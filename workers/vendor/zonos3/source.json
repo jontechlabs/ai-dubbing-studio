@@ -1,0 +1,9 @@
+{
+  "repository": "https://github.com/Zyphra/ZONOS3-Mini",
+  "revision": "96d9e0ec1e39083ed336ac78f24e3dbc93721c0f",
+  "sourceFiles": [
+    "assets/steering/speaker_accents_mect60k_x10/fra.npy",
+    "model/src/zonos3/tts/steering.py"
+  ],
+  "note": "Only the 192-value French raw-space direction and its norm-preserving transformation are used; no hidden-space emotion steering is claimed."
+}

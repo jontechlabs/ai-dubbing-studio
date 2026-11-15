@@ -2,7 +2,7 @@ import type { Dialogue, Generation, Project, VoiceSettings } from './types';
 import { dialogueText } from './subtitles';
 import { activeSpeakerGroup } from './speakerDubbing';
 import { approveTranslation, hasTranslation } from './translation';
-import { audio8Variant, voiceVariant, voiceSettingsFormat } from './voiceEngines';
+import { audio8Variant, native095Variant, voiceVariant, voiceSettingsFormat } from './voiceEngines';
 import { validAccent } from './voiceAccents';
 import { validMood } from './voiceMoods';
 import { validQuality } from './voiceQuality';
@@ -18,10 +18,12 @@ export function validVoiceSettings(value: unknown): value is VoiceSettings {
     validMood(s.mood) &&
     validQuality(s.quality, s.variantId) &&
     (!audio8Variant(s.variantId) || s.mode === 'zeroShot') &&
+    (!native095Variant(s.variantId) || s.mode === 'crossLingual') &&
     (!(
       s.variantId?.startsWith('qwen3') ||
       s.variantId?.startsWith('chatterbox') ||
-      audio8Variant(s.variantId)
+      audio8Variant(s.variantId) ||
+      native095Variant(s.variantId)
     ) ||
       !s.mood ||
       s.mood === 'default') &&

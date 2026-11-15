@@ -1,7 +1,7 @@
 import { useId } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { VoiceSettings } from '../domain/types';
-import { accentSupported, voiceAccents } from '../domain/voiceAccents';
+import { accentSupported, voiceAccents, validAccent } from '../domain/voiceAccents';
 
 export function VoiceAccentControl({
   settings,
@@ -34,7 +34,9 @@ export function VoiceAccentControl({
       ? 'ttsAccentLanguageHint'
       : voxBlocked
         ? 'ttsAccentVoxBlockedHint'
-        : 'ttsAccentHint';
+        : variant === 'zonos3-mini-gguf'
+          ? 'ttsAccentZonosHint'
+          : 'ttsAccentHint';
   return (
     <section className="voice-accent">
       <label className="field">
@@ -50,10 +52,12 @@ export function VoiceAccentControl({
           </option>
           {supported &&
             voiceAccents
-              .filter((a) => a.language === language)
+              .filter((a) => a.language === language && validAccent(a.id, variant))
               .map((a) => (
                 <option key={a.id} value={a.id}>
-                  {t(`accents.${a.labelKey}`)}
+                  {t(
+                    variant === 'zonos3-mini-gguf' ? 'zonos3FrenchAccent' : `accents.${a.labelKey}`,
+                  )}
                 </option>
               ))}
         </select>

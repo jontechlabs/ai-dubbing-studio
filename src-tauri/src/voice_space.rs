@@ -29,7 +29,7 @@ pub fn check_variant<R: tauri::Runtime>(
     id: &str,
 ) -> Result<Space, String> {
     let multilingual = voice_engines::multilingual(id);
-    if voice_engines::audio8(id) {
+    if voice_engines::audio8(id) || voice_engines::native095(id) {
         return check_gguf(core, app, id);
     }
     if !multilingual && id != "drama3-comfy-fp8" {
@@ -121,7 +121,11 @@ fn check_gguf<R: tauri::Runtime>(
         &std::fs::read(separation::resources(app).join("voice-engines.json")).map_err(io_error)?,
     )
     .map_err(io_error)?;
-    let engine = &manifest["engine"];
+    let engine = &manifest[if voice_engines::native095(id) {
+        "engineV095"
+    } else {
+        "engine"
+    }];
     let size = engine["size"].as_u64().ok_or("TTS_RUNTIME_FAILED")?;
     let name = engine["name"].as_str().ok_or("TTS_RUNTIME_FAILED")?;
     crate::domain::valid_relative(name)?;

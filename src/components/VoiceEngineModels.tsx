@@ -2,7 +2,12 @@ import { useModelRevision } from '../hooks/useModelRevision';
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Job } from '../domain/types';
-import { audio8Variant, installedVoiceVariants, multilingualVariant } from '../domain/voiceEngines';
+import {
+  audio8Variant,
+  native095Variant,
+  installedVoiceVariants,
+  multilingualVariant,
+} from '../domain/voiceEngines';
 import * as bridge from '../services/bridge';
 import { DramaModels } from './DramaModels';
 import { MultilingualModel } from './MultilingualModel';
@@ -71,7 +76,11 @@ export function VoiceEngineModels({
         .filter((v) => v.id !== 'cosy3-official')
         .map((variant) => {
           const state = status?.variants.find((v) => v.id === variant.id);
-          if (multilingualVariant(variant.id) || audio8Variant(variant.id))
+          if (
+            multilingualVariant(variant.id) ||
+            audio8Variant(variant.id) ||
+            native095Variant(variant.id)
+          )
             return (
               <MultilingualModel
                 key={variant.id}

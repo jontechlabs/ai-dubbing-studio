@@ -12,8 +12,30 @@ export interface VoiceVariant {
   suggested16Gb: boolean;
   reportedVramGb?: number;
 }
-import { installedVoiceVariants } from './voiceEngines';
+import { installedVoiceVariants, native095Variant } from './voiceEngines';
 export const voiceVariants: VoiceVariant[] = [
+  {
+    id: 'zonos3-mini-gguf',
+    providerId: 'zonos3',
+    name: 'ZONOS3-Mini · GGUF Q4/Q8',
+    format: 'GGUF Q4_0 experts / Q8_0 mixers',
+    origin: 'official',
+    engine: 'audio.cpp 0.9.5 · Vulkan / CPU',
+    source: 'https://huggingface.co/Zyphra/ZONOS3-Mini',
+    detailKey: 'zonos3Profile',
+    suggested16Gb: true,
+  },
+  {
+    id: 'moss-local-v15-gguf-q8',
+    providerId: 'moss-tts-local',
+    name: 'MOSS-TTS Local v1.5 · GGUF Q8_0',
+    format: 'GGUF Q8_0',
+    origin: 'community',
+    engine: 'audio.cpp 0.9.5 · Vulkan / CPU',
+    source: 'https://huggingface.co/audio-cpp/audio.cpp-gguf',
+    detailKey: 'mossLocalProfile',
+    suggested16Gb: true,
+  },
   {
     id: 'voxcpm2-bf16',
     providerId: 'voxcpm2',
@@ -48,7 +70,7 @@ export const voiceVariants: VoiceVariant[] = [
     suggested16Gb: true,
   },
   ...installedVoiceVariants
-    .filter((v) => v.backend === 'vulkan')
+    .filter((v) => v.backend === 'vulkan' && !native095Variant(v.id))
     .map((v) => ({
       id: v.id,
       providerId: v.providerId,

@@ -129,11 +129,13 @@ export function ModelsPanel({
                 ...p,
                 formatVersion: Math.max(
                   p.formatVersion,
-                  event.target.value === 'audio8-tts'
-                    ? 26
-                    : ['voxcpm2', 'chatterbox'].includes(event.target.value)
-                      ? 16
-                      : 3,
+                  ['zonos3', 'moss-tts-local'].includes(event.target.value)
+                    ? 31
+                    : event.target.value === 'audio8-tts'
+                      ? 26
+                      : ['voxcpm2', 'chatterbox'].includes(event.target.value)
+                        ? 16
+                        : 3,
                 ),
                 modelPreferences: {
                   ...p.modelPreferences,

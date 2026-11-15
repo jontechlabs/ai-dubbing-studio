@@ -56,6 +56,8 @@ export interface TranslationProvider {
   translate(text: string, source: string, target: string, signal: AbortSignal): Promise<string>;
 }
 export const futureVoiceProviders = [
+  { id: 'zonos3', name: 'ZONOS3-Mini', phase: 51 },
+  { id: 'moss-tts-local', name: 'MOSS-TTS Local v1.5', phase: 51 },
   { id: 'cosyvoice3', name: 'CosyVoice3', phase: 5 },
   { id: 'fish-s2', name: 'Fish Audio S2', phase: 6 },
   { id: 'fish-drama3', name: 'Fish Audio Drama 3', phase: 9 },

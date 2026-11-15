@@ -235,7 +235,11 @@ impl Session {
             let device_id = device["id"].as_str().ok_or("DEVICE_UNAVAILABLE")?;
             let (backend, index) = device_id.split_once(':').unwrap_or(("cpu", "0"));
             let model_id = id();
-            let config = serde_json::json!({"host":"127.0.0.1","port":port,"backend":backend,"device":index.parse::<u32>().map_err(io_error)?,"threads":6,"lazy_load":true,"max_loaded_models":1,"models":[{"id":model_id,"family":family,"path":model,"task":"tts","mode":"offline"}]});
+            let mut config = serde_json::json!({"host":"127.0.0.1","port":port,"backend":backend,"device":index.parse::<u32>().map_err(io_error)?,"threads":6,"lazy_load":true,"max_loaded_models":1,"models":[{"id":model_id,"family":family,"path":model,"task":"tts","mode":"offline"}]});
+            if family == "moss_tts_local" {
+                config["models"][0]["session_options"] =
+                    serde_json::json!({"moss_tts_local.weight_type":"native"});
+            }
             let file = tempfile::NamedTempFile::new().map_err(io_error)?;
             std::fs::write(file.path(), serde_json::to_vec(&config).map_err(io_error)?)
                 .map_err(io_error)?;
@@ -304,7 +308,7 @@ impl Session {
             });
         }
         let server = self.gguf.as_ref().ok_or("PROCESS_FAILED")?;
-        let mut body = serde_json::json!({"model":server.id,"input":input["promptText"],"voice_ref":input["referenceAudio"],"seed":input["seed"].to_string(),"max_tokens":crate::qwen_safety::max_tokens(input),"response_format":"wav"});
+        let mut body = serde_json::json!({"model":server.id,"input":input["promptText"],"voice_ref":input["referenceAudio"],"seed":input["seed"].to_string(),"max_tokens":crate::voice_engines::max_tokens(input),"response_format":"wav"});
         if family == "qwen3_tts" {
             body["language"] =
                 crate::voice_engines::qwen_language(input["language"].as_str().unwrap_or("fr"))?
@@ -314,6 +318,19 @@ impl Session {
         }
         if body["options"].is_null() {
             body["options"] = serde_json::json!({});
+        }
+        if family == "zonos3" {
+            body["language"] =
+                crate::voice_engines::zonos_language(input["language"].as_str().unwrap_or("fr"))?
+                    .into();
+            if let Some(path) = input["speakerEmbeddingFile"].as_str() {
+                body.as_object_mut().unwrap().remove("voice_ref");
+                body["options"]["speaker_embedding_file"] = path.into();
+            }
+        } else if family == "moss_tts_local" {
+            body["language"] =
+                crate::voice_engines::qwen_language(input["language"].as_str().unwrap_or("fr"))?
+                    .into();
         }
         for (name, value) in crate::voice_quality::gguf_options(input)? {
             body["options"][name] = value.into();

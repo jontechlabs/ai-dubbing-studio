@@ -294,6 +294,7 @@
           "options_VoiceQuality_2": {
             "type": "object",
             "properties": {
+              "accentStrength": { "anyOf": [{ "type": "number" }] },
               "inferenceSteps": { "anyOf": [{ "type": "number" }] },
               "cfgStrength": { "anyOf": [{ "type": "number" }] },
               "temperature": { "anyOf": [{ "type": "number" }] },
@@ -1689,6 +1690,7 @@
           "options_VoiceQuality_1": {
             "type": "object",
             "properties": {
+              "accentStrength": { "anyOf": [{ "type": "number" }] },
               "inferenceSteps": { "anyOf": [{ "type": "number" }] },
               "cfgStrength": { "anyOf": [{ "type": "number" }] },
               "temperature": { "anyOf": [{ "type": "number" }] },
@@ -2526,6 +2528,7 @@
           "options_VoiceQuality_3": {
             "type": "object",
             "properties": {
+              "accentStrength": { "anyOf": [{ "type": "number" }] },
               "inferenceSteps": { "anyOf": [{ "type": "number" }] },
               "cfgStrength": { "anyOf": [{ "type": "number" }] },
               "temperature": { "anyOf": [{ "type": "number" }] },
@@ -2927,6 +2930,7 @@
           "options_VoiceQuality_1": {
             "type": "object",
             "properties": {
+              "accentStrength": { "anyOf": [{ "type": "number" }] },
               "inferenceSteps": { "anyOf": [{ "type": "number" }] },
               "cfgStrength": { "anyOf": [{ "type": "number" }] },
               "temperature": { "anyOf": [{ "type": "number" }] },
@@ -3161,6 +3165,7 @@
           "spec_VoiceQuality_3": {
             "type": "object",
             "properties": {
+              "accentStrength": { "anyOf": [{ "type": "number" }] },
               "inferenceSteps": { "anyOf": [{ "type": "number" }] },
               "cfgStrength": { "anyOf": [{ "type": "number" }] },
               "temperature": { "anyOf": [{ "type": "number" }] },
@@ -3374,6 +3379,7 @@
           "selection_VoiceQuality_2": {
             "type": "object",
             "properties": {
+              "accentStrength": { "anyOf": [{ "type": "number" }] },
               "inferenceSteps": { "anyOf": [{ "type": "number" }] },
               "cfgStrength": { "anyOf": [{ "type": "number" }] },
               "temperature": { "anyOf": [{ "type": "number" }] },
@@ -3552,6 +3558,7 @@
           "selection_VoiceQuality_2": {
             "type": "object",
             "properties": {
+              "accentStrength": { "anyOf": [{ "type": "number" }] },
               "inferenceSteps": { "anyOf": [{ "type": "number" }] },
               "cfgStrength": { "anyOf": [{ "type": "number" }] },
               "temperature": { "anyOf": [{ "type": "number" }] },
@@ -5070,6 +5077,7 @@
           "VoiceQuality_7": {
             "type": "object",
             "properties": {
+              "accentStrength": { "anyOf": [{ "type": "number" }] },
               "inferenceSteps": { "anyOf": [{ "type": "number" }] },
               "cfgStrength": { "anyOf": [{ "type": "number" }] },
               "temperature": { "anyOf": [{ "type": "number" }] },
@@ -6329,6 +6337,7 @@
         "VoiceQuality_12": {
           "type": "object",
           "properties": {
+            "accentStrength": { "anyOf": [{ "type": "number" }] },
             "inferenceSteps": { "anyOf": [{ "type": "number" }] },
             "cfgStrength": { "anyOf": [{ "type": "number" }] },
             "temperature": { "anyOf": [{ "type": "number" }] },
@@ -7257,6 +7266,7 @@
         "VoiceQuality_2": {
           "type": "object",
           "properties": {
+            "accentStrength": { "anyOf": [{ "type": "number" }] },
             "inferenceSteps": { "anyOf": [{ "type": "number" }] },
             "cfgStrength": { "anyOf": [{ "type": "number" }] },
             "temperature": { "anyOf": [{ "type": "number" }] },
@@ -7521,6 +7531,7 @@
         "VoiceQuality_3": {
           "type": "object",
           "properties": {
+            "accentStrength": { "anyOf": [{ "type": "number" }] },
             "inferenceSteps": { "anyOf": [{ "type": "number" }] },
             "cfgStrength": { "anyOf": [{ "type": "number" }] },
             "temperature": { "anyOf": [{ "type": "number" }] },
@@ -7724,6 +7735,7 @@
         "VoiceQuality_1": {
           "type": "object",
           "properties": {
+            "accentStrength": { "anyOf": [{ "type": "number" }] },
             "inferenceSteps": { "anyOf": [{ "type": "number" }] },
             "cfgStrength": { "anyOf": [{ "type": "number" }] },
             "temperature": { "anyOf": [{ "type": "number" }] },
@@ -8150,6 +8162,7 @@
         "VoiceQuality_2": {
           "type": "object",
           "properties": {
+            "accentStrength": { "anyOf": [{ "type": "number" }] },
             "inferenceSteps": { "anyOf": [{ "type": "number" }] },
             "cfgStrength": { "anyOf": [{ "type": "number" }] },
             "temperature": { "anyOf": [{ "type": "number" }] },
@@ -8577,6 +8590,7 @@
         "VoiceQuality_3": {
           "type": "object",
           "properties": {
+            "accentStrength": { "anyOf": [{ "type": "number" }] },
             "inferenceSteps": { "anyOf": [{ "type": "number" }] },
             "cfgStrength": { "anyOf": [{ "type": "number" }] },
             "temperature": { "anyOf": [{ "type": "number" }] },

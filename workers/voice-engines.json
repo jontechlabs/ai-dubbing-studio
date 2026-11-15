@@ -266,6 +266,54 @@
           "sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4"
         }
       ]
+    },
+    {
+      "id": "zonos3-mini-gguf",
+      "providerId": "zonos3",
+      "name": "ZONOS3-Mini · GGUF Q4/Q8",
+      "engine": "audio095",
+      "revision": "d2d142a86b1e6aeb4252679673c86ecd86177bf8",
+      "files": [
+        {
+          "name": "model.gguf",
+          "url": "https://huggingface.co/Zyphra/ZONOS3-Mini/resolve/d2d142a86b1e6aeb4252679673c86ecd86177bf8/gguf/backbone-ptq.gguf?download=true",
+          "size": 663150624,
+          "sha256": "66fceb6d73a8c30bde80249e4112bb308380ab7f3384fa11c8e4048115e4ceec"
+        },
+        {
+          "name": "zac-keep2.gguf",
+          "url": "https://huggingface.co/Zyphra/ZONOS3-Mini/resolve/d2d142a86b1e6aeb4252679673c86ecd86177bf8/gguf/zac-keep2.gguf?download=true",
+          "size": 452325440,
+          "sha256": "834e5b70b88294afc3c702a478487e0664dcc6b574c16fc6167d72444aabeafd"
+        },
+        {
+          "name": "spk-encoder.gguf",
+          "url": "https://huggingface.co/Zyphra/ZONOS3-Mini/resolve/d2d142a86b1e6aeb4252679673c86ecd86177bf8/gguf/spk-encoder.gguf?download=true",
+          "size": 45385728,
+          "sha256": "9539f340b70be246005403b9c254732e180e85e0b3c57fb1973f0d6bc6c59bdc"
+        }
+      ]
+    },
+    {
+      "id": "moss-local-v15-gguf-q8",
+      "providerId": "moss-tts-local",
+      "name": "MOSS-TTS Local v1.5 · GGUF Q8_0",
+      "engine": "audio095",
+      "revision": "ca0b203eb1bb87f333a7cfbad2d5f6672b4ccba7",
+      "files": [
+        {
+          "name": "model.gguf",
+          "url": "https://huggingface.co/audio-cpp/audio.cpp-gguf/resolve/ca0b203eb1bb87f333a7cfbad2d5f6672b4ccba7/MOSS-TTS-Local-v1.5-GGUF/moss-tts-local-v1.5-q8_0.gguf?download=true",
+          "size": 7512224256,
+          "sha256": "d465210814e60cc09224b33bf272bde519c871dda76997a8c17aed4878d1ba9a"
+        }
+      ]
     }
-  ]
+  ],
+  "engineV095": {
+    "name": "audio-v0.9.5-bin-windows-x64-vulkan-portable.zip",
+    "url": "https://github.com/0xShug0/audio.cpp/releases/download/v0.9.5/audio-v0.9.5-bin-windows-x64-vulkan-portable.zip",
+    "size": 85462928,
+    "sha256": "6c304c9a1e0cfc18b2d3b208b03d40365fec71d094ee4da4f695b2d9e7de29e8"
+  }
 }

@@ -1,5 +1,20 @@
 import { moodFormatVersion } from './voiceMoods';
+export function native095Variant(id?: string | null) {
+  return id === 'zonos3-mini-gguf' || id === 'moss-local-v15-gguf-q8';
+}
 export const installedVoiceVariants = [
+  {
+    id: 'zonos3-mini-gguf',
+    providerId: 'zonos3',
+    name: 'ZONOS3-Mini · GGUF Q4/Q8',
+    backend: 'vulkan',
+  },
+  {
+    id: 'moss-local-v15-gguf-q8',
+    providerId: 'moss-tts-local',
+    name: 'MOSS-TTS Local v1.5 · GGUF Q8_0',
+    backend: 'vulkan',
+  },
   { id: 'cosy3-official', providerId: 'cosyvoice3', name: 'CosyVoice3 0.5B RL', backend: 'cuda' },
   {
     id: 'audio8-realistic-06b-gguf-q8',
@@ -56,6 +71,7 @@ export function voiceSettingsFormat(settings: {
   intonationGuide?: unknown;
 }) {
   return Math.max(
+    native095Variant(settings.variantId) ? 31 : 5,
     audio8Variant(settings.variantId) ? 26 : 5,
     settings.outputGain !== undefined && settings.outputGain !== 1 ? 22 : 5,
     settings.intonationGuide !== undefined || settings.referenceMode === 'library' ? 21 : 5,

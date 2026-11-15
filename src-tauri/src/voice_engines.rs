@@ -29,9 +29,13 @@ pub struct Variant {
 #[derive(Deserialize)]
 struct Manifest {
     engine: File,
+    #[serde(rename = "engineV095")]
+    engine_v095: Option<File>,
     variants: Vec<Variant>,
 }
 pub const IDS: &[&str] = &[
+    "zonos3-mini-gguf",
+    "moss-local-v15-gguf-q8",
     "audio8-realistic-06b-gguf-q8",
     "fish-s2-gguf-q8",
     "qwen3-06b-gguf-q8",
@@ -42,11 +46,23 @@ pub const IDS: &[&str] = &[
     "voxcpm2-bf16",
     "chatterbox-multilingual-v3",
 ];
+pub(crate) fn native095(id: &str) -> bool {
+    ["zonos3-mini-gguf", "moss-local-v15-gguf-q8"].contains(&id)
+}
+pub(crate) fn engine_folder(core: &Core, id: &str) -> PathBuf {
+    root(core).join(if native095(id) {
+        "audiocpp-v095"
+    } else {
+        "audiocpp"
+    })
+}
 pub(crate) fn audio8(id: &str) -> bool {
     id == "audio8-realistic-06b-gguf-q8"
 }
 pub(crate) fn gguf_family(provider: &str) -> Result<&'static str, String> {
     match provider {
+        "zonos3" => Ok("zonos3"),
+        "moss-tts-local" => Ok("moss_tts_local"),
         "audio8-tts" => Ok("audio8_tts"),
         "fish-s2" => Ok("fish_audio"),
         "qwen3-tts" => Ok("qwen3_tts"),
@@ -105,6 +121,16 @@ pub fn installed(core: &Core, id: &str) -> bool {
                         "t3_mtl23ls_v3.safetensors"
                     })
                     .is_file()
+        } else if native095(id) {
+            engine_folder(core, id).join("audiocpp_cli.exe").is_file()
+                && engine_folder(core, id)
+                    .join("audiocpp_server.exe")
+                    .is_file()
+                && root(core).join(id).join("model.gguf").is_file()
+                && (id != "zonos3-mini-gguf"
+                    || ["zac-keep2.gguf", "spk-encoder.gguf"]
+                        .iter()
+                        .all(|f| root(core).join(id).join(f).is_file()))
         } else {
             root(core).join("audiocpp/audiocpp_cli.exe").is_file()
                 && root(core).join("audiocpp/audiocpp_server.exe").is_file()
@@ -121,13 +147,24 @@ pub fn parse_devices(output: &str) -> Vec<serde_json::Value> {
     }).collect()
 }
 pub async fn inventory(core: &Core) -> Vec<serde_json::Value> {
-    let command = root(core).join("audiocpp/audiocpp_cli.exe");
+    let newer = root(core).join("audiocpp-v095/audiocpp_cli.exe");
+    let command = if newer.is_file() {
+        newer
+    } else {
+        root(core).join("audiocpp/audiocpp_cli.exe")
+    };
+    inventory_command(&command).await
+}
+async fn inventory_for(core: &Core, id: &str) -> Vec<serde_json::Value> {
+    inventory_command(&engine_folder(core, id).join("audiocpp_cli.exe")).await
+}
+async fn inventory_command(command: &std::path::Path) -> Vec<serde_json::Value> {
     if !command.is_file() {
         return vec![];
     }
     match tokio::time::timeout(
         Duration::from_secs(30),
-        media::command(&command).arg("--list-devices").output(),
+        media::command(command).arg("--list-devices").output(),
     )
     .await
     {
@@ -218,7 +255,7 @@ pub fn install<R: tauri::Runtime>(
                 jobs::update(&core,&app,&key,|j|j.logs.push(format!("Drama 3 before downloads: {}; available {:.2} GiB; estimated required {:.2} GiB (models, dependency archives, expansion and margin)",space.path,space.available_bytes as f64/1073741824.0,space.required_bytes as f64/1073741824.0)));
                 if !space.enough {return Err("TTS_DRAMA_DISK_REQUIRED".into());}
             }
-            if selected.engine=="multilingual" || audio8(&id) {
+            if selected.engine=="multilingual" || audio8(&id) || native095(&id) {
               let c=core.clone();let a=app.clone();let v=id.clone();
               let space=tauri::async_runtime::spawn_blocking(move||crate::voice_space::check_variant(&c,&a,&v)).await.map_err(io_error)??;
               jobs::update(&core,&app,&key,|j|j.logs.push(format!("{}: available {:.2} GiB; estimated required {:.2} GiB before dependency downloads",selected.name,space.available_bytes as f64/1073741824.0,space.required_bytes as f64/1073741824.0)));
@@ -227,13 +264,13 @@ pub fn install<R: tauri::Runtime>(
             jobs::update(&core,&app,&key,|j|{j.status="running".into();j.stage="runtime".into();});
             let folder=root(&core);std::fs::create_dir_all(folder.join(&id)).map_err(io_error)?;
             let _=std::fs::remove_file(folder.join(&id).join("ready.json"));
-            if selected.engine=="audiocpp" {
-                let file=manifest(&app)?.engine;let archive=folder.join(&file.name);
+            if selected.engine=="audiocpp" || selected.engine=="audio095" {
+                let m=manifest(&app)?;let file=if native095(&id){m.engine_v095.ok_or("TTS_RUNTIME_FAILED")?}else{m.engine};let archive=folder.join(&file.name);
                 separation::fetch(&core,&app,&key,&[file.url],&archive,(&file.sha256,file.size),&flag).await?;
                 jobs::update(&core,&app,&key,|j|{j.stage="ttsExtract".into();j.progress=None;});
-                let target=folder.join("audiocpp");let f=flag.clone();
+                let target=engine_folder(&core,&id);let f=flag.clone();
                 tauri::async_runtime::spawn_blocking(move||tts::extract(&archive,&target,&f)).await.map_err(io_error)??;
-                if inventory(&core).await.is_empty(){return Err("TTS_RUNTIME_FAILED".into());}
+                if inventory_for(&core,&id).await.is_empty(){return Err("TTS_RUNTIME_FAILED".into());}
             } else {
                 install_python_profile(&core,&app,&key,&flag,&selected.engine).await?;
                 if selected.engine=="drama3" {
@@ -534,6 +571,11 @@ async fn generate_gguf_attempt<R: tauri::Runtime>(
             j.progress = None;
         });
         let expected = selected.files.first().ok_or("TTS_RUNTIME_FAILED")?;
+        if native095(id) && !hot.as_ref().is_some_and(|s|s.has_gguf()) {
+            for file in &selected.files {
+                if !crate::downloads::cached(&root(core).join(id).join(&file.name),&crate::downloads::Spec{urls:&[],sha256:&file.sha256,size:file.size},flag).await? {return Err("MODEL_CHECKSUM_FAILED".into());}
+            }
+        }
         let valid = if hot.as_ref().is_some_and(|s| s.has_gguf()) {
             true
         } else {
@@ -554,7 +596,7 @@ async fn generate_gguf_attempt<R: tauri::Runtime>(
         let devices = if let Some(device) = hot.as_ref().and_then(|s| s.gguf_device()) {
             vec![device]
         } else {
-            inventory(core).await
+            inventory_for(core,id).await
         };
         let requested = input["device"].as_str().unwrap_or("auto");
         let device = if requested == "auto" {
@@ -567,6 +609,10 @@ async fn generate_gguf_attempt<R: tauri::Runtime>(
         }
         .ok_or("DEVICE_UNAVAILABLE")?;
         let device_id = device["id"].as_str().ok_or("DEVICE_UNAVAILABLE")?;
+        let mut effective=input.clone();
+        let prepared=crate::zonos3::reference(core,app,key,input,&model,&engine_folder(core,id).join("audiocpp_cli.exe"),flag).await?;
+        if let Some(path)=&prepared{effective["speakerEmbeddingFile"]=serde_json::json!(path);}
+        let input=&effective;
         let (backend, index) = device_id.split_once(':').unwrap_or(("cpu", "0"));
         let mut args = vec![
             "--task".into(),
@@ -597,11 +643,20 @@ async fn generate_gguf_attempt<R: tauri::Runtime>(
             "--seed".into(),
             input["seed"].to_string(),
             "--max-tokens".into(),
-            crate::qwen_safety::max_tokens(input).to_string(),
+            max_tokens(input).to_string(),
             "--log".into(),
         ];
         for (name, value) in crate::voice_quality::gguf_options(input)? {
             args.extend(["--request-option".into(), format!("{name}={value}")]);
+        }
+        if native095(id){
+            args.extend(["--language".into(),if id=="zonos3-mini-gguf"{zonos_language(input["language"].as_str().unwrap_or("fr"))?.into()}else{qwen_language(input["language"].as_str().unwrap_or("fr"))?.into()}]);
+            if let Some(path)=prepared {
+                let index=args.iter().position(|a|a=="--voice-ref").ok_or("TTS_RUNTIME_FAILED")?;
+                args.drain(index..index+2);
+                args.extend(["--request-option".into(),format!("speaker_embedding_file={}",path.to_string_lossy())]);
+            }
+            if id=="moss-local-v15-gguf-q8"{args.extend(["--session-option".into(),"moss_tts_local.weight_type=native".into()]);}
         }
         if selected.provider_id == "qwen3-tts" {
             args.extend([
@@ -633,7 +688,7 @@ async fn generate_gguf_attempt<R: tauri::Runtime>(
                     core,
                     app,
                     key,
-                    &root(core).join("audiocpp/audiocpp_server.exe"),
+                    &engine_folder(core,id).join("audiocpp_server.exe"),
                     &model,
                     gguf_family(&selected.provider_id)?,
                     device,
@@ -647,7 +702,7 @@ async fn generate_gguf_attempt<R: tauri::Runtime>(
                 core,
                 app,
                 key,
-                &root(core).join("audiocpp/audiocpp_cli.exe"),
+                &engine_folder(core,id).join("audiocpp_cli.exe"),
                 &args,
                 flag,
             )
@@ -692,6 +747,27 @@ async fn generate_gguf_attempt<R: tauri::Runtime>(
     result
 }
 
+pub(crate) fn max_tokens(input: &serde_json::Value) -> u64 {
+    match input["variantId"].as_str() {
+        Some("zonos3-mini-gguf") => 1800,
+        Some("moss-local-v15-gguf-q8") => 1500,
+        _ => crate::qwen_safety::max_tokens(input),
+    }
+}
+pub(crate) fn zonos_language(code: &str) -> Result<&'static str, String> {
+    match code {
+        "fr" => Ok("fr_fr"),
+        "en" => Ok("en_us"),
+        "zh" => Ok("cmn"),
+        "pt" => Ok("pt_br"),
+        "de" => Ok("de"),
+        "es" => Ok("es"),
+        "it" => Ok("it"),
+        "ja" => Ok("ja"),
+        "ko" => Ok("ko"),
+        _ => Err("TTS_LANGUAGE_UNSUPPORTED".into()),
+    }
+}
 pub(crate) fn qwen_language(code: &str) -> Result<&'static str, String> {
     match code {
         "zh" => Ok("Chinese"),
@@ -709,6 +785,89 @@ pub(crate) fn qwen_language(code: &str) -> Result<&'static str, String> {
 }
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn new_native_engines_require_supported_conditioning_and_a_reopenable_format() {
+        use crate::{domain::Project, tts::Options};
+        for (variant, provider) in [
+            ("zonos3-mini-gguf", "zonos3"),
+            ("moss-local-v15-gguf-q8", "moss-tts-local"),
+        ] {
+            let mut value = serde_json::json!({"variantId":variant,"device":"vulkan:1","referenceMode":"current","referenceId":null,"mode":"crossLingual","speed":1,"seed":7});
+            let settings: Options = serde_json::from_value(value.clone()).unwrap();
+            settings.validate().unwrap();
+            assert_eq!(settings.required_format(), 31);
+            value["mode"] = "zeroShot".into();
+            assert!(serde_json::from_value::<Options>(value.clone())
+                .unwrap()
+                .validate()
+                .is_err());
+            value["mode"] = "crossLingual".into();
+            value["mood"] = "angry".into();
+            assert!(serde_json::from_value::<Options>(value.clone())
+                .unwrap()
+                .validate()
+                .is_err());
+            value["mood"] = "default".into();
+            value["accent"] = "fr-CA".into();
+            assert!(serde_json::from_value::<Options>(value)
+                .unwrap()
+                .validate()
+                .is_err());
+            let dir = tempfile::tempdir().unwrap();
+            let mut p = Project::new("Native voice".into(), "ja".into(), "fr".into());
+            p.format_version = 31;
+            p.model_preferences =
+                Some(serde_json::json!({"ttsProviderId":provider,"voiceVariantId":variant}));
+            crate::project::save(dir.path(), &p).unwrap();
+            assert_eq!(crate::project::load(dir.path()).unwrap().format_version, 31);
+            p.format_version = 30;
+            assert!(p.validate().is_err());
+        }
+        assert_eq!(super::gguf_family("zonos3").unwrap(), "zonos3");
+        assert_eq!(
+            super::gguf_family("moss-tts-local").unwrap(),
+            "moss_tts_local"
+        );
+        assert_eq!(super::zonos_language("fr").unwrap(), "fr_fr");
+        assert_eq!(
+            super::max_tokens(&serde_json::json!({"variantId":"zonos3-mini-gguf"})),
+            1800
+        );
+    }
+    #[test]
+    fn zonos_installation_requires_all_companions_and_the_separate_new_runtime() {
+        let dir = tempfile::tempdir().unwrap();
+        let core = crate::mix::tests::core(
+            dir.path(),
+            crate::domain::Project::new("Test".into(), "ja".into(), "fr".into()),
+        );
+        let model = super::root(&core).join("zonos3-mini-gguf");
+        std::fs::create_dir_all(&model).unwrap();
+        for name in [
+            "ready.json",
+            "model.gguf",
+            "zac-keep2.gguf",
+            "spk-encoder.gguf",
+        ] {
+            std::fs::write(model.join(name), b"fixture").unwrap();
+        }
+        let old = super::engine_folder(&core, "fish-s2-gguf-q8");
+        std::fs::create_dir_all(&old).unwrap();
+        for name in ["audiocpp_cli.exe", "audiocpp_server.exe"] {
+            std::fs::write(old.join(name), b"fixture").unwrap();
+        }
+        assert!(!super::installed(&core, "zonos3-mini-gguf"));
+        let new = super::engine_folder(&core, "zonos3-mini-gguf");
+        assert_ne!(old, new);
+        std::fs::create_dir_all(&new).unwrap();
+        for name in ["audiocpp_cli.exe", "audiocpp_server.exe"] {
+            std::fs::write(new.join(name), b"fixture").unwrap();
+        }
+        assert!(super::installed(&core, "zonos3-mini-gguf"));
+        std::fs::remove_file(model.join("spk-encoder.gguf")).unwrap();
+        assert!(!super::installed(&core, "zonos3-mini-gguf"));
+        assert!(old.join("audiocpp_cli.exe").is_file());
+    }
     #[test]
     fn audio8_is_not_misrouted_to_qwen_or_fish() {
         assert_eq!(super::gguf_family("audio8-tts").unwrap(), "audio8_tts");

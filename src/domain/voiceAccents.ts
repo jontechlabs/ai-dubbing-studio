@@ -2,7 +2,8 @@ import catalog from '../../workers/voice-accents.json' with { type: 'json' };
 export const voiceAccents = catalog.accents;
 export function accentSupported(variantId: string, language?: string) {
   return (
-    (variantId === 'cosy3-official' ||
+    (variantId === 'zonos3-mini-gguf' ||
+      variantId === 'cosy3-official' ||
       variantId === 'voxcpm2-bf16' ||
       variantId.startsWith('fish-s2') ||
       variantId === 'drama3-comfy-fp8') &&
@@ -13,6 +14,8 @@ export function validAccent(accent: unknown, variantId = 'cosy3-official') {
   return (
     accent == null ||
     accent === 'auto' ||
-    (accentSupported(variantId) && voiceAccents.some((item) => item.id === accent))
+    (accentSupported(variantId) &&
+      (variantId !== 'zonos3-mini-gguf' || accent === 'fr-FR') &&
+      voiceAccents.some((item) => item.id === accent))
   );
 }

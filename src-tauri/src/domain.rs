@@ -272,7 +272,7 @@ impl Project {
         references.iter().find(|r| r.id == id)
     }
     pub fn validate(&self) -> Result<(), String> {
-        if !(1..=30).contains(&self.format_version) {
+        if !(1..=31).contains(&self.format_version) {
             return Err("UNSUPPORTED_PROJECT_VERSION".into());
         }
         crate::speaker_dubbing::validate(self)?;
@@ -336,6 +336,13 @@ impl Project {
             }
         }
         if let Some(preferences) = &self.model_preferences {
+            if self.format_version < 31
+                && preferences["ttsProviderId"]
+                    .as_str()
+                    .is_some_and(|s| ["zonos3", "moss-tts-local"].contains(&s))
+            {
+                return Err("UNSUPPORTED_PROJECT_VERSION".into());
+            }
             if preferences["ttsProviderId"] == "audio8-tts" && self.format_version < 26 {
                 return Err("UNSUPPORTED_PROJECT_VERSION".into());
             }
@@ -360,6 +367,10 @@ impl Project {
                     .contains(&preferences["voiceVariantId"].as_str().unwrap_or("")),
                     Some("fish-drama3") => ["drama3-comfy-fp8"]
                         .contains(&preferences["voiceVariantId"].as_str().unwrap_or("")),
+                    Some("zonos3") => preferences["voiceVariantId"] == "zonos3-mini-gguf",
+                    Some("moss-tts-local") => {
+                        preferences["voiceVariantId"] == "moss-local-v15-gguf-q8"
+                    }
                     Some("voxcpm2") => preferences["voiceVariantId"] == "voxcpm2-bf16",
                     Some("audio8-tts") => {
                         preferences["voiceVariantId"] == "audio8-realistic-06b-gguf-q8"
@@ -391,6 +402,8 @@ impl Project {
                         "voxcpm2",
                         "chatterbox",
                         "audio8-tts",
+                        "zonos3",
+                        "moss-tts-local",
                     ]
                     .contains(&id)
                 })

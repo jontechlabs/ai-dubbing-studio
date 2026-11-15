@@ -102,6 +102,11 @@ export function validateProject(value: unknown): Project {
   if (!value || typeof value !== 'object') throw new Error('INVALID_PROJECT');
   const project = value as Project;
   const preferences = project.modelPreferences;
+  if (
+    ['zonos3', 'moss-tts-local'].includes(preferences?.ttsProviderId ?? '') &&
+    project.formatVersion < 31
+  )
+    throw Error('UNSUPPORTED_PROJECT_VERSION');
   if (preferences?.ttsProviderId === 'audio8-tts' && project.formatVersion < 26)
     throw Error('UNSUPPORTED_PROJECT_VERSION');
   if (
@@ -115,7 +120,7 @@ export function validateProject(value: unknown): Project {
   if (
     !Number.isInteger(project.formatVersion) ||
     project.formatVersion < 1 ||
-    project.formatVersion > 30
+    project.formatVersion > 31
   )
     throw new Error('UNSUPPORTED_PROJECT_VERSION');
   if (project.voiceEdits !== undefined) {

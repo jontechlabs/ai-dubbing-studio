@@ -453,7 +453,8 @@
     "QUEUE_LIMIT": "Queue limit reached. Remove tasks or finished history.",
     "QUEUE_RESTARTED": "The studio restarted. Explicitly resume incomplete steps.",
     "QUEUE_CORRUPT": "The stored queue cannot be read. Clear finished history to reset it and archive its file for recovery.",
-    "QUEUE_PROJECT_REQUIRED": "Open this task’s project, then resume the queue."
+    "QUEUE_PROJECT_REQUIRED": "Open this task’s project, then resume the queue.",
+    "TTS_ACCENT_EMBEDDING_FAILED": "Could not prepare a valid speaker embedding for French orientation. Try a clean reference."
   },
   "preparingVideo": "Preparing video…",
   "loadingVideo": "Loading video…",
@@ -1362,7 +1363,8 @@
       "repetitionPenalty": "Repetition penalty",
       "minP": "Min P",
       "cfgWeight": "Reference guidance",
-      "exaggeration": "Expressiveness"
+      "exaggeration": "Expressiveness",
+      "accentStrength": "French orientation strength"
     },
     "hints": {
       "inferenceSteps": "More steps: more computation and slower generation.",
@@ -1373,7 +1375,8 @@
       "repetitionPenalty": "Reduces repetition; excessive values can distort diction.",
       "minP": "Removes candidates that are too unlikely.",
       "cfgWeight": "Higher values may strengthen the reference accent.",
-      "exaggeration": "Strengthens acting; high values may change the rhythm."
+      "exaggeration": "Strengthens acting; high values may change the rhythm.",
+      "accentStrength": "ZONOS3 only, when French orientation is selected. 0 disables the direction; 1 applies its full official shift. Strong doses can change speaker identity."
     }
   },
   "resizeInspector": "Resize subtitle inspector",
@@ -2093,5 +2096,12 @@
       "cancelled": "Cancelled",
       "interrupted": "Interrupted by restart"
     }
-  }
+  },
+  "zonos3Profile": "Local MECT-B2 speaker-embedding cloning, without a transcript. Official GGUF Q4/Q8 weights: about 1.08 GiB including decoder and encoder. Adjustable French orientation without adding instructions to the spoken text. Apache 2.0 weights; audio.cpp 0.9.5 native port.",
+  "mossLocalProfile": "MOSS-TTS Local v1.5: transcript-free cloning, explicit target language, native 48 kHz stereo output. Q8_0 GGUF: about 7 GiB including the codec. Candidate for 16 GB VRAM; memory and speed have not been measured on your RTX. Apache 2.0 weights; community conversion.",
+  "nativeGgufHardwareHint": "Native Vulkan / CPU runtime, without an extra Python environment. Select the NVIDIA GPU explicitly when needed. The model stays loaded within a batch, then its process is closed.",
+  "nativeCloneHint": "Clone the chosen reference without an exact transcript. Target text is passed unchanged and the target language is sent explicitly.",
+  "zonos3FrenchAccent": "French · speaker-embedding orientation",
+  "ttsAccentZonosHint": "Official French direction applied to the speaker embedding. Adjust its strength below in Quality → Advanced controls. This experimental control can change identity; regional accents and removal of the source accent are not guaranteed.",
+  "nativeStyleHint": "The integrated native port does not yet support mood or emotion instructions. The reference can guide style; unsupported controls are never silently sent."
 }

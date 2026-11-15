@@ -1,5 +1,6 @@
 import catalog from '../../workers/voice-quality.json' with { type: 'json' };
 export interface VoiceQuality {
+  accentStrength?: number;
   inferenceSteps?: number;
   cfgStrength?: number;
   temperature?: number;

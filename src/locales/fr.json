@@ -453,7 +453,8 @@
     "QUEUE_LIMIT": "La file est trop volumineuse. Retirez des tâches ou l’historique terminé.",
     "QUEUE_RESTARTED": "Le studio a été redémarré. Reprenez les étapes inachevées explicitement.",
     "QUEUE_CORRUPT": "La file enregistrée est illisible. Retirer l’historique termine sa remise à zéro et archive le fichier pour récupération.",
-    "QUEUE_PROJECT_REQUIRED": "Ouvrez le projet de cette tâche, puis reprenez la file."
+    "QUEUE_PROJECT_REQUIRED": "Ouvrez le projet de cette tâche, puis reprenez la file.",
+    "TTS_ACCENT_EMBEDDING_FAILED": "Impossible de préparer une empreinte vocale valide pour l’orientation française. Réessayez avec une référence nette."
   },
   "preparingVideo": "Préparation de la vidéo…",
   "loadingVideo": "Chargement de la vidéo…",
@@ -1362,7 +1363,8 @@
       "repetitionPenalty": "Pénalité de répétition",
       "minP": "Min P",
       "cfgWeight": "Guidage de la référence",
-      "exaggeration": "Expressivité"
+      "exaggeration": "Expressivité",
+      "accentStrength": "Intensité de l’orientation française"
     },
     "hints": {
       "inferenceSteps": "Plus d’étapes : davantage de calcul, génération plus lente.",
@@ -1373,7 +1375,8 @@
       "repetitionPenalty": "Réduit les répétitions ; une valeur excessive peut déformer la diction.",
       "minP": "Écarte les candidats trop peu probables.",
       "cfgWeight": "Une valeur élevée peut renforcer l’influence de l’accent de référence.",
-      "exaggeration": "Renforce l’interprétation ; une valeur élevée peut modifier le rythme."
+      "exaggeration": "Renforce l’interprétation ; une valeur élevée peut modifier le rythme.",
+      "accentStrength": "ZONOS3 uniquement, avec l’accent français sélectionné. 0 désactive la direction ; 1 applique le déplacement officiel complet. Une intensité forte peut modifier l’identité vocale."
     }
   },
   "resizeInspector": "Redimensionner le panneau de sous-titres",
@@ -2093,5 +2096,12 @@
       "cancelled": "Annulé",
       "interrupted": "Interrompu au redémarrage"
     }
-  }
+  },
+  "zonos3Profile": "Clonage local par empreinte MECT-B2, sans transcription. Poids officiels GGUF Q4/Q8 : environ 1,08 Gio avec décodeur et encodeur. Orientation française réglable, sans ajouter de consigne au texte prononcé. Licence Apache 2.0 ; port natif audio.cpp 0.9.5.",
+  "mossLocalProfile": "MOSS-TTS Local v1.5 : clonage sans transcription, langue cible explicite, sortie native stéréo 48 kHz. GGUF Q8_0 : environ 7 Gio de fichiers, codec inclus. Profil à essayer sur 16 Go de VRAM ; consommation et vitesse non mesurées sur votre RTX. Licence Apache 2.0 ; conversion communautaire.",
+  "nativeGgufHardwareHint": "Moteur natif Vulkan / CPU, sans environnement Python supplémentaire. Choisissez explicitement la carte NVIDIA si nécessaire. Le modèle reste chargé pendant un lot, puis son processus est fermé.",
+  "nativeCloneHint": "Clonage à partir de la référence choisie, sans transcription exacte. Le texte cible est envoyé tel quel ; la langue cible est précisée au moteur.",
+  "zonos3FrenchAccent": "Français · orientation de l’empreinte vocale",
+  "ttsAccentZonosHint": "Direction française officielle appliquée à l’empreinte vocale. Intensité réglable ci-dessous dans Qualité → Réglages avancés. Ce contrôle expérimental peut modifier le timbre ; il ne garantit ni un accent régional ni la disparition complète de l’accent source.",
+  "nativeStyleHint": "Le port natif intégré ne prend pas encore en charge les humeurs ni les instructions d’émotion. Le style peut venir de la référence ; aucun réglage non pris en charge n’est envoyé."
 }

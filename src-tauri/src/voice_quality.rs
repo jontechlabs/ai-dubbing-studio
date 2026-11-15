@@ -37,6 +37,7 @@ pub(crate) fn gguf_options(input: &Value) -> Result<Vec<(&'static str, String)>,
         ("temperature", "temperature"),
         ("topP", "top_p"),
         ("topK", "top_k"),
+        ("cfgStrength", "guidance_scale"),
         ("repetitionPenalty", "repetition_penalty"),
     ]
     .into_iter()
