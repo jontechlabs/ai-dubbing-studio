@@ -15,11 +15,14 @@ class FishTests(unittest.TestCase):
     def test_model_and_runtime_manifests_include_all_engines_and_verified_files(self):
         root=Path(__file__).parent
         manifest=json.loads((root/'voice-engines.json').read_text(encoding='utf-8'))
-        self.assertEqual(len(manifest['variants']),9)
+        self.assertEqual(len(manifest['variants']),11)
         self.assertTrue(manifest['engine']['name'].endswith('vulkan-portable.zip'))
+        self.assertIn('v0.9.5',manifest['engineV095']['url'])
+        self.assertEqual({v['id'] for v in manifest['variants'] if v['engine']=='audio095'},
+                         {'zonos3-mini-gguf','moss-local-v15-gguf-q8'})
         runtime=json.loads((root/'fish-runtime.json').read_text(encoding='utf-8'))
         self.assertGreater(len(runtime['files']),100)
-        for file in [manifest['engine']]+[f for v in manifest['variants'] for f in v['files']]+runtime['files']:
+        for file in [manifest['engine'],manifest['engineV095']]+[f for v in manifest['variants'] for f in v['files']]+runtime['files']:
             with self.subTest(file=file['name']):
                 self.assertEqual(len(file['sha256']),64);self.assertGreater(file['size'],0)
                 if 'bundledPath' in file:
