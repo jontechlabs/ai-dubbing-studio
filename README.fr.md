@@ -1,5 +1,9 @@
 # AI Dubbing Studio
 
+## v0.52.0 — Durées des essais et temps restant estimé
+
+Chaque nouvel essai conserve le temps de calcul de sa génération TTS, de son changement de timbre ou de son transfert d’intonation. Affichage dans les essais, conservation après redémarrage et estimation indicative de l’essai/étape en cours à partir de mesures comparables sur le même PC. Chargement initial et modèle conservé en lot sont séparés ; les durées anciennes restent inconnues. Sources et essais préservés. [Guide et captures](docs/GENERATION-TIMING.md).
+
 ## v0.51.0 — ZONOS3-Mini et MOSS-TTS Local en local
 
 Installation des poids officiels ZONOS3-Mini GGUF Q4/Q8 ou de MOSS-TTS Local v1.5 Q8_0 depuis le studio. Génération locale Vulkan/CPU, références sans transcription, GPU au choix, réglages de qualité et modèle conservé pendant un lot. ZONOS3 ajoute une direction française officielle d’empreinte vocale avec intensité réglable ; aucun accent régional ni contrôle émotionnel caché n’est promis. Essais existants conservés. **170 outils MCP / 33 schémas ; format 31 pour les nouveaux moteurs.** [Guide, limites et capture](docs/NATIVE-VOICES-51.md).

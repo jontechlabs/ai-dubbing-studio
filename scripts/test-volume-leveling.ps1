@@ -1,5 +1,5 @@
 [CmdletBinding()]
-param([string]$PortablePath, [switch]$NativeVoices)
+param([string]$PortablePath, [switch]$NativeVoices, [switch]$GenerationTiming)
 $ErrorActionPreference='Stop'
 $repoRoot=Split-Path -Parent $PSScriptRoot
 if(-not $PortablePath){$PortablePath=Join-Path $repoRoot 'artifacts/AI-Dubbing-Studio-Windows-Portable.zip'}
@@ -35,6 +35,10 @@ foreach($phase in @('before','after')) {
             node (Join-Path $PSScriptRoot 'test-native-voices-mcp.mjs') --exe $executable --endpoint $endpoint --test-root $testRoot --proof (Join-Path $repoRoot 'artifacts/native-voices-validation.json')
             if($LASTEXITCODE){throw 'Official SDK real native voice models diagnostic failed'}
         }
+        if($phase -eq 'after' -and $GenerationTiming) {
+            node (Join-Path $PSScriptRoot 'test-generation-timing-mcp.mjs') --exe $executable --endpoint $endpoint --test-root $testRoot --phase before --desktop-pid $desktop.Id --proof (Join-Path $repoRoot 'artifacts/generation-timing-validation.json')
+            if($LASTEXITCODE){throw 'Take timing persistence setup failed'}
+        }
     } catch {
         if(Test-Path -LiteralPath $stderr){Get-Content -LiteralPath $stderr -Tail 15}
         if(Test-Path -LiteralPath $stdout){Get-Content -LiteralPath $stdout -Tail 10}
@@ -48,5 +52,21 @@ foreach($phase in @('before','after')) {
         $queueFile=Join-Path $dataRoot 'task-queue.json'
         python (Join-Path $PSScriptRoot 'simulate-queue-interruption.py') $queueFile
         if($LASTEXITCODE){throw 'Isolated queue restart fixture failed'}
+    }
+}
+if($GenerationTiming) {
+    $endpoint=Join-Path $dataRoot 'mcp-endpoint.json'
+    if(Test-Path -LiteralPath $endpoint){Remove-Item -LiteralPath $endpoint -Force}
+    $desktop=Start-Process -FilePath $executable -ArgumentList @('--ui-test',"`"$dataRoot`"",'--synthetic-microphone') -WindowStyle Hidden -PassThru
+    try {
+        $until=[DateTime]::UtcNow.AddSeconds(60)
+        while(-not(Test-Path -LiteralPath $endpoint)) {
+            if($desktop.HasExited -or [DateTime]::UtcNow -ge $until){throw 'Take timing desktop restart did not start'}
+            Start-Sleep -Milliseconds 250
+        }
+        node (Join-Path $PSScriptRoot 'test-generation-timing-mcp.mjs') --exe $executable --endpoint $endpoint --test-root $testRoot --phase after --desktop-pid $desktop.Id --proof (Join-Path $repoRoot 'artifacts/generation-timing-validation.json')
+        if($LASTEXITCODE){throw 'Take timing persistence restart failed'}
+    } finally {
+        if(-not $desktop.HasExited){$desktop.Kill();$null=$desktop.WaitForExit(5000)}
     }
 }

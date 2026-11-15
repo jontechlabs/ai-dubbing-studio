@@ -50,7 +50,9 @@ export function JobDuration({ job }: { job: Job }) {
             ? t('generationTiming.learning')
             : remaining === 'overrun'
               ? t('generationTiming.overrun')
-              : t('generationTiming.remaining', { time: formatJobDuration(remaining) })}
+              : t('generationTiming.remaining', {
+                  time: formatJobDuration(Math.ceil(remaining / 1000) * 1000),
+                })}
         </small>
       )}
     </>

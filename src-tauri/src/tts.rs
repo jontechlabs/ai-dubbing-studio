@@ -704,13 +704,19 @@ pub(crate) async fn execute_with_session<R: tauri::Runtime>(
             .duration_ms
             .min(20000)
     };
+    let mut timing_options = serde_json::json!(request.options);
+    timing_options["variantId"] = serde_json::json!(request.options.variant());
+    timing_options["mood"] =
+        serde_json::json!(request.options.mood.as_deref().unwrap_or("default"));
+    timing_options["accent"] =
+        serde_json::json!(request.options.accent.as_deref().unwrap_or("auto"));
     let measurement = crate::generation_timing::begin(
         core,
         app,
         key,
         &p,
         "tts",
-        serde_json::json!({"options":request.options,"language":p.languages.target,"referenceBucket":reference_ms.div_ceil(5000)}),
+        serde_json::json!({"options":timing_options,"language":p.languages.target,"referenceBucket":reference_ms.div_ceil(5000)}),
         text(&p, line)
             .chars()
             .filter(|c| c.is_alphanumeric())

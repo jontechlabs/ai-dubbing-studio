@@ -1,6 +1,6 @@
 # Piloter le studio avec une IA via MCP
 
-Le studio fournit **170 outils MCP** en v0.51.0 : 135 commandes natives et 35 commandes d’édition, d’état et de lecture, avec **33 schémas partagés**. Le serveur utilise **stdio** et le même exécutable que l’application. Cette intégration pilote **l’application ouverte** ; aucun environnement Node.js ou Python supplémentaire n’est requis pour la connexion.
+Le studio fournit **170 outils MCP** en v0.52.0 : 135 commandes natives et 35 commandes d’édition, d’état et de lecture, avec **33 schémas partagés**. Le serveur utilise **stdio** et le même exécutable que l’application. Cette intégration pilote **l’application ouverte** ; aucun environnement Node.js ou Python supplémentaire n’est requis pour la connexion.
 
 ## Nouveaux moteurs natifs
 
@@ -134,3 +134,9 @@ Le studio démarre sur l’accueil, sans rouvrir automatiquement le dernier proj
 `studio_trash_registered_project` exige `confirmed: true` et la révision actuelle ; seul un dossier `.dubproject` fermé et enregistré peut être déplacé. `studio_restore_registered_project` restaure sans écraser la destination, avec un autre `parentPath` facultatif. `studio_forget_registered_project` avec `confirmed: true` retire seulement l’entrée du catalogue, sans toucher aux fichiers.
 
 `studio_project_cover` prend `key` et un `atMs` facultatif, renvoie un PNG local, le moment de capture et la durée. Il ne charge pas le projet dans l’éditeur et ne modifie pas la vidéo. Le format du projet reste 26. [Utilisation et limites](PROJECTS.md).
+
+## Mesures des essais et estimations (0.52.0)
+
+`studio_get_project` conserve `generationTiming` sur les essais mesurés : `takeId`, `operation` (`tts`, `voiceConversion` ou `prosody`), `elapsedMs`, `inputUnits`, `warmModel` et `contextKey`. Une mesure ne s’applique qu’à l’essai dont l’identifiant correspond à `takeId`. Les champs sont facultatifs pour les anciennes données et les valeurs invalides sont refusées.
+
+`studio_list_jobs` expose `estimate` pendant une création : opération, `estimatedMs` (ou `null` sans historique), `baselineElapsedMs` et `sampleCount`. Le temps restant se calcule avec le temps actif de l’opération, pas avec tout le temps déjà passé dans un lot. L’estimation concerne l’essai/étape en cours. Les démarrages à froid et les modèles conservés en lot ont des calibrations séparées. [Guide](GENERATION-TIMING.md). Aucun nouvel outil : 170 outils / 33 schémas.

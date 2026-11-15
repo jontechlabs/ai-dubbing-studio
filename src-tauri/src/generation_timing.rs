@@ -59,7 +59,8 @@ impl Measurement {
     pub fn finish(self, take_id: &str) -> Value {
         let mut timing = self.timing;
         timing.take_id = take_id.into();
-        timing.elapsed_ms = (self.start.elapsed().as_millis() as u64).clamp(1, MAX_MS);
+        timing.elapsed_ms =
+            (self.start.elapsed().as_millis().min(u128::from(MAX_MS)) as u64).max(1);
         json!(timing)
     }
 }
@@ -108,6 +109,9 @@ fn comparable(p: &Project, timing: &TakeTiming) -> (Option<u64>, usize) {
         .rev()
         .take(512)
         .filter_map(|g| {
+            if g["kind"] != "tts" {
+                return None;
+            }
             let item: TakeTiming =
                 serde_json::from_value(g.get("generationTiming")?.clone()).ok()?;
             if item.validate().is_err()
@@ -207,7 +211,7 @@ mod tests {
             record(&key, 40, 0, false),
         ] {
             p.generations
-                .push(json!({"id":"measured","generationTiming":item}));
+                .push(json!({"kind":"tts","id":"measured","generationTiming":item}));
         }
         p.generations.push(json!({"kind":"tts"}));
         assert_eq!(comparable(&p, &r), (Some(11000), 3));

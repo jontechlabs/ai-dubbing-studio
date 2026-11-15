@@ -1,5 +1,9 @@
 # AI Dubbing Studio
 
+## v0.52.0 — Saved take durations and live generation estimates
+
+Each new take saves the computation time for TTS, timbre conversion or prosody transfer. Take cards retain this after restart; ongoing steps show an approximate remaining time based on comparable measurements on the same computer. Cold starts and resident batch models stay separate. Historical unknown durations are not invented; previous takes and sources remain intact. [Guide and screenshots](docs/GENERATION-TIMING.md).
+
 ## v0.51.0 — Local ZONOS3-Mini and MOSS-TTS Local
 
 Install ZONOS3-Mini official Q4/Q8 GGUF weights or MOSS-TTS Local v1.5 Q8_0 directly in the studio. Local Vulkan/CPU generation, transcript-free references, selected GPU, quality controls and retained-model batches. ZONOS3 adds an adjustable official French speaker-embedding direction; regional accents and hidden emotion controls are not claimed. Existing takes remain intact. **170 MCP tools / 33 schemas; format 31 for the new engines.** [Guide, limits and screenshot](docs/NATIVE-VOICES-51.md).
