@@ -22,7 +22,13 @@ export function useTaskQueue() {
     void bridge
       .taskQueueStatus()
       .then((q) => {
-        if (!disposed) setData((old) => (!old || q.revision >= old.revision ? q : old));
+        if (!disposed)
+          setData((old) => {
+            if (old && q.revision < old.revision) return old;
+            // Forecasts change after completed work, not every clock tick.
+            // Keep the editor/timeline out of unchanged polling renders.
+            return old && JSON.stringify(old) === JSON.stringify(q) ? old : q;
+          });
       })
       .catch((e) => {
         if (!disposed) setError(String(e));
