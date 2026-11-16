@@ -140,6 +140,35 @@ try {
       },
     });
     assert.deepEqual(filePreview.ready, [line.id]);
+    const laneState = {
+      sourcePath: p.media.path,
+      lanes: [
+        { id: 'main', name: 'Voix principale', mute: false, solo: false, gain: 1 },
+        { id: 'sdk-second', name: 'Voix secondaire', mute: true, solo: false, gain: 1.75 },
+      ],
+      assignments: { [line.id]: 'sdk-second' },
+    };
+    await call('studio_project_patch', {
+      patches: [
+        { op: 'replace', path: '/formatVersion', value: 32 },
+        { op: 'add', path: '/dubbingLanes', value: laneState },
+      ],
+    });
+    p = await call('studio_get_project');
+    assert.deepEqual(p.dubbingLanes, laneState);
+    assert.deepEqual(p.generations, beforePreview.generations);
+    const invalidLane = await client.callTool({
+      name: 'studio_project_patch',
+      arguments: {
+        context: (await call('studio_get_state')).context,
+        patches: [{ op: 'replace', path: '/dubbingLanes/lanes/1/gain', value: 4 }],
+      },
+    });
+    assert(
+      invalidLane.isError &&
+        invalidLane.content.some((c) => c.text?.includes('INVALID_DUBBING_LANES')),
+    );
+    assert.equal((await call('studio_get_project')).revision, p.revision);
     const record = {
       takeId: p.generations[index].id,
       operation: 'tts',
@@ -209,6 +238,7 @@ try {
       'voiceEdits',
       'voiceReferences',
       'dubbingTiming',
+      'dubbingLanes',
       'sourceCues',
       'targetCues',
     ])
@@ -222,6 +252,8 @@ try {
       officialSdk: true,
       actualApplicationRestart: true,
       persistentTakeTiming: true,
+      independentDubbingLanesPersisted: true,
+      invalidLaneGainRejected: true,
       batchTimbrePreviewValidated: true,
       batchReferenceImportPersisted: true,
       batchRuntimeGuardPreservesTakes: true,

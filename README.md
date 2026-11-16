@@ -2,7 +2,7 @@
 
 ## v0.54.0 — Harmonize the timbre of selected dubbed dialogues
 
-Check several dubbed dialogues → **Dubbing → Batch → Harmonize timbre**. Choose a common existing take or import a reference file with a 1–20 second range. Local Chatterbox VC creates and selects one new take per eligible dialogue, preserving previous takes, duration, placement and subtitles. The model stays loaded during the batch and is released on completion/cancellation. Durable results, before/after audition and retries of unfinished conversions. **174 MCP tools / 35 schemas; project format unchanged.** [Guide and screenshot](docs/BATCH-TIMBRE.md).
+Check several dubbed dialogues → **Dubbing → Batch → Harmonize timbre**. Choose a common existing take or import a reference file with a 1–20 second range. Local Chatterbox VC creates and selects one new take per eligible dialogue, preserving previous takes, duration, placement and subtitles. The model stays loaded during the batch and is released on completion/cancellation. Durable results, before/after audition and retries of unfinished conversions. Independent dubbing tracks allow simultaneous unrelated dialogues with per-track volume, mute and solo. **174 MCP tools / 35 schemas; format 32 only when using the new tracks.** [Track guide](docs/DUBBING-LANES.md). [Guide and screenshot](docs/BATCH-TIMBRE.md).
 
 ## v0.53.0 — Whole-batch and queue remaining time
 

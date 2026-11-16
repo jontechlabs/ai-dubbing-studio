@@ -44,7 +44,7 @@ jobs:
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
           pnpm format:check
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
-          pnpm exec prettier --check tests/e2e/volume-leveling.pw.ts scripts/test-volume-leveling-mcp.mjs tests/e2e/task-queue.pw.ts tests/e2e/native-voices.pw.ts scripts/test-native-voices-mcp.mjs tests/e2e/generation-timing.pw.ts tests/e2e/work-estimate.pw.ts scripts/test-generation-timing-mcp.mjs tests/e2e/batch-timbre.pw.ts
+          pnpm exec prettier --check tests/e2e/volume-leveling.pw.ts scripts/test-volume-leveling-mcp.mjs tests/e2e/task-queue.pw.ts tests/e2e/native-voices.pw.ts scripts/test-native-voices-mcp.mjs tests/e2e/generation-timing.pw.ts tests/e2e/work-estimate.pw.ts scripts/test-generation-timing-mcp.mjs tests/e2e/batch-timbre.pw.ts tests/e2e/dubbing-lanes.pw.ts
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
           pnpm test:e2e --shard=${{ matrix.shard }}/2 '--reporter=line,json'
           if ($LASTEXITCODE) { exit $LASTEXITCODE }

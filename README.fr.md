@@ -2,7 +2,7 @@
 
 ## v0.54.0 — Harmoniser le timbre de plusieurs dialogues doublés
 
-Cochez plusieurs dialogues doublés → **Doublage → Lot → Harmoniser le timbre**. Choisissez un essai existant ou importez un fichier de référence avec un extrait de 1 à 20 secondes. Chatterbox VC crée et sélectionne un nouvel essai par dialogue admissible, en conservant les précédents, la durée, le placement et les sous-titres. Modèle conservé pendant le lot, libéré à la fin ou à l’annulation. Résultats conservés, écoute avant/après et reprise des conversions non terminées. **174 outils MCP / 35 schémas ; format projet inchangé.** [Guide et capture](docs/BATCH-TIMBRE.md).
+Cochez plusieurs dialogues doublés → **Doublage → Lot → Harmoniser le timbre**. Choisissez un essai existant ou importez un fichier de référence avec un extrait de 1 à 20 secondes. Chatterbox VC crée et sélectionne un nouvel essai par dialogue admissible, en conservant les précédents, la durée, le placement et les sous-titres. Modèle conservé pendant le lot, libéré à la fin ou à l’annulation. Résultats conservés, écoute avant/après et reprise des conversions non terminées. Des pistes de doublage distinctes permettent aussi les dialogues simultanés, avec volume, muet et solo par piste. **174 outils MCP / 35 schémas ; format 32 uniquement lorsque les nouvelles pistes sont utilisées.** [Guide des pistes](docs/DUBBING-LANES.md). [Guide et capture](docs/BATCH-TIMBRE.md).
 
 ## v0.53.0 — Temps restant du lot et de la file
 
