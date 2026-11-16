@@ -19,7 +19,7 @@ dependencies = [
 
 [[package]]
 name = "ai-dubbing-studio"
-version = "0.52.0"
+version = "0.53.0"
 dependencies = [
  "chrono",
  "reqwest 0.12.28",
@@ -2974,7 +2974,7 @@ dependencies = [
  "getrandom 0.2.17",
  "libc",
  "untrusted",
- "windows-sys 0.52.0",
+ "windows-sys 0.53.0",
 ]
 
 [[package]]
@@ -4920,7 +4920,7 @@ dependencies = [
 
 [[package]]
 name = "windows-sys"
-version = "0.52.0"
+version = "0.53.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "282be5f36a8ce781fad8c8ae18fa3f9beff57ec1b52cb3de0789201425d9a33d"
 dependencies = [

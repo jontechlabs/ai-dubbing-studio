@@ -17,6 +17,8 @@ use std::{
     time::Duration,
 };
 use tauri::Emitter;
+#[path = "task_queue_estimate.rs"]
+mod estimate;
 
 #[derive(Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
@@ -60,6 +62,8 @@ pub struct DubRun {
 #[derive(Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Entry {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub eta_plan: Option<Vec<estimate::PlannedTake>>,
     pub id: String,
     pub created_at: String,
     pub project_id: String,
@@ -137,6 +141,7 @@ pub fn restore(folder: &std::path::Path) -> State {
 #[derive(Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Summary {
+    pub work_estimate: Option<crate::work_estimate::Forecast>,
     pub id: String,
     pub name: String,
     pub created_at: String,
@@ -158,25 +163,47 @@ pub struct Summary {
 #[derive(Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct View {
+    pub work_estimate: Option<crate::work_estimate::Forecast>,
     pub revision: u64,
     pub paused: bool,
     pub warning: Option<String>,
     pub entries: Vec<Summary>,
 }
 pub fn status(core: &Core) -> Result<View, String> {
-    let state = core.queue.lock().map_err(io_error)?;
+    let state = core.queue.lock().map_err(io_error)?.data.clone();
+    let mut estimator = estimate::Estimator::new(core);
+    let mut total = crate::work_estimate::Forecast::default();
+    let has_pending = state
+        .entries
+        .iter()
+        .any(|e| ["running", "pending"].contains(&e.status.as_str()));
+    if has_pending && !state.paused {
+        total.append(estimator.blocking(state.entries.iter().any(|e| e.status == "running")));
+    }
+    let entries = state
+        .entries
+        .iter()
+        .map(|e| {
+            let remaining = estimator.entry(e);
+            if let Some(forecast) = &remaining {
+                total.append(forecast.clone());
+            }
+            (e.id.clone(), remaining)
+        })
+        .collect::<std::collections::HashMap<_, _>>();
     Ok(View {
-        revision: state.data.revision,
-        paused: state.data.paused,
-        warning: state.data.warning.clone(),
+        work_estimate: has_pending.then_some(total),
+        revision: state.revision,
+        paused: state.paused,
+        warning: state.warning.clone(),
         entries: state
-            .data
             .entries
             .iter()
             .map(|e| {
                 let row = e.rows.iter().find(|r| r.status == "running");
                 let dub = e.dubbing_runs.iter().rev().find(|r| r.status == "running");
                 Summary {
+                    work_estimate: entries.get(&e.id).cloned().flatten(),
                     id: e.id.clone(),
                     name: e.spec.name.clone(),
                     created_at: e.created_at.clone(),
@@ -432,7 +459,9 @@ fn capture(p: &Project, root: PathBuf, mut spec: Spec) -> Result<Entry, String> 
     }
     spec.selection.scope = "selected".into();
     spec.selection.line_ids = lines.iter().map(|l| l.id.clone()).collect();
+    let eta_plan = Some(estimate::capture(p, &root, &spec));
     Ok(Entry {
+        eta_plan,
         id: id(),
         created_at: now(),
         project_id: p.id.clone(),

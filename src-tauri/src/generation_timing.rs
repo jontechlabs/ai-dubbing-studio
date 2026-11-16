@@ -3,7 +3,73 @@ use crate::{domain::Project, jobs, Core};
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use sha2::{Digest, Sha256};
+use std::collections::HashMap;
 use std::time::Instant;
+
+#[derive(Clone, Debug, Hash, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct Query {
+    operation: String,
+    context_key: String,
+    input_units: u64,
+    pub warm_model: bool,
+}
+impl Query {
+    pub fn new(operation: &str, context: Value, input_units: u64, warm_model: bool) -> Self {
+        Self {
+            operation: operation.into(),
+            context_key: context_key(operation, context),
+            input_units: input_units.clamp(1, 120000),
+            warm_model,
+        }
+    }
+    fn timing(&self) -> TakeTiming {
+        TakeTiming {
+            take_id: "forecast".into(),
+            operation: self.operation.clone(),
+            context_key: self.context_key.clone(),
+            input_units: self.input_units,
+            warm_model: self.warm_model,
+            elapsed_ms: 1,
+        }
+    }
+}
+/// Snapshot only bounded successful measurements, not the whole project/audio.
+pub(crate) struct History {
+    samples: Project,
+    cache: HashMap<Query, Option<u64>>,
+}
+impl History {
+    pub fn new(p: &Project) -> Self {
+        let mut samples = Project::new(String::new(), String::new(), String::new());
+        samples.generations = p
+            .generations
+            .iter()
+            .rev()
+            .take(512)
+            .rev()
+            .filter_map(|g| {
+                let t: TakeTiming =
+                    serde_json::from_value(g.get("generationTiming")?.clone()).ok()?;
+                (g["kind"] == "tts" && t.validate().is_ok() && g["id"] == t.take_id)
+                    .then(|| json!({"id":t.take_id,"kind":"tts","generationTiming":t}))
+            })
+            .collect();
+        Self {
+            samples,
+            cache: HashMap::new(),
+        }
+    }
+    pub fn predict(&mut self, query: &Query) -> Option<u64> {
+        *self.cache.entry(query.clone()).or_insert_with(|| {
+            let timing = query.timing();
+            if timing.validate().is_err() {
+                return None;
+            }
+            comparable(&self.samples, &timing).0
+        })
+    }
+}
 
 const MAX_MS: u64 = 86_400_000;
 pub(crate) fn audio_units(p: &Project, source: &Value) -> u64 {
@@ -148,15 +214,24 @@ pub(crate) fn begin<R: tauri::Runtime>(
     input_units: u64,
     warm_model: bool,
 ) -> Measurement {
+    begin_query(
+        core,
+        app,
+        key,
+        p,
+        Query::new(operation, context, input_units, warm_model),
+    )
+}
+pub(crate) fn begin_query<R: tauri::Runtime>(
+    core: &Core,
+    app: &tauri::AppHandle<R>,
+    key: &str,
+    p: &Project,
+    query: Query,
+) -> Measurement {
     let start = Instant::now();
-    let timing = TakeTiming {
-        take_id: String::new(),
-        operation: operation.into(),
-        elapsed_ms: 1,
-        input_units: input_units.clamp(1, 120000),
-        warm_model,
-        context_key: context_key(operation, context),
-    };
+    let mut timing = query.timing();
+    timing.take_id.clear();
     let (estimated_ms, sample_count) = comparable(p, &timing);
     let baseline = core
         .jobs
@@ -166,11 +241,18 @@ pub(crate) fn begin<R: tauri::Runtime>(
         .map_or(0, |t| t.elapsed_ms);
     jobs::update(core, app, key, |j| {
         j.estimate = Some(Estimate {
-            operation: operation.into(),
+            operation: timing.operation.clone(),
             estimated_ms,
             baseline_elapsed_ms: baseline,
             sample_count,
-        })
+        });
+        if let Some(work) = j.work_estimate.as_mut() {
+            work.active = Some(crate::work_estimate::Active {
+                job_id: key.into(),
+                estimated_ms,
+                baseline_elapsed_ms: baseline,
+            });
+        }
     });
     Measurement { start, timing }
 }

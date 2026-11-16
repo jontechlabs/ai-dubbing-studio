@@ -43,12 +43,14 @@ export interface WorkflowEntry {
   dubbingRuns: WorkflowDubRun[];
 }
 export interface WorkflowQueue {
+  workEstimate?: import('./workEstimate').WorkForecast | null;
   revision: number;
   paused: boolean;
   entries: WorkflowSummary[];
   warning: string | null;
 }
 export interface WorkflowSummary {
+  workEstimate?: import('./workEstimate').WorkForecast | null;
   id: string;
   name: string;
   createdAt: string;

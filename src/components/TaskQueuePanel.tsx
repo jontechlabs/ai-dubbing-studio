@@ -13,6 +13,7 @@ import { useTranslation } from 'react-i18next';
 import type { WorkflowQueue } from '../domain/taskQueue';
 import type { Job, Project } from '../domain/types';
 import { IconButton } from './IconButton';
+import { WorkEstimate } from './WorkEstimate';
 import { CurrentJobProgress } from './CurrentJobProgress';
 import { BatchRecovery } from './BatchRecovery';
 import * as bridge from '../services/bridge';
@@ -73,6 +74,7 @@ export function TaskQueuePanel({
           <Trash2 size={14} />
         </IconButton>
       </div>
+      <WorkEstimate forecast={data?.workEstimate} jobs={jobs} scope="queue" paused={data?.paused} />
       {(error || localError || data?.warning) && (
         <p role="alert" className="warning">
           {t(`errors.${(localError || error || data?.warning || '').replace(/^Error: /, '')}`, {
@@ -109,6 +111,12 @@ export function TaskQueuePanel({
               )}{' '}
               · {t('workflow.lineCount', { count: e.total })}
             </p>
+            <WorkEstimate
+              forecast={e.workEstimate}
+              jobs={jobs}
+              scope="workflow"
+              paused={data.paused}
+            />
             {e.separation && (
               <small>
                 {t('workflow.separationProgress', {

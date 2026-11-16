@@ -58,6 +58,7 @@ mod voice_space;
 mod volume_leveling;
 mod volume_leveling_dsp;
 mod waveform;
+mod work_estimate;
 mod zonos3;
 pub fn smoke_test(path: &std::path::Path) -> Result<(), String> {
     smoke::run(path)

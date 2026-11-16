@@ -5337,3 +5337,26 @@ pre {
 .statusbar .job-estimate {
   display: none;
 }
+
+.work-estimate {
+  display: flex;
+  align-items: flex-start;
+  gap: 5px;
+  color: var(--accent);
+  font-size: 11px;
+  line-height: 1.45;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.work-estimate svg {
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+.work-estimate-queue {
+  padding: 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+footer .work-estimate {
+  display: none;
+}

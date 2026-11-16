@@ -1,5 +1,179 @@
 use super::*;
 use crate::jobs;
+#[tokio::test]
+async fn queue_forecast_recalibrates_counts_resident_takes_and_replaces_active_plan_once() {
+    let (_dir, core) = fixture().await;
+    let app = tauri::test::mock_app();
+    let options = spec("timing", false, true).selection.options;
+    {
+        let mut g = core.session.lock().unwrap();
+        let p = &mut g.as_mut().unwrap().project;
+        for cue in &mut p.target_cues {
+            cue.text = "Bonjour".into();
+        }
+        for line in &mut p.dialogues {
+            line.tts_text = None;
+        }
+        for (warm, ms, id) in [(false, 120000, "cold"), (true, 10000, "warm")] {
+            let q = tts::timing_query(p, &p.dialogues[0], &options, warm).unwrap();
+            let mut t = serde_json::to_value(q).unwrap();
+            t["takeId"] = json!(id);
+            t["elapsedMs"] = json!(ms);
+            p.generations
+                .push(json!({"id":id,"kind":"tts","generationTiming":t}));
+        }
+    }
+    let first = add_paused(&core, app.handle(), spec("first", false, true));
+    add_paused(&core, app.handle(), spec("next", false, true));
+    let before = std::fs::read(core.data_dir.join("task-queue.json")).unwrap();
+    let q = status(&core).unwrap();
+    let total = q.work_estimate.unwrap();
+    assert_eq!(
+        (total.pending_ms, total.pending_known, total.pending_unknown),
+        (300000, 8, 0)
+    );
+    assert!(total.active.is_none());
+    assert_eq!(
+        before,
+        std::fs::read(core.data_dir.join("task-queue.json")).unwrap()
+    );
+    // A second measurement becomes available; queued lots learn without a queue edit.
+    {
+        let mut g = core.session.lock().unwrap();
+        let p = &mut g.as_mut().unwrap().project;
+        for id in ["new1", "new2"] {
+            let q = tts::timing_query(p, &p.dialogues[0], &options, true).unwrap();
+            let mut t = serde_json::to_value(q).unwrap();
+            t["takeId"] = json!(id);
+            t["elapsedMs"] = json!(6000);
+            p.generations
+                .push(json!({"id":id,"kind":"tts","generationTiming":t}));
+        }
+    }
+    assert_eq!(
+        status(&core).unwrap().work_estimate.unwrap().pending_ms,
+        276000
+    );
+    let job = jobs::create(&core, app.handle(), "ttsBatch", "fixture".into(), None);
+    jobs::update(&core, app.handle(), &job, |j| {
+        j.status = "running".into();
+        j.work_estimate = Some(crate::work_estimate::Forecast {
+            pending_ms: 12000,
+            pending_known: 2,
+            pending_unknown: 0,
+            active: Some(crate::work_estimate::Active {
+                job_id: job.clone(),
+                estimated_ms: Some(6000),
+                baseline_elapsed_ms: 5000,
+            }),
+        });
+    });
+    change(&core, app.handle(), |q| {
+        let e = q.entries.iter_mut().find(|e| e.id == first).unwrap();
+        e.status = "running".into();
+        e.stage = "dubbing".into();
+        e.dubbing_runs.push(DubRun {
+            id: "run".into(),
+            line_ids: e.spec.selection.line_ids.clone(),
+            job_id: Some(job.clone()),
+            status: "running".into(),
+            error: None,
+        });
+        Ok(())
+    })
+    .unwrap();
+    let total = status(&core).unwrap().work_estimate.unwrap();
+    assert_eq!(
+        (total.pending_ms, total.pending_known, total.count()),
+        (150000, 6, 7)
+    );
+    assert_eq!(total.active.unwrap().job_id, job);
+    // Restart never runs or counts down an interrupted entry.
+    let restored = restore(&core.data_dir);
+    *core.queue.lock().unwrap() = restored;
+    let q = status(&core).unwrap();
+    assert!(q.paused);
+    assert_eq!(q.entries[0].status, "interrupted");
+    jobs::update(&core, app.handle(), &job, |j| {
+        j.status = "interrupted".into()
+    });
+    assert!(status(&core)
+        .unwrap()
+        .work_estimate
+        .unwrap()
+        .active
+        .is_none());
+    // Cancelled/finished entries disappear from the remaining total.
+    control(
+        core.clone(),
+        app.handle().clone(),
+        "cancel",
+        Some(&q.entries[1].id),
+    )
+    .unwrap();
+    assert!(status(&core).unwrap().work_estimate.is_none());
+}
+
+#[tokio::test]
+async fn separation_queue_marks_unknown_steps_then_uses_only_matching_local_successes() {
+    let (_dir, core) = fixture().await;
+    let app = tauri::test::mock_app();
+    add_paused(&core, app.handle(), spec("isolate", true, false));
+    let first = status(&core).unwrap().work_estimate.unwrap();
+    assert_eq!((first.pending_known, first.pending_unknown), (0, 2));
+    let e = core.queue.lock().unwrap().data.entries[0].clone();
+    let row = &e.rows[0];
+    let job = jobs::create(
+        &core,
+        app.handle(),
+        "audioToolbox",
+        e.project_id.clone(),
+        None,
+    );
+    {
+        let mut g = core.jobs.lock().unwrap();
+        let j = g.get_mut(&job).unwrap();
+        j.saved.record.status = "succeeded".into();
+        j.saved.record.timing.as_mut().unwrap().elapsed_ms = 3000;
+        j.saved.toolbox_request = Some(audio_toolbox::Request {
+            root: e.root.clone(),
+            project_id: e.project_id.clone(),
+            source_path: "fixture".into(),
+            snapshot: json!({}),
+            options: audio_toolbox::Options {
+                model_id: "mel-band-roformer-kim".into(),
+                source_track_id: "original".into(),
+                start_ms: row.start_ms,
+                end_ms: row.end_ms,
+                device: "cpu".into(),
+                prompt: String::new(),
+                window_seconds: 4,
+            },
+        });
+    }
+    let f = status(&core).unwrap().work_estimate.unwrap();
+    assert!(f.pending_known >= 1);
+    assert!(f.pending_ms >= 3000);
+    core.jobs
+        .lock()
+        .unwrap()
+        .get_mut(&job)
+        .unwrap()
+        .saved
+        .toolbox_request
+        .as_mut()
+        .unwrap()
+        .options
+        .device = "cuda:0".into();
+    assert_eq!(
+        status(&core)
+            .unwrap()
+            .work_estimate
+            .unwrap()
+            .pending_unknown,
+        2
+    );
+}
 struct BrokenJournal<R: tauri::Runtime>(Protocol<R>);
 impl<R: tauri::Runtime> Clone for BrokenJournal<R> {
     fn clone(&self) -> Self {

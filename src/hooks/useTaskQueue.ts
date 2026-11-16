@@ -42,5 +42,30 @@ export function useTaskQueue() {
       off?.();
     };
   }, []);
+  const pending = !!data?.entries.some((e) => ['pending', 'running'].includes(e.status));
+  useEffect(() => {
+    if (!bridge.native || !pending) return;
+    let disposed = false,
+      inFlight = false;
+    const timer = window.setInterval(() => {
+      if (inFlight) return;
+      inFlight = true;
+      void bridge
+        .taskQueueStatus()
+        .then((q) => {
+          if (!disposed) setData((old) => (!old || q.revision >= old.revision ? q : old));
+        })
+        .catch(() => {
+          /* The next poll or explicit refresh can recover. */
+        })
+        .finally(() => {
+          inFlight = false;
+        });
+    }, 2000);
+    return () => {
+      disposed = true;
+      window.clearInterval(timer);
+    };
+  }, [pending]);
   return { data, error, refresh };
 }

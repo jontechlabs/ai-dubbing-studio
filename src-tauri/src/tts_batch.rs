@@ -3,6 +3,8 @@ use crate::{
     jobs, project, separation, tts, Core,
 };
 use serde::{Deserialize, Serialize};
+#[path = "tts_batch_estimate.rs"]
+mod estimate;
 #[path = "tts_batch_review.rs"]
 pub mod review;
 #[cfg(test)]
@@ -428,9 +430,31 @@ fn persist<R: tauri::Runtime>(
     key: &str,
     request: &Request,
     current: Option<String>,
+    timing_plan: &[Option<crate::generation_timing::Query>],
+    warm: bool,
 ) {
+    let progress = progress(request, current.clone());
+    let work = core.session.lock().ok().and_then(|g| {
+        g.as_ref().map(|s| {
+            estimate::remaining(
+                &s.project,
+                key,
+                request,
+                timing_plan,
+                current.as_ref().and_then(|line| {
+                    request
+                        .items
+                        .iter()
+                        .position(|i| i.status == "pending" && i.request.line_id == *line)
+                }),
+                warm,
+            )
+        })
+    });
     jobs::update(core, app, key, |j| {
-        j.batch = Some(progress(request, current))
+        j.batch = Some(progress);
+        j.work_estimate = work;
+        j.estimate = None;
     });
 }
 fn folder(core: &Core, key: &str) -> Result<PathBuf, String> {
@@ -603,7 +627,8 @@ fn start_with_launch<R: tauri::Runtime>(
         .ok_or("INVALID_PROJECT")?
         .saved
         .tts_batch = Some(key.clone());
-    persist(&core, &app, &key, &request, None);
+    let timing_plan = estimate::capture(&core, &request);
+    persist(&core, &app, &key, &request, None, &timing_plan, false);
     jobs::update(&core, &app, &key, |j| {
         j.stage = "ttsBatch".into();
         if let Some(p) = preview {
@@ -631,10 +656,10 @@ fn start_with_launch<R: tauri::Runtime>(
                 }
                 if flag.load(Ordering::Relaxed){return Err("CANCELLED".into());}
                 let committed={let session=core.session.lock().map_err(io_error)?;let s=session.as_ref().ok_or("NO_PROJECT")?;if s.root!=request.root||s.project.id!=request.project_id||s.project.languages.target!=request.language{return Err("STALE_REVISION".into());}already_committed(&s.project,&s.root,&request.items[index])};
-                if committed{request.items[index].status="succeeded".into();record_item(&core,&key,index,&request.items[index])?;review::record_origin(&core,&request,&request.items[index])?;persist(&core,&app,&key,&request,None);continue;}
+                if committed{request.items[index].status="succeeded".into();record_item(&core,&key,index,&request.items[index])?;review::record_origin(&core,&request,&request.items[index])?;persist(&core,&app,&key,&request,None,&timing_plan,hot.is_loaded());continue;}
                 let item=&request.items[index];let line_id=item.request.line_id.clone();
                 let excluded={let guard=core.session.lock().map_err(io_error)?;let session=guard.as_ref().ok_or("NO_PROJECT")?;session.project.dialogues.iter().any(|l|l.id==line_id&&l.excluded_from_dubbing==Some(true))};
-                if excluded {request.items[index].status="skipped".into();request.items[index].error=None;record_item(&core,&key,index,&request.items[index])?;review::record_origin(&core,&request,&request.items[index])?;persist(&core,&app,&key,&request,None);jobs::update(&core,&app,&key,|j|j.logs.push(format!("Skipped excluded dialogue: {line_id}")));continue;}
+                if excluded {request.items[index].status="skipped".into();request.items[index].error=None;record_item(&core,&key,index,&request.items[index])?;review::record_origin(&core,&request,&request.items[index])?;persist(&core,&app,&key,&request,None,&timing_plan,hot.is_loaded());jobs::update(&core,&app,&key,|j|j.logs.push(format!("Skipped excluded dialogue: {line_id}")));continue;}
                 let item=&request.items[index];
                 if (request.approved_only || request.unapproved_only) && !authorized_lines.contains(&line_id) {
                     let session=core.session.lock().map_err(io_error)?;let s=session.as_ref().ok_or("NO_PROJECT")?;
@@ -644,7 +669,7 @@ fn start_with_launch<R: tauri::Runtime>(
                     if request.unapproved_only && approved { return Err("TTS_BATCH_TRANSLATION_APPROVED".into()); }
                     authorized_lines.insert(line_id.clone());
                 }
-                persist(&core,&app,&key,&request,Some(line_id.clone()));
+                persist(&core,&app,&key,&request,Some(line_id.clone()),&timing_plan,hot.is_loaded());
                 jobs::update(&core,&app,&key,|j|{j.stage="ttsReference".into();j.progress=None;j.logs.push(format!("Dubbing {}/{}: {}",index+1,request.items.len(),line_id));});
                 let before = if request.items.iter().skip(index+1).any(|next|next.request.line_id==line_id && next.status=="pending") {
                     Some(core.session.lock().map_err(io_error)?.as_ref().ok_or("NO_PROJECT")?.project.clone())
@@ -653,7 +678,7 @@ fn start_with_launch<R: tauri::Runtime>(
                 let item=&mut request.items[index];
                 match result {
                     Ok(())=>{item.status="succeeded".into();item.error=None;}
-                    Err(error) if error=="CANCELLED"||flag.load(Ordering::Relaxed)=>{persist(&core,&app,&key,&request,None);return Err("CANCELLED".into());}
+                    Err(error) if error=="CANCELLED"||flag.load(Ordering::Relaxed)=>{persist(&core,&app,&key,&request,None,&timing_plan,hot.is_loaded());return Err("CANCELLED".into());}
                     Err(error)=>{item.status="failed".into();item.error=Some(error.clone());jobs::update(&core,&app,&key,|j|j.logs.push(format!("Failed {line_id}: {error}")));}
                 }
                 if request.items[index].status=="succeeded" {
@@ -661,13 +686,13 @@ fn start_with_launch<R: tauri::Runtime>(
                 }
                 record_item(&core,&key,index,&request.items[index])?;
                 review::record_origin(&core,&request,&request.items[index])?;
-                persist(&core,&app,&key,&request,None);
+                persist(&core,&app,&key,&request,None,&timing_plan,hot.is_loaded());
                 if request.items[index].error.as_deref().is_some_and(|e|["TTS_OUT_OF_MEMORY","TTS_SYSTEM_MEMORY","TTS_FP8_MEMORY_REQUIRED","TTS_FP8_CUDA_REQUIRED","MODEL_CHECKSUM_FAILED","TTS_DRAMA_RAM_REQUIRED","TTS_DRAMA_VRAM_REQUIRED","TTS_DRAMA_DISK_REQUIRED","DEVICE_UNAVAILABLE","TTS_RUNTIME_FAILED","TTS_RUNTIME_REQUIRED"].contains(&e)){return Err("TTS_BATCH_PARTIAL".into());}
             }
             if request.items.iter().any(|i|i.status=="failed"){Err("TTS_BATCH_PARTIAL".into())}else{Ok(())}
             }.await; hot.finish(&core,&app,&key).await;outcome
         }.await;
-        persist(&core, &app, &key, &request, None);
+        persist(&core, &app, &key, &request, None, &timing_plan, false);
         separation::finish(&core, &app, &key, &result);
     });
     Ok(output)

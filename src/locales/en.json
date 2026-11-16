@@ -2114,5 +2114,19 @@
     "learning": "Estimate unavailable · insufficient comparable history",
     "overrun": "Estimate exceeded · still processing",
     "estimateHint": "Estimate for the current take or step, not the entire batch. Based on {{count}} similarly sized measurement(s), using the same engine, settings and device on this PC. Initial loading and resident models are kept separate. Approximate value."
+  },
+  "workEstimate": {
+    "batch": "Batch remaining",
+    "workflow": "Workflow remaining",
+    "queue": "Queue remaining",
+    "remaining": "{{label}}: ≈ {{time}}",
+    "partial_one": "{{label}}: at least {{time}} · {{count}} unestimated step",
+    "partial_other": "{{label}}: at least {{time}} · {{count}} unestimated steps",
+    "learning_one": "{{label}}: learning estimate · {{count}} unestimated step",
+    "learning_other": "{{label}}: learning estimate · {{count}} unestimated steps",
+    "overrun": "active step taking longer than expected",
+    "paused": "work duration after resuming",
+    "finalizing": "{{label}}: finalizing or refreshing",
+    "hint": "Indicative remaining work, recalibrated from comparable project measurements after every take. Includes 1–4 takes per line, separating cold loads and resident models. Only the active step counts down. Missing history and overruns are explicit. Pauses and waiting for a project to be opened have unknown duration. Separation uses its own local timings; future batches can still skip already available takes."
   }
 }

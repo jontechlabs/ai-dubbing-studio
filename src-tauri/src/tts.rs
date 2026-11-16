@@ -575,7 +575,7 @@ pub(crate) fn validate_input(p: &Project, line_id: &str, options: &Options) -> R
     }
     Ok(())
 }
-fn reference<'a>(
+pub(crate) fn reference<'a>(
     p: &'a Project,
     line: &crate::domain::Dialogue,
     options: &Options,
@@ -672,6 +672,31 @@ pub(crate) async fn execute_with_launch<R: tauri::Runtime>(
     execute_with_session(core, app, key, request, flag, launch, None).await
 }
 #[allow(clippy::too_many_arguments)]
+pub(crate) fn timing_query(
+    p: &Project,
+    line: &crate::domain::Dialogue,
+    options: &Options,
+    warm: bool,
+) -> Result<crate::generation_timing::Query, String> {
+    let reference_ms = if options.reference_mode == "current" {
+        line.end_ms.saturating_sub(line.start_ms).min(20000)
+    } else {
+        reference(p, line, options)?.duration_ms.min(20000)
+    };
+    let mut timing_options = serde_json::json!(options);
+    timing_options["variantId"] = serde_json::json!(options.variant());
+    timing_options["mood"] = serde_json::json!(options.mood.as_deref().unwrap_or("default"));
+    timing_options["accent"] = serde_json::json!(options.accent.as_deref().unwrap_or("auto"));
+    Ok(crate::generation_timing::Query::new(
+        "tts",
+        serde_json::json!({"options":timing_options,"language":p.languages.target,"referenceBucket":reference_ms.div_ceil(5000)}),
+        text(p, line)
+            .chars()
+            .filter(|c| c.is_alphanumeric())
+            .count() as u64,
+        warm,
+    ))
+}
 pub(crate) async fn execute_with_session<R: tauri::Runtime>(
     core: &Arc<Core>,
     app: &tauri::AppHandle<R>,
@@ -697,32 +722,13 @@ pub(crate) async fn execute_with_session<R: tauri::Runtime>(
         .iter()
         .find(|l| l.id == request.line_id)
         .ok_or("NO_DIALOGUES")?;
-    let reference_ms = if request.options.reference_mode == "current" {
-        (line.end_ms - line.start_ms).min(20000)
-    } else {
-        reference(&p, line, &request.options)?
-            .duration_ms
-            .min(20000)
-    };
-    let mut timing_options = serde_json::json!(request.options);
-    timing_options["variantId"] = serde_json::json!(request.options.variant());
-    timing_options["mood"] =
-        serde_json::json!(request.options.mood.as_deref().unwrap_or("default"));
-    timing_options["accent"] =
-        serde_json::json!(request.options.accent.as_deref().unwrap_or("auto"));
-    let measurement = crate::generation_timing::begin(
-        core,
-        app,
-        key,
+    let query = timing_query(
         &p,
-        "tts",
-        serde_json::json!({"options":timing_options,"language":p.languages.target,"referenceBucket":reference_ms.div_ceil(5000)}),
-        text(&p, line)
-            .chars()
-            .filter(|c| c.is_alphanumeric())
-            .count() as u64,
+        line,
+        &request.options,
         hot.as_ref().is_some_and(|s| s.is_loaded()),
-    );
+    )?;
+    let measurement = crate::generation_timing::begin_query(core, app, key, &p, query);
     let directory = project::ensure_directory(&request.root, "generations")?;
     let generation_id = id();
     let destination = directory.join(format!("{generation_id}.wav"));

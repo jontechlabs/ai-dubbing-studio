@@ -22,6 +22,8 @@ mod timing_tests;
 #[serde(rename_all = "camelCase")]
 pub struct Job {
     #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub work_estimate: Option<crate::work_estimate::Forecast>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub estimate: Option<crate::generation_timing::Estimate>,
     pub id: String,
     pub project_id: String,
@@ -178,6 +180,7 @@ pub struct Control {
 impl Control {
     pub fn restore(mut saved: PersistedJob) -> Self {
         saved.record.estimate = None;
+        saved.record.work_estimate = None;
         // A stopped application cannot execute work. Keep the last checkpoint,
         // never add the time spent closed, and leave legacy durations unknown.
         if ["queued", "running", "paused"].contains(&saved.record.status.as_str()) {
@@ -233,6 +236,7 @@ pub fn create<R: tauri::Runtime>(
 ) -> String {
     let key = id();
     let record = Job {
+        work_estimate: None,
         estimate: None,
         id: key.clone(),
         project_id,
@@ -326,6 +330,9 @@ pub fn update<R: tauri::Runtime>(
             change(&mut c.saved.record);
             if c.saved.record.status != "running" {
                 c.saved.record.estimate = None;
+                if !["queued", "paused"].contains(&c.saved.record.status.as_str()) {
+                    c.saved.record.work_estimate = None;
+                }
             }
             c.clock.transition(&c.saved.record.status, Instant::now());
             if c.saved.record.timing.is_some() {

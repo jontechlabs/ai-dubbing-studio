@@ -3,6 +3,7 @@ import { Clock3 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { Job } from '../domain/types';
 import { formatJobDuration, jobElapsedMs } from '../domain/jobTiming';
+import { WorkEstimate } from './WorkEstimate';
 import { remainingGenerationMs } from '../domain/generationTiming';
 
 export function JobDuration({ job }: { job: Job }) {
@@ -40,6 +41,14 @@ export function JobDuration({ job }: { job: Job }) {
           })}
         </time>
       </span>
+      {job.workEstimate && ['running', 'queued', 'paused'].includes(job.status) && (
+        <WorkEstimate
+          forecast={job.workEstimate}
+          jobs={[job]}
+          scope="batch"
+          paused={job.status === 'paused'}
+        />
+      )}
       {remaining !== null && (
         <small
           className="job-estimate"
