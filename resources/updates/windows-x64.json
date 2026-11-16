@@ -1,11 +1,11 @@
 {
-  "version": "0.52.0",
-  "notes": "Durée de calcul conservée sur chaque nouvel essai TTS, changement de timbre et transfert d’intonation. Estimation indicative du temps restant pour l’essai ou l’étape en cours à partir de mesures comparables sur ce PC ; modèles à froid et déjà chargés séparés. Les anciennes durées restent non mesurées. Essais, vidéo et fichiers audio conservés. 170 outils MCP / 33 schémas ; métadonnées facultatives, aucun nouveau format projet.",
-  "pub_date": "2026-11-15T17:45:55Z",
+  "version": "0.53.0",
+  "notes": "Estimation globale du temps de travail restant pour le lot et la file, recalibrée après chaque essai. Compte les 1 à 4 essais par réplique, le premier chargement, le modèle conservé en mémoire et les séparations. Les étapes sans mesure et les dépassements rendent le total explicitement partiel. Pauses, annulations et reprises respectées. Essais, WAV et vidéo conservés. 170 outils MCP / 33 schémas ; aucun nouveau format projet.",
+  "pub_date": "2026-11-16T04:32:05Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSdFFyMUJGTFp3Nkl0ZmNVUDRRdTB2eG1lSFVMTG9yZ21keWpDL2VPTDVYWEVpT21VNnMra1FnVmUwTmVtVVRvZW1rOEhBK3VLTkl2ZG1TRVRaYnM1RGpSekR6SkV2VFFFPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk0NzY0NDgwCWZpbGU6QUkgRHViYmluZyBTdHVkaW9fMC41Mi4wX3g2NC1zZXR1cC5leGUJdmVyc2lvbjowLjUyLjAKTk10YzJDZUN2V3lvc08wRE5jL012NVZJVXh1QjlteWlJTDBEazI0dzdSK2drcW4xSENCQTE3VndPa1VZQVRQN3J0dW1HNUF0Q25DT1ZpdnBZUjJTREE9PQo=",
-      "url": "https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.52.0/AI-Dubbing-Studio-0.52.0-Setup.exe"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSdFFyMUJGTFp3NkJmaDlwSXlHS2I5SnpObFpEeEE2RlN2WVR6UzMvQWdCTG5OcjJ1ZGxWaEFYVjhUMUxBcnhwdDNndlJVMksxV1NoZkxMWGJQSnJWWmY2NnZCa1pnbmdnPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk0ODAzMzU2CWZpbGU6QUkgRHViYmluZyBTdHVkaW9fMC41My4wX3g2NC1zZXR1cC5leGUJdmVyc2lvbjowLjUzLjAKOWxQTlRRSUp0bW9UV240SE1EQnJxOUF6WFlzNk13Rm04Q2hTOEhhQm1WbndnalM4STdCdi92aTRlM1RoUGE2SVNEUCtFNjlIOXVGdDd4dEFXVmhWQWc9PQo=",
+      "url": "https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.53.0/AI-Dubbing-Studio-0.53.0-Setup.exe"
     }
   }
 }
