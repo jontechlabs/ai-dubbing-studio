@@ -243,9 +243,9 @@ pub fn retry<R: tauri::Runtime>(
     if tts::busy(&core) {
         return Err("BUSY".into());
     }
-    let mut r = load(core, id)?;
+    let mut r = load(&core, id)?;
     let root = r.origin.as_deref().unwrap_or(id).to_owned();
-    r = load(core, &root)?;
+    r = load(&core, &root)?;
     let guard = core.session.lock().map_err(io_error)?;
     let s = guard.as_ref().ok_or("NO_PROJECT")?;
     if s.root != r.root || s.project.id != r.project_id {
