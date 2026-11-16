@@ -1,4 +1,5 @@
 import type { Project } from './types';
+import { validateDubbingLanes } from './dubbingLanes';
 import { validGenerationTiming } from './generationTiming';
 import { validateDubbingAudit } from './dubbingAudit';
 import { validateSpeakerDubbings } from './speakerDubbing';
@@ -102,6 +103,7 @@ export function demoProject(): Project {
 export function validateProject(value: unknown): Project {
   if (!value || typeof value !== 'object') throw new Error('INVALID_PROJECT');
   const project = value as Project;
+  validateDubbingLanes(project);
   const preferences = project.modelPreferences;
   if (
     ['zonos3', 'moss-tts-local'].includes(preferences?.ttsProviderId ?? '') &&
@@ -121,7 +123,7 @@ export function validateProject(value: unknown): Project {
   if (
     !Number.isInteger(project.formatVersion) ||
     project.formatVersion < 1 ||
-    project.formatVersion > 31
+    project.formatVersion > 32
   )
     throw new Error('UNSUPPORTED_PROJECT_VERSION');
   if (project.voiceEdits !== undefined) {

@@ -457,7 +457,9 @@
     "QUEUE_PROJECT_REQUIRED": "Ouvrez le projet de cette tâche, puis reprenez la file.",
     "TTS_ACCENT_EMBEDDING_FAILED": "Impossible de préparer une empreinte vocale valide pour l’orientation française. Réessayez avec une référence nette.",
     "VC_BATCH_EMPTY": "Aucun essai de doublage sélectionné ne peut être harmonisé.",
-    "VC_BATCH_PARTIAL": "Le lot est terminé avec des échecs. Les essais réussis sont conservés ; vous pouvez reprendre les éléments inachevés."
+    "VC_BATCH_PARTIAL": "Le lot est terminé avec des échecs. Les essais réussis sont conservés ; vous pouvez reprendre les éléments inachevés.",
+    "INVALID_DUBBING_LANES": "Configuration des pistes de doublage invalide.",
+    "DUBBING_LANES_LIMIT": "Le projet peut contenir 32 pistes de doublage au maximum."
   },
   "preparingVideo": "Préparation de la vidéo…",
   "loadingVideo": "Chargement de la vidéo…",
@@ -2166,5 +2168,28 @@
       "failed": "Échec"
     },
     "retryHint": "Relance uniquement les éléments inachevés avec la référence et les essais source figés du lot d’origine."
+  },
+  "dubLanes": {
+    "title": "Pistes de doublage",
+    "hint": "Placez plusieurs dialogues au même moment sur des pistes distinctes. Chaque piste a son volume, son mode muet et son solo ; le mix Doublage reste le réglage général.",
+    "master": "Mix Doublage (général)",
+    "enableMaster": "Activer le mix",
+    "muteMaster": "Couper le mix",
+    "name": "Nom de la piste {{number}}",
+    "volume": "Volume de la piste",
+    "volumeName": "Volume de la piste {{number}}",
+    "percent": "Volume {{name}} (%)",
+    "mute": "Muet",
+    "solo": "Solo",
+    "remove": "Supprimer {{name}}",
+    "count": "{{count}} dialogue(s)",
+    "add": "Ajouter une piste de doublage",
+    "assign": "Affecter un dialogue",
+    "dialogue": "Dialogue à affecter",
+    "destination": "Piste de doublage",
+    "removeHint": "Supprimer une piste renvoie ses dialogues à la première piste. Les essais et les sous-titres restent conservés. Les limites de chevauchement s’appliquent seulement à une même piste.",
+    "defaultName": "Doublage {{number}}",
+    "moveTo": "Déplacer vers {{name}}",
+    "newAndMove": "Nouvelle piste et y déplacer ce dialogue"
   }
 }

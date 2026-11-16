@@ -5384,3 +5384,52 @@ footer .work-estimate {
   gap: 6px;
   font-size: 11px;
 }
+
+.dubbing-lanes-modal {
+  width: min(760px, calc(100vw - 32px));
+}
+.dubbing-lanes-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 10px;
+  margin: 12px 0;
+}
+.dubbing-lane-settings {
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  min-width: 0;
+}
+.dubbing-lane-settings > input {
+  width: 100%;
+  min-width: 0;
+}
+.dubbing-lane-settings > label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.dubbing-lane-settings input[type='range'] {
+  flex: 1;
+  min-width: 70px;
+}
+.dubbing-lane-settings .button-row,
+.dubbing-lanes-master {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin: 8px 0;
+}
+.dubbing-lane-controls label {
+  display: flex;
+  align-items: center;
+  font-size: 9px;
+}
+.dubbing-lane-controls input {
+  width: 43px;
+  min-width: 0;
+  padding: 2px;
+  font-size: 10px;
+}

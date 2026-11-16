@@ -1,4 +1,152 @@
 use super::*;
+fn independent_lane_project(mut p: Project) -> Project {
+    let mut line = p.dialogues[0].clone();
+    line.id = "independent-line".into();
+    line.selected_generation_ids
+        .insert("fr".into(), "independent-take".into());
+    let mut take = p.generations[0].clone();
+    take["id"] = serde_json::json!("independent-take");
+    take["dialogueId"] = serde_json::json!(line.id);
+    p.dialogues.push(line);
+    p.generations.push(take);
+    p.format_version = 32;
+    p.dubbing_lanes=Some(serde_json::from_value(serde_json::json!({"sourcePath":p.media.as_ref().unwrap().path,"lanes":[{"id":"main","name":"Main voice","gain":1,"mute":false,"solo":false},{"id":"second","name":"Second voice","gain":0.5,"mute":false,"solo":false}],"assignments":{"independent-line":"second"}})).unwrap());
+    p.validate().unwrap();
+    p
+}
+#[tokio::test]
+async fn independent_dubbing_lanes_render_simultaneous_unrelated_takes_with_individual_gains() {
+    let (_temp, root, p) = fixture().await;
+    let mut p = independent_lane_project(p);
+    let original = fs::read(root.join("generations/voice.wav")).unwrap();
+    let selected = clips(&p);
+    assert!(selected
+        .iter()
+        .all(|c| c.slot_ms == 2000 && c.duration_ms() == 1500));
+    let output = root.join("exports/lanes.f32");
+    assemble(
+        &root,
+        &selected,
+        4000,
+        &output,
+        &AtomicBool::new(false),
+        |_| {},
+    )
+    .unwrap();
+    let read_at = || {
+        let b = fs::read(&output).unwrap();
+        f32::from_le_bytes(b[1200 * 24 * 4..1200 * 24 * 4 + 4].try_into().unwrap())
+    };
+    assert!((read_at() - 0.3).abs() < 0.001);
+    p.dubbing_lanes.as_mut().unwrap().lanes[1].solo = true;
+    assemble(
+        &root,
+        &clips(&p),
+        4000,
+        &output,
+        &AtomicBool::new(false),
+        |_| {},
+    )
+    .unwrap();
+    assert!((read_at() - 0.1).abs() < 0.001);
+    p.dubbing_lanes.as_mut().unwrap().lanes[1].mute = true;
+    assemble(
+        &root,
+        &clips(&p),
+        4000,
+        &output,
+        &AtomicBool::new(false),
+        |_| {},
+    )
+    .unwrap();
+    assert!((read_at() - 0.2).abs() < 0.001);
+    assert_eq!(
+        fs::read(root.join("generations/voice.wav")).unwrap(),
+        original
+    );
+    p.dubbing_lanes.as_mut().unwrap().assignments.clear();
+    assert!(clips(&p).iter().all(|c| c.slot_ms == 0));
+}
+#[tokio::test]
+async fn independent_lane_configuration_reopens_and_rejects_corrupt_assignments_and_old_formats() {
+    let (_temp, root, p) = fixture().await;
+    let p = independent_lane_project(p);
+    project::save(&root, &p).unwrap();
+    let loaded = project::load(&root).unwrap();
+    assert_eq!(
+        serde_json::to_value(&loaded.dubbing_lanes).unwrap(),
+        serde_json::to_value(&p.dubbing_lanes).unwrap()
+    );
+    let mut bad = p.clone();
+    bad.format_version = 31;
+    assert_eq!(bad.validate().unwrap_err(), "INVALID_DUBBING_LANES");
+    let mut bad = p.clone();
+    bad.dubbing_lanes
+        .as_mut()
+        .unwrap()
+        .assignments
+        .insert("line".into(), "missing".into());
+    assert_eq!(bad.validate().unwrap_err(), "INVALID_DUBBING_LANES");
+    for gain in [-1.0, 3.01, f64::NAN] {
+        let mut bad = p.clone();
+        bad.dubbing_lanes.as_mut().unwrap().lanes[0].gain = gain;
+        assert_eq!(bad.validate().unwrap_err(), "INVALID_DUBBING_LANES");
+    }
+    let mut replaced = p.clone();
+    replaced.media.as_mut().unwrap().path = "media/replaced.mkv".into();
+    assert_eq!(
+        crate::dubbing_lanes::lane(&replaced, "independent-line"),
+        "main"
+    );
+    assert_eq!(
+        crate::dubbing_lanes::gain(&replaced, "independent-line"),
+        1.0
+    );
+}
+#[tokio::test]
+async fn actual_mkv_export_keeps_independent_simultaneous_voices_and_the_original_video() {
+    let (_temp, root, p) = fixture().await;
+    let mut p = independent_lane_project(p);
+    for track in &mut p.tracks {
+        track.mute = track.kind != "dubbing";
+        track.gain = 1.0;
+        track.regions.clear();
+    }
+    let before = fs::read(root.join("media/source.mkv")).unwrap();
+    let voice = fs::read(root.join("generations/voice.wav")).unwrap();
+    let app = tauri::test::mock_app();
+    let app = app.handle().clone();
+    let core = core(&root, p.clone());
+    let output = root.join("exports/independent-lanes.mkv");
+    let r = Request {
+        root: root.clone(),
+        project_id: p.id.clone(),
+        revision: p.revision,
+        output: output.clone(),
+        options: Options {
+            include_retouched: false,
+            include_original: false,
+            source_subtitles: false,
+            target_subtitles: false,
+            codec: "flac".into(),
+            allow_incomplete: false,
+        },
+    };
+    validate(&p, &r.options).unwrap();
+    let key = jobs::create(&core, &app, "mkvExport", p.id.clone(), None);
+    export(&core, &app, &key, &r, &p, &Arc::new(AtomicBool::new(false)))
+        .await
+        .unwrap();
+    let samples = pcm(&output, "0:a:0").await;
+    let at = &samples[1200 * 96..1210 * 96];
+    assert!(at.iter().all(|v| (*v - 0.3).abs() < 0.002));
+    assert_eq!(
+        hash(&root.join("media/source.mkv"), "0:v:0").await,
+        hash(&output, "0:v:0").await
+    );
+    assert_eq!(fs::read(root.join("media/source.mkv")).unwrap(), before);
+    assert_eq!(fs::read(root.join("generations/voice.wav")).unwrap(), voice);
+}
 use crate::audio_patch::{self, Snippet};
 use std::sync::Mutex;
 fn overlap_project(mut p: Project) -> Project {

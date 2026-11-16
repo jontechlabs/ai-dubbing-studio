@@ -163,6 +163,7 @@ export interface SpeakerAnalysis {
   }[];
 }
 export interface Project {
+  dubbingLanes?: import('./dubbingLanes').DubbingLanes;
   dubbingAudit?: import('./dubbingAudit').DubbingAudit;
   speakerDubbings?: import('./speakerDubbing').SpeakerDubbingGroup[];
   characterProfiles?: Record<string, import('./characterReview').CharacterProfile>;

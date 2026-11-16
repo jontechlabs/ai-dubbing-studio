@@ -20,7 +20,9 @@ export class DubbingBus {
     if (this.project !== project) {
       this.project = project;
       this.clips = dubbingClips(project);
-      const signature = this.clips.map((c) => `${c.cacheKey}:${c.startMs}:${c.endMs}`).join('|');
+      const signature = this.clips
+        .map((c) => `${c.cacheKey}:${c.startMs}:${c.endMs}:${c.laneGain}`)
+        .join('|');
       if (this.signature !== signature) this.stop();
       this.signature = signature;
       this.reported = false;
@@ -63,7 +65,7 @@ export class DubbingBus {
       track = tracks.find((t) => t.kind === 'dubbing');
     if (!track || !effectiveGain(track, tracks, volume)) return;
     const nearby = this.getClips(project).filter(
-      (c) => c.slotMs > 0 && c.endMs > time && c.startMs < time + 3000,
+      (c) => c.laneGain > 0 && c.slotMs > 0 && c.endMs > time && c.startMs < time + 3000,
     );
     const keep = new Set([...nearby.map((c) => c.cacheKey), ...this.voices.keys()]);
     for (const id of this.cache.keys()) {
@@ -104,7 +106,8 @@ export class DubbingBus {
       this.stop();
     this.anchor ??= { time: now, position, rate };
     const clips = this.getClips(project).filter(
-      (c) => c.slotMs > 0 && c.endMs > position && c.startMs < position + 500 * rate,
+      (c) =>
+        c.laneGain > 0 && c.slotMs > 0 && c.endMs > position && c.startMs < position + 500 * rate,
     );
     const desired = new Set(clips.map((c) => c.cacheKey));
     for (const [id, voice] of this.voices)
@@ -143,7 +146,7 @@ export class DubbingBus {
         voice.gain,
         track,
         trackPatches(project, track.id),
-        base,
+        base * clip.laneGain,
         position,
         clip.endMs,
         rate,

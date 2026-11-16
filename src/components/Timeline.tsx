@@ -47,6 +47,9 @@ import { VoiceRegionEditor } from './VoiceRegionEditor';
 import { TimelineAudioSelection } from './TimelineAudioSelection';
 import { TrackVolume } from './TrackVolume';
 import { AudioMeter } from './AudioMeter';
+import { DubbingLanesModal } from './DubbingLanesModal';
+import { DubbingLaneControls } from './DubbingLaneControls';
+import { dubbingLanes, assignDubbingLane, addDubbingLane } from '../domain/dubbingLanes';
 
 export const Timeline = memo(function Timeline({
   project,
@@ -288,6 +291,7 @@ export const Timeline = memo(function Timeline({
     const bounds = event.currentTarget.getBoundingClientRect();
     onSeek(xToTime(event.clientX - bounds.left, 0, scale, duration));
   };
+  const [lanesOpen, setLanesOpen] = useState(false);
   const tracks = [
     { key: 'videoTrack', icon: Film, style: 'video', exists: Boolean(project?.media) },
     { key: 'originalTrack', icon: AudioLines, style: 'audio', exists: Boolean(project?.media) },
@@ -306,6 +310,7 @@ export const Timeline = memo(function Timeline({
   ]
     .map((track) => ({
       ...track,
+      dubbingLaneId: undefined as string | undefined,
       track: (track.key === 'originalTrack' && project ? audioTracks(project)[0] : undefined) as
         Track | undefined,
     }))
@@ -315,6 +320,7 @@ export const Timeline = memo(function Timeline({
           (track) => track.kind === 'audio' && track.sourcePath === project.media?.path,
         ) ?? []
       ).map((track) => ({
+        dubbingLaneId: undefined as string | undefined,
         key: track.name ?? `stem.${track.role}`,
         icon: AudioLines,
         style: 'audio',
@@ -326,21 +332,51 @@ export const Timeline = memo(function Timeline({
       project
         ? audioTracks(project)
             .filter((t) => t.kind === 'dubbing')
-            .map((track) => ({
-              key: 'dubbingTrack',
-              icon: AudioLines,
-              style: 'audio',
-              exists: true,
-              track,
-            }))
+            .flatMap((track) =>
+              project.dubbingLanes?.sourcePath === project.media?.path
+                ? dubbingLanes(project).map((lane) => ({
+                    key: lane.name,
+                    icon: AudioLines,
+                    style: 'audio',
+                    exists: true,
+                    track,
+                    dubbingLaneId: lane.id as string | undefined,
+                  }))
+                : [
+                    {
+                      key: 'dubbingTrack',
+                      icon: AudioLines,
+                      style: 'audio',
+                      exists: true,
+                      track,
+                      dubbingLaneId: undefined,
+                    },
+                  ],
+            )
         : [],
     )
     .filter((track) => track.exists);
   return (
     <section className="timeline-pane">
+      {project && lanesOpen && (
+        <DubbingLanesModal
+          project={project}
+          selected={selected}
+          busy={busy}
+          onEdit={onEdit}
+          onClose={() => setLanesOpen(false)}
+        />
+      )}
       <div className="timeline-heading">
         <div>
           {project?.media && <AudioQuickControls project={project} onEdit={onEdit} compact />}
+          <IconButton
+            label={t('dubLanes.title')}
+            disabled={!project?.media || busy}
+            onClick={() => setLanesOpen(true)}
+          >
+            <AudioLines size={15} />
+          </IconButton>
           <IconButton
             label={t('selectAudioArea')}
             active={audioTool}
@@ -466,10 +502,10 @@ export const Timeline = memo(function Timeline({
           <div style={{ transform: `translateY(${-scrollTop}px)` }}>
             <div className="ruler-label" />
             <div>
-              {tracks.map(({ key, icon: Icon, style, track }) => (
+              {tracks.map(({ key, icon: Icon, style, track, dubbingLaneId: laneId }) => (
                 <div
                   className={`track-label ${style}`}
-                  key={track?.id ?? key}
+                  key={laneId ?? track?.id ?? key}
                   style={{
                     height:
                       track?.kind === 'dubbing' && hasSeparatedLanes
@@ -479,8 +515,18 @@ export const Timeline = memo(function Timeline({
                 >
                   <Icon size={13} />
                   <span>{t(key)}</span>
-                  {style === 'audio' && track && <AudioMeter id={track.id} name={t(key)} compact />}
-                  {style === 'audio' && track && (
+                  {style === 'audio' && track && !laneId && (
+                    <AudioMeter id={track.id} name={t(key)} compact />
+                  )}
+                  {laneId && project && (
+                    <DubbingLaneControls
+                      project={project}
+                      id={laneId}
+                      busy={busy}
+                      onEdit={onEdit}
+                    />
+                  )}
+                  {style === 'audio' && track && !laneId && (
                     <div className="timeline-track-controls">
                       <TrackVolume track={track} onEdit={onEdit} busy={busy} />
                       <button
@@ -569,11 +615,11 @@ export const Timeline = memo(function Timeline({
                 </span>
               ))}
             </div>
-            {tracks.map(({ key, style, track }) => (
+            {tracks.map(({ key, style, track, dubbingLaneId: laneId }) => (
               <div
-                key={track?.id ?? key}
+                key={laneId ?? track?.id ?? key}
                 className={`timeline-track ${style} ${audioTool && track ? 'audio-selection-tool' : ''}`}
-                data-track-id={track?.id}
+                data-track-id={laneId ? 'dubbing-lane:' + laneId : track?.id}
                 style={{
                   height:
                     track?.kind === 'dubbing' && hasSeparatedLanes
@@ -581,6 +627,12 @@ export const Timeline = memo(function Timeline({
                       : rowHeight,
                 }}
                 onContextMenu={(event) => {
+                  if (laneId) {
+                    onContextMenu(event, t('dubLanes.title'), [
+                      { label: t('dubLanes.title'), run: () => setLanesOpen(true) },
+                    ]);
+                    return;
+                  }
                   if (!track || !project?.media) return;
                   const point = xToTime(
                     event.clientX - event.currentTarget.getBoundingClientRect().left,
@@ -806,6 +858,7 @@ export const Timeline = memo(function Timeline({
               >
                 {track?.kind === 'dubbing' && project ? (
                   previewClips
+                    .filter((c) => !laneId || c.laneId === laneId)
                     .filter(
                       (c) =>
                         c.line.id === dubbingDrag?.lineId ||
@@ -841,6 +894,27 @@ export const Timeline = memo(function Timeline({
                                   busy || dubbingDuration(project, clip.line.id) === undefined,
                                 run: () => onEdit((p) => resizeDubbing(p, clip.line.id, null)),
                               },
+                              ...dubbingLanes(project).map((lane) => ({
+                                label: t('dubLanes.moveTo', { name: lane.name }),
+                                disabled: busy || lane.id === clip.laneId,
+                                run: () =>
+                                  onEdit((p) => assignDubbingLane(p, [clip.line.id], lane.id)),
+                              })),
+                              {
+                                label: t('dubLanes.newAndMove'),
+                                disabled: busy || dubbingLanes(project).length >= 32,
+                                run: () =>
+                                  onEdit((p) =>
+                                    addDubbingLane(
+                                      p,
+                                      t('dubLanes.defaultName', {
+                                        number: dubbingLanes(p).length + 1,
+                                      }),
+                                      [clip.line.id],
+                                    ),
+                                  ),
+                              },
+                              { label: t('dubLanes.title'), run: () => setLanesOpen(true) },
                             ],
                           )
                         }
@@ -1119,6 +1193,7 @@ export const Timeline = memo(function Timeline({
                         aria-label={t('timelineAudioRegion', { name: t(key), index: index + 1 })}
                         disabled={busy}
                         onPointerDown={(event) => {
+                          if (laneId) return;
                           if (!audioTool && !event.shiftKey) event.stopPropagation();
                         }}
                         onClick={(event) => {

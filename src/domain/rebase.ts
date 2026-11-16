@@ -15,6 +15,7 @@ export function rebaseProject(base: Project, local: Project, incoming: Project):
     'modelPreferences',
     'subtitleDisplay',
     'dubbingTiming',
+    'dubbingLanes',
     'translationApprovals',
     'voiceEdits',
     'speakerDubbings',

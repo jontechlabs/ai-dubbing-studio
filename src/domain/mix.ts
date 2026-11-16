@@ -1,4 +1,5 @@
 import { editDuration } from './voiceEdit';
+import { dubbingLaneId, dubbingLaneGain } from './dubbingLanes';
 import { MAX_VOICE_DURATION_MS, freeVoiceStart } from './voiceLimits';
 import type { Project } from './types';
 import { speakerDubbingState } from './speakerDubbing';
@@ -33,7 +34,11 @@ export function dubbingBounds(project: Project, lineId: string) {
       Math.min(project.media.durationMs - 1, line.startMs + dubbingOffset(project, lineId)),
     );
   const family = speakerDubbingState(project);
-  const others = clips.filter((c) => family.key(c.line.id) !== family.key(lineId));
+  const others = clips.filter(
+    (c) =>
+      dubbingLaneId(project, c.line.id) === dubbingLaneId(project, lineId) &&
+      family.key(c.line.id) !== family.key(lineId),
+  );
   const next = others.reduce(
     (end, c) => (c.startMs >= startMs ? Math.min(end, c.startMs) : end),
     project.media.durationMs,
@@ -126,7 +131,11 @@ function placeDubbing(
     wanted,
     project.media.durationMs,
     clips
-      .filter((c) => family.key(c.line.id) !== family.key(lineId))
+      .filter(
+        (c) =>
+          dubbingLaneId(project, c.line.id) === dubbingLaneId(project, lineId) &&
+          family.key(c.line.id) !== family.key(lineId),
+      )
       .map((c) => ({
         startMs: c.startMs,
         endMs:
@@ -220,6 +229,8 @@ export function dubbingClips(project: Project) {
       return [
         {
           line,
+          laneId: dubbingLaneId(project, line.id),
+          laneGain: dubbingLaneGain(project, line.id),
           lane: family.child.get(line.id)?.lane ?? 0,
           groupKey: family.child.get(line.id)?.group.id ?? null,
           overlapKey: family.key(line.id),
@@ -235,17 +246,23 @@ export function dubbingClips(project: Project) {
       ];
     })
     .sort((a, b) => a.startMs - b.startMs);
-  const conflicts = new Set<number>();
-  ordered.forEach((clip, index) => {
-    const previous = ordered[index - 1];
+  const conflicts = new Set<string>();
+  const previousByLane = new Map<string, (typeof ordered)[number]>();
+  ordered.forEach((clip) => {
+    const previous = previousByLane.get(clip.laneId);
     if (previous?.startMs === clip.startMs && previous.overlapKey !== clip.overlapKey)
-      conflicts.add(clip.startMs);
+      conflicts.add(clip.laneId + ':' + clip.startMs);
+    previousByLane.set(clip.laneId, clip);
   });
   return ordered.map((clip, index, clips) => {
     let following = index + 1;
-    while (following < clips.length && clips[following].overlapKey === clip.overlapKey) following++;
+    while (
+      following < clips.length &&
+      (clips[following].laneId !== clip.laneId || clips[following].overlapKey === clip.overlapKey)
+    )
+      following++;
     const next = clips[following];
-    const duplicate = conflicts.has(clip.startMs);
+    const duplicate = conflicts.has(clip.laneId + ':' + clip.startMs);
     const slotMs = duplicate
       ? 0
       : Math.max(

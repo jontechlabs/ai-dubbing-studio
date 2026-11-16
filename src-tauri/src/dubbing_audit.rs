@@ -72,13 +72,17 @@ pub struct Report {
     pub source_track_id: String,
 }
 pub fn basis(p: &Project) -> Value {
-    json!({"sourcePath":p.media.as_ref().map(|m|&m.path),"language":p.languages.target,
+    let mut basis = json!({"sourcePath":p.media.as_ref().map(|m|&m.path),"language":p.languages.target,
  "lines":p.dialogues.iter().map(|l|json!({"id":l.id,"startMs":l.start_ms,"endMs":l.end_ms,"takeId":l.selected_generation_ids.get(&p.languages.target),"ttsText":l.tts_text,"excluded":l.excluded_from_dubbing.unwrap_or(false)})).collect::<Vec<_>>(),
  "sourceCues":p.source_cues,"targetCues":p.target_cues,
  "takes":p.generations.iter().filter(|g|g["kind"]=="tts").map(|g|json!({"id":g["id"],"path":g["path"],"durationMs":g["durationMs"]})).collect::<Vec<_>>(),
  "edits":p.voice_edits,"timing":p.dubbing_timing,
  "patches":p.generations.iter().filter(|g|g["kind"]=="audioPatch").collect::<Vec<_>>(),
- "groups":p.speaker_dubbings,"tracks":p.tracks.iter().filter(|t|t.kind!="dubbing").map(|t|json!({"id":t.id,"path":t.path,"sourcePath":t.source_path})).collect::<Vec<_>>()})
+ "groups":p.speaker_dubbings,"tracks":p.tracks.iter().filter(|t|t.kind!="dubbing").map(|t|json!({"id":t.id,"path":t.path,"sourcePath":t.source_path})).collect::<Vec<_>>()});
+    if let Some(lanes) = &p.dubbing_lanes {
+        basis["dubbingLanes"] = json!(lanes);
+    }
+    basis
 }
 pub fn validate(p: &Project) -> Result<(), String> {
     if let Some(a) = &p.dubbing_audit {

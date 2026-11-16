@@ -9,6 +9,7 @@ mod character_review;
 mod domain;
 mod downloads;
 mod dubbing_audit;
+mod dubbing_lanes;
 mod dubbing_pipeline;
 mod embedded;
 mod face_detection;

@@ -89,6 +89,7 @@ export function auditBasis(p: Project) {
       .filter((g) => g.kind === 'tts')
       .map((g) => ({ id: g.id, path: g.path ?? null, durationMs: g.durationMs ?? null })),
     edits: p.voiceEdits ?? {},
+    ...(p.dubbingLanes ? { dubbingLanes: p.dubbingLanes } : {}),
     timing: p.dubbingTiming ?? null,
     patches: p.generations.filter((g) => g.kind === 'audioPatch'),
     groups: p.speakerDubbings ?? [],

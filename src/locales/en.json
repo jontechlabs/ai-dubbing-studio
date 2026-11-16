@@ -457,7 +457,9 @@
     "QUEUE_PROJECT_REQUIRED": "Open this task’s project, then resume the queue.",
     "TTS_ACCENT_EMBEDDING_FAILED": "Could not prepare a valid speaker embedding for French orientation. Try a clean reference.",
     "VC_BATCH_EMPTY": "No selected dubbing take can be harmonized.",
-    "VC_BATCH_PARTIAL": "The batch has failures. Successful takes are kept; unfinished entries can be retried."
+    "VC_BATCH_PARTIAL": "The batch has failures. Successful takes are kept; unfinished entries can be retried.",
+    "INVALID_DUBBING_LANES": "Invalid dubbing track configuration.",
+    "DUBBING_LANES_LIMIT": "A project supports up to 32 dubbing tracks."
   },
   "preparingVideo": "Preparing video…",
   "loadingVideo": "Loading video…",
@@ -2166,5 +2168,28 @@
       "failed": "Failed"
     },
     "retryHint": "Retry only unfinished entries using the original frozen source takes and reference."
+  },
+  "dubLanes": {
+    "title": "Dubbing tracks",
+    "hint": "Place simultaneous dialogues on separate tracks. Each track has independent volume, mute and solo; the Dubbing mix remains the master control.",
+    "master": "Dubbing mix (master)",
+    "enableMaster": "Enable mix",
+    "muteMaster": "Mute mix",
+    "name": "Track {{number}} name",
+    "volume": "Track volume",
+    "volumeName": "Track {{number}} volume",
+    "percent": "{{name}} volume (%)",
+    "mute": "Mute",
+    "solo": "Solo",
+    "remove": "Delete {{name}}",
+    "count": "{{count}} dialogue(s)",
+    "add": "Add dubbing track",
+    "assign": "Assign a dialogue",
+    "dialogue": "Dialogue to assign",
+    "destination": "Dubbing track",
+    "removeHint": "Deleting a track returns its dialogues to the first track. Takes and subtitles remain intact. Overlap protection applies within the same track.",
+    "defaultName": "Dubbing {{number}}",
+    "moveTo": "Move to {{name}}",
+    "newAndMove": "New track and move this dialogue"
   }
 }

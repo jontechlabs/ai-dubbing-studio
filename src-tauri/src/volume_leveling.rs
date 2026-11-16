@@ -40,7 +40,7 @@ pub fn dubbing_scope(p: &Project, start: u64, end: u64) -> Value {
         .filter(|c| c.slot_ms > 0 && c.start_ms() < end && c.start_ms() + c.slot_ms > start)
         .collect();
     clips.sort_by_cached_key(|c| c.id.clone());
-    Value::Array(clips.into_iter().map(|c|json!({"id":c.id,"startMs":c.start_ms(),"slotMs":c.slot_ms,"durationMs":c.duration_ms(),"exactDuration":c.exact_duration,"edit":p.voice_edits.get(&c.id)})).collect())
+    Value::Array(clips.into_iter().map(|c|{let mut v=json!({"id":c.id,"startMs":c.start_ms(),"slotMs":c.slot_ms,"durationMs":c.duration_ms(),"exactDuration":c.exact_duration,"edit":p.voice_edits.get(&c.id)});if crate::dubbing_lanes::current(p).is_some(){v["laneId"]=json!(c.lane_id);v["laneGain"]=json!(c.lane_gain);}v}).collect())
 }
 fn replaced_layers(p: &Project, o: &Options) -> std::collections::HashSet<String> {
     audio_patch::layers(p, &o.track_id)

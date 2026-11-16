@@ -183,12 +183,18 @@ async fn failures_are_durable_and_retry_rejects_changed_inputs_and_never_repeats
         .push(crate::domain::VoiceReference {
             id: "file-reference".into(),
             label: "Imported French reference".into(),
-            path: "generations/voice.wav".into(),
+            path: "characters/file-reference.wav".into(),
             duration_ms: 1500,
             transcript: String::new(),
             source_dialogue_id: None,
         });
     o.reference.reference_mode = Some("reference".into());
+    std::fs::create_dir_all(root.join("characters")).unwrap();
+    std::fs::copy(
+        root.join("generations/voice.wav"),
+        root.join("characters/file-reference.wav"),
+    )
+    .unwrap();
     o.reference.reference_id = "file-reference".into();
     o.reference.reference_range = None;
     std::fs::write(root.join("fail-once"), b"fixture").unwrap();
@@ -201,7 +207,12 @@ async fn failures_are_durable_and_retry_rejects_changed_inputs_and_never_repeats
     .unwrap();
     assert_eq!(finished(&core, &key).await.status, "failed");
     let r = load(&core, &key).unwrap();
-    assert_eq!(r.items[0].status, "succeeded");
+    assert_eq!(
+        r.items[0].status,
+        "succeeded",
+        "{:?}",
+        finished(&core, &key).await.logs
+    );
     assert_eq!(r.items[1].error.as_deref(), Some("VC_FAILED"));
     let first = core
         .session

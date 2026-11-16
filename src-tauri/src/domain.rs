@@ -175,6 +175,8 @@ pub struct SpeakerAnalysis {
 #[serde(rename_all = "camelCase")]
 pub struct Project {
     #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub dubbing_lanes: Option<crate::dubbing_lanes::State>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub dubbing_audit: Option<crate::dubbing_audit::Report>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub speaker_dubbings: Vec<crate::speaker_dubbing::Group>,
@@ -236,6 +238,7 @@ impl Project {
 
     pub fn new(name: String, source: String, target: String) -> Self {
         Self {
+            dubbing_lanes: None,
             dubbing_audit: None,
             speaker_dubbings: vec![],
             character_profiles: HashMap::new(),
@@ -272,10 +275,11 @@ impl Project {
         references.iter().find(|r| r.id == id)
     }
     pub fn validate(&self) -> Result<(), String> {
-        if !(1..=31).contains(&self.format_version) {
+        if !(1..=32).contains(&self.format_version) {
             return Err("UNSUPPORTED_PROJECT_VERSION".into());
         }
         crate::speaker_dubbing::validate(self)?;
+        crate::dubbing_lanes::validate(self)?;
         crate::dubbing_audit::validate(self)?;
         if !self.translation_approvals.is_empty()
             && (self.format_version < 10

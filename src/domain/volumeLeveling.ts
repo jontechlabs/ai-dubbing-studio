@@ -41,6 +41,9 @@ export function dubbingLevelingScope(project: Project, startMs: number, endMs: n
   const value = cached.clips
     .filter((c) => c.slotMs > 0 && c.startMs < endMs && c.startMs + c.slotMs > startMs)
     .map((c) => ({
+      ...(project.dubbingLanes?.sourcePath === project.media?.path
+        ? { laneId: c.laneId, laneGain: c.laneGain }
+        : {}),
       id: c.generation.id,
       startMs: c.startMs,
       slotMs: c.slotMs,

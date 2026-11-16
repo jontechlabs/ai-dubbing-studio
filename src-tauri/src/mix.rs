@@ -43,6 +43,8 @@ pub struct Request {
 #[derive(Clone)]
 pub(crate) struct Clip {
     pub id: String,
+    pub(crate) lane_id: String,
+    pub(crate) lane_gain: f64,
     pub path: String,
     pub slot_ms: u64,
     pub(crate) exact_duration: bool,
@@ -105,6 +107,8 @@ pub(crate) fn clips(p: &Project) -> Vec<Clip> {
                 .copied();
             Some(Clip {
                 id: id.clone(),
+                lane_id: crate::dubbing_lanes::lane(p, &line.id).into(),
+                lane_gain: crate::dubbing_lanes::gain(p, &line.id),
                 path: g["path"].as_str()?.into(),
                 slot_ms: 0,
                 exact_duration: duration.is_some(),
@@ -128,19 +132,27 @@ pub(crate) fn clips(p: &Project) -> Vec<Clip> {
         .iter()
         .map(|c| family.key(generations[c.id.as_str()]["dialogueId"].as_str().unwrap()))
         .collect();
+    let lanes: Vec<_> = clips.iter().map(|c| c.lane_id.clone()).collect();
     let mut conflicts = std::collections::HashSet::new();
-    for (index, start) in starts.iter().enumerate().skip(1) {
-        if *start == starts[index - 1] && keys[index] != keys[index - 1] {
-            conflicts.insert(*start);
+    let mut previous = std::collections::HashMap::new();
+    for (index, start) in starts.iter().enumerate() {
+        if let Some((at, key)) =
+            previous.insert(lanes[index].clone(), (*start, keys[index].clone()))
+        {
+            if at == *start && key != keys[index] {
+                conflicts.insert((lanes[index].clone(), *start));
+            }
         }
     }
     for (index, clip) in clips.iter_mut().enumerate() {
         let mut following = index + 1;
-        while following < starts.len() && keys[following] == keys[index] {
+        while following < starts.len()
+            && (lanes[following] != lanes[index] || keys[following] == keys[index])
+        {
             following += 1;
         }
         let next = starts.get(following).copied().unwrap_or(u64::MAX);
-        let duplicate = conflicts.contains(&clip.start);
+        let duplicate = conflicts.contains(&(clip.lane_id.clone(), clip.start));
         clip.slot_ms = if duplicate {
             0
         } else {
@@ -191,7 +203,10 @@ pub(crate) async fn render_dubbing_range_raw<R: tauri::Runtime>(
     let executable = media::binary(app, "ffmpeg")?;
     let mut selected = clips(p);
     selected.retain(|c| {
-        c.slot_ms > 0 && c.start_ms() < end_ms && c.start_ms() + c.duration_ms() > start_ms
+        c.lane_gain > 0.0
+            && c.slot_ms > 0
+            && c.start_ms() < end_ms
+            && c.start_ms() + c.duration_ms() > start_ms
     });
     for clip in &mut selected {
         let edited = crate::voice_edit::render(
@@ -302,6 +317,7 @@ fn assemble_at(
         file: fs::File,
         start: u64,
         end: u64,
+        gain: f32,
     }
     let mut active: Vec<Active> = vec![];
     let mut pending = clips.iter().peekable();
@@ -344,6 +360,7 @@ fn assemble_at(
             .map_err(io_error)?;
             active.push(Active {
                 file,
+                gain: clip.lane_gain as f32,
                 start: clip.start,
                 end: clip.start + length.min(clip.frames),
             });
@@ -363,7 +380,8 @@ fn assemble_at(
                 .map_err(io_error)?;
             for i in 0..length {
                 samples[(start - position) as usize + i] +=
-                    f32::from(i16::from_le_bytes([input[i * 2], input[i * 2 + 1]])) / 32768.0;
+                    f32::from(i16::from_le_bytes([input[i * 2], input[i * 2 + 1]])) / 32768.0
+                        * clip.gain;
             }
         }
         for (i, sample) in samples[..count].iter().enumerate() {
@@ -541,7 +559,7 @@ async fn export<R: tauri::Runtime>(
     if dubbed {
         let root = request.root.clone();
         let mut selected = clips(p);
-        selected.retain(|c| c.slot_ms > 0);
+        selected.retain(|c| c.lane_gain > 0.0 && c.slot_ms > 0);
         jobs::update(core, app, key, |j| {
             j.stage = "mixFit".into();
             j.progress = Some(0.0);
