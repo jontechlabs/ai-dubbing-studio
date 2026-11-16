@@ -577,13 +577,18 @@ export function DubPanel({
     </section>
   );
   const actionSelector = batch && (
-    <label className="field batch-action-selector">
-      <span>{t('batchTimbre.action')}</span>
-      <select value={batchAction} onChange={(e) => setBatchAction(e.target.value)}>
-        <option value="generate">{t('batchTimbre.generate')}</option>
-        <option value="timbre">{t('batchTimbre.title')}</option>
-      </select>
-    </label>
+    <div
+      className="dubbing-modes batch-action-selector"
+      role="group"
+      aria-label={t('batchTimbre.action')}
+    >
+      <button aria-pressed={batchAction === 'generate'} onClick={() => setBatchAction('generate')}>
+        {t('batchTimbre.generate')}
+      </button>
+      <button aria-pressed={batchAction === 'timbre'} onClick={() => setBatchAction('timbre')}>
+        {t('batchTimbre.title')}
+      </button>
+    </div>
   );
   if (batch && batchAction === 'timbre')
     return (

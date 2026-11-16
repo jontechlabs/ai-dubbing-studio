@@ -18,6 +18,7 @@ export interface BatchVoiceConversionOptions {
   reference: VoiceConversionOptions;
 }
 export interface VoiceBatchReport {
+  unfinished: number;
   id: string;
   total: number;
   offset: number;

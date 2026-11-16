@@ -1,5 +1,9 @@
 # AI Dubbing Studio
 
+## v0.54.0 — Harmoniser le timbre de plusieurs dialogues doublés
+
+Cochez plusieurs dialogues doublés → **Doublage → Lot → Harmoniser le timbre**. Choisissez un essai existant ou importez un fichier de référence avec un extrait de 1 à 20 secondes. Chatterbox VC crée et sélectionne un nouvel essai par dialogue admissible, en conservant les précédents, la durée, le placement et les sous-titres. Modèle conservé pendant le lot, libéré à la fin ou à l’annulation. Résultats conservés, écoute avant/après et reprise des conversions non terminées. **174 outils MCP / 35 schémas ; format projet inchangé.** [Guide et capture](docs/BATCH-TIMBRE.md).
+
 ## v0.53.0 — Temps restant du lot et de la file
 
 Les lots et la file affichent une estimation globale, recalibrée après chaque essai. Les 1 à 4 essais par réplique, modèles à froid/déjà chargés et séparations sont comptés ; les parties sans historique restent explicites. [Guide et captures](docs/GENERATION-TIMING.md).

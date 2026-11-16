@@ -482,7 +482,8 @@ export function BatchVoiceConversion({
           <div className="compact-toolbar">
             <button
               className="button subtle"
-              disabled={busy}
+              disabled={busy || (!checked.length && !report?.unfinished)}
+              title={t('batchTimbre.retryHint')}
               onClick={() => void perform(() => bridge.retryVoiceBatch(reportId, checked))}
             >
               <RefreshCw size={14} />

@@ -1,6 +1,6 @@
 # Piloter le studio avec une IA via MCP
 
-Le studio fournit **170 outils MCP** en v0.53.0 : 135 commandes natives et 35 commandes d’édition, d’état et de lecture, avec **33 schémas partagés**. Le serveur utilise **stdio** et le même exécutable que l’application. Cette intégration pilote **l’application ouverte** ; aucun environnement Node.js ou Python supplémentaire n’est requis pour la connexion.
+Le studio fournit **174 outils MCP** en v0.54.0 : 139 commandes natives et 35 commandes d’édition, d’état et de lecture, avec **35 schémas partagés**. Le serveur utilise **stdio** et le même exécutable que l’application. Cette intégration pilote **l’application ouverte** ; aucun environnement Node.js ou Python supplémentaire n’est requis pour la connexion.
 
 ## Nouveaux moteurs natifs
 
@@ -142,3 +142,25 @@ Le studio démarre sur l’accueil, sans rouvrir automatiquement le dernier proj
 `studio_list_jobs` expose `estimate` pendant une création : opération, `estimatedMs` (ou `null` sans historique), `baselineElapsedMs` et `sampleCount`. Le temps restant se calcule avec le temps actif de l’opération, pas avec tout le temps déjà passé dans un lot. L’estimation concerne l’essai/étape en cours. Les démarrages à froid et les modèles conservés en lot ont des calibrations séparées. [Guide](GENERATION-TIMING.md). Aucun nouvel outil : 170 outils / 33 schémas.
 
 Whole-batch and FIFO estimates: `studio_list_jobs` includes optional `workEstimate` on active TTS batches. `studio_task_queue_status` includes it on the queue and each pending/running entry: `pendingMs`, `pendingKnown`, `pendingUnknown`, and optional `active` (`jobId`, `estimatedMs`, `baselineElapsedMs`). Subtract only that active job’s execution elapsed time beyond the baseline; never subtract elapsed time from future operations. Unknown steps and active overruns make the forecast partial. Queue polling is read-only; paused waiting time has no predicted duration. Existing 170 tools and 33 schemas remain available.
+
+## Harmonisation du timbre par lot (v0.54.0)
+
+`studio_preview_voice_batch` vérifie les dialogues cochés sans modifier le projet. `studio_convert_voice_batch` lance une conversion audio → audio locale avec Chatterbox VC, une référence commune et un nouvel essai sélectionné par dialogue admissible. La mutation exige le contexte courant. Les anciens essais restent conservés ; aucune réécriture de la vidéo, des sous-titres ni du placement des doublages.
+
+```json
+{
+  "lineIds": ["dialogue-1", "dialogue-2"],
+  "reference": {
+    "generationId": "batch",
+    "referenceMode": "generation",
+    "referenceId": "existing-french-take-id",
+    "referenceRange": { "startMs": 0, "endMs": 5000 },
+    "characterId": null,
+    "device": "cuda:0"
+  }
+}
+```
+
+`reference.generationId` vaut `batch` : chaque entrée est résolue depuis l’essai sélectionné du dialogue, puis son ID est figé au lancement. `referenceMode: "reference"` utilise une référence enregistrée/importée (`referenceId`, `characterId` ou null), sans `referenceRange`. Importez d’abord le fichier et son extrait via `studio_import_dubbing_reference`. Les extraits de référence doivent durer 1–20 s ; les sources converties 0,15–120 s. Aucun repli CPU silencieux.
+
+Suivez `studio_list_jobs` (`kind: voiceConversionBatch`) puis `studio_voice_batch_report({id, offset, limit})` (1–200 entrées). Le rapport expose les ID source/résultat, statut, erreur et nombre restant. `studio_retry_voice_batch({id, lineIds})` reprend les lignes non terminées ; une liste vide les reprend toutes. Les sources/références restent figées : une modification de leurs entrées refuse la reprise et demande un nouveau lot. Les succès ne sont pas recréés, y compris après une interruption entre la validation du WAV/projet et l’écriture du rapport. Aucun redémarrage automatique des tâches. [Guide](BATCH-TIMBRE.md).

@@ -38,7 +38,7 @@ try {
   assert.equal(client.getServerVersion().version, '0.54.0');
   assert.equal(tools.length, 174);
   if (args.phase === 'before') {
-    const p = await call('studio_get_project');
+    let p = await call('studio_get_project');
     assert(p);
     const library = await call('studio_list_projects');
     const entry = library.entries.find((e) => e.key === library.activeKey);
@@ -53,6 +53,93 @@ try {
     );
     const index = p.generations.findIndex((g) => g.kind === 'tts');
     assert(index >= 0);
+    const input = p.generations[index],
+      line = p.dialogues.find((l) => l.id === input.dialogueId);
+    assert(input.durationMs >= 1000 && line);
+    const reference = {
+      generationId: 'batch',
+      referenceMode: 'generation',
+      referenceId: input.id,
+      characterId: null,
+      device: 'cpu',
+      referenceRange: { startMs: 0, endMs: 1000 },
+    };
+    const selection = { lineIds: [line.id], reference };
+    const beforePreview = structuredClone(p);
+    const preview = await call('studio_preview_voice_batch', { options: selection });
+    assert.deepEqual(preview.ready, [line.id]);
+    assert.deepEqual(preview.blocked, []);
+    const invalid = await client.callTool({
+      name: 'studio_preview_voice_batch',
+      arguments: {
+        options: {
+          ...selection,
+          reference: { ...reference, referenceRange: { startMs: 0, endMs: 100 } },
+        },
+      },
+    });
+    assert(
+      invalid.isError && invalid.content.some((c) => c.text?.includes('INVALID_REFERENCE_AUDIO')),
+    );
+    assert.deepEqual(await call('studio_get_project'), beforePreview);
+    // This isolated diagnostic has no voice weights. Check the real guard,
+    // not an invented inference result, through the official SDK.
+    const rejected = await client.callTool({
+      name: 'studio_convert_voice_batch',
+      arguments: { context: (await call('studio_get_state')).context, options: selection },
+    });
+    assert(
+      rejected.isError && rejected.content.some((c) => c.text?.includes('TTS_MODEL_REQUIRED')),
+    );
+    assert.deepEqual(await call('studio_get_project'), beforePreview);
+    const pcm = Buffer.alloc(44 + 2 * 24000 * 2);
+    pcm.write('RIFF');
+    pcm.writeUInt32LE(pcm.length - 8, 4);
+    pcm.write('WAVEfmt ', 8);
+    pcm.writeUInt32LE(16, 16);
+    pcm.writeUInt16LE(1, 20);
+    pcm.writeUInt16LE(1, 22);
+    pcm.writeUInt32LE(24000, 24);
+    pcm.writeUInt32LE(48000, 28);
+    pcm.writeUInt16LE(2, 32);
+    pcm.writeUInt16LE(16, 34);
+    pcm.write('data', 36);
+    pcm.writeUInt32LE(pcm.length - 44, 40);
+    for (let i = 0; i < 48000; i++)
+      pcm.writeInt16LE(Math.round(Math.sin(i * 0.03) * 6000), 44 + i * 2);
+    const file = path.join(root, 'cache', 'sdk-vc-reference.wav');
+    await fs.mkdir(path.dirname(file), { recursive: true });
+    await fs.writeFile(file, pcm);
+    await call('studio_import_dubbing_reference', {
+      lineId: null,
+      path: file,
+      options: {
+        device: 'cpu',
+        referenceMode: 'current',
+        referenceId: null,
+        mode: 'crossLingual',
+        speed: 1,
+        seed: 0,
+      },
+      range: { startMs: 250, endMs: 1750 },
+    });
+    p = await call('studio_get_project');
+    const imported = p.voiceReferences.at(-1);
+    assert.equal(imported.durationMs, 1500);
+    assert.deepEqual(p.generations, beforePreview.generations);
+    const filePreview = await call('studio_preview_voice_batch', {
+      options: {
+        lineIds: [line.id],
+        reference: {
+          generationId: 'batch',
+          referenceMode: 'reference',
+          referenceId: imported.id,
+          characterId: null,
+          device: 'cpu',
+        },
+      },
+    });
+    assert.deepEqual(filePreview.ready, [line.id]);
     const record = {
       takeId: p.generations[index].id,
       operation: 'tts',
@@ -120,6 +207,7 @@ try {
       'dialogues',
       'tracks',
       'voiceEdits',
+      'voiceReferences',
       'dubbingTiming',
       'sourceCues',
       'targetCues',
@@ -134,6 +222,9 @@ try {
       officialSdk: true,
       actualApplicationRestart: true,
       persistentTakeTiming: true,
+      batchTimbrePreviewValidated: true,
+      batchReferenceImportPersisted: true,
+      batchRuntimeGuardPreservesTakes: true,
       invalidMeasurementsRejected: true,
       otherTakesAndMixPreserved: true,
       wavAndVideoHashesPreserved: true,

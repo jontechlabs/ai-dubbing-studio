@@ -1,5 +1,9 @@
 # AI Dubbing Studio
 
+## v0.54.0 — Harmonize the timbre of selected dubbed dialogues
+
+Check several dubbed dialogues → **Dubbing → Batch → Harmonize timbre**. Choose a common existing take or import a reference file with a 1–20 second range. Local Chatterbox VC creates and selects one new take per eligible dialogue, preserving previous takes, duration, placement and subtitles. The model stays loaded during the batch and is released on completion/cancellation. Durable results, before/after audition and retries of unfinished conversions. **174 MCP tools / 35 schemas; project format unchanged.** [Guide and screenshot](docs/BATCH-TIMBRE.md).
+
 ## v0.53.0 — Whole-batch and queue remaining time
 
 Batches and FIFO workflows show total remaining-work estimates, recalibrated after every take. Counts 1–4 takes per line, cold/resident models and separation steps; missing history remains explicit. [Guide and screenshots](docs/GENERATION-TIMING.md).

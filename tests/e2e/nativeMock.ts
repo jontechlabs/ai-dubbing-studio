@@ -171,6 +171,28 @@ export async function nativeMock(page: Page, large = false, seededProject?: Proj
         workflowQueue = { ...workflowQueue, ...structuredClone(q) };
         saveQueue();
       };
+      const voiceBatches:Record<string,any>=JSON.parse(localStorage.getItem('mockVoiceBatches')||'{}');
+      const saveVoiceBatches=()=>localStorage.setItem('mockVoiceBatches',JSON.stringify(voiceBatches));
+      const planVoiceBatch=(o:any)=>{const ready:string[]=[],blocked:any[]=[];for(const id of [...new Set(o.lineIds)] as string[]){const l=project.dialogues.find(l=>l.id===id),g=project.generations.find(g=>g.id===l?.selectedGenerationIds[project.languages.target]&&g.kind==='tts');if(!l||l.excludedFromDubbing||!g)blocked.push({lineId:id,error:'INVALID_GENERATION'});else ready.push(id);}return{ready,blocked};};
+      const launchVoiceBatch=(o:any,items:any[],origin?:string)=>{
+        const id=crypto.randomUUID();host.__pendingVoiceBatch=structuredClone(o);
+        job={id,projectId:project.id,kind:'voiceConversionBatch',status:'running',stage:'vcConvert',progress:null,error:null,logs:[],timing:{elapsedMs:0,observedAtMs:Date.now()},batch:{total:items.length,completed:0,succeeded:0,failed:0,skipped:0,currentLineId:items[0]?.lineId??null}};
+        voiceBatches[id]={id,root:origin??id,options:structuredClone(o),items:structuredClone(items),job:structuredClone(job)};saveVoiceBatches();emit('job-changed',structuredClone(job));return id;
+      };
+      host.__finishVoiceBatch=(failed:string[]=[])=>{
+        const r=voiceBatches[job.id];
+        for(const [i,row] of r.items.entries()) {
+          if(failed.includes(row.lineId)){row.status='failed';row.error='VC_FAILED';continue;}
+          const source:any=project.generations.find(g=>g.id===row.sourceId),id=crypto.randomUUID();
+          const g={...structuredClone(source),id,path:'generations/'+id+'.wav',createdAt:new Date().toISOString(),providerId:'chatterbox-vc',modelId:'chatterbox-vc',takeOrigin:{type:'conversion',sourceGenerationId:source.id,referenceId:r.options.reference.referenceId},generationTiming:{takeId:id,operation:'voiceConversion',elapsedMs:8000,inputUnits:source.durationMs,warmModel:i>0,contextKey:'b'.repeat(64)}};
+          project.generations.push(g);const l=project.dialogues.find(l=>l.id===row.lineId)!;l.selectedGenerationIds[project.languages.target]=id;l.status='review';row.status='succeeded';row.generationId=id;row.error=null;
+          if(r.root!==r.id)Object.assign(voiceBatches[r.root].items.find((v:any)=>v.lineId===row.lineId),row);
+        }
+        project.formatVersion=Math.max(17,project.formatVersion);project.revision++;localStorage.setItem('nativeMockProject',JSON.stringify(project));emit('project-changed',structuredClone(project));
+        const failures=r.items.filter((i:any)=>i.status==='failed').length;
+        job={...job,status:failures?'failed':'succeeded',stage:'done',error:failures?'VC_BATCH_PARTIAL':null,batch:{...job.batch,completed:r.items.length,succeeded:r.items.length-failures,failed:failures,currentLineId:null}};
+        r.job=structuredClone(job);saveVoiceBatches();emit('job-changed',structuredClone(job));
+      };
       const leveling = new Map<string, any>();
       host.__completeAudit = (report: any) => {
         project.formatVersion = 29;
@@ -2373,6 +2395,13 @@ export async function nativeMock(page: Page, large = false, seededProject?: Proj
             emit('project-changed', structuredClone(project));
             return structuredClone(project);
           }
+          if(command==='preview_voice_batch')return planVoiceBatch(args.options);
+          if(command==='convert_voice_batch') {
+            const o=args.options,plan=planVoiceBatch(o);
+            return launchVoiceBatch(o,plan.ready.map(id=>({lineId:id,sourceId:project.dialogues.find(l=>l.id===id)!.selectedGenerationIds[project.languages.target],status:'pending',error:null,generationId:null})));
+          }
+          if(command==='voice_batch_report') {const r=voiceBatches[args.id];return{id:args.id,total:r.items.length,unfinished:r.items.filter((i:any)=>i.status!=='succeeded').length,offset:args.offset,items:structuredClone(r.items.slice(args.offset,args.offset+args.limit))};}
+          if(command==='retry_voice_batch') {const r=voiceBatches[voiceBatches[args.id].root];const rows=r.items.filter((i:any)=>i.status!=='succeeded'&&(!args.lineIds.length||args.lineIds.includes(i.lineId))).map((i:any)=>({...i,status:'pending',error:null,generationId:null}));host.__voiceRetry=structuredClone(args);return launchVoiceBatch(r.options,rows,r.id);}
           if (command === 'convert_voice_timbre') {
             if (host.__rejectConversion) throw Error('TTS_MODEL_REQUIRED');
             host.__pendingConversion = structuredClone(args.options);
@@ -2474,7 +2503,7 @@ export async function nativeMock(page: Page, large = false, seededProject?: Proj
             }
             return null;
           }
-          if (command === 'list_jobs') return job ? [job] : [];
+          if (command === 'list_jobs') return [...(job?[job]:[]),...Object.values(voiceBatches).map((r:any)=>r.job).filter((j:any)=>j.id!==job?.id)];
           if (command === 'media_path') return 'preview.mp4';
           if (command === 'get_waveform')
             return {

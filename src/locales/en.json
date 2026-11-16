@@ -2164,6 +2164,7 @@
       "pending": "Not processed",
       "succeeded": "New take created",
       "failed": "Failed"
-    }
+    },
+    "retryHint": "Retry only unfinished entries using the original frozen source takes and reference."
   }
 }

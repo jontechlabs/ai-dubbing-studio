@@ -2164,6 +2164,7 @@
       "pending": "Non traité",
       "succeeded": "Nouvel essai créé",
       "failed": "Échec"
-    }
+    },
+    "retryHint": "Relance uniquement les éléments inachevés avec la référence et les essais source figés du lot d’origine."
   }
 }

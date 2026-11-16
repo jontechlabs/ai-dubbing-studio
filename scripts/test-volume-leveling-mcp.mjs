@@ -96,7 +96,7 @@ try {
     await until(async () => {
       const m = (await state()).microphone;
       if (m.error) throw Error(JSON.stringify(m));
-      return m.phase === 'recording' && m.durationMs >= 900;
+      return m.phase === 'recording' && m.durationMs >= 1500;
     });
     await call('studio_microphone', { action: 'stop', context: await context() });
     await until(async () => (await state()).microphone.phase === 'ready');
