@@ -433,7 +433,7 @@ pub(crate) async fn execute_project<R: tauri::Runtime>(
     key: &str,
     request: &Request,
     flag: &AtomicBool,
-    mut hot: Option<&mut crate::tts_session::Session>,
+    hot: Option<&mut crate::tts_session::Session>,
     launch: Option<&tts::WorkerLaunch>,
 ) -> Result<Project, String> {
     let p = {
@@ -522,7 +522,7 @@ pub(crate) async fn execute_project<R: tauri::Runtime>(
         model: voice_engines::root(core).join("chatterbox-vc"),
     };
     let launch = launch.unwrap_or(&default_launch);
-    if let Some(session) = hot.as_deref_mut() {
+    if let Some(session) = hot {
         session
             .generate(core, app, key, launch, &input, flag)
             .await?;

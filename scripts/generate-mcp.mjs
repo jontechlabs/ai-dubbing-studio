@@ -232,7 +232,7 @@ const notes = {
   suggest_translation:
     'Propose a local translation without applying it. Optional direction (up to 2000 characters) guides character, register, tone and desired spoken length; subtitle timings are supplied automatically. Poll jobs, review the proposal, then explicitly apply it.',
   preview_voice_batch:
-    'Preview selected dubbed dialogues for one common local timbre reference. Uses the selected take in each dialogue; reports missing, excluded or invalid audio. Read-only.',
+    'Preview selected dubbed dialogues for one common local timbre reference. Uses the selected take in each dialogue; reports missing, excluded or invalid audio. Set reference.generationId to "batch" (each source is resolved from lineIds). Read-only.',
   convert_voice_batch:
     'Harmonize selected dubbed dialogues with one stored reference or generated-take range through local Chatterbox VC. Freeze input take IDs, create/select one new immutable take per eligible dialogue, preserve all old takes/timeline timings, keep the model resident for the lot. Poll jobs and voice_batch_report. Cancellable; no CPU fallback.',
   voice_batch_report:

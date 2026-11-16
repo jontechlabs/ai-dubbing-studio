@@ -170,9 +170,27 @@ async fn selected_takes_share_a_resident_converter_and_preserve_old_audio_edits_
 }
 #[tokio::test]
 async fn failures_are_durable_and_retry_rejects_changed_inputs_and_never_repeats_successes() {
-    let (_dir, core, o, launch) = fixture().await;
+    let (_dir, core, mut o, launch) = fixture().await;
     let app = tauri::test::mock_app();
     let root = core.session.lock().unwrap().as_ref().unwrap().root.clone();
+    core.session
+        .lock()
+        .unwrap()
+        .as_mut()
+        .unwrap()
+        .project
+        .voice_references
+        .push(crate::domain::VoiceReference {
+            id: "file-reference".into(),
+            label: "Imported French reference".into(),
+            path: "generations/voice.wav".into(),
+            duration_ms: 1500,
+            transcript: String::new(),
+            source_dialogue_id: None,
+        });
+    o.reference.reference_mode = Some("reference".into());
+    o.reference.reference_id = "file-reference".into();
+    o.reference.reference_range = None;
     std::fs::write(root.join("fail-once"), b"fixture").unwrap();
     let key = enqueue(
         core.clone(),

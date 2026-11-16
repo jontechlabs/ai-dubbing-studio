@@ -4,7 +4,7 @@
     {
       "name": "studio_preview_voice_batch",
       "command": "preview_voice_batch",
-      "description": "Preview selected dubbed dialogues for one common local timbre reference. Uses the selected take in each dialogue; reports missing, excluded or invalid audio. Read-only.",
+      "description": "Preview selected dubbed dialogues for one common local timbre reference. Uses the selected take in each dialogue; reports missing, excluded or invalid audio. Set reference.generationId to \"batch\" (each source is resolved from lineIds). Read-only.",
       "inputSchema": {
         "type": "object",
         "properties": { "options": { "$ref": "#/$defs/options_BatchVoiceConversionOptions_0" } },

@@ -202,7 +202,7 @@ pub fn report(core: &Core, id: &str, offset: u32, limit: u32) -> Result<Value, S
     let root = r.origin.clone().unwrap_or_else(|| id.into());
     reconcile(&s.project, &mut r, &root);
     Ok(
-        json!({"id":id,"total":r.items.len(),"offset":offset,"items":r.items.iter().skip(offset as usize).take(limit as usize).collect::<Vec<_>>() }),
+        json!({"id":id,"total":r.items.len(),"unfinished":r.items.iter().filter(|i|i.status!="succeeded").count(),"offset":offset,"items":r.items.iter().skip(offset as usize).take(limit as usize).collect::<Vec<_>>() }),
     )
 }
 pub fn start<R: tauri::Runtime>(
@@ -391,7 +391,7 @@ fn enqueue<R: tauri::Runtime>(
                     record(&core,&id,index,&r.items[index])?;
                     if let Some(origin)=&r.origin {record(&core,origin,r.items[index].origin_index,&r.items[index])?;}
                     checkpoint(&core,&app,&id,&r,None,hot.is_loaded());
-                    if let Some(e)=r.items[index].error.as_deref() {if ["STALE_REVISION","NO_PROJECT","TTS_OUT_OF_MEMORY","DEVICE_UNAVAILABLE","TTS_MODEL_REQUIRED"].contains(&e) {return Err(e.into());}}
+                    if let Some(e)=r.items[index].error.as_deref() {if ["STALE_REVISION","NO_PROJECT","TTS_OUT_OF_MEMORY","DEVICE_UNAVAILABLE","TTS_MODEL_REQUIRED","INVALID_REFERENCE_AUDIO","MODEL_CHECKSUM_FAILED","TTS_RUNTIME_FAILED","TTS_NATIVE_CRASH"].contains(&e) {return Err(e.into());}}
                 }
                 if r.items.iter().any(|i|i.status=="failed") {Err("VC_BATCH_PARTIAL".into())} else {Ok(())}
             }.await;
