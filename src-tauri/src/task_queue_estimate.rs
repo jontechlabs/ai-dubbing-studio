@@ -227,7 +227,7 @@ impl Estimator {
                 }
             } else {
                 // Pre-v0.53 journals have no immutable prediction inputs.
-                for row in e.rows.iter().filter(|r| !complete.contains(&r.line_id)) {
+                for _ in e.rows.iter().filter(|r| !complete.contains(&r.line_id)) {
                     for _ in 0..e.spec.selection.take_count.unwrap_or(1) {
                         result.push(None);
                     }
