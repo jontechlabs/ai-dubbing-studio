@@ -105,6 +105,11 @@ fn checkpoint_measures_silent_work_and_restart_never_counts_closed_app_time() {
         let mut jobs = core.jobs.lock().unwrap();
         let c = jobs.get_mut(&key).unwrap();
         c.saved.record.status = "running".into();
+        c.saved.record.work_estimate = Some(crate::work_estimate::Forecast {
+            pending_ms: 1000,
+            pending_known: 1,
+            ..Default::default()
+        });
         c.saved.record.estimate = Some(crate::generation_timing::Estimate {
             operation: "tts".into(),
             estimated_ms: Some(10000),
@@ -125,6 +130,7 @@ fn checkpoint_measures_silent_work_and_restart_never_counts_closed_app_time() {
     let snapshot = restored.snapshot_at(Instant::now() + Duration::from_secs(86400), u64::MAX);
     assert_eq!(snapshot.status, "interrupted");
     assert!(snapshot.estimate.is_none());
+    assert!(snapshot.work_estimate.is_none());
     assert_eq!(snapshot.timing.unwrap().elapsed_ms, measured);
 }
 

@@ -344,6 +344,11 @@ try {
     assert(queue.paused);
     assert.equal(queue.entries[0].id, secondQueue);
     assert(queue.entries.every((e) => e.status === 'pending'));
+    assert.equal(queue.workEstimate.pendingKnown, 0);
+    assert.equal(queue.workEstimate.pendingUnknown, 5); // four TTS takes + one separation
+    assert.equal(queue.workEstimate.active, null);
+    assert.equal(queue.entries.find((e) => e.id === firstQueue).workEstimate.pendingUnknown, 4);
+    assert.equal(queue.entries.find((e) => e.id === secondQueue).workEstimate.pendingUnknown, 1);
     const queuePage = await call('studio_task_queue_entry', {
       id: firstQueue,
       offset: 0,
@@ -466,6 +471,7 @@ try {
       actualApplicationRestart: true,
       persistedQueueAndFrozenWorkflow: true,
       queueControlsAndBoundedRead: true,
+      remainingQueueCountsPreserved: true,
       noAutomaticQueueResume: true,
       realPcmLowAndHigh: true,
       fullTrackBeyond120s: true,

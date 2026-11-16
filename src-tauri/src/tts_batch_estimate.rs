@@ -45,7 +45,7 @@ pub(super) fn remaining(
         } else {
             let estimate = plan.get(index).and_then(|q| q.as_ref()).and_then(|q| {
                 let mut query = q.clone();
-                query.warm_model = loaded && !item.request.options.variant().contains("gguf");
+                query.warm_model = loaded;
                 history.predict(&query)
             });
             result.push(estimate);

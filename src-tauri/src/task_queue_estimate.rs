@@ -51,15 +51,7 @@ pub(super) fn capture(p: &Project, root: &std::path::Path, spec: &Spec) -> Vec<P
                 p.dialogues
                     .iter()
                     .find(|l| l.id == item.request.line_id)
-                    .and_then(|l| {
-                        tts::timing_query(
-                            p,
-                            l,
-                            &item.request.options,
-                            index > 0 && !item.request.options.variant().contains("gguf"),
-                        )
-                        .ok()
-                    })
+                    .and_then(|l| tts::timing_query(p, l, &item.request.options, index > 0).ok())
             };
             let initial_ms = query.as_ref().and_then(|q| history.predict(q));
             PlannedTake {

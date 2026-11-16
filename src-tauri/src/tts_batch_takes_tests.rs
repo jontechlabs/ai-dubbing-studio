@@ -123,8 +123,14 @@ async fn four_takes_per_dialogue_reuse_one_worker_select_last_and_keep_previous_
     let job = fixture::finished(&core, &key).await;
     assert_eq!(job.status, "succeeded");
     assert_eq!(job.batch.unwrap().succeeded, 8);
+    assert!(job.work_estimate.is_none());
     let p = project::load(&root).unwrap();
     assert_eq!(p.generations.len(), 10);
+    for (index, g) in p.generations.iter().skip(before.len()).enumerate() {
+        assert_eq!(g["generationTiming"]["takeId"], g["id"]);
+        assert_eq!(g["generationTiming"]["warmModel"], index > 0);
+        assert!(g["generationTiming"]["elapsedMs"].as_u64().unwrap() > 0);
+    }
     for (g, bytes) in before.iter().zip(audio) {
         assert!(p.generations.contains(g));
         assert_eq!(
