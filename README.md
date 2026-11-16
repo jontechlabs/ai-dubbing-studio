@@ -1,5 +1,9 @@
 # AI Dubbing Studio
 
+## v0.53.0 — Whole-batch and queue remaining time
+
+Batches and FIFO workflows show total remaining-work estimates, recalibrated after every take. Counts 1–4 takes per line, cold/resident models and separation steps; missing history remains explicit. [Guide and screenshots](docs/GENERATION-TIMING.md).
+
 ## v0.52.0 — Saved take durations and live generation estimates
 
 Each new take saves the computation time for TTS, timbre conversion or prosody transfer. Take cards retain this after restart; ongoing steps show an approximate remaining time based on comparable measurements on the same computer. Cold starts and resident batch models stay separate. Historical unknown durations are not invented; previous takes and sources remain intact. [Guide and screenshots](docs/GENERATION-TIMING.md).

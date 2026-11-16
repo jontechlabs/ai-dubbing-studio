@@ -1,6 +1,6 @@
 # Piloter le studio avec une IA via MCP
 
-Le studio fournit **170 outils MCP** en v0.52.0 : 135 commandes natives et 35 commandes d’édition, d’état et de lecture, avec **33 schémas partagés**. Le serveur utilise **stdio** et le même exécutable que l’application. Cette intégration pilote **l’application ouverte** ; aucun environnement Node.js ou Python supplémentaire n’est requis pour la connexion.
+Le studio fournit **170 outils MCP** en v0.53.0 : 135 commandes natives et 35 commandes d’édition, d’état et de lecture, avec **33 schémas partagés**. Le serveur utilise **stdio** et le même exécutable que l’application. Cette intégration pilote **l’application ouverte** ; aucun environnement Node.js ou Python supplémentaire n’est requis pour la connexion.
 
 ## Nouveaux moteurs natifs
 
@@ -140,3 +140,5 @@ Le studio démarre sur l’accueil, sans rouvrir automatiquement le dernier proj
 `studio_get_project` conserve `generationTiming` sur les essais mesurés : `takeId`, `operation` (`tts`, `voiceConversion` ou `prosody`), `elapsedMs`, `inputUnits`, `warmModel` et `contextKey`. Une mesure ne s’applique qu’à l’essai dont l’identifiant correspond à `takeId`. Les champs sont facultatifs pour les anciennes données et les valeurs invalides sont refusées.
 
 `studio_list_jobs` expose `estimate` pendant une création : opération, `estimatedMs` (ou `null` sans historique), `baselineElapsedMs` et `sampleCount`. Le temps restant se calcule avec le temps actif de l’opération, pas avec tout le temps déjà passé dans un lot. L’estimation concerne l’essai/étape en cours. Les démarrages à froid et les modèles conservés en lot ont des calibrations séparées. [Guide](GENERATION-TIMING.md). Aucun nouvel outil : 170 outils / 33 schémas.
+
+Whole-batch and FIFO estimates: `studio_list_jobs` includes optional `workEstimate` on active TTS batches. `studio_task_queue_status` includes it on the queue and each pending/running entry: `pendingMs`, `pendingKnown`, `pendingUnknown`, and optional `active` (`jobId`, `estimatedMs`, `baselineElapsedMs`). Subtract only that active job’s execution elapsed time beyond the baseline; never subtract elapsed time from future operations. Unknown steps and active overruns make the forecast partial. Queue polling is read-only; paused waiting time has no predicted duration. Existing 170 tools and 33 schemas remain available.

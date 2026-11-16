@@ -40,7 +40,7 @@ test('whole batch countdown keeps future takes, recalibrates, freezes on pause a
   await page.clock.fastForward(10000);
   await expect(eta).toContainText('00:02:20');
   await page.clock.fastForward(55000);
-  await expect(eta).toContainText('au moins 00:01:30 · 1 étape non estimée');
+  await expect(eta).toContainText('≈ 00:01:30 + 1 étape non estimée');
   await expect(eta).toContainText('plus longue que prévu');
   // New successful measurements revise future costs instead of counting time twice.
   await emit({
@@ -144,7 +144,7 @@ test('queue displays whole and per-workflow estimates, partial learning and paus
     .click();
   const panel = page.getByRole('dialog', { name: 'File des tâches', exact: true }),
     eta = panel.locator('.work-estimate-queue');
-  await expect(eta).toContainText('File restante : au moins 00:03:30 · 1 étape non estimée');
+  await expect(eta).toContainText('File restante : ≈ 00:03:30 + 1 étape non estimée');
   await page.clock.fastForward(10000);
   await expect(eta).toContainText('00:03:20');
   await panel.getByRole('button', { name: 'Pause après le lot courant', exact: true }).click();
@@ -162,7 +162,7 @@ test('queue displays whole and per-workflow estimates, partial learning and paus
     q.workEstimate = q.entries[1].workEstimate;
     w.__setWorkflowQueue(q);
   });
-  await expect(eta).toContainText('File restante : au moins 00:02:00');
+  await expect(eta).toContainText('File restante : ≈ 00:02:00');
   await page.clock.fastForward(120000);
   await expect(eta).toContainText('00:02:00');
   await expect(eta).toContainText('à la reprise');

@@ -1,5 +1,9 @@
 # AI Dubbing Studio
 
+## v0.53.0 — Temps restant du lot et de la file
+
+Les lots et la file affichent une estimation globale, recalibrée après chaque essai. Les 1 à 4 essais par réplique, modèles à froid/déjà chargés et séparations sont comptés ; les parties sans historique restent explicites. [Guide et captures](docs/GENERATION-TIMING.md).
+
 ## v0.52.0 — Durées des essais et temps restant estimé
 
 Chaque nouvel essai conserve le temps de calcul de sa génération TTS, de son changement de timbre ou de son transfert d’intonation. Affichage dans les essais, conservation après redémarrage et estimation indicative de l’essai/étape en cours à partir de mesures comparables sur le même PC. Chargement initial et modèle conservé en lot sont séparés ; les durées anciennes restent inconnues. Sources et essais préservés. [Guide et captures](docs/GENERATION-TIMING.md).

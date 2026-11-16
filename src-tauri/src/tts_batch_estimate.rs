@@ -29,7 +29,7 @@ pub(super) fn remaining(
     let mut history = History::new(p);
     let mut result = Forecast::default();
     let mut loaded = warm;
-    for (index, item) in request
+    for (index, _) in request
         .items
         .iter()
         .enumerate()
