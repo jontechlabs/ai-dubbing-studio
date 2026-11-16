@@ -2,6 +2,12 @@ import { useCallback, useEffect, useState } from 'react';
 import { listen } from '@tauri-apps/api/event';
 import type { WorkflowQueue } from '../domain/taskQueue';
 import * as bridge from '../services/bridge';
+function latestQueue(old: WorkflowQueue | null, q: WorkflowQueue) {
+  if (old && q.revision < old.revision) return old;
+  // Forecasts change after completed work, not every clock tick. Keep the
+  // editor/timeline out of unchanged polling and notification renders.
+  return old && JSON.stringify(old) === JSON.stringify(q) ? old : q;
+}
 export function useTaskQueue() {
   const [data, setData] = useState<WorkflowQueue | null>(null),
     [error, setError] = useState('');
@@ -9,7 +15,7 @@ export function useTaskQueue() {
     if (!bridge.native) return;
     try {
       const q = await bridge.taskQueueStatus();
-      setData((old) => (!old || q.revision >= old.revision ? q : old));
+      setData((old) => latestQueue(old, q));
       setError('');
     } catch (e) {
       setError(String(e));
@@ -22,13 +28,7 @@ export function useTaskQueue() {
     void bridge
       .taskQueueStatus()
       .then((q) => {
-        if (!disposed)
-          setData((old) => {
-            if (old && q.revision < old.revision) return old;
-            // Forecasts change after completed work, not every clock tick.
-            // Keep the editor/timeline out of unchanged polling renders.
-            return old && JSON.stringify(old) === JSON.stringify(q) ? old : q;
-          });
+        if (!disposed) setData((old) => latestQueue(old, q));
       })
       .catch((e) => {
         if (!disposed) setError(String(e));
@@ -36,7 +36,7 @@ export function useTaskQueue() {
     void listen<WorkflowQueue>('task-queue-changed', (event) => {
       if (!disposed) {
         const q = event.payload;
-        setData((old) => (!old || q.revision >= old.revision ? q : old));
+        setData((old) => latestQueue(old, q));
         setError('');
       }
     }).then((fn) => {
@@ -59,7 +59,7 @@ export function useTaskQueue() {
       void bridge
         .taskQueueStatus()
         .then((q) => {
-          if (!disposed) setData((old) => (!old || q.revision >= old.revision ? q : old));
+          if (!disposed) setData((old) => latestQueue(old, q));
         })
         .catch(() => {
           /* The next poll or explicit refresh can recover. */
