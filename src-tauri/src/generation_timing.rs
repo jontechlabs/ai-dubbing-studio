@@ -36,23 +36,20 @@ impl Query {
 }
 /// Snapshot only bounded successful measurements, not the whole project/audio.
 pub(crate) struct History {
-    samples: Project,
+    samples: Vec<TakeTiming>,
     cache: HashMap<Query, Option<u64>>,
 }
 impl History {
     pub fn new(p: &Project) -> Self {
-        let mut samples = Project::new(String::new(), String::new(), String::new());
-        samples.generations = p
+        let samples = p
             .generations
             .iter()
             .rev()
             .take(512)
-            .rev()
             .filter_map(|g| {
                 let t: TakeTiming =
                     serde_json::from_value(g.get("generationTiming")?.clone()).ok()?;
-                (g["kind"] == "tts" && t.validate().is_ok() && g["id"] == t.take_id)
-                    .then(|| json!({"id":t.take_id,"kind":"tts","generationTiming":t}))
+                (g["kind"] == "tts" && t.validate().is_ok() && g["id"] == t.take_id).then_some(t)
             })
             .collect();
         Self {
@@ -66,7 +63,28 @@ impl History {
             if timing.validate().is_err() {
                 return None;
             }
-            comparable(&self.samples, &timing).0
+            let mut nearby: Vec<_> = self
+                .samples
+                .iter()
+                .filter(|item| {
+                    item.operation == timing.operation
+                        && item.context_key == timing.context_key
+                        && item.warm_model == timing.warm_model
+                        && item.input_units * 3 >= timing.input_units * 2
+                        && item.input_units * 2 <= timing.input_units * 3
+                })
+                .map(|item| {
+                    (
+                        item.input_units.abs_diff(timing.input_units),
+                        item.elapsed_ms,
+                    )
+                })
+                .collect();
+            nearby.sort_by_key(|s| s.0);
+            nearby.truncate(5);
+            let mut durations: Vec<_> = nearby.into_iter().map(|s| s.1).collect();
+            durations.sort_unstable();
+            durations.get(durations.len() / 2).copied()
         })
     }
 }

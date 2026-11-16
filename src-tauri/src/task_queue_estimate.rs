@@ -190,6 +190,12 @@ impl Estimator {
             }
         }
         if e.spec.dubbing {
+            let failed: HashSet<_> = e
+                .rows
+                .iter()
+                .filter(|r| r.status == "failed")
+                .map(|r| &r.line_id)
+                .collect();
             let active = e.dubbing_runs.iter().find(|r| r.status == "running");
             let active_work = active
                 .and_then(|r| r.job_id.as_ref())
@@ -207,11 +213,7 @@ impl Estimator {
             if let Some(plan) = &e.eta_plan {
                 for take in plan.iter().filter(|t| !complete.contains(&t.line_id)) {
                     // Failed separation rows will not be dubbed in this run.
-                    if e.spec.separation.is_some()
-                        && e.rows
-                            .iter()
-                            .any(|r| r.line_id == take.line_id && r.status == "failed")
-                    {
+                    if e.spec.separation.is_some() && failed.contains(&take.line_id) {
                         continue;
                     }
                     let measured = if self.project_id.as_deref() == Some(&e.project_id) {
