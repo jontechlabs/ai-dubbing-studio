@@ -208,7 +208,8 @@
     "levelingAnalyze": "Analyse et homogénéisation des niveaux",
     "levelingPreview": "Préparation des préécoutes longue durée",
     "auditAudio": "Vérification des fichiers et des niveaux audio",
-    "auditVoices": "Recherche de plusieurs voix possibles"
+    "auditVoices": "Recherche de plusieurs voix possibles",
+    "vcReuse": "Réutilisation du modèle de timbre"
   },
   "shortcuts": "Espace : lecture · J/K/L : transport · O : original · Ctrl+S : sauvegarde · Ctrl+Z/Y : annuler/rétablir",
   "errors": {
@@ -454,7 +455,9 @@
     "QUEUE_RESTARTED": "Le studio a été redémarré. Reprenez les étapes inachevées explicitement.",
     "QUEUE_CORRUPT": "La file enregistrée est illisible. Retirer l’historique termine sa remise à zéro et archive le fichier pour récupération.",
     "QUEUE_PROJECT_REQUIRED": "Ouvrez le projet de cette tâche, puis reprenez la file.",
-    "TTS_ACCENT_EMBEDDING_FAILED": "Impossible de préparer une empreinte vocale valide pour l’orientation française. Réessayez avec une référence nette."
+    "TTS_ACCENT_EMBEDDING_FAILED": "Impossible de préparer une empreinte vocale valide pour l’orientation française. Réessayez avec une référence nette.",
+    "VC_BATCH_EMPTY": "Aucun essai de doublage sélectionné ne peut être harmonisé.",
+    "VC_BATCH_PARTIAL": "Le lot est terminé avec des échecs. Les essais réussis sont conservés ; vous pouvez reprendre les éléments inachevés."
   },
   "preparingVideo": "Préparation de la vidéo…",
   "loadingVideo": "Chargement de la vidéo…",
@@ -1319,7 +1322,8 @@
     "speakerSeparation": "Séparation des voix superposées",
     "speakerSeparationInstall": "Installation du séparateur de voix",
     "volumeLeveling": "Égalisation du volume",
-    "dubbingAudit": "Analyse des doublages"
+    "dubbingAudit": "Analyse des doublages",
+    "voiceConversionBatch": "Harmonisation de timbre par lot"
   },
   "fxRemoveTrack": "Retirer la copie avec effets · {{name}}",
   "transferEffects": "Effets audio",
@@ -2128,5 +2132,38 @@
     "paused": "durée de travail à la reprise",
     "finalizing": "{{label}} : finalisation ou actualisation en cours",
     "hint": "Temps de travail restant indicatif, recalculé avec les mesures comparables du projet après chaque essai. Les 1 à 4 essais par réplique, le premier chargement et le modèle gardé chargé sont comptés séparément. Seule l’étape active décompte le temps. Les étapes sans historique et les dépassements sont explicites. Une pause ou l’attente de l’ouverture d’un projet n’a pas de durée prévisible. Les séparations utilisent leurs propres mesures locales ; les futurs lots peuvent encore exclure des essais déjà disponibles."
+  },
+  "batchTimbre": {
+    "title": "Harmoniser le timbre",
+    "action": "Action du lot",
+    "generate": "Générer les voix",
+    "hint": "Applique une voix de référence commune aux essais sélectionnés de chaque dialogue coché, avec Chatterbox VC en local. Un nouvel essai est créé et sélectionné pour chacun ; les anciens essais, la durée et le placement restent conservés. Le modèle reste chargé pendant le lot, puis est libéré. Écoutez les résultats avant validation.",
+    "referenceKind": "Référence commune",
+    "take": "Doublage existant",
+    "file": "Fichier ou référence enregistrée",
+    "referenceDialogue": "Dialogue de référence",
+    "referenceTake": "Essai de référence",
+    "range": "Choisissez une portion de référence comprise entre 1 et 20 secondes.",
+    "loading": "Vérification de Chatterbox VC et des périphériques…",
+    "select": "Cochez les dialogues à harmoniser dans la liste de gauche.",
+    "preview": "{{ready}} dialogues prêts · {{blocked}} exclus (essai absent, dialogue exclu ou audio invalide).",
+    "start_one": "Harmoniser {{count}} dialogue",
+    "start_other": "Harmoniser {{count}} dialogues",
+    "history": "Historique des harmonisations",
+    "chooseReport": "Choisir un compte rendu",
+    "retrySelected": "Relancer les éléments cochés",
+    "retryAll": "Reprendre les éléments inachevés",
+    "retryOne": "Relancer ce dialogue",
+    "page": "{{from}}–{{to}} / {{total}}",
+    "listenSource": "Écouter l’essai source",
+    "listenResult": "Écouter l’essai harmonisé",
+    "openLine": "Aller au dialogue",
+    "previous": "Précédents",
+    "next": "Suivants",
+    "status": {
+      "pending": "Non traité",
+      "succeeded": "Nouvel essai créé",
+      "failed": "Échec"
+    }
   }
 }

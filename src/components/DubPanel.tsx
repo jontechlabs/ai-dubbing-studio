@@ -51,6 +51,7 @@ import { ProsodyTransfer } from './ProsodyTransfer';
 import { moodGroup, moodGroups, voiceMoods } from '../domain/voiceMoods';
 import { SpeakerSeparationPanel } from './SpeakerSeparationPanel';
 import { isolatedVoice, speakerDubbingState } from '../domain/speakerDubbing';
+import { BatchVoiceConversion } from './BatchVoiceConversion';
 import { useDubbingTask } from '../hooks/useDubbingTask';
 import { useTakeReview } from '../hooks/useTakeReview';
 import { TakeDate } from './TakeDate';
@@ -263,6 +264,7 @@ export function DubPanel({
       referenceId: value.referenceMode === 'library' ? null : value.referenceId,
     };
   });
+  const [batchAction, setBatchAction] = useState('generate');
   const [referencePending, setReferencePending] = useState(false);
   const [takeCount, setTakeCount] = useState<1 | 2 | 3 | 4>(1);
   const [pipeline, setPipeline] = useState(false),
@@ -574,8 +576,36 @@ export function DubPanel({
       )}
     </section>
   );
+  const actionSelector = batch && (
+    <label className="field batch-action-selector">
+      <span>{t('batchTimbre.action')}</span>
+      <select value={batchAction} onChange={(e) => setBatchAction(e.target.value)}>
+        <option value="generate">{t('batchTimbre.generate')}</option>
+        <option value="timbre">{t('batchTimbre.title')}</option>
+      </select>
+    </label>
+  );
+  if (batch && batchAction === 'timbre')
+    return (
+      <div className="panel-body dub-panel">
+        {actionSelector}
+        <BatchVoiceConversion
+          project={project}
+          selectedIds={batch.selectedIds}
+          jobs={jobs}
+          snapshot={snapshot}
+          run={runProject}
+          onError={onError}
+          onModels={onModels}
+          onPlay={onPlay}
+          onChooseLine={onChooseLine}
+          queueActive={queueActive}
+        />
+      </div>
+    );
   return (
     <div className="panel-body dub-panel">
+      {actionSelector}
       {takeReview.dialog}
       <nav className="dub-navigation" aria-label={t('compact.dubbingNavigation')}>
         {(

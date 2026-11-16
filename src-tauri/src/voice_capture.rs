@@ -23,6 +23,8 @@ mod tests;
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct Options {
     #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub reference_range: Option<ReferenceRange>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub reference_mode: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub reference_track_id: Option<String>,
@@ -30,6 +32,12 @@ pub struct Options {
     pub reference_id: String,
     pub character_id: Option<String>,
     pub device: String,
+}
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct ReferenceRange {
+    pub start_ms: u64,
+    pub end_ms: u64,
 }
 impl Options {
     pub(crate) fn validate(&self) -> Result<(), String> {
@@ -50,11 +58,18 @@ impl Options {
         if self
             .reference_mode
             .as_deref()
-            .is_some_and(|s| !["current", "reference"].contains(&s))
+            .is_some_and(|s| !["current", "reference", "generation"].contains(&s))
             || (self.reference_mode.as_deref() != Some("current")
                 && (self.reference_id.is_empty() || self.reference_id.len() > 128))
         {
             return Err("INVALID_VOICE_CONVERSION".into());
+        }
+        if self.reference_range.as_ref().is_some_and(|r| {
+            self.reference_mode.as_deref() != Some("generation")
+                || r.end_ms <= r.start_ms
+                || !(1000..=20000).contains(&(r.end_ms - r.start_ms))
+        }) {
+            return Err("INVALID_REFERENCE_AUDIO".into());
         }
         Ok(())
     }
@@ -71,6 +86,8 @@ pub(crate) fn validate_reference(p: &Project, o: &Options, line_id: &str) -> Res
             return Err("INVALID_REFERENCE_AUDIO".into());
         }
         crate::audio_patch::source_track(p, o.reference_track_id.as_deref())?;
+    } else if o.reference_mode.as_deref() == Some("generation") {
+        generation_reference(p, o)?;
     } else {
         reference(p, o)?;
     }
@@ -78,6 +95,10 @@ pub(crate) fn validate_reference(p: &Project, o: &Options, line_id: &str) -> Res
 }
 #[derive(Clone, Serialize, Deserialize)]
 pub struct Request {
+    #[serde(default)]
+    pub batch_origin: Option<String>,
+    #[serde(default)]
+    pub batch_index: Option<usize>,
     pub root: PathBuf,
     pub project_id: String,
     pub revision: u64,
@@ -123,7 +144,7 @@ fn reference<'a>(p: &'a Project, o: &Options) -> Result<&'a crate::domain::Voice
     }
     Ok(r)
 }
-fn inputs<'a>(p: &'a Project, o: &Options) -> Result<&'a Value, String> {
+pub(crate) fn inputs<'a>(p: &'a Project, o: &Options) -> Result<&'a Value, String> {
     o.validate()?;
     let g = p
         .generations
@@ -156,10 +177,50 @@ fn inputs<'a>(p: &'a Project, o: &Options) -> Result<&'a Value, String> {
             return Err("INVALID_REFERENCE_AUDIO".into());
         }
         crate::audio_patch::source_track(p, o.reference_track_id.as_deref())?;
+    } else if o.reference_mode.as_deref() == Some("generation") {
+        generation_reference(p, o)?;
     } else {
         reference(p, o)?;
     }
     Ok(g)
+}
+pub(crate) fn generation_reference<'a>(
+    p: &'a Project,
+    o: &Options,
+) -> Result<(&'a Value, u64, u64), String> {
+    let g = p
+        .generations
+        .iter()
+        .find(|g| {
+            g["kind"] == "tts" && g["id"] == o.reference_id && g["language"] == p.languages.target
+        })
+        .ok_or("INVALID_GENERATION")?;
+    let duration = crate::generation_timing::audio_units(p, g);
+    let start = o.reference_range.as_ref().map_or(0, |r| r.start_ms);
+    let end = o
+        .reference_range
+        .as_ref()
+        .map_or(duration.min(20000), |r| r.end_ms);
+    if end <= start || end > duration || !(1000..=20000).contains(&(end - start)) {
+        return Err("INVALID_REFERENCE_AUDIO".into());
+    }
+    Ok((g, start, end))
+}
+pub(crate) fn fingerprint(p: &Project, o: &Options) -> Result<String, String> {
+    use sha2::{Digest, Sha256};
+    let source = inputs(p, o)?;
+    let line = p
+        .dialogues
+        .iter()
+        .find(|l| Some(l.id.as_str()) == source["dialogueId"].as_str())
+        .ok_or("NO_DIALOGUES")?;
+    let reference = if o.reference_mode.as_deref() == Some("generation") {
+        let (g, start, end) = generation_reference(p, o)?;
+        json!({"generation":g,"edit":p.voice_edits.get(&o.reference_id),"start":start,"end":end})
+    } else {
+        json!(reference(p, o)?)
+    };
+    Ok(format!("{:x}",Sha256::digest(json!({"source":source,"edit":p.voice_edits.get(&o.generation_id),"reference":reference,"media":p.media,"language":p.languages.target,"start":line.start_ms,"end":line.end_ms,"character":line.character_id,"text":tts::text(p,line),"timing":p.dubbing_timing.as_ref().map(|t|json!({"sourcePath":t.source_path,"offset":t.offsets_ms.get(&line.id),"duration":t.durations_ms.get(&line.id)})),"options":o}).to_string().as_bytes())))
 }
 pub fn validate(p: &Project) -> Result<(), String> {
     for g in &p.generations {
@@ -313,6 +374,8 @@ pub fn start<R: tauri::Runtime>(
         let s = session.as_ref().ok_or("NO_PROJECT")?;
         inputs(&s.project, &options)?;
         Request {
+            batch_origin: None,
+            batch_index: None,
             root: s.root.clone(),
             project_id: s.project.id.clone(),
             revision: s.project.revision,
@@ -360,6 +423,19 @@ pub(crate) async fn execute<R: tauri::Runtime>(
     request: &Request,
     flag: &AtomicBool,
 ) -> Result<(), String> {
+    execute_project(core, app, key, request, flag, None, None)
+        .await
+        .map(|_| ())
+}
+pub(crate) async fn execute_project<R: tauri::Runtime>(
+    core: &Arc<Core>,
+    app: &tauri::AppHandle<R>,
+    key: &str,
+    request: &Request,
+    flag: &AtomicBool,
+    mut hot: Option<&mut crate::tts_session::Session>,
+    launch: Option<&tts::WorkerLaunch>,
+) -> Result<Project, String> {
     let p = {
         let session = core.session.lock().map_err(io_error)?;
         let s = session.as_ref().ok_or("NO_PROJECT")?;
@@ -380,7 +456,7 @@ pub(crate) async fn execute<R: tauri::Runtime>(
         "voiceConversion",
         json!({"options":request.options,"language":p.languages.target}),
         crate::generation_timing::audio_units(&p, source),
-        false,
+        hot.as_ref().is_some_and(|s| s.is_loaded()),
     );
     let wav = crate::voice_edit::render(
         &request.root,
@@ -420,29 +496,51 @@ pub(crate) async fn execute<R: tauri::Runtime>(
         )
         .await?;
         target
+    } else if request.options.reference_mode.as_deref() == Some("generation") {
+        let (g, start, end) = generation_reference(&p, &request.options)?;
+        let rendered = crate::voice_edit::render(
+            &request.root,
+            g["path"].as_str().ok_or("INVALID_GENERATION")?,
+            p.voice_edits.get(&request.options.reference_id),
+            &media::binary(app, "ffmpeg")?,
+            flag,
+        )
+        .await?;
+        let target = temporary.path().join("reference.wav");
+        crate::voice_batch::trim_reference(&rendered, &target, start, end, flag).await?;
+        target
     } else {
         project::asset(&request.root, &reference(&p, &request.options)?.path)?
     };
     let output = temporary.path().join("converted.wav");
     let result = temporary.path().join("result.json");
     let input = temporary.path().join("request.json");
-    project::atomic_write(&input,&serde_json::to_vec(&json!({"variantId":"chatterbox-vc","modelDir":voice_engines::root(core).join("chatterbox-vc"),"sourceAudio":wav,"referenceAudio":reference,"outputPath":output,"resultPath":result,"device":request.options.device})).map_err(io_error)?)?;
-    separation::process(
-        core,
-        app,
-        key,
-        &separation::python(&voice_engines::root(core).join("multilingual-runtime")),
-        &[
-            separation::resources(app)
-                .join("voice_conversion_worker.py")
-                .to_string_lossy()
-                .into_owned(),
-            "--request".into(),
-            input.to_string_lossy().into_owned(),
-        ],
-        flag,
-    )
-    .await?;
+    project::atomic_write(&input,&serde_json::to_vec(&json!({"variantId":"chatterbox-vc","modelDir":voice_engines::root(core).join("chatterbox-vc"),"sourceAudio":wav,"sourceGenerationId":request.options.generation_id,"referenceAudio":reference,"outputPath":output,"resultPath":result,"device":request.options.device,"referenceKey":crate::voice_edit::key(p.voice_edits.get(&request.options.reference_id))+&serde_json::to_string(&request.options.reference_range).map_err(io_error)?+&request.options.reference_id+request.options.character_id.as_deref().unwrap_or_default()})).map_err(io_error)?)?;
+    let default_launch = tts::WorkerLaunch {
+        python: separation::python(&voice_engines::root(core).join("multilingual-runtime")),
+        script: separation::resources(app).join("voice_conversion_worker.py"),
+        model: voice_engines::root(core).join("chatterbox-vc"),
+    };
+    let launch = launch.unwrap_or(&default_launch);
+    if let Some(session) = hot.as_deref_mut() {
+        session
+            .generate(core, app, key, launch, &input, flag)
+            .await?;
+    } else {
+        separation::process(
+            core,
+            app,
+            key,
+            &launch.python,
+            &[
+                launch.script.to_string_lossy().into_owned(),
+                "--request".into(),
+                input.to_string_lossy().into_owned(),
+            ],
+            flag,
+        )
+        .await?;
+    }
     if audio_files::pcm_frames(&output, 1, 24000, "VC_INVALID_AUDIO")?
         != audio_files::pcm_frames(&wav, 1, 24000, "VC_INVALID_AUDIO")?
     {
@@ -460,12 +558,27 @@ pub(crate) async fn execute<R: tauri::Runtime>(
         .ok_or("INVALID_GENERATION")?
         .remove("prosodyTransfer");
     generation["generationTiming"] = measurement.finish("");
+    for field in [
+        "voiceConversionBatchId",
+        "voiceConversionBatchRootId",
+        "voiceConversionBatchItemIndex",
+    ] {
+        generation
+            .as_object_mut()
+            .ok_or("INVALID_GENERATION")?
+            .remove(field);
+    }
+    if let Some(origin) = &request.batch_origin {
+        generation["voiceConversionBatchId"] = json!(key);
+        generation["voiceConversionBatchRootId"] = json!(origin);
+        generation["voiceConversionBatchItemIndex"] = json!(request.batch_index);
+    }
     generation["providerId"] = json!("chatterbox-vc");
     generation["modelId"] = json!("chatterbox-vc");
     for field in ["device", "deviceName", "peakVramMb"] {
         generation[field] = metadata[field].clone();
     }
-    generation["takeOrigin"] = json!({"type":"conversion","sourceGenerationId":request.options.generation_id,"referenceId":if request.options.reference_mode.as_deref()==Some("current"){format!("dialogue:{}",source["dialogueId"].as_str().unwrap_or_default())}else{request.options.reference_id.clone()},"characterId":request.options.character_id,"referenceMode":request.options.reference_mode,"referenceTrackId":request.options.reference_track_id});
+    generation["takeOrigin"] = json!({"type":"conversion","sourceGenerationId":request.options.generation_id,"referenceId":if request.options.reference_mode.as_deref()==Some("current"){format!("dialogue:{}",source["dialogueId"].as_str().unwrap_or_default())}else{request.options.reference_id.clone()},"characterId":request.options.character_id,"referenceMode":request.options.reference_mode,"referenceTrackId":request.options.reference_track_id,"referenceRange":request.options.reference_range});
     publish(
         core,
         app,
@@ -474,5 +587,4 @@ pub(crate) async fn execute<R: tauri::Runtime>(
         generation,
         flag,
     )
-    .map(|_| ())
 }

@@ -47,6 +47,7 @@ mod tts_batch;
 mod tts_session;
 mod tts_trials;
 mod voice_accent;
+mod voice_batch;
 mod voice_capture;
 mod voice_edit;
 mod voice_engines;
@@ -137,6 +138,39 @@ async fn mcp_store_microphone_take(
     })
     .await
     .map_err(domain::io_error)?
+}
+#[tauri::command]
+fn preview_voice_batch(
+    core: State<'_, Shared>,
+    options: voice_batch::Options,
+) -> Result<voice_batch::Preview, String> {
+    voice_batch::preview(&core, &options)
+}
+#[tauri::command]
+fn convert_voice_batch(
+    app: tauri::AppHandle,
+    core: State<'_, Shared>,
+    options: voice_batch::Options,
+) -> Result<String, String> {
+    voice_batch::start(core.inner().clone(), app, options)
+}
+#[tauri::command]
+fn voice_batch_report(
+    core: State<'_, Shared>,
+    id: String,
+    offset: u32,
+    limit: u32,
+) -> Result<serde_json::Value, String> {
+    voice_batch::report(&core, &id, offset, limit)
+}
+#[tauri::command]
+fn retry_voice_batch(
+    app: tauri::AppHandle,
+    core: State<'_, Shared>,
+    id: String,
+    line_ids: Vec<String>,
+) -> Result<String, String> {
+    voice_batch::retry(core.inner().clone(), app, &id, &line_ids)
 }
 #[tauri::command]
 fn convert_voice_timbre(
@@ -1927,6 +1961,9 @@ fn retry_job(app: tauri::AppHandle, core: State<'_, Shared>, id: String) -> Resu
             record.inpaint_model.as_deref().unwrap_or(inpaint::MUSE),
         );
     }
+    if let Some(key) = record.voice_conversion_batch {
+        return voice_batch::retry(core.inner().clone(), app, &key, &[]);
+    }
     if let Some(request) = record.voice_conversion {
         return voice_capture::enqueue(core.inner().clone(), app, request);
     }
@@ -2283,6 +2320,10 @@ pub fn run() {
             prosody_status,
             mcp_store_microphone_take,
             convert_voice_timbre,
+            preview_voice_batch,
+            convert_voice_batch,
+            voice_batch_report,
+            retry_voice_batch,
             transfer_voice_prosody,
             generation_path,
             dubbing_path,

@@ -77,8 +77,8 @@ async function job(id) {
 }
 try {
   await client.connect(transport);
-  assert.equal(client.getServerVersion().version, '0.53.0');
-  assert.equal((await client.listTools()).tools.length, 170);
+  assert.equal(client.getServerVersion().version, '0.54.0');
+  assert.equal((await client.listTools()).tools.length, 174);
   await until(async () => {
     try {
       return (await state()).screen === 'home';
@@ -465,9 +465,9 @@ try {
         pcm(await fs.readFile(await call('studio_audio_patch_path', { id: layer.id }))).length > 0,
       );
     const proof = {
-      version: '0.53.0',
+      version: '0.54.0',
       officialSdk: true,
-      toolCount: 170,
+      toolCount: 174,
       actualApplicationRestart: true,
       persistedQueueAndFrozenWorkflow: true,
       queueControlsAndBoundedRead: true,

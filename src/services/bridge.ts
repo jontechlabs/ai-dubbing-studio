@@ -332,6 +332,29 @@ export function convertVoiceTimbre(
 ) {
   return invoke<string>('convert_voice_timbre', { options });
 }
+export function previewVoiceBatch(
+  options: import('../domain/voiceCapture').BatchVoiceConversionOptions,
+) {
+  return invoke<{ ready: string[]; blocked: { lineId: string; error: string }[] }>(
+    'preview_voice_batch',
+    { options },
+  );
+}
+export function convertVoiceBatch(
+  options: import('../domain/voiceCapture').BatchVoiceConversionOptions,
+) {
+  return invoke<string>('convert_voice_batch', { options });
+}
+export function voiceBatchReport(id: string, offset = 0, limit = 25) {
+  return invoke<import('../domain/voiceCapture').VoiceBatchReport>('voice_batch_report', {
+    id,
+    offset,
+    limit,
+  });
+}
+export function retryVoiceBatch(id: string, lineIds: string[] = []) {
+  return invoke<string>('retry_voice_batch', { id, lineIds });
+}
 export function prosodyStatus() {
   return invoke<{
     available: boolean;

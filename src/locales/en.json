@@ -208,7 +208,8 @@
     "levelingAnalyze": "Analysing and levelling volume",
     "levelingPreview": "Preparing long-form previews",
     "auditAudio": "Checking audio files and levels",
-    "auditVoices": "Checking for multiple-voice hints"
+    "auditVoices": "Checking for multiple-voice hints",
+    "vcReuse": "Reusing timbre model"
   },
   "shortcuts": "Space: play · J/K/L: transport · O: original · Ctrl+S: save · Ctrl+Z/Y: undo/redo",
   "errors": {
@@ -454,7 +455,9 @@
     "QUEUE_RESTARTED": "The studio restarted. Explicitly resume incomplete steps.",
     "QUEUE_CORRUPT": "The stored queue cannot be read. Clear finished history to reset it and archive its file for recovery.",
     "QUEUE_PROJECT_REQUIRED": "Open this task’s project, then resume the queue.",
-    "TTS_ACCENT_EMBEDDING_FAILED": "Could not prepare a valid speaker embedding for French orientation. Try a clean reference."
+    "TTS_ACCENT_EMBEDDING_FAILED": "Could not prepare a valid speaker embedding for French orientation. Try a clean reference.",
+    "VC_BATCH_EMPTY": "No selected dubbing take can be harmonized.",
+    "VC_BATCH_PARTIAL": "The batch has failures. Successful takes are kept; unfinished entries can be retried."
   },
   "preparingVideo": "Preparing video…",
   "loadingVideo": "Loading video…",
@@ -1319,7 +1322,8 @@
     "speakerSeparation": "Overlapping voice separation",
     "speakerSeparationInstall": "Voice separator installation",
     "volumeLeveling": "Volume levelling",
-    "dubbingAudit": "Dubbing analysis"
+    "dubbingAudit": "Dubbing analysis",
+    "voiceConversionBatch": "Batch timbre harmonization"
   },
   "fxRemoveTrack": "Remove processed copy · {{name}}",
   "transferEffects": "Audio effects",
@@ -2128,5 +2132,38 @@
     "paused": "work duration after resuming",
     "finalizing": "{{label}}: finalizing or refreshing",
     "hint": "Indicative remaining work, recalibrated from comparable project measurements after every take. Includes 1–4 takes per line, separating cold loads and resident models. Only the active step counts down. Missing history and overruns are explicit. Pauses and waiting for a project to be opened have unknown duration. Separation uses its own local timings; future batches can still skip already available takes."
+  },
+  "batchTimbre": {
+    "title": "Harmonize timbre",
+    "action": "Batch action",
+    "generate": "Generate voices",
+    "hint": "Apply one common reference voice to the selected take of each checked dialogue using local Chatterbox VC. Creates and selects one new take per dialogue, keeping old takes, duration and timeline placement. The model stays loaded for the lot, then is released. Listen before approving.",
+    "referenceKind": "Common reference",
+    "take": "Existing dubbing take",
+    "file": "File or stored reference",
+    "referenceDialogue": "Reference dialogue",
+    "referenceTake": "Reference take",
+    "range": "Choose a reference region between 1 and 20 seconds.",
+    "loading": "Checking Chatterbox VC and devices…",
+    "select": "Check the dialogues to harmonize in the left list.",
+    "preview": "{{ready}} ready dialogues · {{blocked}} excluded (missing take, excluded dialogue or invalid audio).",
+    "start_one": "Harmonize {{count}} dialogue",
+    "start_other": "Harmonize {{count}} dialogues",
+    "history": "Timbre batch history",
+    "chooseReport": "Choose a report",
+    "retrySelected": "Retry checked entries",
+    "retryAll": "Resume unfinished entries",
+    "retryOne": "Retry this dialogue",
+    "page": "{{from}}–{{to}} / {{total}}",
+    "listenSource": "Listen to source take",
+    "listenResult": "Listen to harmonized take",
+    "openLine": "Go to dialogue",
+    "previous": "Previous",
+    "next": "Next",
+    "status": {
+      "pending": "Not processed",
+      "succeeded": "New take created",
+      "failed": "Failed"
+    }
   }
 }

@@ -3,6 +3,19 @@ from pathlib import Path
 import voice_conversion_worker as vc
 
 class VoiceConversionTests(unittest.TestCase):
+    def test_private_batch_reuses_model_and_target_but_reloads_a_different_profile(self):
+        loaded=[];verified=[];targets=[]
+        class Model:
+            def set_target_voice(self,path):targets.append(path)
+        def load(path,device):loaded.append((path,device));return Model()
+        state={};r=dict(modelDir='one',referenceAudio='first.wav',referenceKey='fixed')
+        a=vc.prepare_model(r,state,'cuda:0',load,verified.append)
+        b=vc.prepare_model(dict(r,referenceAudio='other-temporary-name.wav'),state,'cuda:0',load,verified.append)
+        self.assertIs(a,b);self.assertEqual(len(loaded),1);self.assertEqual(targets,['first.wav']);self.assertEqual(len(verified),1)
+        vc.prepare_model(dict(r,referenceKey='new-reference'),state,'cuda:0',load,verified.append)
+        self.assertEqual(len(targets),2)
+        vc.prepare_model(r,state,'cpu',load,verified.append)
+        self.assertEqual(len(loaded),2);self.assertEqual(len(verified),2)
     def test_paths_and_devices_are_validated_before_loading_weights(self):
         r=dict(variantId='chatterbox-vc',device='cuda:0',modelDir='model',sourceAudio='source.wav',referenceAudio='ref.wav',outputPath='out.wav',resultPath='result.json')
         vc.validate(r)

@@ -90,7 +90,23 @@ def convert_windows(source, convert, progress=lambda _: None):
     return output
 
 
-def generate(request):
+def prepare_model(request, state, device, loader, verify):
+    key = (request['modelDir'], device)
+    if state.get('key') != key:
+        verify(request)
+        report(stage='vcLoad', progress=None)
+        state.clear()
+        state.update(key=key, model=loader(request['modelDir'], device=device))
+    else:
+        report(stage='vcReuse', progress=None, log='Chatterbox VC: reusing the private batch model.')
+    reference = request.get('referenceKey') or request['referenceAudio']
+    if state.get('reference') != reference:
+        state['model'].set_target_voice(request['referenceAudio'])
+        state['reference'] = reference
+    return state['model']
+
+
+def generate(request, state=None):
     validate(request)
     if request['device'] == 'cpu':
         os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
@@ -110,10 +126,8 @@ def generate(request):
     reference, ref_rate = sf.read(request['referenceAudio'], dtype='float32')
     if rate != RATE or ref_rate != RATE or reference.ndim != 1 or not RATE <= len(reference) <= 20 * RATE or not np.isfinite(reference).all() or np.max(np.abs(reference), initial=0) < .001:
         raise ValueError('INVALID_REFERENCE_AUDIO')
-    verify_models(request)
-    report(stage='vcLoad', progress=None)
-    model = ChatterboxVC.from_local(request['modelDir'], device=device)
-    model.set_target_voice(request['referenceAudio'])
+    state = {} if state is None else state
+    model = prepare_model(request, state, device, ChatterboxVC.from_local, verify_models)
     with tempfile.TemporaryDirectory(prefix='studio-vc-') as folder:
         chunk = Path(folder) / 'source.wav'
         def convert(audio):

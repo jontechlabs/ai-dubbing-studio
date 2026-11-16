@@ -5360,3 +5360,27 @@ pre {
 footer .work-estimate {
   display: none;
 }
+
+.batch-timbre {
+  min-width: 0;
+}
+.batch-timbre h3 {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.batch-timbre audio {
+  width: 100%;
+  max-width: 100%;
+}
+.timbre-result {
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+  overflow-wrap: anywhere;
+}
+.timbre-result > label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+}

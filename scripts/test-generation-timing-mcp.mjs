@@ -35,8 +35,8 @@ const checkpoint = path.join(args['test-root'], 'take-timing-checkpoint.json');
 try {
   await client.connect(transport);
   tools = (await client.listTools()).tools;
-  assert.equal(client.getServerVersion().version, '0.53.0');
-  assert.equal(tools.length, 170);
+  assert.equal(client.getServerVersion().version, '0.54.0');
+  assert.equal(tools.length, 174);
   if (args.phase === 'before') {
     const p = await call('studio_get_project');
     assert(p);
@@ -129,8 +129,8 @@ try {
     for (const g of c.hashes)
       assert.equal(await digest(await call('studio_generation_path', { id: g.id })), g.sha256);
     const proof = {
-      version: '0.53.0',
-      toolCount: 170,
+      version: '0.54.0',
+      toolCount: 174,
       officialSdk: true,
       actualApplicationRestart: true,
       persistentTakeTiming: true,

@@ -41,7 +41,7 @@ def serve(module, incoming, protocol):
             code = 'TTS_OUT_OF_MEMORY' if 'out of memory' in str(error).lower() else str(error).split(':')[0]
             if code == 'OUT_OF_MEMORY':
                 code = 'TTS_OUT_OF_MEMORY'
-            if not code.startswith(('TTS_', 'INVALID_', 'DEVICE_', 'MODEL_', 'OUT_')):
+            if not code.startswith(('TTS_', 'VC_', 'INVALID_', 'DEVICE_', 'MODEL_', 'OUT_')):
                 code = 'TTS_ENGINE_FAILED'
             report(requestDone=key, error=code)
             # A failed native context or inference thread must never serve another line.
@@ -51,7 +51,7 @@ def serve(module, incoming, protocol):
 def main():
     faulthandler.enable(file=sys.stderr, all_threads=True)
     parser = argparse.ArgumentParser()
-    parser.add_argument('--engine', choices=['cosyvoice_worker', 'fish_worker', 'drama_worker', 'multilingual_worker'], required=True)
+    parser.add_argument('--engine', choices=['cosyvoice_worker', 'fish_worker', 'drama_worker', 'multilingual_worker', 'voice_conversion_worker'], required=True)
     args = parser.parse_args()
     protocol = sys.stdout
     def thread_error(args):

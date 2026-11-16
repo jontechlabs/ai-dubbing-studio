@@ -85,6 +85,8 @@ const mapping = {
   'voice_library::Generation': 'VoiceLibraryGeneration',
   'voice_library::Review': 'VoiceLibraryReview',
   'voice_capture::Options': 'VoiceConversionOptions',
+  'voice_capture::ReferenceRange': 'VoiceConversionReferenceRange',
+  'voice_batch::Options': 'BatchVoiceConversionOptions',
   'prosody::Options': 'ProsodyOptions',
   'tts::Options': 'VoiceSettings',
   'voice_edit::Edit': 'VoiceEdit',
@@ -129,12 +131,18 @@ function rustSchema(type) {
 const readOnly =
   /^(?!apply_)(environment|graphics_info|.*_status|.*_result|latest_.*|audio_effects_catalog|.*_path|.*_paths|list_jobs|model_storage_info|model_storage_size|managed_models|current_project|list_projects|project_cover|voice_install_space|preview_.*|reference_audio_info|get_waveform|dubbing_batch_report|dubbing_batch_history|task_queue_entry)$/;
 const notes = {
-  task_queue_status: 'Read the compact persistent FIFO queue. Reports counts/current child IDs and up to 20 separation problems. No model probe, source mutation or automatic resume.',
-  task_queue_entry: 'Read one workflow configuration and paginated separation rows. offset >=0, limit 1–200. spec.selection.lineIds contains ONLY this page. dubbingRuns link to existing batch reports.',
-  enqueue_workflow: 'Enqueue a frozen dialogue selection/configuration, even while another job runs. separation optional supports Mel-Band Kim / BS-RoFormer Viperx with automatic vocals->speech and/or accompaniment->music replacement layers. dubbing true runs a retained-model 1–4 take TTS batch AFTER successful separation. Failed separation rows never enter TTS. Source files/takes remain intact. Returns a WORKFLOW ID, poll task_queue_status (not list_jobs). Requires current project/revision. Queue never auto-resumes after app restart.',
-  control_task_queue: 'Manage FIFO workflows: pause after current workflow, resume, cancel (propagates to child), up/down pending entries, remove inactive entry, retry incomplete steps, clear completed history. id required except pause/resume/clear. Retry requires unchanged captured media/text/reference context. This does not undo already committed audio/takes. Context required.',
-  apply_volume_leveling_batch:'Atomically apply ONLY explicitly approved preview IDs on distinct tracks at the same current revision. Prelisten and approve each track first. All-or-nothing, one undo step. Unapproved previews must not be passed.',
-  analyze_dubbing:'Analyze all dialogues locally without changing audio/takes. Persist missing/silent/quiet/clipping/possible-cut-end/long-silence/timing/invalid-audio hints. voices off/source/dubbing/both optionally uses the installed speaker model for conservative multi-voice hints, not reliable overlap detection. Missing model is explicitly reported. Poll jobs; read project.dubbingAudit and check its audio basis before using tags. Context required.',
+  task_queue_status:
+    'Read the compact persistent FIFO queue. Reports counts/current child IDs and up to 20 separation problems. No model probe, source mutation or automatic resume.',
+  task_queue_entry:
+    'Read one workflow configuration and paginated separation rows. offset >=0, limit 1–200. spec.selection.lineIds contains ONLY this page. dubbingRuns link to existing batch reports.',
+  enqueue_workflow:
+    'Enqueue a frozen dialogue selection/configuration, even while another job runs. separation optional supports Mel-Band Kim / BS-RoFormer Viperx with automatic vocals->speech and/or accompaniment->music replacement layers. dubbing true runs a retained-model 1–4 take TTS batch AFTER successful separation. Failed separation rows never enter TTS. Source files/takes remain intact. Returns a WORKFLOW ID, poll task_queue_status (not list_jobs). Requires current project/revision. Queue never auto-resumes after app restart.',
+  control_task_queue:
+    'Manage FIFO workflows: pause after current workflow, resume, cancel (propagates to child), up/down pending entries, remove inactive entry, retry incomplete steps, clear completed history. id required except pause/resume/clear. Retry requires unchanged captured media/text/reference context. This does not undo already committed audio/takes. Context required.',
+  apply_volume_leveling_batch:
+    'Atomically apply ONLY explicitly approved preview IDs on distinct tracks at the same current revision. Prelisten and approve each track first. All-or-nothing, one undo step. Unapproved previews must not be passed.',
+  analyze_dubbing:
+    'Analyze all dialogues locally without changing audio/takes. Persist missing/silent/quiet/clipping/possible-cut-end/long-silence/timing/invalid-audio hints. voices off/source/dubbing/both optionally uses the installed speaker model for conservative multi-voice hints, not reliable overlap detection. Missing model is explicitly reported. Poll jobs; read project.dubbingAudit and check its audio basis before using tags. Context required.',
 
   prepare_volume_leveling:
     'Prepare an immutable local RMS volume-levelling preview for a 100 ms–24 h selection or an entire track on any audio track, including dubbing. mode low attenuates louder passages to the quietest active half-second window; high raises quieter passages to the loudest. Silence is excluded, boost is capped at 18 dB and sample peaks are protected. Input includes existing patches before mixer gains/mutes. Returns a job ID; poll jobs then inspect volume_leveling_result and preview original/leveled audio through volume_leveling_path. No project edit until apply.',
@@ -223,6 +231,14 @@ const notes = {
     'List the 20 local audio effects, parameter bounds/defaults and 12 presets. Voice edit operations also support kind effects.',
   suggest_translation:
     'Propose a local translation without applying it. Optional direction (up to 2000 characters) guides character, register, tone and desired spoken length; subtitle timings are supplied automatically. Poll jobs, review the proposal, then explicitly apply it.',
+  preview_voice_batch:
+    'Preview selected dubbed dialogues for one common local timbre reference. Uses the selected take in each dialogue; reports missing, excluded or invalid audio. Read-only.',
+  convert_voice_batch:
+    'Harmonize selected dubbed dialogues with one stored reference or generated-take range through local Chatterbox VC. Freeze input take IDs, create/select one new immutable take per eligible dialogue, preserve all old takes/timeline timings, keep the model resident for the lot. Poll jobs and voice_batch_report. Cancellable; no CPU fallback.',
+  voice_batch_report:
+    'Read a bounded page of durable timbre batch outcomes, including source/new take IDs and per-dialogue failures. Reconciles commits after a crash. Does not resume work.',
+  retry_voice_batch:
+    'Retry unfinished timbre conversions from the frozen inputs/reference. An empty lineIds list retries all unfinished entries; explicit IDs allow individual retries. Rejects edited inputs and never repeats completed conversions.',
   convert_voice_timbre:
     'Convert the timbre of any existing voice take, using a stored character/file reference. Local Chatterbox VC, no TTS. Creates another immutable take; poll jobs.',
   transfer_voice_prosody:
@@ -267,6 +283,8 @@ projectCommands.add('apply_volume_leveling');
 projectCommands.add('apply_volume_leveling_batch');
 projectCommands.add('analyze_dubbing');
 projectCommands.add('enqueue_workflow');
+projectCommands.add('convert_voice_batch');
+projectCommands.add('retry_voice_batch');
 projectCommands.add('control_task_queue');
 for (const command of [
   'transcribe_dialogue_source',
@@ -444,7 +462,22 @@ tool(
     offset: integer,
     limit: { type: 'integer', minimum: 1, maximum: 200 },
     status: choice('all', 'untranslated', 'translated', 'approved'),
-    qualityTags:{type:'array',items:choice('retranslate','improveVoice','missing','silent','multipleVoices','quiet','clipping','cutEnd','longSilence','timing','invalidAudio')},
+    qualityTags: {
+      type: 'array',
+      items: choice(
+        'retranslate',
+        'improveVoice',
+        'missing',
+        'silent',
+        'multipleVoices',
+        'quiet',
+        'clipping',
+        'cutEnd',
+        'longSilence',
+        'timing',
+        'invalidAudio',
+      ),
+    },
     ids: { type: 'array', items: string },
   },
   [],

@@ -2,6 +2,159 @@
   "protocolVersion": "2025-11-25",
   "commands": [
     {
+      "name": "studio_preview_voice_batch",
+      "command": "preview_voice_batch",
+      "description": "Preview selected dubbed dialogues for one common local timbre reference. Uses the selected take in each dialogue; reports missing, excluded or invalid audio. Read-only.",
+      "inputSchema": {
+        "type": "object",
+        "properties": { "options": { "$ref": "#/$defs/options_BatchVoiceConversionOptions_0" } },
+        "required": ["options"],
+        "additionalProperties": false,
+        "$defs": {
+          "options_BatchVoiceConversionOptions_0": {
+            "type": "object",
+            "properties": {
+              "lineIds": { "type": "array", "items": { "type": "string" } },
+              "reference": { "$ref": "#/$defs/options_VoiceConversionOptions_1" }
+            },
+            "required": ["lineIds", "reference"],
+            "additionalProperties": false
+          },
+          "options_VoiceConversionOptions_1": {
+            "type": "object",
+            "properties": {
+              "referenceMode": {
+                "anyOf": [
+                  { "type": "string", "const": "reference" },
+                  { "type": "string", "const": "current" },
+                  { "type": "string", "const": "generation" }
+                ]
+              },
+              "referenceRange": {
+                "anyOf": [{ "$ref": "#/$defs/options_VoiceConversionReferenceRange_2" }]
+              },
+              "referenceTrackId": { "anyOf": [{ "type": "string" }] },
+              "generationId": { "type": "string" },
+              "referenceId": { "type": "string" },
+              "characterId": { "anyOf": [{ "type": "null" }, { "type": "string" }] },
+              "device": { "type": "string" }
+            },
+            "required": ["generationId", "referenceId", "characterId", "device"],
+            "additionalProperties": false
+          },
+          "options_VoiceConversionReferenceRange_2": {
+            "type": "object",
+            "properties": { "startMs": { "type": "number" }, "endMs": { "type": "number" } },
+            "required": ["startMs", "endMs"],
+            "additionalProperties": false
+          }
+        }
+      },
+      "annotations": { "readOnlyHint": true, "destructiveHint": false, "openWorldHint": false }
+    },
+    {
+      "name": "studio_convert_voice_batch",
+      "command": "convert_voice_batch",
+      "description": "Harmonize selected dubbed dialogues with one stored reference or generated-take range through local Chatterbox VC. Freeze input take IDs, create/select one new immutable take per eligible dialogue, preserve all old takes/timeline timings, keep the model resident for the lot. Poll jobs and voice_batch_report. Cancellable; no CPU fallback.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "options": { "$ref": "#/$defs/options_BatchVoiceConversionOptions_0" },
+          "context": {
+            "type": "object",
+            "properties": {
+              "projectId": { "type": "string" },
+              "expectedRevision": { "type": "integer", "minimum": 0 }
+            },
+            "required": ["projectId", "expectedRevision"],
+            "additionalProperties": false
+          }
+        },
+        "required": ["options", "context"],
+        "additionalProperties": false,
+        "$defs": {
+          "options_BatchVoiceConversionOptions_0": {
+            "type": "object",
+            "properties": {
+              "lineIds": { "type": "array", "items": { "type": "string" } },
+              "reference": { "$ref": "#/$defs/options_VoiceConversionOptions_1" }
+            },
+            "required": ["lineIds", "reference"],
+            "additionalProperties": false
+          },
+          "options_VoiceConversionOptions_1": {
+            "type": "object",
+            "properties": {
+              "referenceMode": {
+                "anyOf": [
+                  { "type": "string", "const": "reference" },
+                  { "type": "string", "const": "current" },
+                  { "type": "string", "const": "generation" }
+                ]
+              },
+              "referenceRange": {
+                "anyOf": [{ "$ref": "#/$defs/options_VoiceConversionReferenceRange_2" }]
+              },
+              "referenceTrackId": { "anyOf": [{ "type": "string" }] },
+              "generationId": { "type": "string" },
+              "referenceId": { "type": "string" },
+              "characterId": { "anyOf": [{ "type": "null" }, { "type": "string" }] },
+              "device": { "type": "string" }
+            },
+            "required": ["generationId", "referenceId", "characterId", "device"],
+            "additionalProperties": false
+          },
+          "options_VoiceConversionReferenceRange_2": {
+            "type": "object",
+            "properties": { "startMs": { "type": "number" }, "endMs": { "type": "number" } },
+            "required": ["startMs", "endMs"],
+            "additionalProperties": false
+          }
+        }
+      },
+      "annotations": { "readOnlyHint": false, "destructiveHint": true, "openWorldHint": false }
+    },
+    {
+      "name": "studio_voice_batch_report",
+      "command": "voice_batch_report",
+      "description": "Read a bounded page of durable timbre batch outcomes, including source/new take IDs and per-dialogue failures. Reconciles commits after a crash. Does not resume work.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "offset": { "type": "integer", "minimum": 0 },
+          "limit": { "type": "integer", "minimum": 0 }
+        },
+        "required": ["id", "offset", "limit"],
+        "additionalProperties": false
+      },
+      "annotations": { "readOnlyHint": false, "destructiveHint": true, "openWorldHint": false }
+    },
+    {
+      "name": "studio_retry_voice_batch",
+      "command": "retry_voice_batch",
+      "description": "Retry unfinished timbre conversions from the frozen inputs/reference. An empty lineIds list retries all unfinished entries; explicit IDs allow individual retries. Rejects edited inputs and never repeats completed conversions.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "lineIds": { "type": "array", "items": { "type": "string" } },
+          "context": {
+            "type": "object",
+            "properties": {
+              "projectId": { "type": "string" },
+              "expectedRevision": { "type": "integer", "minimum": 0 }
+            },
+            "required": ["projectId", "expectedRevision"],
+            "additionalProperties": false
+          }
+        },
+        "required": ["id", "lineIds", "context"],
+        "additionalProperties": false
+      },
+      "annotations": { "readOnlyHint": false, "destructiveHint": true, "openWorldHint": false }
+    },
+    {
       "name": "studio_convert_voice_timbre",
       "command": "convert_voice_timbre",
       "description": "Convert the timbre of any existing voice take, using a stored character/file reference. Local Chatterbox VC, no TTS. Creates another immutable take; poll jobs.",
@@ -28,8 +181,12 @@
               "referenceMode": {
                 "anyOf": [
                   { "type": "string", "const": "reference" },
-                  { "type": "string", "const": "current" }
+                  { "type": "string", "const": "current" },
+                  { "type": "string", "const": "generation" }
                 ]
+              },
+              "referenceRange": {
+                "anyOf": [{ "$ref": "#/$defs/options_VoiceConversionReferenceRange_1" }]
               },
               "referenceTrackId": { "anyOf": [{ "type": "string" }] },
               "generationId": { "type": "string" },
@@ -38,6 +195,12 @@
               "device": { "type": "string" }
             },
             "required": ["generationId", "referenceId", "characterId", "device"],
+            "additionalProperties": false
+          },
+          "options_VoiceConversionReferenceRange_1": {
+            "type": "object",
+            "properties": { "startMs": { "type": "number" }, "endMs": { "type": "number" } },
+            "required": ["startMs", "endMs"],
             "additionalProperties": false
           }
         }
@@ -328,8 +491,12 @@
               "referenceMode": {
                 "anyOf": [
                   { "type": "string", "const": "reference" },
-                  { "type": "string", "const": "current" }
+                  { "type": "string", "const": "current" },
+                  { "type": "string", "const": "generation" }
                 ]
+              },
+              "referenceRange": {
+                "anyOf": [{ "$ref": "#/$defs/options_VoiceConversionReferenceRange_5" }]
               },
               "referenceTrackId": { "anyOf": [{ "type": "string" }] },
               "generationId": { "type": "string" },
@@ -338,6 +505,12 @@
               "device": { "type": "string" }
             },
             "required": ["generationId", "referenceId", "characterId", "device"],
+            "additionalProperties": false
+          },
+          "options_VoiceConversionReferenceRange_5": {
+            "type": "object",
+            "properties": { "startMs": { "type": "number" }, "endMs": { "type": "number" } },
+            "required": ["startMs", "endMs"],
             "additionalProperties": false
           }
         }
@@ -5891,17 +6064,17 @@
               "required": ["source", "target"],
               "additionalProperties": false
             },
-            "media": { "anyOf": [{ "type": "null" }, { "$ref": "#/$defs/MediaAsset_31" }] },
+            "media": { "anyOf": [{ "type": "null" }, { "$ref": "#/$defs/MediaAsset_32" }] },
             "sourceCues": { "type": "array", "items": { "$ref": "#/$defs/Cue_22" } },
             "targetCues": { "type": "array", "items": { "$ref": "#/$defs/Cue_22" } },
-            "dialogues": { "type": "array", "items": { "$ref": "#/$defs/Dialogue_33" } },
-            "tracks": { "type": "array", "items": { "$ref": "#/$defs/Track_34" } },
-            "characters": { "type": "array", "items": { "$ref": "#/$defs/Character_36" } },
+            "dialogues": { "type": "array", "items": { "$ref": "#/$defs/Dialogue_34" } },
+            "tracks": { "type": "array", "items": { "$ref": "#/$defs/Track_35" } },
+            "characters": { "type": "array", "items": { "$ref": "#/$defs/Character_37" } },
             "voiceReferences": {
               "anyOf": [{ "type": "array", "items": { "$ref": "#/$defs/VoiceReference_8" } }]
             },
             "speakerAnalysis": {
-              "anyOf": [{ "type": "null" }, { "$ref": "#/$defs/SpeakerAnalysis_37" }]
+              "anyOf": [{ "type": "null" }, { "$ref": "#/$defs/SpeakerAnalysis_38" }]
             },
             "modelPreferences": {
               "anyOf": [
@@ -6603,8 +6776,8 @@
           "properties": {
             "generationTiming": { "anyOf": [{ "$ref": "#/$defs/GenerationTiming_24" }] },
             "dubbingPipeline": { "anyOf": [{ "$ref": "#/$defs/DubbingPipelineRecord_25" }] },
-            "takeOrigin": { "anyOf": [{ "$ref": "#/$defs/TakeOrigin_28" }] },
-            "prosodyTransfer": { "anyOf": [{ "$ref": "#/$defs/ProsodyTransfer_29" }] },
+            "takeOrigin": { "anyOf": [{ "$ref": "#/$defs/TakeOrigin_29" }] },
+            "prosodyTransfer": { "anyOf": [{ "$ref": "#/$defs/ProsodyTransfer_30" }] },
             "kind": { "type": "string", "const": "tts" },
             "id": { "type": "string" },
             "dialogueId": { "type": "string" },
@@ -6733,9 +6906,11 @@
             "referenceMode": {
               "anyOf": [
                 { "type": "string", "const": "reference" },
-                { "type": "string", "const": "current" }
+                { "type": "string", "const": "current" },
+                { "type": "string", "const": "generation" }
               ]
             },
+            "referenceRange": { "anyOf": [{ "$ref": "#/$defs/VoiceConversionReferenceRange_28" }] },
             "referenceTrackId": { "anyOf": [{ "type": "string" }] },
             "generationId": { "type": "string" },
             "referenceId": { "type": "string" },
@@ -6745,7 +6920,13 @@
           "required": ["generationId", "referenceId", "characterId", "device"],
           "additionalProperties": false
         },
-        "TakeOrigin_28": {
+        "VoiceConversionReferenceRange_28": {
+          "type": "object",
+          "properties": { "startMs": { "type": "number" }, "endMs": { "type": "number" } },
+          "required": ["startMs", "endMs"],
+          "additionalProperties": false
+        },
+        "TakeOrigin_29": {
           "type": "object",
           "properties": {
             "type": {
@@ -6761,14 +6942,14 @@
           "required": ["type"],
           "additionalProperties": false
         },
-        "ProsodyTransfer_29": {
+        "ProsodyTransfer_30": {
           "type": "object",
           "properties": {
             "algorithm": { "type": "string", "const": "praat-psola-v1" },
             "sourceGenerationId": { "type": "string" },
             "sourceDurationMs": { "type": "number" },
             "guideDurationMs": { "type": "number" },
-            "options": { "$ref": "#/$defs/ProsodyOptions_30" }
+            "options": { "$ref": "#/$defs/ProsodyOptions_31" }
           },
           "required": [
             "algorithm",
@@ -6779,7 +6960,7 @@
           ],
           "additionalProperties": false
         },
-        "ProsodyOptions_30": {
+        "ProsodyOptions_31": {
           "type": "object",
           "properties": {
             "generationId": { "type": "string" },
@@ -6808,7 +6989,7 @@
           ],
           "additionalProperties": false
         },
-        "MediaAsset_31": {
+        "MediaAsset_32": {
           "type": "object",
           "properties": {
             "id": { "type": "string" },
@@ -6817,7 +6998,7 @@
             "audioStreamIndex": { "anyOf": [{ "type": "null" }, { "type": "number" }] },
             "originalName": { "type": "string" },
             "durationMs": { "type": "number" },
-            "streams": { "type": "array", "items": { "$ref": "#/$defs/MediaStream_32" } }
+            "streams": { "type": "array", "items": { "$ref": "#/$defs/MediaStream_33" } }
           },
           "required": [
             "id",
@@ -6830,7 +7011,7 @@
           ],
           "additionalProperties": false
         },
-        "MediaStream_32": {
+        "MediaStream_33": {
           "type": "object",
           "properties": {
             "index": { "type": "number" },
@@ -6856,7 +7037,7 @@
           ],
           "additionalProperties": false
         },
-        "Dialogue_33": {
+        "Dialogue_34": {
           "type": "object",
           "properties": {
             "reviewTags": {
@@ -6917,7 +7098,7 @@
           ],
           "additionalProperties": false
         },
-        "Track_34": {
+        "Track_35": {
           "type": "object",
           "properties": {
             "name": { "anyOf": [{ "type": "string" }] },
@@ -6947,7 +7128,7 @@
             "solo": { "type": "boolean" },
             "gain": { "type": "number" },
             "regions": {
-              "anyOf": [{ "type": "array", "items": { "$ref": "#/$defs/AudioRegion_35" } }]
+              "anyOf": [{ "type": "array", "items": { "$ref": "#/$defs/AudioRegion_36" } }]
             },
             "regionsEnabled": {
               "anyOf": [
@@ -6959,7 +7140,7 @@
           "required": ["id", "kind", "language", "mute", "solo", "gain"],
           "additionalProperties": false
         },
-        "AudioRegion_35": {
+        "AudioRegion_36": {
           "type": "object",
           "properties": {
             "id": { "type": "string" },
@@ -6971,7 +7152,7 @@
           "required": ["id", "startMs", "endMs", "gain", "mute"],
           "additionalProperties": false
         },
-        "Character_36": {
+        "Character_37": {
           "type": "object",
           "properties": {
             "id": { "type": "string" },
@@ -6983,10 +7164,10 @@
           "required": ["id", "name", "color", "references", "defaultReferenceId"],
           "additionalProperties": false
         },
-        "SpeakerAnalysis_37": {
+        "SpeakerAnalysis_38": {
           "type": "object",
           "properties": {
-            "scope": { "anyOf": [{ "$ref": "#/$defs/SpeakerScope_38" }] },
+            "scope": { "anyOf": [{ "$ref": "#/$defs/SpeakerScope_39" }] },
             "audioSnapshot": {},
             "originalAssignments": {
               "anyOf": [
@@ -7048,7 +7229,7 @@
           "required": ["id", "sourcePath", "lines", "assignments", "clusters"],
           "additionalProperties": false
         },
-        "SpeakerScope_38": {
+        "SpeakerScope_39": {
           "type": "object",
           "properties": {
             "startMs": { "anyOf": [{ "type": "number" }] },
@@ -7320,9 +7501,11 @@
             "referenceMode": {
               "anyOf": [
                 { "type": "string", "const": "reference" },
-                { "type": "string", "const": "current" }
+                { "type": "string", "const": "current" },
+                { "type": "string", "const": "generation" }
               ]
             },
+            "referenceRange": { "anyOf": [{ "$ref": "#/$defs/VoiceConversionReferenceRange_5" }] },
             "referenceTrackId": { "anyOf": [{ "type": "string" }] },
             "generationId": { "type": "string" },
             "referenceId": { "type": "string" },
@@ -7330,6 +7513,12 @@
             "device": { "type": "string" }
           },
           "required": ["generationId", "referenceId", "characterId", "device"],
+          "additionalProperties": false
+        },
+        "VoiceConversionReferenceRange_5": {
+          "type": "object",
+          "properties": { "startMs": { "type": "number" }, "endMs": { "type": "number" } },
+          "required": ["startMs", "endMs"],
           "additionalProperties": false
         }
       }
@@ -7614,9 +7803,11 @@
             "referenceMode": {
               "anyOf": [
                 { "type": "string", "const": "reference" },
-                { "type": "string", "const": "current" }
+                { "type": "string", "const": "current" },
+                { "type": "string", "const": "generation" }
               ]
             },
+            "referenceRange": { "anyOf": [{ "$ref": "#/$defs/VoiceConversionReferenceRange_1" }] },
             "referenceTrackId": { "anyOf": [{ "type": "string" }] },
             "generationId": { "type": "string" },
             "referenceId": { "type": "string" },
@@ -7624,6 +7815,63 @@
             "device": { "type": "string" }
           },
           "required": ["generationId", "referenceId", "characterId", "device"],
+          "additionalProperties": false
+        },
+        "VoiceConversionReferenceRange_1": {
+          "type": "object",
+          "properties": { "startMs": { "type": "number" }, "endMs": { "type": "number" } },
+          "required": ["startMs", "endMs"],
+          "additionalProperties": false
+        }
+      }
+    },
+    "VoiceConversionReferenceRange": {
+      "$ref": "#/$defs/VoiceConversionReferenceRange_0",
+      "$defs": {
+        "VoiceConversionReferenceRange_0": {
+          "type": "object",
+          "properties": { "startMs": { "type": "number" }, "endMs": { "type": "number" } },
+          "required": ["startMs", "endMs"],
+          "additionalProperties": false
+        }
+      }
+    },
+    "BatchVoiceConversionOptions": {
+      "$ref": "#/$defs/BatchVoiceConversionOptions_0",
+      "$defs": {
+        "BatchVoiceConversionOptions_0": {
+          "type": "object",
+          "properties": {
+            "lineIds": { "type": "array", "items": { "type": "string" } },
+            "reference": { "$ref": "#/$defs/VoiceConversionOptions_1" }
+          },
+          "required": ["lineIds", "reference"],
+          "additionalProperties": false
+        },
+        "VoiceConversionOptions_1": {
+          "type": "object",
+          "properties": {
+            "referenceMode": {
+              "anyOf": [
+                { "type": "string", "const": "reference" },
+                { "type": "string", "const": "current" },
+                { "type": "string", "const": "generation" }
+              ]
+            },
+            "referenceRange": { "anyOf": [{ "$ref": "#/$defs/VoiceConversionReferenceRange_2" }] },
+            "referenceTrackId": { "anyOf": [{ "type": "string" }] },
+            "generationId": { "type": "string" },
+            "referenceId": { "type": "string" },
+            "characterId": { "anyOf": [{ "type": "null" }, { "type": "string" }] },
+            "device": { "type": "string" }
+          },
+          "required": ["generationId", "referenceId", "characterId", "device"],
+          "additionalProperties": false
+        },
+        "VoiceConversionReferenceRange_2": {
+          "type": "object",
+          "properties": { "startMs": { "type": "number" }, "endMs": { "type": "number" } },
+          "required": ["startMs", "endMs"],
           "additionalProperties": false
         }
       }

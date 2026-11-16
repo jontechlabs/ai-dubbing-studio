@@ -92,6 +92,8 @@ pub struct ImportRequest {
 #[derive(Clone, Serialize, Deserialize)]
 pub struct PersistedJob {
     #[serde(default)]
+    pub voice_conversion_batch: Option<String>,
+    #[serde(default)]
     pub tts_trials: Option<crate::tts_trials::Request>,
     #[serde(default)]
     pub speaker_separation_request: Option<crate::speaker_separation::Request>,
@@ -257,6 +259,7 @@ pub fn create<R: tauri::Runtime>(
             key.clone(),
             Control {
                 saved: PersistedJob {
+                    voice_conversion_batch: None,
                     audio_effects: None,
                     volume_leveling: None,
                     dubbing_audit: None,

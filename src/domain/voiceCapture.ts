@@ -1,12 +1,33 @@
 import type { Project } from './types';
 import { validVoiceSettings } from './tts';
 export interface VoiceConversionOptions {
-  referenceMode?: 'current' | 'reference';
+  referenceMode?: 'current' | 'reference' | 'generation';
+  referenceRange?: VoiceConversionReferenceRange;
   referenceTrackId?: string;
   generationId: string;
   referenceId: string;
   characterId: string | null;
   device: string;
+}
+export interface VoiceConversionReferenceRange {
+  startMs: number;
+  endMs: number;
+}
+export interface BatchVoiceConversionOptions {
+  lineIds: string[];
+  reference: VoiceConversionOptions;
+}
+export interface VoiceBatchReport {
+  id: string;
+  total: number;
+  offset: number;
+  items: {
+    lineId: string;
+    sourceId: string;
+    status: string;
+    error: string | null;
+    generationId: string | null;
+  }[];
 }
 export interface DubbingPipelineOptions {
   lineId: string;
@@ -45,7 +66,8 @@ export function validateDubbingPipelines(project: Project) {
       !c.generationId ||
       c.generationId.length > 128 ||
       (!['auto', 'cpu'].includes(c.device) && !/^cuda:\d{1,2}$/.test(c.device)) ||
-      (c.referenceMode !== undefined && !['current', 'reference'].includes(c.referenceMode)) ||
+      (c.referenceMode !== undefined &&
+        !['current', 'reference', 'generation'].includes(c.referenceMode)) ||
       (c.referenceMode !== 'current' && (!c.referenceId || c.referenceId.length > 128))
     )
       throw Error('INVALID_DUBBING_PIPELINE');

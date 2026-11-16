@@ -249,6 +249,8 @@ pub(crate) async fn run<R: tauri::Runtime>(
         let mut options = r.options.conversion.clone();
         options.generation_id = r.stages.last().unwrap().clone();
         let request = voice_capture::Request {
+            batch_origin: None,
+            batch_index: None,
             root: r.root.clone(),
             project_id: r.project_id.clone(),
             revision: r.revision,
