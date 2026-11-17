@@ -1,4 +1,5 @@
 use super::*;
+use std::sync::Mutex;
 fn fixture() -> (Project, Request, Model) {
     let (p, o, m) = super::super::selection_tests::fixture();
     let r = Request {
@@ -175,5 +176,155 @@ fn separation_origin_requires_new_format_and_complete_provenance() {
         let mut bad = next.clone();
         bad.generations[0]["takeOrigin"][field] = json!("");
         assert!(bad.validate().is_err());
+    }
+}
+
+fn mono(path: &Path) {
+    let mut b = vec![];
+    b.extend(b"RIFF");
+    b.extend(96036u32.to_le_bytes());
+    b.extend(b"WAVEfmt ");
+    b.extend(16u32.to_le_bytes());
+    b.extend(1u16.to_le_bytes());
+    b.extend(1u16.to_le_bytes());
+    b.extend(48000u32.to_le_bytes());
+    b.extend(96000u32.to_le_bytes());
+    b.extend(2u16.to_le_bytes());
+    b.extend(16u16.to_le_bytes());
+    b.extend(b"data");
+    b.extend(96000u32.to_le_bytes());
+    for _ in 0..48000 {
+        b.extend(6000i16.to_le_bytes());
+    }
+    std::fs::write(path, b).unwrap();
+}
+async fn setup() -> (
+    tempfile::TempDir,
+    Arc<Core>,
+    tauri::App<tauri::test::MockRuntime>,
+    String,
+    PathBuf,
+) {
+    let temp = tempfile::tempdir().unwrap();
+    let root = project::create_root(temp.path(), "Isolated 日本語").unwrap();
+    super::super::silence(&root.join("media/source.wav")).unwrap();
+    let (p, mut r, _) = fixture();
+    r.root = root.clone();
+    r.snapshot = super::super::snapshot(&p, &root, &r.options).unwrap();
+    let core = Arc::new(Core {
+        data_dir: temp.path().join("data"),
+        model_dir: Mutex::new(temp.path().join("models")),
+        session: Mutex::new(Some(project::Session::new(root.clone(), p.clone()))),
+        jobs: Mutex::new(HashMap::new()),
+        gate: Arc::new(tokio::sync::Semaphore::new(1)),
+        queue: Mutex::new(crate::task_queue::State::default()),
+    });
+    let app = tauri::test::mock_app();
+    let key = jobs::create(&core, app.handle(), "speakerSeparation", p.id, None);
+    {
+        let mut jobs = core.jobs.lock().unwrap();
+        let j = jobs.get_mut(&key).unwrap();
+        j.saved.record.status = "succeeded".into();
+        j.saved.speaker_separation_request = Some(r);
+    }
+    let cache = root.join(format!("cache/speaker-separation/{key}"));
+    std::fs::create_dir_all(&cache).unwrap();
+    mono(&cache.join("voice-1.wav"));
+    mono(&cache.join("voice-2.wav"));
+    std::fs::write(
+        cache.join("result.json"),
+        br#"{"commonGain":1,"deviceName":"Synthetic fixture"}"#,
+    )
+    .unwrap();
+    (temp, core, app, key, root)
+}
+#[tokio::test]
+async fn actual_placement_resamples_exact_frames_persists_reopens_and_undoes_atomically() {
+    let (_temp, core, app, key, root) = setup().await;
+    let original = std::fs::read(root.join("media/source.wav")).unwrap();
+    let first = place(
+        core.clone(),
+        app.handle().clone(),
+        key.clone(),
+        "ja".into(),
+        vec![assignment("voice-1")],
+    )
+    .await
+    .unwrap();
+    assert_eq!(
+        crate::audio_files::pcm_frames(
+            &root.join(first.generations[0]["path"].as_str().unwrap()),
+            1,
+            24000,
+            "BAD"
+        )
+        .unwrap(),
+        24000
+    );
+    assert_eq!(
+        super::super::result(&core, app.handle(), &key).unwrap()["stale"],
+        false
+    );
+    let second = place(
+        core.clone(),
+        app.handle().clone(),
+        key.clone(),
+        "ja".into(),
+        vec![assignment("voice-2")],
+    )
+    .await
+    .unwrap();
+    assert_eq!(second.generations[0], first.generations[0]);
+    assert_eq!(second.dialogues.len(), 3);
+    assert_eq!(
+        std::fs::read(root.join("media/source.wav")).unwrap(),
+        original
+    );
+    let reopened = project::load(&root).unwrap();
+    assert_eq!(
+        serde_json::to_value(&reopened).unwrap(),
+        serde_json::to_value(&second).unwrap()
+    );
+    assert_eq!(crate::mix::clips(&second).len(), 2);
+    let result = super::super::result(&core, app.handle(), &key).unwrap();
+    assert_eq!(result["placedOutputIds"].as_array().unwrap().len(), 2);
+    let take_path = root.join(second.generations[1]["path"].as_str().unwrap());
+    let mut guard = core.session.lock().unwrap();
+    let s = guard.as_mut().unwrap();
+    let undone = s.history(false).unwrap();
+    assert_eq!(undone.generations, first.generations);
+    assert!(take_path.exists());
+}
+#[tokio::test]
+async fn corrupt_later_output_rolls_back_staged_assets_and_keeps_project_unchanged() {
+    let (_temp, core, app, key, root) = setup().await;
+    let before = core
+        .session
+        .lock()
+        .unwrap()
+        .as_ref()
+        .unwrap()
+        .project
+        .clone();
+    std::fs::write(
+        root.join(format!("cache/speaker-separation/{key}/voice-2.wav")),
+        b"bad",
+    )
+    .unwrap();
+    assert!(place(
+        core.clone(),
+        app.handle().clone(),
+        key,
+        "ja".into(),
+        vec![assignment("voice-1"), assignment("voice-2")]
+    )
+    .await
+    .is_err());
+    assert_eq!(
+        serde_json::to_value(&core.session.lock().unwrap().as_ref().unwrap().project).unwrap(),
+        serde_json::to_value(&before).unwrap()
+    );
+    for dir in ["stems", "generations"] {
+        assert_eq!(std::fs::read_dir(root.join(dir)).unwrap().count(), 0);
     }
 }

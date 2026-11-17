@@ -124,7 +124,9 @@ fn plan(
         if already.contains(&a.output_id) {
             return Err("SPEAKER_SEPARATION_ALREADY_APPLIED".into());
         }
-        let voice = if let Some(voice) = group.voices.iter().find(|v| v.output_id == a.output_id) {
+        let mut voice = if let Some(voice) =
+            group.voices.iter().find(|v| v.output_id == a.output_id)
+        {
             voice.clone()
         } else {
             let mut line = dialogue(group.start_ms, group.end_ms);
@@ -142,11 +144,22 @@ fn plan(
             group.voices.push(voice.clone());
             voice
         };
+        voice.label = a.label;
+        voice.source_text = a.source_text;
+        voice
+            .translations
+            .insert(p.languages.target.clone(), a.target_text);
+        *group
+            .voices
+            .iter_mut()
+            .find(|v| v.output_id == a.output_id)
+            .unwrap() = voice.clone();
         let line = next
             .dialogues
             .iter_mut()
             .find(|l| l.id == voice.line_id)
             .ok_or("INVALID_PROJECT")?;
+        line.character_id = a.character_id;
         if line.start_ms < group.start_ms || line.end_ms > group.end_ms {
             return Err("SPEAKER_SEPARATION_OPTIONS".into());
         }

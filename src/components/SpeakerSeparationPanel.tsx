@@ -39,7 +39,7 @@ export function SpeakerSeparationPanel({
   onAudition: () => void;
 }) {
   const { t } = useTranslation();
-  const [usage, setUsage] = useState<'dub' | 'tracks'>('dub');
+  const [usage, setUsage] = useState<'dub' | 'tracks' | 'lanes'>('dub');
   const [open, setOpen] = useState(false),
     [status, setStatus] = useState<AudioToolboxStatus | null>(null);
   const [modelId, setModel] = useState('mossformer2-16k'),
@@ -281,135 +281,140 @@ export function SpeakerSeparationPanel({
       )}
       {result && (
         <div className="speaker-separation-results">
-          <IsolatedDubbingPlacement
-            key={result.id}
-            project={project}
-            result={result}
-            urls={urls}
-            busy={disabled}
-            snapshot={snapshot}
-            run={run}
-            onError={onError}
-            onAudition={onAudition}
-          />
           <p className="panel-description">{t('overlap.review')}</p>
           <label className="field">
             <span>{t('overlap.usage')}</span>
             <select
               value={usage}
               disabled={disabled}
-              onChange={(e) => setUsage(e.target.value as 'dub' | 'tracks')}
+              onChange={(e) => setUsage(e.target.value as 'dub' | 'tracks' | 'lanes')}
             >
               <option value="dub">{t('overlap.createDubs')}</option>
               <option value="tracks">{t('overlap.applyTracks')}</option>
+              <option value="lanes">{t('isolatedPlacement.title')}</option>
             </select>
           </label>
-          {voices.map((voice, index) => (
-            <fieldset key={voice.outputId} disabled={disabled}>
-              <legend>{voice.label}</legend>
-              <audio
-                controls
-                src={urls[voice.outputId]}
-                preload="metadata"
-                aria-label={voice.label}
-                onPlay={(e) => {
-                  document.querySelectorAll('audio').forEach((a) => {
-                    if (a !== e.currentTarget) a.pause();
-                  });
-                  onAudition();
-                }}
-              />
-              <label className="field">
-                <span>{t('overlap.label')}</span>
-                <input
-                  value={voice.label}
-                  maxLength={200}
-                  onChange={(e) =>
-                    setVoices((rows) =>
-                      rows.map((v, i) => (i === index ? { ...v, label: e.target.value } : v)),
-                    )
-                  }
+          {usage === 'lanes' && (
+            <IsolatedDubbingPlacement
+              defaultOpen
+              key={result.id}
+              project={project}
+              result={result}
+              urls={urls}
+              busy={disabled}
+              snapshot={snapshot}
+              run={run}
+              onError={onError}
+              onAudition={onAudition}
+            />
+          )}
+          {usage !== 'lanes' &&
+            voices.map((voice, index) => (
+              <fieldset key={voice.outputId} disabled={disabled}>
+                <legend>{voice.label}</legend>
+                <audio
+                  controls
+                  src={urls[voice.outputId]}
+                  preload="metadata"
+                  aria-label={voice.label}
+                  onPlay={(e) => {
+                    document.querySelectorAll('audio').forEach((a) => {
+                      if (a !== e.currentTarget) a.pause();
+                    });
+                    onAudition();
+                  }}
                 />
-              </label>
-              {usage === 'dub' && (
-                <>
+                <label className="field">
+                  <span>{t('overlap.label')}</span>
+                  <input
+                    value={voice.label}
+                    maxLength={200}
+                    onChange={(e) =>
+                      setVoices((rows) =>
+                        rows.map((v, i) => (i === index ? { ...v, label: e.target.value } : v)),
+                      )
+                    }
+                  />
+                </label>
+                {usage === 'dub' && (
+                  <>
+                    <label className="field">
+                      <span>{t('character')}</span>
+                      <select
+                        value={voice.characterId ?? ''}
+                        onChange={(e) =>
+                          setVoices((rows) =>
+                            rows.map((v, i) =>
+                              i === index ? { ...v, characterId: e.target.value || null } : v,
+                            ),
+                          )
+                        }
+                      >
+                        <option value="">{t('unassigned')}</option>
+                        {project.characters.map((c) => (
+                          <option key={c.id} value={c.id}>
+                            {c.name}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    <label className="field">
+                      <span>{t('original')}</span>
+                      <textarea
+                        rows={2}
+                        value={voice.sourceText}
+                        onChange={(e) =>
+                          setVoices((rows) =>
+                            rows.map((v, i) =>
+                              i === index ? { ...v, sourceText: e.target.value } : v,
+                            ),
+                          )
+                        }
+                      />
+                    </label>
+                    <label className="field">
+                      <span>{t('overlap.translation')}</span>
+                      <textarea
+                        rows={2}
+                        value={voice.targetText}
+                        onChange={(e) =>
+                          setVoices((rows) =>
+                            rows.map((v, i) =>
+                              i === index ? { ...v, targetText: e.target.value } : v,
+                            ),
+                          )
+                        }
+                      />
+                    </label>
+                  </>
+                )}
+                {usage === 'tracks' && (
                   <label className="field">
-                    <span>{t('character')}</span>
+                    <span>{t('overlap.destination')}</span>
                     <select
-                      value={voice.characterId ?? ''}
+                      value={destinations[voice.outputId] ?? ''}
                       onChange={(e) =>
-                        setVoices((rows) =>
-                          rows.map((v, i) =>
-                            i === index ? { ...v, characterId: e.target.value || null } : v,
-                          ),
-                        )
+                        setDestinations({ ...destinations, [voice.outputId]: e.target.value })
                       }
                     >
-                      <option value="">{t('unassigned')}</option>
-                      {project.characters.map((c) => (
-                        <option key={c.id} value={c.id}>
-                          {c.name}
+                      <option value="">{t('overlap.skipTrack')}</option>
+                      {tracks
+                        .filter((t) => t.kind === 'audio')
+                        .map((track) => (
+                          <option key={track.id} value={track.id}>
+                            {track.name ?? t(trackLabel(track))}
+                          </option>
+                        ))}
+                      {['speech', 'music', 'sfx'].map((role) => (
+                        <option key={role} value={'role:' + role}>
+                          {t('overlap.role.' + role)}
                         </option>
                       ))}
                     </select>
                   </label>
-                  <label className="field">
-                    <span>{t('original')}</span>
-                    <textarea
-                      rows={2}
-                      value={voice.sourceText}
-                      onChange={(e) =>
-                        setVoices((rows) =>
-                          rows.map((v, i) =>
-                            i === index ? { ...v, sourceText: e.target.value } : v,
-                          ),
-                        )
-                      }
-                    />
-                  </label>
-                  <label className="field">
-                    <span>{t('overlap.translation')}</span>
-                    <textarea
-                      rows={2}
-                      value={voice.targetText}
-                      onChange={(e) =>
-                        setVoices((rows) =>
-                          rows.map((v, i) =>
-                            i === index ? { ...v, targetText: e.target.value } : v,
-                          ),
-                        )
-                      }
-                    />
-                  </label>
-                </>
-              )}
-              {usage === 'tracks' && (
-                <label className="field">
-                  <span>{t('overlap.destination')}</span>
-                  <select
-                    value={destinations[voice.outputId] ?? ''}
-                    onChange={(e) =>
-                      setDestinations({ ...destinations, [voice.outputId]: e.target.value })
-                    }
-                  >
-                    <option value="">{t('overlap.skipTrack')}</option>
-                    {tracks
-                      .filter((t) => t.kind === 'audio')
-                      .map((track) => (
-                        <option key={track.id} value={track.id}>
-                          {track.name ?? t(trackLabel(track))}
-                        </option>
-                      ))}
-                    {['speech', 'music', 'sfx'].map((role) => (
-                      <option key={role} value={'role:' + role}>
-                        {t('overlap.role.' + role)}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-              )}
-            </fieldset>
-          ))}
+                )}
+              </fieldset>
+            ))}
           {usage === 'tracks' ? (
             <>
               <label className="field">
@@ -462,23 +467,25 @@ export function SpeakerSeparationPanel({
               </button>
             </>
           ) : (
-            <button
-              className="button accent wide"
-              disabled={disabled}
-              onClick={() => {
-                setWorking(true);
-                void run(async () => {
-                  await snapshot();
-                  const p = await bridge.createSpeakerDubbings(result.id, voices);
-                  return p;
-                })
-                  .then(() => setResult(null))
-                  .catch((e) => onError(String(e)))
-                  .finally(() => setWorking(false));
-              }}
-            >
-              {t('overlap.createDubs')}
-            </button>
+            usage === 'dub' && (
+              <button
+                className="button accent wide"
+                disabled={disabled}
+                onClick={() => {
+                  setWorking(true);
+                  void run(async () => {
+                    await snapshot();
+                    const p = await bridge.createSpeakerDubbings(result.id, voices);
+                    return p;
+                  })
+                    .then(() => setResult(null))
+                    .catch((e) => onError(String(e)))
+                    .finally(() => setWorking(false));
+                }}
+              >
+                {t('overlap.createDubs')}
+              </button>
+            )
           )}
         </div>
       )}

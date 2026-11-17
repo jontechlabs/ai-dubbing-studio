@@ -37,6 +37,14 @@ try {
   tools = (await client.listTools()).tools;
   assert.equal(client.getServerVersion().version, '0.56.0');
   assert.equal(tools.length, 177);
+  // New placement is exposed with revision context. A missing separation
+  // must leave all dialogues/takes intact; real PCM placement is exercised
+  // by the native transactional tests, without claiming neural inference.
+  if (args.phase === 'before') {
+    const beforePlacement=await call('studio_get_project');
+    await assert.rejects(() => call('studio_place_speaker_dubbings', {id:'missing-result',audioLanguage:beforePlacement.languages.source,assignments:[{outputId:'voice-1',label:'Test',characterId:null,sourceText:'',targetText:'',laneId:null,laneName:'Test'}]}), /INVALID_JOB/);
+    assert.deepEqual(await call('studio_get_project'),beforePlacement);
+  }
   if (args.phase === 'before') {
     let p = await call('studio_get_project');
     assert(p);

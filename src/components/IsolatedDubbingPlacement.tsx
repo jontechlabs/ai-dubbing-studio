@@ -8,6 +8,7 @@ import * as bridge from '../services/bridge';
 
 /** Shared review step for dialogue-bound and free-region speaker separation. */
 export function IsolatedDubbingPlacement({
+  defaultOpen = false,
   project,
   result,
   urls,
@@ -17,6 +18,7 @@ export function IsolatedDubbingPlacement({
   onError,
   onAudition,
 }: {
+  defaultOpen?: boolean;
   project: Project;
   result: { id: string; outputs: string[]; stale: boolean };
   urls: Record<string, string>;
@@ -27,7 +29,7 @@ export function IsolatedDubbingPlacement({
   onAudition: () => void;
 }) {
   const { t } = useTranslation();
-  const [open, setOpen] = useState(false),
+  const [open, setOpen] = useState(defaultOpen),
     [working, setWorking] = useState(false);
   const [language, setLanguage] = useState(project.languages.source);
   const [rows, setRows] = useState<SpeakerDubbingPlacement[]>(() =>

@@ -2,6 +2,32 @@ import { test, expect } from 'vitest';
 import { blankProject } from './project';
 import { validateTakeOrigins } from './voiceCapture';
 import { encodeMicrophone, MIC_RATE } from '../services/microphone';
+test('isolated takes record their actual source language and require format 34 with complete provenance', () => {
+  const project = blankProject();
+  project.formatVersion = 34;
+  project.generations = [
+    {
+      id: 'isolated',
+      kind: 'tts',
+      takeOrigin: {
+        type: 'separation',
+        separationId: 'job',
+        outputId: 'voice-2',
+        sourceTrackId: 'speech',
+        sourceLanguage: 'ja',
+      },
+    },
+  ];
+  expect(() => validateTakeOrigins(project)).not.toThrow();
+  project.formatVersion = 33;
+  expect(() => validateTakeOrigins(project)).toThrow();
+  project.formatVersion = 34;
+  for (const field of ['separationId', 'outputId', 'sourceTrackId', 'sourceLanguage']) {
+    const invalid = structuredClone(project);
+    (invalid.generations[0].takeOrigin as Record<string, unknown>)[field] = '';
+    expect(() => validateTakeOrigins(invalid)).toThrow();
+  }
+});
 test('microphone WAV has canonical lossless PCM data and rejects unsafe durations/samples', () => {
   const samples = new Float32Array(MIC_RATE).map((_, i) => Math.sin(i * 0.02));
   const wav = new DataView(encodeMicrophone(samples));

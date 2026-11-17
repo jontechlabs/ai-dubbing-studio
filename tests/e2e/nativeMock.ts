@@ -2081,6 +2081,33 @@ export async function nativeMock(page: Page, large = false, seededProject?: Proj
               deviceName: 'CPU (simulation)',
             };
           if (command === 'speaker_separation_path') return 'C:/Studio/' + args.outputId + '.wav';
+          if (command === 'place_speaker_dubbings') {
+            undoStack.push(structuredClone(project));
+            const o=host.__speakerOptions;
+            project.formatVersion=Math.max(project.formatVersion,34);
+            project.dubbingLanes ??= {sourcePath:project.media.path,lanes:[{id:'main',name:'Doublage 1',mute:false,solo:false,gain:1}],assignments:{}};
+            project.speakerDubbings ??= [];
+            let group=project.speakerDubbings.find((g:any) => g.separationId===args.id);
+            if(!group) {
+              let parentId=o.lineId;
+              if(!parentId) {parentId=crypto.randomUUID();project.dialogues.push({id:parentId,startMs:o.startMs,endMs:o.endMs,sourceCueIds:[],targetCueIds:[],ttsText:null,characterId:null,status:'ungenerated',warnings:[],selectedGenerationIds:{}});}
+              group={id:crypto.randomUUID(),parentId,separationId:args.id,modelId:o.modelId,sourcePath:project.media.path,sourceTrackId:o.sourceTrackId,startMs:o.startMs,endMs:o.endMs,createdAt:new Date().toISOString(),active:true,voices:[]};
+              project.speakerDubbings.push(group);
+            }
+            for(const a of args.assignments) {
+              let voice=group.voices.find((v:any)=>v.outputId===a.outputId);
+              if(!voice){const lineId=crypto.randomUUID();voice={lineId,outputId:a.outputId,label:a.label,audioPath:'stems/isolated-'+crypto.randomUUID()+'.wav',sourceText:a.sourceText,translations:{[project.languages.target]:a.targetText}};group.voices.push(voice);project.dialogues.push({id:lineId,startMs:o.startMs,endMs:o.endMs,sourceCueIds:[],targetCueIds:[],ttsText:null,characterId:a.characterId,status:'review',warnings:[],selectedGenerationIds:{}});}
+              const line=project.dialogues.find((l:any)=>l.id===voice.lineId),takeId=crypto.randomUUID();
+              line.selectedGenerationIds[project.languages.target]=takeId;
+              const template=structuredClone(project.generations.find((g:any)=>g.kind==='tts') ?? {});
+              project.generations.push({...template,id:takeId,kind:'tts',dialogueId:line.id,path:'generations/'+takeId+'.wav',createdAt:new Date().toISOString(),sourcePath:project.media.path,startMs:line.startMs,endMs:line.endMs,text:voice.translations[project.languages.target],language:project.languages.target,characterId:line.characterId,durationMs:line.endMs-line.startMs,sampleRate:24000,providerId:'speaker-separation',modelId:o.modelId,options:{device:'cpu',referenceMode:'current',referenceId:null,mode:'crossLingual',speed:1,seed:0},referenceTranscript:voice.sourceText,device:'cpu',deviceName:'Isolated source audio',peakVramMb:0,inputHash:'fixture',takeOrigin:{type:'separation',separationId:args.id,outputId:a.outputId,sourceTrackId:o.sourceTrackId,sourceLanguage:args.audioLanguage}});
+              let laneId=a.laneId;
+              if(!laneId){laneId=crypto.randomUUID();project.dubbingLanes.lanes.push({id:laneId,name:a.laneName,mute:false,solo:false,gain:1});}
+              if(laneId==='main') delete project.dubbingLanes.assignments[line.id];else project.dubbingLanes.assignments[line.id]=laneId;
+              if(project.dubbingLanes.byCharacter) project.dubbingLanes.byCharacter.manualLineIds.push(line.id);
+            }
+            project.revision++;emit('project-changed',structuredClone(project));return structuredClone(project);
+          }
           if (command === 'create_speaker_dubbings') {
             undoStack.push(structuredClone(project));
             const o = host.__speakerOptions,
