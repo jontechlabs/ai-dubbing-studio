@@ -1,5 +1,9 @@
 # AI Dubbing Studio
 
+## v0.56.0 — Isolated voices on independent dubbing tracks
+
+Preview separated speakers, keep selected outputs and place them at the same timestamp on existing or new dubbing tracks. Reuses prepared sub-dialogues, creates missing ones from dialogue or free timeline selections, and preserves every previous take, subtitle and source video. Isolated audio retains its actual language; separation does not translate it. Atomic exact-duration WAV placement, undo, manual routing priority and a truthful source-audio badge. **177 MCP tools / 37 schemas; project format 34 only on use.** [Guide, screenshot and TF-GridNet / SR-CorrNet evaluation notes](docs/ISOLATED-DUBBING-TRACKS.md).
+
 ## v0.55.0 — Automatic dubbing tracks by character
 
 Timeline → **Dubbing tracks** → enable **Automatically route dialogues by character**. Stable character IDs create or safely reuse tracks, including for future character assignments. Manual routes stay pinned, with an explicit return to automatic routing. Existing track levels, takes, subtitles and timings remain intact. Renames follow the character until a track is custom-named. Up to 256 tracks; opt-in project format 33. **176 MCP tools / 36 schemas.** [Guide and screenshot](docs/DUBBING-LANES.md).

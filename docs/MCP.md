@@ -179,3 +179,10 @@ Les dialogues sur des pistes différentes peuvent partager le même créneau. La
 Le format 33 ajoute `dubbingLanes.byCharacter:{enabled,manualLineIds}` et les champs facultatifs de piste `characterId`, `characterName` (dernier nom du personnage pour conserver les renommages personnalisés). Les liens utilisent les ID des personnages, pas la reconnaissance des voix ni seulement les noms. Le routage est recalculé lors des éditions du projet, y compris celles provenant du MCP et des tâches natives. Une modification manuelle de `assignments` via un patch brut doit également ajouter les ID concernés à `manualLineIds` ; préférez `studio_assign_dubbing_lanes` qui conserve cette cohérence.
 
 Jusqu’à 256 pistes, noms non vides de 80 caractères au plus et gain de 0 à 3. Le format 32 conserve sa limite de 32 pistes. Ni les lectures MCP ni le redémarrage ne déclenchent d’identification vocale ou de génération. Essais, timings et sources restent conservés. [Guide complet](DUBBING-LANES.md).
+
+
+## Placer les voix isolées sur des pistes de doublage (v0.56.0)
+
+`studio_place_speaker_dubbings({id,audioLanguage,assignments,context})` place les sorties sélectionnées d’une séparation réussie dans des essais indépendants et crée les dialogues manquants. La même séparation réutilise ses sous-dialogues existants. `assignments:[{outputId,label,characterId,sourceText,targetText,laneId,laneName}]` : `laneId:null` crée une piste ; un ID existant impose une affectation manuelle durable. La source et la révision sont vérifiées, les fichiers sont convertis à durée exacte et le clic est atomique et annulable. `studio_speaker_separation_result` indique `placedOutputIds` pour éviter les doublons.
+
+Le format 34 conserve `takeOrigin.type:"separation"`, l’ID de séparation/sortie, la piste et la langue réellement parlée. Ces essais sont de l’audio source isolé, sans traduction implicite. La vidéo, les SRT et les essais existants restent conservés. **177 outils / 37 schémas**. [Guide](ISOLATED-DUBBING-TRACKS.md).

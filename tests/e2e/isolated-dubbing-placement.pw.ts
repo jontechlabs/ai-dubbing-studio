@@ -68,6 +68,10 @@ test('places selected isolated voices on distinct dubbing tracks and preserves e
       ),
   ).toBe(true);
   await expect(panel).toBeVisible();
+  while (await page.locator('.job-notice .notice-close').count())
+    await page.locator('.job-notice .notice-close').first().click();
+  await page.setViewportSize({ width: 1600, height: 1400 });
+  await placement.locator('summary').scrollIntoViewIfNeeded();
   await page.screenshot({
     path: 'docs/screenshots/isolated-dubbing-placement.png',
     fullPage: true,

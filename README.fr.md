@@ -1,5 +1,9 @@
 # AI Dubbing Studio
 
+## v0.56.0 — Voix isolées sur des pistes de doublage indépendantes
+
+Après une séparation de plusieurs locuteurs, choisissez **Placer sur des pistes de doublage**, gardez les voix souhaitées et choisissez des pistes existantes ou nouvelles. Les dialogues préparés sont réutilisés, les autres sont créés au même timestamp, y compris depuis une sélection libre. Chaque voix devient un nouvel essai audio isolé, sans traduction implicite. Les anciens essais, SRT et la vidéo restent conservés. Placement atomique à durée exacte, annulation et affectations manuelles prioritaires. **177 outils MCP / 37 schémas ; format 34 uniquement à l’utilisation.** [Guide, capture et comparaison TF-GridNet / SR-CorrNet](docs/ISOLATED-DUBBING-TRACKS.md).
+
 ## v0.55.0 — Pistes de doublage automatiques par personnage
 
 Timeline → **Pistes de doublage** → **Affecter automatiquement les dialogues par personnage**. Création ou réutilisation sûre des pistes par identifiant de personnage, y compris pour les futures attributions. Les choix manuels restent prioritaires, avec retour explicite à l’automatique. Niveaux, essais, sous-titres et placements conservés. Les noms suivent le personnage tant que la piste n’est pas renommée manuellement. Jusqu’à 256 pistes ; format 33 à l’activation. **176 outils MCP / 36 schémas.** [Guide et capture](docs/DUBBING-LANES.md).
