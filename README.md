@@ -1,5 +1,9 @@
 # AI Dubbing Studio
 
+## v0.55.0 — Automatic dubbing tracks by character
+
+Timeline → **Dubbing tracks** → enable **Automatically route dialogues by character**. Stable character IDs create or safely reuse tracks, including for future character assignments. Manual routes stay pinned, with an explicit return to automatic routing. Existing track levels, takes, subtitles and timings remain intact. Renames follow the character until a track is custom-named. Up to 256 tracks; opt-in project format 33. **176 MCP tools / 36 schemas.** [Guide and screenshot](docs/DUBBING-LANES.md).
+
 ## v0.54.0 — Harmonize the timbre of selected dubbed dialogues
 
 Check several dubbed dialogues → **Dubbing → Batch → Harmonize timbre**. Choose a common existing take or import a reference file with a 1–20 second range. Local Chatterbox VC creates and selects one new take per eligible dialogue, preserving previous takes, duration, placement and subtitles. The model stays loaded during the batch and is released on completion/cancellation. Durable results, before/after audition and retries of unfinished conversions. Independent dubbing tracks allow simultaneous unrelated dialogues with per-track volume, mute and solo. **174 MCP tools / 35 schemas; format 32 only when using the new tracks.** [Track guide](docs/DUBBING-LANES.md). [Guide and screenshot](docs/BATCH-TIMBRE.md).

@@ -1,6 +1,6 @@
 # Piloter le studio avec une IA via MCP
 
-Le studio fournit **174 outils MCP** en v0.54.0 : 139 commandes natives et 35 commandes d’édition, d’état et de lecture, avec **35 schémas partagés**. Le serveur utilise **stdio** et le même exécutable que l’application. Cette intégration pilote **l’application ouverte** ; aucun environnement Node.js ou Python supplémentaire n’est requis pour la connexion.
+Le studio fournit **176 outils MCP** en v0.55.0 : 141 commandes natives et 35 commandes d’édition, d’état et de lecture, avec **36 schémas partagés**. Le serveur utilise **stdio** et le même exécutable que l’application. Cette intégration pilote **l’application ouverte** ; aucun environnement Node.js ou Python supplémentaire n’est requis pour la connexion.
 
 ## Nouveaux moteurs natifs
 
@@ -170,3 +170,12 @@ Suivez `studio_list_jobs` (`kind: voiceConversionBatch`) puis `studio_voice_batc
 Le champ facultatif `dubbingLanes` utilise le **format projet 32**, activé uniquement lors de son utilisation. Les anciens projets conservent le comportement de la piste unique. Utilisez `studio_project_patch` avec le contexte courant : ajoutez `dubbingLanes` et passez `formatVersion` à 32 dans la même mutation. Structure : `{sourcePath, lanes:[{id,name,mute,solo,gain}], assignments:{dialogueId:laneId}}`. La première piste porte l’ID `main` ; les dialogues sans affectation y restent. Au maximum 32 pistes, nom non vide de 80 caractères au plus et gain de 0 à 3. Les affectations doivent pointer vers des pistes existantes. Le volume/muet/solo de la piste générale `dubbing` reste le réglage commun final. Pour supprimer une piste, supprimez aussi ses affectations ou réaffectez-les à `main` dans la même mutation. Une lecture ou un redémarrage ne lance aucune tâche.
 
 Les dialogues sur des pistes différentes peuvent partager le même créneau. La protection des durées/mouvements contre les collisions reste active au sein d’une même piste, et les sous-doublages explicitement liés restent compatibles. Les réglages sont appliqués au lecteur et au mix MKV ; les essais et fichiers source restent conservés. [Guide](DUBBING-LANES.md).
+
+## Routage automatique par personnage (v0.55.0)
+
+- `studio_configure_character_lanes({options:{enabled:true,preserveManual:true},context})` active le mode et conserve les choix manuels antérieurs. `preserveManual:false` réaffecte explicitement tous les dialogues. `enabled:false` conserve les pistes et leurs affectations actuelles.
+- `studio_assign_dubbing_lanes({lineIds:[...],laneId,context})` affecte un ou plusieurs dialogues à une piste existante comme choix manuel durable. `laneId:"main"` force la première piste ; `laneId:null` retire la priorité manuelle et rétablit le routage par personnage. Une sélection invalide refuse toute mutation.
+
+Le format 33 ajoute `dubbingLanes.byCharacter:{enabled,manualLineIds}` et les champs facultatifs de piste `characterId`, `characterName` (dernier nom du personnage pour conserver les renommages personnalisés). Les liens utilisent les ID des personnages, pas la reconnaissance des voix ni seulement les noms. Le routage est recalculé lors des éditions du projet, y compris celles provenant du MCP et des tâches natives. Une modification manuelle de `assignments` via un patch brut doit également ajouter les ID concernés à `manualLineIds` ; préférez `studio_assign_dubbing_lanes` qui conserve cette cohérence.
+
+Jusqu’à 256 pistes, noms non vides de 80 caractères au plus et gain de 0 à 3. Le format 32 conserve sa limite de 32 pistes. Ni les lectures MCP ni le redémarrage ne déclenchent d’identification vocale ou de génération. Essais, timings et sources restent conservés. [Guide complet](DUBBING-LANES.md).

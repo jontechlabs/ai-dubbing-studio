@@ -1,5 +1,9 @@
 # AI Dubbing Studio
 
+## v0.55.0 — Pistes de doublage automatiques par personnage
+
+Timeline → **Pistes de doublage** → **Affecter automatiquement les dialogues par personnage**. Création ou réutilisation sûre des pistes par identifiant de personnage, y compris pour les futures attributions. Les choix manuels restent prioritaires, avec retour explicite à l’automatique. Niveaux, essais, sous-titres et placements conservés. Les noms suivent le personnage tant que la piste n’est pas renommée manuellement. Jusqu’à 256 pistes ; format 33 à l’activation. **176 outils MCP / 36 schémas.** [Guide et capture](docs/DUBBING-LANES.md).
+
 ## v0.54.0 — Harmoniser le timbre de plusieurs dialogues doublés
 
 Cochez plusieurs dialogues doublés → **Doublage → Lot → Harmoniser le timbre**. Choisissez un essai existant ou importez un fichier de référence avec un extrait de 1 à 20 secondes. Chatterbox VC crée et sélectionne un nouvel essai par dialogue admissible, en conservant les précédents, la durée, le placement et les sous-titres. Modèle conservé pendant le lot, libéré à la fin ou à l’annulation. Résultats conservés, écoute avant/après et reprise des conversions non terminées. Des pistes de doublage distinctes permettent aussi les dialogues simultanés, avec volume, muet et solo par piste. **174 outils MCP / 35 schémas ; format 32 uniquement lorsque les nouvelles pistes sont utilisées.** [Guide des pistes](docs/DUBBING-LANES.md). [Guide et capture](docs/BATCH-TIMBRE.md).

@@ -155,7 +155,12 @@ export function syncCharacterLanes(project: Project): Project {
     const available = state.lanes.filter((l) => l.id !== MAIN_DUBBING_LANE && !l.characterId);
     const named =
       nameCounts.get(character.name) === 1
-        ? available.filter((l) => l.name === character.name)
+        ? available.filter(
+            (l) =>
+              l.name === character.name &&
+              (!owners.has(l.id) ||
+                (owners.get(l.id)!.size === 1 && owners.get(l.id)!.has(character.id))),
+          )
         : [];
     const exclusive = available.filter(
       (l) => owners.get(l.id)?.size === 1 && owners.get(l.id)!.has(character.id),

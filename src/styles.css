@@ -5433,3 +5433,11 @@ footer .work-estimate {
   padding: 2px;
   font-size: 10px;
 }
+
+.character-lane-routing {
+  margin-bottom: 12px;
+}
+.dubbing-lane-settings small {
+  display: block;
+  overflow-wrap: anywhere;
+}

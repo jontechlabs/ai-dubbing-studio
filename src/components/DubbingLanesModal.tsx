@@ -49,7 +49,7 @@ export function DubbingLanesModal({
       <p>{t('dubLanes.hint')}</p>
       <fieldset disabled={busy} className="character-lane-routing">
         <legend>{t('dubLanes.characterRouting')}</legend>
-        <label>
+        <label className="checkbox-field">
           <input
             type="checkbox"
             checked={!!routing?.enabled}

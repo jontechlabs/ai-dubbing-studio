@@ -78,8 +78,8 @@ function wav(bytes) {
 try {
   await client.connect(transport);
   tools = (await client.listTools()).tools;
-  assert.equal(client.getServerVersion().version, '0.54.0');
-  assert.equal(tools.length, 174);
+  assert.equal(client.getServerVersion().version, '0.55.0');
+  assert.equal(tools.length, 176);
   let p = await call('studio_get_project');
   assert(p?.dialogues.length >= 2);
   const lib = await call('studio_list_projects'),
@@ -241,7 +241,7 @@ try {
   assert.equal(p.formatVersion, 31);
   assert.equal(p.generations.at(-1).id, moss.id);
   const proof = {
-    version: '0.54.0',
+    version: '0.55.0',
     officialSdk: true,
     realModelInstallers: true,
     realNeuralInference: true,

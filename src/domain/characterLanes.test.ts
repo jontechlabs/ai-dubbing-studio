@@ -70,6 +70,11 @@ it('reuses unambiguous existing tracks and preserves their settings and prior ma
   p = enable(p, false);
   expect(dubbingLaneId(p, 'line')).toBe(id);
   expect(p.dubbingLanes!.byCharacter!.manualLineIds).toEqual([]);
+  let occupied = addDubbingLane(fixture(), 'Alice', ['line2']);
+  const occupiedId = occupied.dubbingLanes!.lanes[1].id;
+  occupied = enable(occupied);
+  expect(dubbingLaneId(occupied, 'line2')).toBe(occupiedId);
+  expect(dubbingLaneId(occupied, 'line')).not.toBe(occupiedId);
 });
 it('binds by character ID and follows renames while retaining custom track names', () => {
   let p = fixture();

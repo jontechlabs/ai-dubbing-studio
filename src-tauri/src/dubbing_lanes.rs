@@ -97,18 +97,17 @@ pub fn validate(p: &Project) -> Result<(), String> {
         {
             return Err(invalid());
         }
-        if l.character_id.is_some() || l.character_name.is_some() {
-            if p.format_version < 33
+        if (l.character_id.is_some() || l.character_name.is_some())
+            && (p.format_version < 33
                 || l.id == MAIN
                 || l.character_id
                     .as_ref()
                     .is_none_or(|id| id.is_empty() || id.len() > 128 || !characters.insert(id))
                 || l.character_name
                     .as_ref()
-                    .is_none_or(|n| n.trim().is_empty() || n.chars().count() > 80)
-            {
-                return Err(invalid());
-            }
+                    .is_none_or(|n| n.trim().is_empty() || n.chars().count() > 80))
+        {
+            return Err(invalid());
         }
     }
     if let Some(r) = &s.by_character {
@@ -201,7 +200,13 @@ pub fn normalize(p: &mut Project) -> Result<(), String> {
             .collect();
         let named: Vec<_> = available
             .iter()
-            .filter(|(_, l)| names[c.name.as_str()] == 1 && l.name == c.name)
+            .filter(|(_, l)| {
+                names[c.name.as_str()] == 1
+                    && l.name == c.name
+                    && owners
+                        .get(&l.id)
+                        .is_none_or(|set| set.len() == 1 && set.contains(&Some(c.id.clone())))
+            })
             .map(|(i, _)| *i)
             .collect();
         let exclusive: Vec<_> = available

@@ -35,8 +35,8 @@ const checkpoint = path.join(args['test-root'], 'take-timing-checkpoint.json');
 try {
   await client.connect(transport);
   tools = (await client.listTools()).tools;
-  assert.equal(client.getServerVersion().version, '0.54.0');
-  assert.equal(tools.length, 174);
+  assert.equal(client.getServerVersion().version, '0.55.0');
+  assert.equal(tools.length, 176);
   if (args.phase === 'before') {
     let p = await call('studio_get_project');
     assert(p);
@@ -169,6 +169,78 @@ try {
         invalidLane.content.some((c) => c.text?.includes('INVALID_DUBBING_LANES')),
     );
     assert.equal((await call('studio_get_project')).revision, p.revision);
+    const other = p.dialogues.find((l) => l.id !== line.id);
+    assert(other);
+    const otherIndex = p.dialogues.findIndex((l) => l.id === other.id),
+      lineIndex = p.dialogues.findIndex((l) => l.id === line.id);
+    await call('studio_project_patch', {
+      patches: [
+        {
+          op: 'add',
+          path: '/characters/-',
+          value: {
+            id: 'sdk-auto-a',
+            name: 'Alice MCP',
+            color: '#a48bd4',
+            references: [],
+            defaultReferenceId: null,
+          },
+        },
+        {
+          op: 'add',
+          path: '/characters/-',
+          value: {
+            id: 'sdk-auto-b',
+            name: 'Bob MCP',
+            color: '#82bda0',
+            references: [],
+            defaultReferenceId: null,
+          },
+        },
+        { op: 'replace', path: `/dialogues/${lineIndex}/characterId`, value: 'sdk-auto-a' },
+        { op: 'replace', path: `/dialogues/${otherIndex}/characterId`, value: 'sdk-auto-b' },
+      ],
+    });
+    await call('studio_configure_character_lanes', {
+      options: { enabled: true, preserveManual: false },
+    });
+    p = await call('studio_get_project');
+    assert.equal(p.formatVersion, 33);
+    assert(p.dubbingLanes.byCharacter.enabled);
+    const laneA = p.dubbingLanes.lanes.find((l) => l.characterId === 'sdk-auto-a'),
+      laneB = p.dubbingLanes.lanes.find((l) => l.characterId === 'sdk-auto-b');
+    assert(laneA && laneB && laneA.id !== laneB.id);
+    assert.equal(p.dubbingLanes.assignments[line.id], laneA.id);
+    assert.equal(p.dubbingLanes.assignments[other.id], laneB.id);
+    assert.equal(laneA.gain, 1.75);
+    assert(laneA.mute);
+    await call('studio_assign_dubbing_lanes', { lineIds: [line.id], laneId: 'main' });
+    await call('studio_project_patch', {
+      patches: [
+        { op: 'replace', path: `/dialogues/${lineIndex}/characterId`, value: 'sdk-auto-b' },
+      ],
+    });
+    p = await call('studio_get_project');
+    assert.equal(p.dubbingLanes.assignments[line.id], undefined);
+    assert(p.dubbingLanes.byCharacter.manualLineIds.includes(line.id));
+    await call('studio_assign_dubbing_lanes', { lineIds: [line.id], laneId: null });
+    p = await call('studio_get_project');
+    assert.equal(p.dubbingLanes.assignments[line.id], laneB.id);
+    await call('studio_assign_dubbing_lanes', { lineIds: [line.id], laneId: 'main' });
+    p = await call('studio_get_project');
+    const badRoute = await client.callTool({
+      name: 'studio_assign_dubbing_lanes',
+      arguments: {
+        context: (await call('studio_get_state')).context,
+        lineIds: ['missing-sdk-dialogue'],
+        laneId: 'main',
+      },
+    });
+    assert(
+      badRoute.isError && badRoute.content.some((c) => c.text?.includes('INVALID_DUBBING_LANES')),
+    );
+    assert.equal((await call('studio_get_project')).revision, p.revision);
+    assert.deepEqual(p.generations, beforePreview.generations);
     const record = {
       takeId: p.generations[index].id,
       operation: 'tts',
@@ -247,12 +319,15 @@ try {
     for (const g of c.hashes)
       assert.equal(await digest(await call('studio_generation_path', { id: g.id })), g.sha256);
     const proof = {
-      version: '0.54.0',
-      toolCount: 174,
+      version: '0.55.0',
+      toolCount: 176,
       officialSdk: true,
       actualApplicationRestart: true,
       persistentTakeTiming: true,
       independentDubbingLanesPersisted: true,
+      automaticCharacterRoutingPersisted: true,
+      manualCharacterRoutingOverrideRetained: true,
+      invalidCharacterRoutingRejected: true,
       invalidLaneGainRejected: true,
       batchTimbrePreviewValidated: true,
       batchReferenceImportPersisted: true,

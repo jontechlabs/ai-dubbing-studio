@@ -28,17 +28,24 @@ async fn matches_shared_fixture_and_keeps_both_simultaneous_selected_takes_and_o
     let result = enabled(&p);
     let spec: Value =
         serde_json::from_str(include_str!("../../resources/character-lanes-fixture.json")).unwrap();
-    assert_eq!(
-        serde_json::to_value(&result.dubbing_lanes).unwrap(),
-        spec["expected"]
-    );
+    assert!(crate::joint_review::same(
+        &serde_json::to_value(&result.dubbing_lanes).unwrap(),
+        &spec["expected"]
+    ));
     let mut repeat = result.clone();
     normalize(&mut repeat).unwrap();
-    assert_eq!(
-        serde_json::to_value(&repeat.dubbing_lanes).unwrap(),
-        spec["expected"]
-    );
+    assert!(crate::joint_review::same(
+        &serde_json::to_value(&repeat.dubbing_lanes).unwrap(),
+        &spec["expected"]
+    ));
     assert_eq!(repeat.generations, before);
+    let mut occupied = p.clone();
+    occupied.format_version = 32;
+    occupied.dubbing_lanes=Some(serde_json::from_value(json!({"sourcePath":p.media.as_ref().unwrap().path,"lanes":[{"id":"main","name":"Doublage 1","gain":1,"mute":false,"solo":false},{"id":"existing","name":"Alice","gain":1.75,"mute":true,"solo":false}],"assignments":{"line2":"existing"}})).unwrap());
+    let occupied = enabled(&occupied);
+    assert_eq!(lane(&occupied, "line2"), "existing");
+    assert_ne!(lane(&occupied, "line"), "existing");
+    assert!(occupied.dubbing_lanes.as_ref().unwrap().lanes[1].mute);
     p.dialogues[0]
         .selected_generation_ids
         .insert("fr".into(), "voice".into());
