@@ -1392,11 +1392,15 @@ export function DubPanel({
                 )}
                 {generation.takeOrigin && (
                   <small className="model-state">
-                    {t(
-                      generation.takeOrigin.type === 'microphone'
-                        ? 'capture.recordedTake'
-                        : 'capture.convertedTake',
-                    )}
+                    {generation.takeOrigin.type === 'separation'
+                      ? t('isolatedPlacement.origin', {
+                          language: generation.takeOrigin.sourceLanguage,
+                        })
+                      : t(
+                          generation.takeOrigin.type === 'microphone'
+                            ? 'capture.recordedTake'
+                            : 'capture.convertedTake',
+                        )}
                   </small>
                 )}
                 {generation.prosodyTransfer && (

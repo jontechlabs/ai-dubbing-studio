@@ -748,6 +748,58 @@
       "annotations": { "readOnlyHint": false, "destructiveHint": true, "openWorldHint": false }
     },
     {
+      "name": "studio_place_speaker_dubbings",
+      "command": "place_speaker_dubbings",
+      "description": "place speaker dubbings. Uses the current desktop session. Local file paths must be absolute; long operations return job IDs. Existing native validation applies.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "audioLanguage": { "type": "string" },
+          "assignments": {
+            "type": "array",
+            "items": { "$ref": "#/$defs/assignments_SpeakerDubbingPlacement_0" }
+          },
+          "context": {
+            "type": "object",
+            "properties": {
+              "projectId": { "type": "string" },
+              "expectedRevision": { "type": "integer", "minimum": 0 }
+            },
+            "required": ["projectId", "expectedRevision"],
+            "additionalProperties": false
+          }
+        },
+        "required": ["id", "audioLanguage", "assignments", "context"],
+        "additionalProperties": false,
+        "$defs": {
+          "assignments_SpeakerDubbingPlacement_0": {
+            "type": "object",
+            "properties": {
+              "laneId": { "anyOf": [{ "type": "null" }, { "type": "string" }] },
+              "laneName": { "type": "string" },
+              "outputId": { "type": "string" },
+              "label": { "type": "string" },
+              "characterId": { "anyOf": [{ "type": "null" }, { "type": "string" }] },
+              "sourceText": { "type": "string" },
+              "targetText": { "type": "string" }
+            },
+            "required": [
+              "laneId",
+              "laneName",
+              "outputId",
+              "label",
+              "characterId",
+              "sourceText",
+              "targetText"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "annotations": { "readOnlyHint": false, "destructiveHint": true, "openWorldHint": false }
+    },
+    {
       "name": "studio_create_speaker_dubbings",
       "command": "create_speaker_dubbings",
       "description": "create speaker dubbings. Uses the current desktop session. Local file paths must be absolute; long operations return job IDs. Existing native validation applies.",
@@ -7033,9 +7085,14 @@
             "type": {
               "anyOf": [
                 { "type": "string", "const": "microphone" },
-                { "type": "string", "const": "conversion" }
+                { "type": "string", "const": "conversion" },
+                { "type": "string", "const": "separation" }
               ]
             },
+            "separationId": { "anyOf": [{ "type": "string" }] },
+            "outputId": { "anyOf": [{ "type": "string" }] },
+            "sourceTrackId": { "anyOf": [{ "type": "string" }] },
+            "sourceLanguage": { "anyOf": [{ "type": "string" }] },
             "sourceGenerationId": { "anyOf": [{ "type": "string" }] },
             "referenceId": { "anyOf": [{ "type": "string" }] },
             "characterId": { "anyOf": [{ "type": "null" }, { "type": "string" }] }
@@ -7418,6 +7475,33 @@
             "targetText": { "type": "string" }
           },
           "required": ["outputId", "label", "characterId", "sourceText", "targetText"],
+          "additionalProperties": false
+        }
+      }
+    },
+    "SpeakerDubbingPlacement": {
+      "$ref": "#/$defs/SpeakerDubbingPlacement_0",
+      "$defs": {
+        "SpeakerDubbingPlacement_0": {
+          "type": "object",
+          "properties": {
+            "laneId": { "anyOf": [{ "type": "null" }, { "type": "string" }] },
+            "laneName": { "type": "string" },
+            "outputId": { "type": "string" },
+            "label": { "type": "string" },
+            "characterId": { "anyOf": [{ "type": "null" }, { "type": "string" }] },
+            "sourceText": { "type": "string" },
+            "targetText": { "type": "string" }
+          },
+          "required": [
+            "laneId",
+            "laneName",
+            "outputId",
+            "label",
+            "characterId",
+            "sourceText",
+            "targetText"
+          ],
           "additionalProperties": false
         }
       }

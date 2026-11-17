@@ -76,6 +76,7 @@ const mapping = {
   'speaker_separation::Options': 'SpeakerSeparationOptions',
   'speaker_separation::Destination': 'SpeakerSeparationDestination',
   'speaker_separation::Assignment': 'SpeakerDubbingAssignment',
+  'speaker_separation::placement::Placement': 'SpeakerDubbingPlacement',
   'audio_toolbox::Options': 'AudioToolboxOptions',
   'audio_toolbox::Destination': 'AudioToolboxDestination',
   'dubbing_pipeline::Options': 'DubbingPipelineOptions',
@@ -87,7 +88,7 @@ const mapping = {
   'voice_capture::Options': 'VoiceConversionOptions',
   'voice_capture::ReferenceRange': 'VoiceConversionReferenceRange',
   'voice_batch::Options': 'BatchVoiceConversionOptions',
-  'dubbing_lanes::Options':'CharacterLaneOptions',
+  'dubbing_lanes::Options': 'CharacterLaneOptions',
   'prosody::Options': 'ProsodyOptions',
   'tts::Options': 'VoiceSettings',
   'voice_edit::Edit': 'VoiceEdit',
@@ -232,8 +233,10 @@ const notes = {
     'List the 20 local audio effects, parameter bounds/defaults and 12 presets. Voice edit operations also support kind effects.',
   suggest_translation:
     'Propose a local translation without applying it. Optional direction (up to 2000 characters) guides character, register, tone and desired spoken length; subtitle timings are supplied automatically. Poll jobs, review the proposal, then explicitly apply it.',
-  configure_character_lanes: 'Enable or disable automatic dubbing-track routing by existing character IDs. Creates or safely reuses a track per character, preserves manual overrides by default; preserveManual=false explicitly reroutes all lines. Opt-in project format 33, up to 256 tracks. No speaker recognition or audio regeneration.',
-  assign_dubbing_lanes: 'Assign dialogues to an existing dubbing track as persistent manual overrides. Pass laneId=null to return these lines to automatic character routing. Preserve takes, subtitles and timings. Current context required.',
+  configure_character_lanes:
+    'Enable or disable automatic dubbing-track routing by existing character IDs. Creates or safely reuses a track per character, preserves manual overrides by default; preserveManual=false explicitly reroutes all lines. Opt-in project format 33, up to 256 tracks. No speaker recognition or audio regeneration.',
+  assign_dubbing_lanes:
+    'Assign dialogues to an existing dubbing track as persistent manual overrides. Pass laneId=null to return these lines to automatic character routing. Preserve takes, subtitles and timings. Current context required.',
   preview_voice_batch:
     'Preview selected dubbed dialogues for one common local timbre reference. Uses the selected take in each dialogue; reports missing, excluded or invalid audio. Set reference.generationId to "batch" (each source is resolved from lineIds). Read-only.',
   convert_voice_batch:
@@ -299,6 +302,7 @@ for (const command of [
   'speaker_separation_path',
   'apply_speaker_separation_result',
   'create_speaker_dubbings',
+  'place_speaker_dubbings',
   'set_voice_output_gain',
   'generate_dubbing_pipeline',
   'separate_audio_selection',

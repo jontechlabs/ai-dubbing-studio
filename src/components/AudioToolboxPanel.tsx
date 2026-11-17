@@ -12,6 +12,7 @@ import { audioTracks, trackLabel } from '../domain/audio';
 import { formatTime } from '../domain/time';
 import * as bridge from '../services/bridge';
 import { CurrentJobProgress } from './CurrentJobProgress';
+import { IsolatedDubbingPlacement } from './IsolatedDubbingPlacement';
 export function AudioToolboxPanel({
   project,
   selection,
@@ -409,6 +410,19 @@ export function AudioToolboxPanel({
           <CurrentJobProgress job={job} onError={onError} />
           {result && (
             <section className="toolbox-results">
+              {speakerModel && (
+                <IsolatedDubbingPlacement
+                  key={result.id}
+                  project={project}
+                  result={result}
+                  urls={urls}
+                  busy={locked}
+                  snapshot={snapshot}
+                  run={run}
+                  onError={onError}
+                  onAudition={onAudition}
+                />
+              )}
               <strong>{t('toolbox.preview')}</strong>
               <p>
                 {result.deviceName} · {formatTime(result.options.startMs)} →{' '}

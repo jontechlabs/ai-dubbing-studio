@@ -13,6 +13,8 @@ use std::{
     sync::{atomic::Ordering, Arc},
 };
 use tauri::{Emitter, Manager};
+#[path = "speaker_placement.rs"]
+pub mod placement;
 #[cfg(test)]
 #[path = "speaker_selection_tests.rs"]
 mod selection_tests;
@@ -336,7 +338,7 @@ pub fn result<R: tauri::Runtime>(
     let data: Value =
         serde_json::from_slice(&std::fs::read(path).map_err(io_error)?).map_err(io_error)?;
     Ok(
-        json!({"id":id,"options":r.options,"outputs":spec.outputs,"commonGain":data["commonGain"],"deviceName":data["deviceName"],"stale":snapshot(&p,&r.root,&r.options)?!=r.snapshot,"applied":p.generations.iter().any(|g|g["kind"]=="audioPatch"&&g["operationId"]==id)}),
+        json!({"id":id,"options":r.options,"outputs":spec.outputs,"commonGain":data["commonGain"],"deviceName":data["deviceName"],"stale":snapshot(&p,&r.root,&r.options)?!=r.snapshot,"applied":p.generations.iter().any(|g|g["kind"]=="audioPatch"&&g["operationId"]==id),"placedOutputIds":placement::placed(&p,id)}),
     )
 }
 pub fn path<R: tauri::Runtime>(

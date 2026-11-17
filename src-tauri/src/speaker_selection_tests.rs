@@ -1,6 +1,6 @@
 use super::*;
 
-fn fixture() -> (Project, Options, Model) {
+pub(super) fn fixture() -> (Project, Options, Model) {
     let mut p = Project::new("Free speaker selection".into(), "ja".into(), "fr".into());
     p.media = Some(serde_json::from_value(json!({"id":"video","path":"media/source.wav","previewPath":null,"audioStreamIndex":0,"originalName":"source.wav","durationMs":16000,"streams":[]})).unwrap());
     let o = serde_json::from_value(json!({"modelId":"mossformer2-16k","sourceTrackId":"original","startMs":7100,"endMs":8100,"device":"cpu","windowSeconds":4,"prompt":""})).unwrap();

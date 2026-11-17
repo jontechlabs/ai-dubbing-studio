@@ -59,6 +59,13 @@ export function createSpeakerDubbings(
 ) {
   return invoke<Project>('create_speaker_dubbings', { id, assignments });
 }
+export function placeSpeakerDubbings(
+  id: string,
+  audioLanguage: string,
+  assignments: import('../domain/speakerDubbing').SpeakerDubbingPlacement[],
+) {
+  return invoke<Project>('place_speaker_dubbings', { id, audioLanguage, assignments });
+}
 
 export function audioToolboxStatus() {
   return invoke<import('../domain/audioToolbox').AudioToolboxStatus>('audio_toolbox_status');

@@ -22,7 +22,7 @@ export interface SpeakerDubbingGroup {
   voices: IsolatedVoice[];
 }
 export interface SpeakerSeparationOptions {
-  /** Omit for a free timeline selection; creating sub-dubs still requires a dialogue. */
+  /** Omit for a free timeline selection. */
   lineId?: string;
   modelId: string;
   sourceTrackId: string;
@@ -46,6 +46,7 @@ export interface SpeakerDubbingAssignment {
   targetText: string;
 }
 export interface SpeakerSeparationResult {
+  placedOutputIds?: string[];
   id: string;
   options: SpeakerSeparationOptions;
   outputs: string[];
@@ -53,6 +54,10 @@ export interface SpeakerSeparationResult {
   applied: boolean;
   commonGain: number;
   deviceName: string;
+}
+export interface SpeakerDubbingPlacement extends SpeakerDubbingAssignment {
+  laneId: string | null;
+  laneName: string;
 }
 export function isolatedVoice(project: Project, lineId: string) {
   for (const group of project.speakerDubbings ?? []) {

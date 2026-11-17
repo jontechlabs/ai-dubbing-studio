@@ -11,6 +11,7 @@ import {
 } from '../domain/speakerDubbing';
 import { audioTracks, trackLabel } from '../domain/audio';
 import * as bridge from '../services/bridge';
+import { IsolatedDubbingPlacement } from './IsolatedDubbingPlacement';
 
 export function SpeakerSeparationPanel({
   project,
@@ -44,6 +45,7 @@ export function SpeakerSeparationPanel({
   const [modelId, setModel] = useState('mossformer2-16k'),
     [device, setDevice] = useState('cpu'),
     [source, setSource] = useState('auto');
+  const [windowSeconds, setWindowSeconds] = useState(2);
   const [jobId, setJob] = useState(''),
     [result, setResult] = useState<SpeakerSeparationResult | null>(null);
   const [urls, setUrls] = useState<Record<string, string>>({}),
@@ -218,6 +220,20 @@ export function SpeakerSeparationPanel({
               ))}
             </select>
           </label>
+          <label className="field">
+            <span>{t('toolbox.window')}</span>
+            <select
+              disabled={disabled}
+              value={windowSeconds}
+              onChange={(e) => setWindowSeconds(Number(e.target.value))}
+            >
+              {[2, 4, 6, 8].map((n) => (
+                <option key={n} value={n}>
+                  {n} s
+                </option>
+              ))}
+            </select>
+          </label>
           {model && (
             <small>
               {t('overlap.disk', {
@@ -253,7 +269,7 @@ export function SpeakerSeparationPanel({
                   endMs: line.endMs,
                   device,
                   prompt: '',
-                  windowSeconds: 2,
+                  windowSeconds,
                 });
               })
             }
@@ -265,6 +281,17 @@ export function SpeakerSeparationPanel({
       )}
       {result && (
         <div className="speaker-separation-results">
+          <IsolatedDubbingPlacement
+            key={result.id}
+            project={project}
+            result={result}
+            urls={urls}
+            busy={disabled}
+            snapshot={snapshot}
+            run={run}
+            onError={onError}
+            onAudition={onAudition}
+          />
           <p className="panel-description">{t('overlap.review')}</p>
           <label className="field">
             <span>{t('overlap.usage')}</span>

@@ -2201,5 +2201,18 @@
     "automaticLine": "Automatically routed by character.",
     "manualLine": "Manual assignment preserved. Choose “Automatic” to return to the character track.",
     "restoreAutomatic": "Restore character track"
+  },
+  "isolatedPlacement": {
+    "title": "Place on dubbing tracks",
+    "hint": "Creates one isolated audio take per voice at the same timestamp on independent tracks. Reuses prepared sub-dialogues or creates them. Separation does not translate: audio keeps its original language. Previous takes and subtitles are preserved. Adjust or mute the source track to avoid hearing it twice.",
+    "language": "Language actually spoken in the outputs",
+    "origin": "Isolated source audio · {{language}}",
+    "keep": "Place this voice",
+    "placed": "Voice already placed",
+    "lane": "Dubbing track",
+    "newLane": "New independent track",
+    "name": "New track name",
+    "place": "Create takes and place voices",
+    "stale": "The source has changed. Run separation again before placing the voices."
   }
 }

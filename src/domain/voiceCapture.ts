@@ -75,7 +75,11 @@ export function validateDubbingPipelines(project: Project) {
   }
 }
 export interface TakeOrigin {
-  type: 'microphone' | 'conversion';
+  type: 'microphone' | 'conversion' | 'separation';
+  separationId?: string;
+  outputId?: string;
+  sourceTrackId?: string;
+  sourceLanguage?: string;
   sourceGenerationId?: string;
   referenceId?: string;
   characterId?: string | null;
@@ -90,7 +94,13 @@ export function validateTakeOrigins(project: Project) {
       Array.isArray(origin) ||
       project.formatVersion < 17 ||
       item.kind !== 'tts' ||
-      !['microphone', 'conversion'].includes(origin.type) ||
+      !['microphone', 'conversion', 'separation'].includes(origin.type) ||
+      (origin.type === 'separation' &&
+        (project.formatVersion < 34 ||
+          ![origin.separationId, origin.sourceTrackId, origin.sourceLanguage].every(
+            (s) => typeof s === 'string' && s.length > 0 && s.length <= 128,
+          ) ||
+          !/^voice-[123]$/.test(origin.outputId ?? ''))) ||
       (origin.type === 'conversion' &&
         (typeof origin.sourceGenerationId !== 'string' ||
           !origin.sourceGenerationId ||

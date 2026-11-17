@@ -227,7 +227,26 @@ pub fn validate(p: &Project) -> Result<(), String> {
         if let Some(origin) = g.get("takeOrigin") {
             if p.format_version < 17
                 || g["kind"] != "tts"
-                || !matches!(origin["type"].as_str(), Some("microphone" | "conversion"))
+                || !matches!(
+                    origin["type"].as_str(),
+                    Some("microphone" | "conversion" | "separation")
+                )
+            {
+                return Err("INVALID_VOICE_CONVERSION".into());
+            }
+            if origin["type"] == "separation"
+                && (p.format_version < 34
+                    || ["separationId", "sourceTrackId", "sourceLanguage"]
+                        .iter()
+                        .any(|key| {
+                            origin[key]
+                                .as_str()
+                                .is_none_or(|s| s.is_empty() || s.len() > 128)
+                        })
+                    || !matches!(
+                        origin["outputId"].as_str(),
+                        Some("voice-1" | "voice-2" | "voice-3")
+                    ))
             {
                 return Err("INVALID_VOICE_CONVERSION".into());
             }

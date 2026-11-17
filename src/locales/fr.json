@@ -2201,5 +2201,18 @@
     "automaticLine": "Affectation automatique selon le personnage.",
     "manualLine": "Affectation manuelle conservée. Choisissez « Automatique » pour revenir à la piste du personnage.",
     "restoreAutomatic": "Rétablir la piste du personnage"
+  },
+  "isolatedPlacement": {
+    "title": "Placer sur des pistes de doublage",
+    "hint": "Crée un essai audio isolé par voix, au même timestamp, sur des pistes indépendantes. Réutilise les sous-dialogues déjà préparés, sinon les crée. La séparation ne traduit pas : le son garde sa langue d’origine. Les anciens essais et sous-titres sont conservés. Réglez ou coupez la piste source pour éviter de l’entendre en double.",
+    "language": "Langue réellement parlée dans les sorties",
+    "origin": "Audio source isolé · {{language}}",
+    "keep": "Placer cette voix",
+    "placed": "Voix déjà placée",
+    "lane": "Piste de doublage",
+    "newLane": "Nouvelle piste indépendante",
+    "name": "Nom de la nouvelle piste",
+    "place": "Créer les essais et placer les voix",
+    "stale": "La source a changé. Relancez la séparation avant de placer les voix."
   }
 }

@@ -351,6 +351,17 @@ async fn apply_speaker_separation_result(
     speaker_separation::apply(core.inner().clone(), app, id, destinations, mute_source).await
 }
 #[tauri::command]
+async fn place_speaker_dubbings(
+    app: tauri::AppHandle,
+    core: State<'_, Shared>,
+    id: String,
+    audio_language: String,
+    assignments: Vec<speaker_separation::placement::Placement>,
+) -> Result<Project, String> {
+    speaker_separation::placement::place(core.inner().clone(), app, id, audio_language, assignments)
+        .await
+}
+#[tauri::command]
 fn create_speaker_dubbings(
     app: tauri::AppHandle,
     core: State<'_, Shared>,
@@ -2320,6 +2331,7 @@ pub fn run() {
             speaker_separation_path,
             apply_speaker_separation_result,
             create_speaker_dubbings,
+            place_speaker_dubbings,
             audio_toolbox_status,
             install_audio_toolbox_model,
             separate_audio_selection,
