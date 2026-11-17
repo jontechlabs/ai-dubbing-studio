@@ -141,6 +141,33 @@ async fn mcp_store_microphone_take(
     .map_err(domain::io_error)?
 }
 #[tauri::command]
+fn configure_character_lanes(
+    app: tauri::AppHandle,
+    core: State<'_, Shared>,
+    options: dubbing_lanes::Options,
+) -> Result<Project, String> {
+    let mut guard = core.session.lock().map_err(io_error)?;
+    let s = guard.as_mut().ok_or("NO_PROJECT")?;
+    let next = dubbing_lanes::configure(&s.project, &options)?;
+    let saved = s.replace(next, s.project.revision)?;
+    app.emit("project-changed", &saved).map_err(io_error)?;
+    Ok(saved)
+}
+#[tauri::command]
+fn assign_dubbing_lanes(
+    app: tauri::AppHandle,
+    core: State<'_, Shared>,
+    line_ids: Vec<String>,
+    lane_id: Option<String>,
+) -> Result<Project, String> {
+    let mut guard = core.session.lock().map_err(io_error)?;
+    let s = guard.as_mut().ok_or("NO_PROJECT")?;
+    let next = dubbing_lanes::assign(&s.project, &line_ids, lane_id.as_deref())?;
+    let saved = s.replace(next, s.project.revision)?;
+    app.emit("project-changed", &saved).map_err(io_error)?;
+    Ok(saved)
+}
+#[tauri::command]
 fn preview_voice_batch(
     core: State<'_, Shared>,
     options: voice_batch::Options,
@@ -2321,6 +2348,8 @@ pub fn run() {
             prosody_status,
             mcp_store_microphone_take,
             convert_voice_timbre,
+            configure_character_lanes,
+            assign_dubbing_lanes,
             preview_voice_batch,
             convert_voice_batch,
             voice_batch_report,

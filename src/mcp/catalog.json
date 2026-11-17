@@ -2,6 +2,64 @@
   "protocolVersion": "2025-11-25",
   "commands": [
     {
+      "name": "studio_configure_character_lanes",
+      "command": "configure_character_lanes",
+      "description": "Enable or disable automatic dubbing-track routing by existing character IDs. Creates or safely reuses a track per character, preserves manual overrides by default; preserveManual=false explicitly reroutes all lines. Opt-in project format 33, up to 256 tracks. No speaker recognition or audio regeneration.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "options": { "$ref": "#/$defs/options_CharacterLaneOptions_0" },
+          "context": {
+            "type": "object",
+            "properties": {
+              "projectId": { "type": "string" },
+              "expectedRevision": { "type": "integer", "minimum": 0 }
+            },
+            "required": ["projectId", "expectedRevision"],
+            "additionalProperties": false
+          }
+        },
+        "required": ["options", "context"],
+        "additionalProperties": false,
+        "$defs": {
+          "options_CharacterLaneOptions_0": {
+            "type": "object",
+            "properties": {
+              "enabled": { "type": "boolean" },
+              "preserveManual": { "type": "boolean" }
+            },
+            "required": ["enabled", "preserveManual"],
+            "additionalProperties": false
+          }
+        }
+      },
+      "annotations": { "readOnlyHint": false, "destructiveHint": true, "openWorldHint": false }
+    },
+    {
+      "name": "studio_assign_dubbing_lanes",
+      "command": "assign_dubbing_lanes",
+      "description": "Assign dialogues to an existing dubbing track as persistent manual overrides. Pass laneId=null to return these lines to automatic character routing. Preserve takes, subtitles and timings. Current context required.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "lineIds": { "type": "array", "items": { "type": "string" } },
+          "laneId": { "anyOf": [{ "type": "string" }, { "type": "null" }] },
+          "context": {
+            "type": "object",
+            "properties": {
+              "projectId": { "type": "string" },
+              "expectedRevision": { "type": "integer", "minimum": 0 }
+            },
+            "required": ["projectId", "expectedRevision"],
+            "additionalProperties": false
+          }
+        },
+        "required": ["lineIds", "context"],
+        "additionalProperties": false
+      },
+      "annotations": { "readOnlyHint": false, "destructiveHint": true, "openWorldHint": false }
+    },
+    {
       "name": "studio_preview_voice_batch",
       "command": "preview_voice_batch",
       "description": "Preview selected dubbed dialogues for one common local timbre reference. Uses the selected take in each dialogue; reports missing, excluded or invalid audio. Set reference.generationId to \"batch\" (each source is resolved from lineIds). Read-only.",
@@ -6147,6 +6205,19 @@
         "DubbingLanes_1": {
           "type": "object",
           "properties": {
+            "byCharacter": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "enabled": { "type": "boolean" },
+                    "manualLineIds": { "type": "array", "items": { "type": "string" } }
+                  },
+                  "required": ["enabled", "manualLineIds"],
+                  "additionalProperties": false
+                }
+              ]
+            },
             "sourcePath": { "type": "string" },
             "lanes": { "type": "array", "items": { "$ref": "#/$defs/DubbingLane_2" } },
             "assignments": {
@@ -6162,6 +6233,8 @@
         "DubbingLane_2": {
           "type": "object",
           "properties": {
+            "characterId": { "anyOf": [{ "type": "string" }] },
+            "characterName": { "anyOf": [{ "type": "string" }] },
             "id": { "type": "string" },
             "name": { "type": "string" },
             "mute": { "type": "boolean" },
@@ -7900,6 +7973,20 @@
           "type": "object",
           "properties": { "startMs": { "type": "number" }, "endMs": { "type": "number" } },
           "required": ["startMs", "endMs"],
+          "additionalProperties": false
+        }
+      }
+    },
+    "CharacterLaneOptions": {
+      "$ref": "#/$defs/CharacterLaneOptions_0",
+      "$defs": {
+        "CharacterLaneOptions_0": {
+          "type": "object",
+          "properties": {
+            "enabled": { "type": "boolean" },
+            "preserveManual": { "type": "boolean" }
+          },
+          "required": ["enabled", "preserveManual"],
           "additionalProperties": false
         }
       }

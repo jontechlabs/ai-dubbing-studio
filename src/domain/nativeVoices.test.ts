@@ -25,7 +25,7 @@ it('new native voices persist with format 31 without changing old takes or accep
     expect(validateProject(JSON.parse(JSON.stringify(p)))).toEqual(p);
     expect(p.generations).toEqual(before);
     expect(() => validateProject({ ...p, formatVersion: 30 })).toThrow();
-    expect(() => validateProject({ ...p, formatVersion: 33 })).toThrow();
+    expect(() => validateProject({ ...p, formatVersion: 34 })).toThrow();
   }
 });
 it('ZONOS3 exposes only the French direction that is actually implemented, with bounded independent strength', () => {

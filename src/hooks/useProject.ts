@@ -4,6 +4,7 @@ import * as bridge from '../services/bridge';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { rebaseProject } from '../domain/rebase';
 import { cleanTranslationApprovals } from '../domain/translation';
+import { syncCharacterLanes } from '../domain/dubbingLanes';
 
 export function useProject() {
   const [project, setProject] = useState<Project | null>(null);
@@ -19,7 +20,7 @@ export function useProject() {
   const inFlight = useRef<Promise<void> | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const load = useCallback((value: Project, newSession = false) => {
-    value = cleanTranslationApprovals(value);
+    value = cleanTranslationApprovals(syncCharacterLanes(value));
     if (!newSession && latest.current?.id === value.id && latest.current.revision > value.revision)
       return;
     if (
@@ -88,7 +89,7 @@ export function useProject() {
     (update: (value: Project) => Project) => {
       if (!latest.current) return;
       try {
-        latest.current = cleanTranslationApprovals(update(latest.current));
+        latest.current = cleanTranslationApprovals(syncCharacterLanes(update(latest.current)));
       } catch (error) {
         setError(String(error));
         return;

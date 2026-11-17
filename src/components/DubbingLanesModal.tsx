@@ -9,6 +9,9 @@ import {
   assignDubbingLane,
   editDubbingLane,
   removeDubbingLane,
+  configureCharacterLanes,
+  resetCharacterLane,
+  MAX_DUBBING_LANES,
 } from '../domain/dubbingLanes';
 import { Modal } from './Modal';
 import { IconButton } from './IconButton';
@@ -34,9 +37,53 @@ export function DubbingLanesModal({
     master = audioTracks(project).find((t) => t.kind === 'dubbing');
   const texts = new Map(voiceGenerations(project).map((g) => [g.dialogueId, g.text]));
   const [lineId, setLineId] = useState(selected?.id ?? project.dialogues[0]?.id ?? '');
+  const routing =
+    project.dubbingLanes?.sourcePath === project.media?.path
+      ? project.dubbingLanes?.byCharacter
+      : undefined;
+  const manual = new Set(routing?.manualLineIds ?? []),
+    characters = new Map(project.characters.map((c) => [c.id, c]));
+  const isAutomatic = !!routing?.enabled && !manual.has(lineId);
   return (
     <Modal title={t('dubLanes.title')} onClose={onClose} className="dubbing-lanes-modal">
       <p>{t('dubLanes.hint')}</p>
+      <fieldset disabled={busy} className="character-lane-routing">
+        <legend>{t('dubLanes.characterRouting')}</legend>
+        <label>
+          <input
+            type="checkbox"
+            checked={!!routing?.enabled}
+            onChange={(e) =>
+              onEdit((p) =>
+                configureCharacterLanes(p, { enabled: e.target.checked, preserveManual: true }),
+              )
+            }
+          />
+          {t('dubLanes.autoEnable')}
+        </label>
+        <p className="panel-description">{t('dubLanes.autoHint')}</p>
+        {routing?.enabled && (
+          <>
+            <p role="status">
+              {t('dubLanes.autoSummary', {
+                automatic: project.dialogues.filter(
+                  (l) => l.characterId && characters.has(l.characterId) && !manual.has(l.id),
+                ).length,
+                manual: project.dialogues.filter((l) => manual.has(l.id)).length,
+                unassigned: project.dialogues.filter((l) => !l.characterId).length,
+              })}
+            </p>
+            <button
+              disabled={busy || !manual.size}
+              onClick={() =>
+                onEdit((p) => configureCharacterLanes(p, { enabled: true, preserveManual: false }))
+              }
+            >
+              {t('dubLanes.rerouteAll')}
+            </button>
+          </>
+        )}
+      </fieldset>
       {master && (
         <div className="dubbing-lanes-master">
           <strong>{t('dubLanes.master')}</strong>
@@ -109,6 +156,14 @@ export function DubbingLanesModal({
               </IconButton>
             </div>
             <small>
+              {lane.characterId && (
+                <span>
+                  {t('dubLanes.linkedCharacter', {
+                    name: characters.get(lane.characterId)?.name ?? lane.characterName,
+                  })}{' '}
+                  ·{' '}
+                </span>
+              )}
               {t('dubLanes.count', {
                 count: project.dialogues.filter((l) => dubbingLaneId(project, l.id) === lane.id)
                   .length,
@@ -118,7 +173,7 @@ export function DubbingLanesModal({
         ))}
       </div>
       <button
-        disabled={busy || lanes.length >= 32}
+        disabled={busy || lanes.length >= MAX_DUBBING_LANES}
         onClick={() =>
           onEdit((p) => addDubbingLane(p, t('dubLanes.defaultName', { number: lanes.length + 1 })))
         }
@@ -141,16 +196,36 @@ export function DubbingLanesModal({
         <label className="field">
           <span>{t('dubLanes.destination')}</span>
           <select
-            value={dubbingLaneId(project, lineId)}
-            onChange={(e) => onEdit((p) => assignDubbingLane(p, [lineId], e.target.value))}
+            value={
+              routing?.enabled
+                ? isAutomatic
+                  ? '@auto'
+                  : 'lane:' + dubbingLaneId(project, lineId)
+                : dubbingLaneId(project, lineId)
+            }
+            onChange={(e) =>
+              onEdit((p) =>
+                routing?.enabled && e.target.value === '@auto'
+                  ? resetCharacterLane(p, [lineId])
+                  : assignDubbingLane(
+                      p,
+                      [lineId],
+                      routing?.enabled ? e.target.value.slice(5) : e.target.value,
+                    ),
+              )
+            }
           >
+            {routing?.enabled && <option value="@auto">{t('dubLanes.autoDestination')}</option>}
             {lanes.map((l) => (
-              <option key={l.id} value={l.id}>
+              <option key={l.id} value={routing?.enabled ? 'lane:' + l.id : l.id}>
                 {l.name}
               </option>
             ))}
           </select>
         </label>
+        {routing?.enabled && (
+          <small>{t(isAutomatic ? 'dubLanes.automaticLine' : 'dubLanes.manualLine')}</small>
+        )}
       </fieldset>
       <p className="panel-description">{t('dubLanes.removeHint')}</p>
     </Modal>

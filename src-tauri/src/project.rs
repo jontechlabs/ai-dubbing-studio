@@ -50,7 +50,7 @@ pub fn load(root: &Path) -> Result<Project, String> {
         let value: serde_json::Value =
             serde_json::from_slice(&std::fs::read(path).map_err(io_error)?)
                 .map_err(|_| "INVALID_PROJECT".to_string())?;
-        if !matches!(value["formatVersion"].as_u64(), Some(1..=32)) {
+        if !matches!(value["formatVersion"].as_u64(), Some(1..=33)) {
             return Err("UNSUPPORTED_PROJECT_VERSION".into());
         }
         let mut p: Project =
@@ -169,6 +169,7 @@ impl Session {
         if self.project.revision != revision || self.project.id != next.id {
             return Err("STALE_REVISION".into());
         }
+        crate::dubbing_lanes::normalize(&mut next)?;
         next.clean_translation_approvals();
         next.validate()?;
         next.revision = revision + 1;
@@ -217,7 +218,7 @@ mod tests {
         save(&root, &project).unwrap();
         assert_eq!(load(&root).unwrap().format_version, 13);
         let mut future = serde_json::to_value(project).unwrap();
-        future["formatVersion"] = serde_json::json!(33);
+        future["formatVersion"] = serde_json::json!(34);
         atomic_write(
             &root.join("project.json"),
             &serde_json::to_vec(&future).unwrap(),

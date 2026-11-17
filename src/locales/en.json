@@ -459,7 +459,7 @@
     "VC_BATCH_EMPTY": "No selected dubbing take can be harmonized.",
     "VC_BATCH_PARTIAL": "The batch has failures. Successful takes are kept; unfinished entries can be retried.",
     "INVALID_DUBBING_LANES": "Invalid dubbing track configuration.",
-    "DUBBING_LANES_LIMIT": "A project supports up to 32 dubbing tracks."
+    "DUBBING_LANES_LIMIT": "A project supports up to 256 dubbing tracks. Remove an unused track before trying again."
   },
   "preparingVideo": "Preparing video…",
   "loadingVideo": "Loading video…",
@@ -2190,6 +2190,16 @@
     "removeHint": "Deleting a track returns its dialogues to the first track. Takes and subtitles remain intact. Overlap protection applies within the same track.",
     "defaultName": "Dubbing {{number}}",
     "moveTo": "Move to {{name}}",
-    "newAndMove": "New track and move this dialogue"
+    "newAndMove": "New track and move this dialogue",
+    "characterRouting": "Character routing",
+    "autoEnable": "Automatically route dialogues by character",
+    "autoHint": "Creates or reuses a track linked to each assigned character. Manual choices take priority, including after a character change. Unassigned dialogues stay on the first track. No additional AI model.",
+    "autoSummary": "{{automatic}} automatic · {{manual}} manual · {{unassigned}} unassigned",
+    "rerouteAll": "Also reroute manually assigned dialogues",
+    "linkedCharacter": "Character: {{name}}",
+    "autoDestination": "Automatic — character track",
+    "automaticLine": "Automatically routed by character.",
+    "manualLine": "Manual assignment preserved. Choose “Automatic” to return to the character track.",
+    "restoreAutomatic": "Restore character track"
   }
 }

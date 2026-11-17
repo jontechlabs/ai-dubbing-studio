@@ -1,0 +1,21 @@
+{
+  "characters": [
+    {"id":"alpha","name":"Alice","color":"#a48bd4","references":[],"defaultReferenceId":null},
+    {"id":"beta","name":"Bob","color":"#82bda0","references":[],"defaultReferenceId":null}
+  ],
+  "dialogues": [
+    {"id":"line","startMs":1000,"endMs":3000,"sourceCueIds":[],"targetCueIds":[],"ttsText":"Bonjour","characterId":"alpha","status":"ungenerated","warnings":[],"selectedGenerationIds":{}},
+    {"id":"line2","startMs":1000,"endMs":3000,"sourceCueIds":[],"targetCueIds":[],"ttsText":"Bonsoir","characterId":"beta","status":"ungenerated","warnings":[],"selectedGenerationIds":{}},
+    {"id":"line3","startMs":3000,"endMs":3500,"sourceCueIds":[],"targetCueIds":[],"ttsText":"Salut","characterId":null,"status":"ungenerated","warnings":[],"selectedGenerationIds":{}}
+  ],
+  "expected": {
+    "byCharacter":{"enabled":true,"manualLineIds":[]},
+    "sourcePath":"media/source.mkv",
+    "lanes":[
+      {"id":"main","name":"Doublage 1","mute":false,"solo":false,"gain":1},
+      {"id":"character-1","name":"Alice","mute":false,"solo":false,"gain":1,"characterId":"alpha","characterName":"Alice"},
+      {"id":"character-2","name":"Bob","mute":false,"solo":false,"gain":1,"characterId":"beta","characterName":"Bob"}
+    ],
+    "assignments":{"line":"character-1","line2":"character-2"}
+  }
+}

@@ -49,7 +49,13 @@ import { TrackVolume } from './TrackVolume';
 import { AudioMeter } from './AudioMeter';
 import { DubbingLanesModal } from './DubbingLanesModal';
 import { DubbingLaneControls } from './DubbingLaneControls';
-import { dubbingLanes, assignDubbingLane, addDubbingLane } from '../domain/dubbingLanes';
+import {
+  dubbingLanes,
+  assignDubbingLane,
+  addDubbingLane,
+  resetCharacterLane,
+  MAX_DUBBING_LANES,
+} from '../domain/dubbingLanes';
 
 export const Timeline = memo(function Timeline({
   project,
@@ -514,7 +520,7 @@ export const Timeline = memo(function Timeline({
                   }}
                 >
                   <Icon size={13} />
-                  <span>{t(key)}</span>
+                  <span title={laneId ? key : undefined}>{laneId ? key : t(key)}</span>
                   {style === 'audio' && track && !laneId && (
                     <AudioMeter id={track.id} name={t(key)} compact />
                   )}
@@ -902,7 +908,7 @@ export const Timeline = memo(function Timeline({
                               })),
                               {
                                 label: t('dubLanes.newAndMove'),
-                                disabled: busy || dubbingLanes(project).length >= 32,
+                                disabled: busy || dubbingLanes(project).length >= MAX_DUBBING_LANES,
                                 run: () =>
                                   onEdit((p) =>
                                     addDubbingLane(
@@ -914,6 +920,20 @@ export const Timeline = memo(function Timeline({
                                     ),
                                   ),
                               },
+                              ...(project.dubbingLanes?.byCharacter?.enabled
+                                ? [
+                                    {
+                                      label: t('dubLanes.restoreAutomatic'),
+                                      disabled:
+                                        busy ||
+                                        !project.dubbingLanes.byCharacter.manualLineIds.includes(
+                                          clip.line.id,
+                                        ),
+                                      run: () =>
+                                        onEdit((p) => resetCharacterLane(p, [clip.line.id])),
+                                    },
+                                  ]
+                                : []),
                               { label: t('dubLanes.title'), run: () => setLanesOpen(true) },
                             ],
                           )

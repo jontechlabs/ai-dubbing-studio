@@ -459,7 +459,7 @@
     "VC_BATCH_EMPTY": "Aucun essai de doublage sélectionné ne peut être harmonisé.",
     "VC_BATCH_PARTIAL": "Le lot est terminé avec des échecs. Les essais réussis sont conservés ; vous pouvez reprendre les éléments inachevés.",
     "INVALID_DUBBING_LANES": "Configuration des pistes de doublage invalide.",
-    "DUBBING_LANES_LIMIT": "Le projet peut contenir 32 pistes de doublage au maximum."
+    "DUBBING_LANES_LIMIT": "Le projet peut contenir 256 pistes de doublage au maximum. Supprimez une piste inutilisée avant de réessayer."
   },
   "preparingVideo": "Préparation de la vidéo…",
   "loadingVideo": "Chargement de la vidéo…",
@@ -2190,6 +2190,16 @@
     "removeHint": "Supprimer une piste renvoie ses dialogues à la première piste. Les essais et les sous-titres restent conservés. Les limites de chevauchement s’appliquent seulement à une même piste.",
     "defaultName": "Doublage {{number}}",
     "moveTo": "Déplacer vers {{name}}",
-    "newAndMove": "Nouvelle piste et y déplacer ce dialogue"
+    "newAndMove": "Nouvelle piste et y déplacer ce dialogue",
+    "characterRouting": "Affectation par personnage",
+    "autoEnable": "Affecter automatiquement les dialogues par personnage",
+    "autoHint": "Crée ou réutilise une piste liée à chaque personnage déjà attribué. Les choix manuels restent prioritaires, même après un changement de personnage. Les dialogues sans personnage restent sur la première piste. Aucun modèle IA supplémentaire.",
+    "autoSummary": "{{automatic}} automatique(s) · {{manual}} manuel(s) · {{unassigned}} sans personnage",
+    "rerouteAll": "Réaffecter aussi les dialogues manuels",
+    "linkedCharacter": "Personnage : {{name}}",
+    "autoDestination": "Automatique — piste du personnage",
+    "automaticLine": "Affectation automatique selon le personnage.",
+    "manualLine": "Affectation manuelle conservée. Choisissez « Automatique » pour revenir à la piste du personnage.",
+    "restoreAutomatic": "Rétablir la piste du personnage"
   }
 }
