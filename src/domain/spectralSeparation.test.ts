@@ -50,11 +50,7 @@ test('five simultaneous streams require format 35 and are all enabled', () => {
   const p = fixture();
   expect(() => validateSpeakerDubbings(p)).not.toThrow();
   const state = speakerDubbingState(p);
-  expect(
-    p.speakerDubbings![0].voices.every((v) =>
-      state.enabled(p.dialogues.find((l) => l.id === v.lineId)!),
-    ),
-  ).toBe(true);
+  expect(p.speakerDubbings![0].voices.every((v) => state.enabled(v.lineId))).toBe(true);
   p.formatVersion = 34;
   expect(() => validateSpeakerDubbings(p)).toThrow('SPEAKER_SEPARATION_OPTIONS');
 });

@@ -1,0 +1,36 @@
+{
+  "source": "https://huggingface.co/csukuangfj/sherpa-onnx-sense-voice-zh-en-ja-ko-yue-2024-07-17",
+  "revision": "2365baeacb507f821a0c8120fcee3d484dba7a07",
+  "files": [
+    {
+      "name": "ja.wav",
+      "url": "https://huggingface.co/csukuangfj/sherpa-onnx-sense-voice-zh-en-ja-ko-yue-2024-07-17/resolve/2365baeacb507f821a0c8120fcee3d484dba7a07/test_wavs/ja.wav",
+      "size": 230444,
+      "sha256": "460bd8dccb0d2a5f4e29c628f837be4082d13defc64c3fc21dd1b6bb0e119095"
+    },
+    {
+      "name": "en.wav",
+      "url": "https://huggingface.co/csukuangfj/sherpa-onnx-sense-voice-zh-en-ja-ko-yue-2024-07-17/resolve/2365baeacb507f821a0c8120fcee3d484dba7a07/test_wavs/en.wav",
+      "size": 228908,
+      "sha256": "eb1eb008904465b74c304aad8342e8c7d3c6e61ffe9f66adcaca9cf0f76a93f4"
+    },
+    {
+      "name": "ko.wav",
+      "url": "https://huggingface.co/csukuangfj/sherpa-onnx-sense-voice-zh-en-ja-ko-yue-2024-07-17/resolve/2365baeacb507f821a0c8120fcee3d484dba7a07/test_wavs/ko.wav",
+      "size": 147500,
+      "sha256": "0dc797a5c81ed30fc339d91f3da718ab02854e17ffa37cb93c4c039ac5c6bb9c"
+    },
+    {
+      "name": "zh.wav",
+      "url": "https://huggingface.co/csukuangfj/sherpa-onnx-sense-voice-zh-en-ja-ko-yue-2024-07-17/resolve/2365baeacb507f821a0c8120fcee3d484dba7a07/test_wavs/zh.wav",
+      "size": 178988,
+      "sha256": "b77f1794fe374a0ba1ee1dc458bfaf9349496cbbfc32780c50ba3c5a7ad8e373"
+    },
+    {
+      "name": "yue.wav",
+      "url": "https://huggingface.co/csukuangfj/sherpa-onnx-sense-voice-zh-en-ja-ko-yue-2024-07-17/resolve/2365baeacb507f821a0c8120fcee3d484dba7a07/test_wavs/yue.wav",
+      "size": 164780,
+      "sha256": "0960b2db54ae202071d250e6462fbf74a3c863f0e3e7f01273e4939c996875a0"
+    }
+  ]
+}

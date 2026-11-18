@@ -4,11 +4,46 @@ import hashlib
 import json
 import unittest
 import zipfile
+import subprocess
+import sys
+import tempfile
+from types import SimpleNamespace
+from unittest.mock import patch
 import numpy as np
 import speaker_separation_worker as worker
 
 
 class SpectralContracts(unittest.TestCase):
+    def test_auto_uses_actual_cuda_availability_and_an_explicit_gpu_never_falls_back(self):
+        selected = []
+        cuda = SimpleNamespace(is_available=lambda: True, device_count=lambda: 2,
+            set_device=lambda n: selected.append(n), reset_peak_memory_stats=lambda n: None,
+            get_device_name=lambda n: 'GPU ' + str(n))
+        with patch.dict(sys.modules, {'torch': SimpleNamespace(cuda=cuda)}):
+            self.assertEqual(worker.device_name('auto'), ('cuda:0', 'GPU 0'))
+            self.assertEqual(worker.device_name('cuda:1'), ('cuda:1', 'GPU 1'))
+            self.assertEqual(selected, [0, 1])
+            cuda.is_available = lambda: False
+            self.assertEqual(worker.device_name('auto'), ('cpu', 'CPU'))
+            with self.assertRaisesRegex(ValueError, 'DEVICE_UNAVAILABLE'):
+                worker.device_name('cuda:1')
+
+    def test_isolated_launcher_finds_bundled_helpers_from_an_unrelated_directory(self):
+        source = Path(__file__).parent.resolve()
+        command = f"import runpy,pathlib;runpy.run_path({str(source/'speaker_separation_worker.py')!r},run_name='isolated_worker');import spectral_separation;assert pathlib.Path(spectral_separation.__file__).resolve()==pathlib.Path({str(source/'spectral_separation.py')!r})"
+        with tempfile.TemporaryDirectory() as folder:
+            subprocess.run([sys.executable, '-I', '-B', '-c', command], cwd=folder, check=True, timeout=30, capture_output=True)
+
+    def test_window_polarity_inversions_do_not_cancel_the_overlap_or_last_samples(self):
+        calls = []
+        def infer(chunk):
+            calls.append(True)
+            return np.stack([chunk, chunk * .5]) * (-1 if len(calls) % 2 == 0 else 1)
+        source = np.random.default_rng(5060).normal(size=5001).astype(np.float32)
+        result = worker.separate_windows(source, 2, 1000, infer)
+        np.testing.assert_allclose(result[0], source, atol=1e-6)
+        np.testing.assert_allclose(result[1], source * .5, atol=1e-6)
+
     def test_profiles_bound_windows_and_reject_invalid_counts_and_values(self):
         tf = worker.model_spec('tf-gridnet-wsj0-2mix')
         sr = worker.model_spec('sr-corrnet-wsj-2-5spk')

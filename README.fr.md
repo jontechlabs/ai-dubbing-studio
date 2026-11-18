@@ -1,5 +1,9 @@
 # AI Dubbing Studio
 
+## v0.57.0 — TF-GridNet et SR-CorrNet en local
+
+Quatre nouveaux checkpoints pour deux à cinq voix superposées, dans Doublage → Outils et la boîte à outils Audio. Profils FP32 à fenêtres de 2/4 secondes, réglage manuel, réduction automatique sur le même GPU en cas d’OOM, cache SR-CorrNet allégé et pistes indépendantes jusqu’à cinq voix. Poids vérifiés ; anciens essais, SRT et vidéo conservés. Tests neuronaux CPU sur huit configurations ; mesure RTX 5060 Ti et qualité des cris à confirmer sur vos extraits. **177 outils MCP / 37 schémas ; format 35 à l’utilisation.** [Guide, réglages 16 Go et capture](docs/SPECTRAL-SEPARATION.md).
+
 ## v0.56.0 — Voix isolées sur des pistes de doublage indépendantes
 
 Après une séparation de plusieurs locuteurs, choisissez **Placer sur des pistes de doublage**, gardez les voix souhaitées et choisissez des pistes existantes ou nouvelles. Les dialogues préparés sont réutilisés, les autres sont créés au même timestamp, y compris depuis une sélection libre. Chaque voix devient un nouvel essai audio isolé, sans traduction implicite. Les anciens essais, SRT et la vidéo restent conservés. Placement atomique à durée exacte, annulation et affectations manuelles prioritaires. **177 outils MCP / 37 schémas ; format 34 uniquement à l’utilisation.** [Guide, capture et comparaison TF-GridNet / SR-CorrNet](docs/ISOLATED-DUBBING-TRACKS.md).

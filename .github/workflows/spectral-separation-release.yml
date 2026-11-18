@@ -44,7 +44,7 @@ jobs:
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
           pnpm format:check
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
-          pnpm exec prettier --check tests/e2e/volume-leveling.pw.ts scripts/test-volume-leveling-mcp.mjs tests/e2e/task-queue.pw.ts tests/e2e/native-voices.pw.ts scripts/test-native-voices-mcp.mjs tests/e2e/generation-timing.pw.ts tests/e2e/work-estimate.pw.ts scripts/test-generation-timing-mcp.mjs tests/e2e/batch-timbre.pw.ts tests/e2e/character-lanes.pw.ts tests/e2e/isolated-dubbing-placement.pw.ts tests/e2e/dubbing-lanes.pw.ts
+          pnpm exec prettier --check tests/e2e/volume-leveling.pw.ts scripts/test-volume-leveling-mcp.mjs tests/e2e/task-queue.pw.ts tests/e2e/native-voices.pw.ts scripts/test-native-voices-mcp.mjs tests/e2e/generation-timing.pw.ts tests/e2e/work-estimate.pw.ts scripts/test-generation-timing-mcp.mjs tests/e2e/batch-timbre.pw.ts tests/e2e/character-lanes.pw.ts tests/e2e/isolated-dubbing-placement.pw.ts tests/e2e/dubbing-lanes.pw.ts tests/e2e/spectral-separation.pw.ts scripts/test-spectral-separation-mcp.mjs
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
           pnpm test:e2e --shard=${{ matrix.shard }}/2 '--reporter=line,json'
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
@@ -102,6 +102,8 @@ jobs:
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
           python -m unittest discover -s workers -p "test_*.py"
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
+      - name: Actual CPU spectral models with pinned weights
+        run: python -B scripts/test-spectral-separation.py --work .cache/spectral-neural-native --proof artifacts/spectral-neural-validation.json
       - name: Build signed updater installer
         env:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
@@ -110,7 +112,7 @@ jobs:
       - name: Package installer and portable version
         run: ./scripts/package-windows.ps1
       - name: Actual packaged restart and history through official MCP SDK
-        run: ./scripts/test-volume-leveling.ps1 -GenerationTiming
+        run: ./scripts/test-volume-leveling.ps1 -GenerationTiming -SpectralProof artifacts/spectral-neural-validation.json
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
         with:

@@ -186,3 +186,12 @@ Jusqu’à 256 pistes, noms non vides de 80 caractères au plus et gain de 0 à 
 `studio_place_speaker_dubbings({id,audioLanguage,assignments,context})` place les sorties sélectionnées d’une séparation réussie dans des essais indépendants et crée les dialogues manquants. La même séparation réutilise ses sous-dialogues existants. `assignments:[{outputId,label,characterId,sourceText,targetText,laneId,laneName}]` : `laneId:null` crée une piste ; un ID existant impose une affectation manuelle durable. La source et la révision sont vérifiées, les fichiers sont convertis à durée exacte et le clic est atomique et annulable. `studio_speaker_separation_result` indique `placedOutputIds` pour éviter les doublons.
 
 Le format 34 conserve `takeOrigin.type:"separation"`, l’ID de séparation/sortie, la piste et la langue réellement parlée. Ces essais sont de l’audio source isolé, sans traduction implicite. La vidéo, les SRT et les essais existants restent conservés. **177 outils / 37 schémas**. [Guide](ISOLATED-DUBBING-TRACKS.md).
+
+
+## TF-GridNet / SR-CorrNet et cinq locuteurs (v0.57.0)
+
+`studio_install_speaker_separation_model({modelId})` installe/vérifie les checkpoints `tf-gridnet-wsj0-2mix`, `sr-corrnet-whamr-2spk`, `sr-corrnet-wsj-2-3spk` ou `sr-corrnet-wsj-2-5spk`. `studio_speaker_separation_status` expose leurs `speakerCounts` et les périphériques.
+
+`studio_separate_dialogue_speakers({options,context})` ajoute `speakerCount` (2 par défaut pour les nouveaux modèles) et `memoryProfile:"gpu16"|"quality"|"manual"`. Les profils bornent la fenêtre à 2/4 secondes ; `windowSeconds` reste de 2 à 8. Une erreur mémoire CUDA réduit la fenêtre sur le même périphérique jusqu’à 500 ms, sans repli CPU pour un GPU choisi. `device:"auto"` détecte les CUDA réellement disponibles dans le worker. Les anciens appels sans ces options conservent leur nombre de sorties et leur fenêtre manuelle sur les anciens modèles.
+
+Le résultat retourne `device`, `precision`, `windowMs`, `attempts` et `peakVramMb`, ainsi que les sorties et `placedOutputIds`. Le placement ou la création de sous-dialogues utilise le format 35 pour ces nouveaux modèles, avec `voice-1` à `voice-5` selon le checkpoint. Les sorties restent de l’audio isolé dans la langue de la source. **177 outils / 37 schémas.** [Guide et limites de qualification](SPECTRAL-SEPARATION.md).

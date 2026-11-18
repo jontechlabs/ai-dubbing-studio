@@ -50,7 +50,7 @@ class SpeakerSeparationTests(unittest.TestCase):
             result=worker.resample_exact(samples,16000,48000,frames)
             self.assertEqual(result.shape,(2,frames))
             self.assertTrue(np.isfinite(result).all())
-        for value in ['auto','cuda:x','vulkan:0',None]:
+        for value in ['cuda:x','vulkan:0',None]:
             with self.assertRaisesRegex(ValueError,'DEVICE_UNAVAILABLE'):worker.device_name(value)
 
     def test_model_manifests_pin_inference_only_files_and_outputs_never_overwrite(self):

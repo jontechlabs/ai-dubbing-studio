@@ -2089,7 +2089,7 @@ export async function nativeMock(page: Page, large = false, seededProject?: Proj
               if(laneId==='main') delete project.dubbingLanes.assignments[line.id];else project.dubbingLanes.assignments[line.id]=laneId;
               if(project.dubbingLanes.byCharacter) project.dubbingLanes.byCharacter.manualLineIds.push(line.id);
             }
-            project.revision++;emit('project-changed',structuredClone(project));return structuredClone(project);
+            project.revision++;localStorage.setItem('nativeMockProject',JSON.stringify(project));emit('project-changed',structuredClone(project));return structuredClone(project);
           }
           if (command === 'create_speaker_dubbings') {
             undoStack.push(structuredClone(project));

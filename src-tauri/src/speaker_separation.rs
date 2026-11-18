@@ -66,7 +66,7 @@ fn configured_model<R: tauri::Runtime>(
         .speaker_count
         .map(|n| n as usize)
         .unwrap_or(allowed[0]);
-    if !allowed.contains(&count) {
+    if !(2..=5).contains(&count) || !allowed.contains(&count) {
         return Err("SPEAKER_SEPARATION_OPTIONS".into());
     }
     m.speakers = count;
@@ -166,7 +166,10 @@ pub fn install<R: tauri::Runtime>(
 let _permit=tokio::select!{_=jobs::cancelled(&flag)=>return Err("CANCELLED".into()),p=core.gate.clone().acquire_owned()=>p.map_err(io_error)?};jobs::update(&core,&app,&key,|j|{j.status="running".into();j.stage="dependenciesCheck".into();j.progress=None;});
 if !runtime(&core).join("ready.json").is_file(){voice_engines::install_python_profile(&core,&app,&key,&flag,"speaker-separation").await?;project::atomic_write(&runtime(&core).join("ready.json"),b"{\"profile\":\"speaker-separation-cu128\"}")?;}
 for f in &m.files{crate::domain::valid_relative(&f.name)?;let path=folder.join(&f.name);std::fs::create_dir_all(path.parent().ok_or("INVALID_PATH")?).map_err(io_error)?;jobs::update(&core,&app,&key,|j|{j.stage="toolboxModel".into();j.progress=None;j.logs.push(format!("Verified model file: {}",f.name));});separation::fetch(&core,&app,&key,std::slice::from_ref(&f.url),&path,(&f.sha256,f.size),&flag).await?;}
-if spectral(&m) {jobs::update(&core,&app,&key,|j|{j.stage="speakerSeparationLoad".into();j.progress=None;});separation::process(&core,&app,&key,&separation::python(&runtime(&core)),&[separation::resources(&app).join("speaker_separation_worker.py").to_string_lossy().into_owned(),"--verify-model".into(),m.id.clone(),folder.to_string_lossy().into_owned()],&flag).await?;project::atomic_write(&folder.join("verified.json"),b"spectral-fp32-v1")?;}Ok(())}.await;
+if spectral(&m) {jobs::update(&core,&app,&key,|j|{j.stage="speakerSeparationLoad".into();j.progress=None;});separation::process(&core,&app,&key,&separation::python(&runtime(&core)),&[separation::resources(&app).join("speaker_separation_worker.py").to_string_lossy().into_owned(),"--verify-model".into(),m.id.clone(),folder.to_string_lossy().into_owned()],&flag).await?;project::atomic_write(&folder.join("verified.json"),b"spectral-fp32-v1")?;
+jobs::update(&core,&app,&key,|j|{j.stage="devicesCheck".into();j.progress=None;});
+if let Some(info)=separation::probe(&separation::python(&runtime(&core)),&[separation::resources(&app).join("speaker_separation_worker.py").to_string_lossy().into_owned(),"--info".into()],&flag,std::time::Duration::from_secs(30)).await? {project::atomic_write(&runtime(&core).join("devices.json"),&serde_json::to_vec(&info).map_err(io_error)?)?;}
+}Ok(())}.await;
         separation::finish(&core, &app, &key, &result);
     });
     Ok(returned)
@@ -268,20 +271,6 @@ pub fn start<R: tauri::Runtime>(
     if spectral(&m) {
         options.speaker_count.get_or_insert(m.speakers as u32);
         options.memory_profile.get_or_insert_with(|| "gpu16".into());
-    }
-    if options.device == "auto" {
-        options.device = std::fs::read(runtime(&core).join("devices.json"))
-            .ok()
-            .and_then(|b| serde_json::from_slice::<Value>(&b).ok())
-            .and_then(|v| {
-                v["devices"].as_array()?.iter().find_map(|d| {
-                    d["id"]
-                        .as_str()
-                        .filter(|s| s.starts_with("cuda:"))
-                        .map(str::to_owned)
-                })
-            })
-            .unwrap_or_else(|| "cpu".into());
     }
     let r = {
         let guard = core.session.lock().map_err(io_error)?;
@@ -402,7 +391,7 @@ pub fn result<R: tauri::Runtime>(
     let data: Value =
         serde_json::from_slice(&std::fs::read(path).map_err(io_error)?).map_err(io_error)?;
     Ok(
-        json!({"id":id,"options":r.options,"outputs":spec.outputs,"commonGain":data["commonGain"],"deviceName":data["deviceName"],"stale":snapshot(&p,&r.root,&r.options)?!=r.snapshot,"applied":p.generations.iter().any(|g|g["kind"]=="audioPatch"&&g["operationId"]==id),"placedOutputIds":placement::placed(&p,id),"windowMs":data["windowMs"],"memoryProfile":data["memoryProfile"],"precision":data["precision"],"attempts":data["attempts"],"peakVramMb":data["peakVramMb"]}),
+        json!({"id":id,"options":r.options,"outputs":spec.outputs,"commonGain":data["commonGain"],"deviceName":data["deviceName"],"stale":snapshot(&p,&r.root,&r.options)?!=r.snapshot,"applied":p.generations.iter().any(|g|g["kind"]=="audioPatch"&&g["operationId"]==id),"placedOutputIds":placement::placed(&p,id),"device":data["device"],"windowMs":data["windowMs"],"memoryProfile":data["memoryProfile"],"precision":data["precision"],"attempts":data["attempts"],"peakVramMb":data["peakVramMb"]}),
     )
 }
 pub fn path<R: tauri::Runtime>(

@@ -48,6 +48,7 @@ export interface SpeakerDubbingAssignment {
   targetText: string;
 }
 export interface SpeakerSeparationResult {
+  device?: string | null;
   windowMs?: number | null;
   attempts?: number | null;
   precision?: string | null;

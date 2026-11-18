@@ -14,6 +14,9 @@ os.environ.setdefault('HF_HUB_OFFLINE', '1')
 os.environ.setdefault('TRANSFORMERS_OFFLINE', '1')
 os.environ.setdefault('HF_HUB_DISABLE_TELEMETRY', '1')
 HERE = Path(__file__).resolve().parent
+# Embedded Windows Python does not add the script directory when _pth isolates
+# its module search path. Resolve bundled helpers independently of the cwd.
+sys.path.insert(0, str(HERE))
 
 
 def path(value):
@@ -51,9 +54,11 @@ def check_files(folder, spec):
 
 
 def device_name(value):
-    if value != 'cpu' and (not isinstance(value, str) or not value.startswith('cuda:') or not value[5:].isdigit()):
+    if value not in ('auto', 'cpu') and (not isinstance(value, str) or not value.startswith('cuda:') or not value[5:].isdigit()):
         raise ValueError('DEVICE_UNAVAILABLE')
     import torch
+    if value == 'auto':
+        value = 'cuda:0' if torch.cuda.is_available() else 'cpu'
     if value == 'cpu':
         return value, 'CPU'
     index = int(value[5:])
@@ -127,7 +132,7 @@ def align_channels(previous, current):
     norms = np.linalg.norm(previous, axis=1)[:, None] * np.linalg.norm(current, axis=1)[None, :]
     scores = np.divide(previous @ current.T, norms, out=np.zeros_like(norms), where=norms > 1e-10)
     order = max(itertools.permutations(range(len(previous))),
-                key=lambda perm: sum(scores[i, j] for i, j in enumerate(perm)))
+                key=lambda perm: sum(abs(scores[i, j]) for i, j in enumerate(perm)))
     return order
 
 
@@ -157,6 +162,13 @@ def separate_windows(samples, speakers, window, infer, progress=lambda *_: None)
             previous = np.divide(result[:, start:start+count], known[None, :],
                                  out=np.zeros((speakers, count), dtype=np.float32), where=known[None, :] > 1e-8)
             values = values[list(align_channels(previous, values[:, :count]))]
+            # SI-SDR-trained models may invert a stream's global polarity.
+            # Correct a confident inversion before overlap-add to prevent
+            # cancellation/clicks, without flipping weak/noisy correlations.
+            norms = np.linalg.norm(previous, axis=1) * np.linalg.norm(values[:, :count], axis=1)
+            similarity = np.divide(np.sum(previous * values[:, :count], axis=1), norms,
+                                   out=np.zeros(speakers, dtype=np.float32), where=norms > 1e-10)
+            values[similarity < -0.5] *= -1
         taper = np.ones(window, dtype=np.float32)
         if index:
             taper[:overlap] = fade
@@ -185,7 +197,7 @@ def settings(spec, request):
     speakers = request.get('speakerCount', counts[0])
     profile = request.get('memoryProfile', 'gpu16' if spec['family'] in ('tfgridnet', 'srcorrnet') else 'manual')
     window = request.get('windowMs', spec['windowMs'])
-    if (type(speakers) is not int or speakers not in counts or profile not in ('gpu16', 'quality', 'manual')
+    if (type(speakers) is not int or not 2 <= speakers <= 5 or speakers not in counts or profile not in ('gpu16', 'quality', 'manual')
             or type(window) is not int or not 500 <= window <= 8000):
         raise ValueError('SPEAKER_SEPARATION_OPTIONS')
     limit = {'gpu16': 2000, 'quality': 4000, 'manual': 8000}[profile]

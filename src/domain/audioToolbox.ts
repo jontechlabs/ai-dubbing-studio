@@ -30,6 +30,7 @@ export interface AudioToolboxStatus {
   devices: { id: string; name: string }[];
 }
 export interface AudioToolboxResult {
+  device?: string | null;
   windowMs?: number | null;
   attempts?: number | null;
   precision?: string | null;

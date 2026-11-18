@@ -1,5 +1,5 @@
 [CmdletBinding()]
-param([string]$PortablePath, [switch]$NativeVoices, [switch]$GenerationTiming)
+param([string]$PortablePath, [switch]$NativeVoices, [switch]$GenerationTiming, [string]$SpectralProof)
 $ErrorActionPreference='Stop'
 $repoRoot=Split-Path -Parent $PSScriptRoot
 if(-not $PortablePath){$PortablePath=Join-Path $repoRoot 'artifacts/AI-Dubbing-Studio-Windows-Portable.zip'}
@@ -7,6 +7,12 @@ $testRoot=Join-Path $repoRoot ".cache/volume-leveling-native/$([guid]::NewGuid()
 $dataRoot=Join-Path $testRoot 'session'
 New-Item -ItemType Directory -Force $dataRoot | Out-Null
 New-Item -ItemType Directory -Force (Join-Path $repoRoot 'artifacts') | Out-Null
+if($SpectralProof) {
+    $spectral = Get-Content -LiteralPath $SpectralProof -Raw | ConvertFrom-Json
+    if($spectral.version -ne '0.57.0' -or $spectral.device -ne 'cpu' -or $spectral.caseCount -ne 8){throw 'Invalid CPU spectral test fixture'}
+    $config = @{version=1;path=$spectral.modelStore} | ConvertTo-Json
+    [IO.File]::WriteAllText((Join-Path $dataRoot 'model-storage.json'),$config)
+}
 Expand-Archive -LiteralPath $PortablePath -DestinationPath $testRoot
 $executable=Join-Path $testRoot 'AI-Dubbing-Studio-Windows/AI Dubbing Studio.exe'
 [IO.File]::WriteAllText((Join-Path $dataRoot 'mcp-enabled'),'1')
@@ -66,6 +72,11 @@ if($GenerationTiming) {
         }
         node (Join-Path $PSScriptRoot 'test-generation-timing-mcp.mjs') --exe $executable --endpoint $endpoint --test-root $testRoot --phase after --desktop-pid $desktop.Id --proof (Join-Path $repoRoot 'artifacts/generation-timing-validation.json')
         if($LASTEXITCODE){throw 'Take timing persistence restart failed'}
+        if($SpectralProof) {
+            node (Join-Path $PSScriptRoot 'test-spectral-separation-mcp.mjs') --exe $executable --endpoint $endpoint --test-root $testRoot --neural-proof $SpectralProof --proof (Join-Path $repoRoot 'artifacts/spectral-sdk-validation.json')
+            if($LASTEXITCODE){throw 'Packaged spectral separation SDK diagnostic failed'}
+        }
+
     } finally {
         if(-not $desktop.HasExited){$desktop.Kill();$null=$desktop.WaitForExit(5000)}
     }

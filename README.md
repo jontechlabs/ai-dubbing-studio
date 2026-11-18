@@ -1,5 +1,9 @@
 # AI Dubbing Studio
 
+## v0.57.0 — Local TF-GridNet and SR-CorrNet speaker separation
+
+Four pinned checkpoints for two to five overlapping voices in the dubbing tools and audio toolbox. FP32 2/4-second profiles, manual windows, same-GPU OOM retries, lazy SR-CorrNet position grids and up to five independent dubbing tracks. Verified downloads preserve prior takes, subtitles and source video. Real CPU neural checks cover eight configurations; RTX 5060 Ti memory/performance and shouting quality still require target-device testing. **177 MCP tools / 37 schemas; format 35 on use.** [Guide, 16 GB settings and screenshot](docs/SPECTRAL-SEPARATION.md).
+
 ## v0.56.0 — Isolated voices on independent dubbing tracks
 
 Preview separated speakers, keep selected outputs and place them at the same timestamp on existing or new dubbing tracks. Reuses prepared sub-dialogues, creates missing ones from dialogue or free timeline selections, and preserves every previous take, subtitle and source video. Isolated audio retains its actual language; separation does not translate it. Atomic exact-duration WAV placement, undo, manual routing priority and a truthful source-audio badge. **177 MCP tools / 37 schemas; project format 34 only on use.** [Guide, screenshot and TF-GridNet / SR-CorrNet evaluation notes](docs/ISOLATED-DUBBING-TRACKS.md).

@@ -47,6 +47,7 @@ import { VoiceRegionEditor } from './VoiceRegionEditor';
 import { TimelineAudioSelection } from './TimelineAudioSelection';
 import { TrackVolume } from './TrackVolume';
 import { AudioMeter } from './AudioMeter';
+import { dubbingLayout } from '../domain/dubbingLayout';
 import { DubbingLanesModal } from './DubbingLanesModal';
 import { DubbingLaneControls } from './DubbingLaneControls';
 import {
@@ -106,7 +107,7 @@ export const Timeline = memo(function Timeline({
   const [audioTool, setAudioTool] = useState(false);
   const [voiceEditor, setVoiceEditor] = useState<string | null>(null);
   const clips = useMemo(() => (project ? dubbingClips(project) : []), [project]);
-  const hasSeparatedLanes = clips.some((c) => c.lane > 0);
+
   const selectedVoice = clips.find((c) => c.line.id === selected?.id);
   const editingVoice = clips.find((c) => c.generation.id === voiceEditor);
   const [audioDrag, setAudioDrag] = useState<{
@@ -191,6 +192,11 @@ export const Timeline = memo(function Timeline({
     () => (dubbingDrag && dubbingPreview ? dubbingClips(dubbingPreview) : clips),
     [clips, dubbingDrag, dubbingPreview],
   );
+  const visualRows = useMemo(() => dubbingLayout(previewClips), [previewClips]);
+  const layers = (laneId?: string) => visualRows.counts.get(laneId ?? 'main') ?? 1;
+  const dubbingHeight = (laneId?: string) =>
+    layers(laneId) > 1 ? Math.max(rowHeight, 84, 3 + layers(laneId) * 26) : rowHeight;
+
   const suppressDubbingClick = useRef(false);
   const duration = useMemo(
     () =>
@@ -513,10 +519,7 @@ export const Timeline = memo(function Timeline({
                   className={`track-label ${style}`}
                   key={laneId ?? track?.id ?? key}
                   style={{
-                    height:
-                      track?.kind === 'dubbing' && hasSeparatedLanes
-                        ? Math.max(rowHeight, 84)
-                        : rowHeight,
+                    height: track?.kind === 'dubbing' ? dubbingHeight(laneId) : rowHeight,
                   }}
                 >
                   <Icon size={13} />
@@ -627,10 +630,7 @@ export const Timeline = memo(function Timeline({
                 className={`timeline-track ${style} ${audioTool && track ? 'audio-selection-tool' : ''}`}
                 data-track-id={laneId ? 'dubbing-lane:' + laneId : track?.id}
                 style={{
-                  height:
-                    track?.kind === 'dubbing' && hasSeparatedLanes
-                      ? Math.max(rowHeight, 84)
-                      : rowHeight,
+                  height: track?.kind === 'dubbing' ? dubbingHeight(laneId) : rowHeight,
                 }}
                 onContextMenu={(event) => {
                   if (laneId) {
@@ -881,8 +881,11 @@ export const Timeline = memo(function Timeline({
                         key={clip.generation.id}
                         className={`subtitle-block dubbing-block ${selected?.id === clip.line.id ? 'selected' : ''} ${dubbingDrag?.lineId === clip.line.id ? 'moving' : ''}`}
                         style={{
-                          top: hasSeparatedLanes ? 3 + clip.lane * 26 : undefined,
-                          height: hasSeparatedLanes ? 23 : undefined,
+                          top:
+                            layers(laneId) > 1
+                              ? 3 + (visualRows.rows.get(clip.generation.id) ?? 0) * 26
+                              : undefined,
+                          height: layers(laneId) > 1 ? 23 : undefined,
                           left: clip.startMs * scale,
                           width: Math.max(3, (clip.endMs - clip.startMs) * scale),
                         }}

@@ -1,0 +1,9 @@
+{
+  "description": "CPU-only neural test fixture, never installed as the production CUDA profile",
+  "torch": {
+    "name": "torch-2.8.0+cpu-cp312-cp312-win_amd64.whl",
+    "url": "https://download-r2.pytorch.org/whl/cpu/torch-2.8.0%2Bcpu-cp312-cp312-win_amd64.whl",
+    "size": 619352539,
+    "sha256": "2be20b2c05a0cce10430cc25f32b689259640d273232b2de357c35729132256d"
+  }
+}
