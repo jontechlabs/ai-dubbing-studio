@@ -124,3 +124,19 @@ Revision b57015b9e916ede150f4b168b4b882be37ad723f, Apache 2.0.
 Uses the existing pinned audio.cpp 0.9.1 runtime (see its license above).
 Weights and full model license are downloaded only on request, with exact
 SHA-256/size verification. Provenance: docs/AUDIO8-TTS.md and workers/voice-engines.json.
+
+TF-GridNet / SR-CorrNet local speaker separation (v0.57)
+TF-GridNet inference layers: ESPnet revision 88c06552015f2877a0508281509e697a706c3006,
+Apache-2.0; full license inside workers/vendor/spectral-separation/tfgridnet-core.zip.
+Imports use the studio's native-complex STFT adapter. The original mono checkpoint
+is downloaded from the ESPnet/CMU tutorial, with pinned size/SHA-256; the archive
+does not provide a separate weight license. Model weights are not redistributed.
+SR-CorrNet-SS: https://github.com/dmlguq456/SR_CorrNet_SS, revision
+7340365b9cc9a021bf7d400f52fce4b88593b67a, MIT; full license inside
+workers/vendor/spectral-separation/sr-corrnet-core.zip. Inference-only subset;
+unused logging imports and global warning suppression removed, positional grid
+created lazily with identical values, unused auxiliary reconstruction omitted.
+The author's shinuh weights download on request from pinned Hugging Face revisions
+under their upstream terms. Source provenance, changes and archive digests are
+recorded in workers/vendor/spectral-separation/sources.json. Checkpoints and their
+digests are in workers/speaker-separation-models.json. See docs/SPECTRAL-SEPARATION.md.

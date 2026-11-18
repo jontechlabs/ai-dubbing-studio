@@ -99,6 +99,9 @@ class SpectralContracts(unittest.TestCase):
             for i in range(5): np.testing.assert_allclose(audio[i], i + 1)
 
     def test_vendors_and_checkpoints_are_pinned_and_inference_only(self):
+        resources = json.loads((Path(__file__).parents[1] / 'src-tauri/tauri.conf.json').read_text())['bundle']['resources']
+        for name in ['spectral_separation.py', 'spectral_compat.py', 'vendor/spectral-separation/']:
+            self.assertEqual(resources.get('../workers/' + name), 'workers/' + name)
         folder = Path(__file__).parent / 'vendor/spectral-separation'
         data = json.loads((folder / 'sources.json').read_text())
         for key, name in [('tfgridnet', 'tfgridnet-core.zip'), ('srCorrnet', 'sr-corrnet-core.zip')]:
