@@ -58,3 +58,49 @@ fn dialogue_bound_separation_still_requires_exact_existing_dialogue_bounds() {
     validate(&p, &o, &m).unwrap();
     assert_eq!(p.dialogues[0].start_ms, 7100);
 }
+
+#[test]
+fn spectral_models_freeze_allowed_counts_and_reject_unknown_profiles_without_changing_legacy_defaults(
+) {
+    let (p, mut options, _) = fixture();
+    let app = tauri::test::mock_app();
+    for (name, counts) in [
+        ("tf-gridnet-wsj0-2mix", vec![2]),
+        ("sr-corrnet-whamr-2spk", vec![2]),
+        ("sr-corrnet-wsj-2-3spk", vec![2, 3]),
+        ("sr-corrnet-wsj-2-5spk", vec![2, 3, 4, 5]),
+    ] {
+        options.model_id = name.into();
+        options.speaker_count = None;
+        let default = configured_model(app.handle(), &options).unwrap();
+        assert_eq!(default.speakers, 2);
+        assert_eq!(default.speaker_counts, counts);
+        for n in 1..=6 {
+            options.speaker_count = Some(n);
+            let model = configured_model(app.handle(), &options);
+            assert_eq!(model.is_ok(), counts.contains(&(n as usize)));
+            if let Ok(m) = model {
+                assert_eq!(m.outputs.len(), n as usize);
+                validate(&p, &options, &m).unwrap();
+            }
+        }
+    }
+    options.model_id = "mossformer2-16k".into();
+    options.speaker_count = None;
+    let m = configured_model(app.handle(), &options).unwrap();
+    assert_eq!(m.speakers, 2);
+    options.memory_profile = Some("fp16".into());
+    assert_eq!(
+        validate(&p, &options, &m).unwrap_err(),
+        "SPEAKER_SEPARATION_OPTIONS"
+    );
+    options.memory_profile = None;
+    assert!(serde_json::to_value(&options)
+        .unwrap()
+        .get("speakerCount")
+        .is_none());
+    assert!(serde_json::to_value(&options)
+        .unwrap()
+        .get("memoryProfile")
+        .is_none());
+}

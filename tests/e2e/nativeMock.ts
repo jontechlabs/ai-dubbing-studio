@@ -94,7 +94,7 @@ export async function nativeMock(page: Page, large = false, seededProject?: Proj
       });
   });
   await page.addInitScript(
-    ({ initial }) => {
+    ({ initial, separatorModels }) => {
       const host = window as unknown as Record<string, any>,
         callbacks = new Map<number, (data: any) => void>(),
         listeners = new Map<string, number>();
@@ -2016,22 +2016,7 @@ export async function nativeMock(page: Page, large = false, seededProject?: Proj
           if (command === 'speaker_separation_status')
             return {
               availableBytes: host.__speakerFree ?? 40 * 1024 ** 3,
-              models: ['mossformer2-16k', 'sepformer-2mix', 'sepformer-3mix'].map((id, i) => ({
-                id,
-                name:
-                  i === 0
-                    ? 'MossFormer2 · 2 voix · 16 kHz'
-                    : i === 1
-                      ? 'SepFormer · 2 voix · 8 kHz'
-                      : 'SepFormer · 3 voix · 8 kHz',
-                family: i === 0 ? 'mossformer2' : 'sepformer',
-                installed: host.__speakerInstalled !== false,
-                modelBytes: 670000000,
-                requiredBytes: 12 * 1024 ** 3,
-                outputs: Array.from({ length: i === 2 ? 3 : 2 }, (_, i) => 'voice-' + (i + 1)),
-                license: 'Apache-2.0',
-                source: 'https://huggingface.co/',
-              })),
+              models: separatorModels.map((m:any) => ({...m, installed:host.__speakerInstalled!==false, modelBytes:m.files.reduce((n:number,f:any)=>n+f.size,0),requiredBytes:12*1024**3,outputs:Array.from({length:m.speakers},(_,i)=>'voice-'+(i+1))})),
               devices: [
                 { id: 'cpu', name: 'CPU' },
                 { id: 'cuda:0', name: 'RTX 5060 Ti (simulation)' },
@@ -2071,10 +2056,8 @@ export async function nativeMock(page: Page, large = false, seededProject?: Proj
             return {
               id: args.id,
               options: host.__speakerOptions,
-              outputs:
-                host.__speakerOptions.modelId === 'sepformer-3mix'
-                  ? ['voice-1', 'voice-2', 'voice-3']
-                  : ['voice-1', 'voice-2'],
+              outputs:Array.from({length:host.__speakerOptions.speakerCount ?? separatorModels.find((m:any)=>m.id===host.__speakerOptions.modelId)?.speakerCounts?.[0] ?? (host.__speakerOptions.modelId==='sepformer-3mix'?3:2)},(_,i)=>'voice-'+(i+1)),
+              windowMs: Math.min(host.__speakerOptions.windowSeconds*1000,host.__speakerOptions.memoryProfile==='gpu16'?2000:host.__speakerOptions.memoryProfile==='quality'?4000:8000), precision:'fp32',attempts:1,peakVramMb:0,
               stale: false,
               applied: false,
               commonGain: 1,
@@ -2084,7 +2067,7 @@ export async function nativeMock(page: Page, large = false, seededProject?: Proj
           if (command === 'place_speaker_dubbings') {
             undoStack.push(structuredClone(project));
             const o=host.__speakerOptions;
-            project.formatVersion=Math.max(project.formatVersion,34);
+            project.formatVersion=Math.max(project.formatVersion, /^(tf-gridnet|sr-corrnet)/.test(o.modelId)?35:34);
             project.dubbingLanes ??= {sourcePath:project.media.path,lanes:[{id:'main',name:'Doublage 1',mute:false,solo:false,gain:1}],assignments:{}};
             project.speakerDubbings ??= [];
             let group=project.speakerDubbings.find((g:any) => g.separationId===args.id);
@@ -2158,7 +2141,7 @@ export async function nativeMock(page: Page, large = false, seededProject?: Proj
               active: true,
               voices,
             });
-            project.formatVersion = 25;
+            project.formatVersion = Math.max(project.formatVersion, /^(tf-gridnet|sr-corrnet)/.test(o.modelId)?35:25);
             project.revision++;
             emit('project-changed', structuredClone(project));
             return structuredClone(project);
@@ -3336,6 +3319,7 @@ export async function nativeMock(page: Page, large = false, seededProject?: Proj
       };
     },
     {
+      separatorModels: JSON.parse(await fs.readFile(new URL('../../workers/speaker-separation-models.json', import.meta.url), 'utf8')).models,
       initial: (() => {
         if (seededProject) return seededProject;
         const initial = demoProject();

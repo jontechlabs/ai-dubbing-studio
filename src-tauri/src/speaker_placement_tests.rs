@@ -328,3 +328,76 @@ async fn corrupt_later_output_rolls_back_staged_assets_and_keeps_project_unchang
         assert_eq!(std::fs::read_dir(root.join(dir)).unwrap().count(), 0);
     }
 }
+
+#[tokio::test]
+async fn five_spectral_streams_create_five_exact_takes_tracks_and_survive_reopen_without_losing_source(
+) {
+    let (_temp, core, app, key, root) = setup().await;
+    let original = std::fs::read(root.join("media/source.wav")).unwrap();
+    {
+        let mut jobs = core.jobs.lock().unwrap();
+        let r = jobs
+            .get_mut(&key)
+            .unwrap()
+            .saved
+            .speaker_separation_request
+            .as_mut()
+            .unwrap();
+        r.options.model_id = "sr-corrnet-wsj-2-5spk".into();
+        r.options.speaker_count = Some(5);
+        r.options.memory_profile = Some("gpu16".into());
+    }
+    for n in 3..=5 {
+        mono(&root.join(format!("cache/speaker-separation/{key}/voice-{n}.wav")));
+    }
+    let placed = place(
+        core.clone(),
+        app.handle().clone(),
+        key.clone(),
+        "ja".into(),
+        (1..=5).map(|n| assignment(&format!("voice-{n}"))).collect(),
+    )
+    .await
+    .unwrap();
+    assert_eq!(placed.format_version, 35);
+    assert_eq!(placed.generations.len(), 5);
+    assert_eq!(placed.speaker_dubbings[0].voices.len(), 5);
+    assert_eq!(placed.dubbing_lanes.as_ref().unwrap().lanes.len(), 6);
+    assert_eq!(crate::mix::clips(&placed).len(), 5);
+    for g in &placed.generations {
+        assert_eq!(
+            crate::audio_files::pcm_frames(
+                &root.join(g["path"].as_str().unwrap()),
+                1,
+                24000,
+                "BAD"
+            )
+            .unwrap(),
+            24000
+        );
+    }
+    assert_eq!(
+        std::fs::read(root.join("media/source.wav")).unwrap(),
+        original
+    );
+    assert_eq!(
+        serde_json::to_value(project::load(&root).unwrap()).unwrap(),
+        serde_json::to_value(&placed).unwrap()
+    );
+    assert_eq!(
+        super::super::result(&core, app.handle(), &key).unwrap()["outputs"]
+            .as_array()
+            .unwrap()
+            .len(),
+        5
+    );
+    let mut old = placed.clone();
+    old.format_version = 34;
+    assert!(old.validate().is_err());
+    // A two-output model must never accept output #5 by merely hiding the others.
+    let mut bad = placed;
+    bad.speaker_dubbings[0].model_id = "tf-gridnet-wsj0-2mix".into();
+    let last = bad.speaker_dubbings[0].voices.pop().unwrap();
+    bad.speaker_dubbings[0].voices = vec![last];
+    assert!(bad.validate().is_err());
+}

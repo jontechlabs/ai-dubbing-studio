@@ -265,6 +265,10 @@ pub fn start<R: tauri::Runtime>(
     if !ready(&core, &m) {
         return Err("SPEAKER_SEPARATION_MODEL_REQUIRED".into());
     }
+    if spectral(&m) {
+        options.speaker_count.get_or_insert(m.speakers as u32);
+        options.memory_profile.get_or_insert_with(|| "gpu16".into());
+    }
     if options.device == "auto" {
         options.device = std::fs::read(runtime(&core).join("devices.json"))
             .ok()

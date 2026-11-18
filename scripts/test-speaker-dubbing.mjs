@@ -28,7 +28,7 @@ export async function verifySpeakerDubbing({call,context,job,args,projectRoot:pr
  const before=await call('studio_get_project'),line=before.dialogues.find((l)=>l.endMs-l.startMs>=1000&&l.endMs-l.startMs<=60000);
  assert(line);const hash=b=>createHash('sha256').update(b).digest('hex');
  const original=hash(await fs.readFile(path.join(projectRoot,before.media.path)));
- const status=await call('studio_speaker_separation_status');assert.equal(status.models.length,3);assert(status.models.every((m)=>m.installed));
+ const status=await call('studio_speaker_separation_status');assert(status.models.length>=3);assert(status.models.filter((m)=>['mossformer2','sepformer'].includes(m.family)).every((m)=>m.installed));
  const id=await call('studio_separate_dialogue_speakers',{context:await context(),options:{lineId:line.id,modelId:'mossformer2-16k',sourceTrackId:'original',startMs:line.startMs,endMs:line.endMs,device:'cpu',prompt:'',windowSeconds:2}});await job(id);
  const result=await call('studio_speaker_separation_result',{context:await context(),id});assert.equal(result.stale,false);assert.deepEqual(result.outputs,['voice-1','voice-2']);console.log('SPEAKER_DUBBING_STAGE real MossFormer2 outputs ready');
  for(const outputId of result.outputs) assert((await fs.stat(await call('studio_speaker_separation_path',{context:await context(),id,outputId}))).size>44);

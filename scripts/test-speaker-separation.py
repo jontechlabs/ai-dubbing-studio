@@ -40,7 +40,7 @@ subprocess.run([str(python),'-B','-m','unittest','discover','-s',str(ROOT/'worke
 sources=json.loads((ROOT/'scripts/speaker-separation-smoke-audio.json').read_text())['files']
 audio=[fetch(row,WORK/'source'/row['name']) for row in sources]
 source_hashes=[digest(p) for p in audio]
-models=json.loads((ROOT/'workers/speaker-separation-models.json').read_text())['models'];proof=[]
+models=json.loads((ROOT/'workers/speaker-separation-models.json').read_text())['models'];models=[m for m in models if m['family'] in ('mossformer2','sepformer')];proof=[]
 for model in models:
  folder=engines/'speaker-separation'/model['id']
  for row in model['files']:fetch(row,folder/row['name'])
