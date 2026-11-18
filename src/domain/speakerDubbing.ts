@@ -22,6 +22,8 @@ export interface SpeakerDubbingGroup {
   voices: IsolatedVoice[];
 }
 export interface SpeakerSeparationOptions {
+  speakerCount?: number;
+  memoryProfile?: SeparationMemoryProfile;
   /** Omit for a free timeline selection. */
   lineId?: string;
   modelId: string;
@@ -46,6 +48,11 @@ export interface SpeakerDubbingAssignment {
   targetText: string;
 }
 export interface SpeakerSeparationResult {
+  windowMs?: number | null;
+  attempts?: number | null;
+  precision?: string | null;
+  peakVramMb?: number | null;
+  memoryProfile?: string | null;
   placedOutputIds?: string[];
   id: string;
   options: SpeakerSeparationOptions;
@@ -54,6 +61,26 @@ export interface SpeakerSeparationResult {
   applied: boolean;
   commonGain: number;
   deviceName: string;
+}
+export type SeparationMemoryProfile = 'gpu16' | 'quality' | 'manual';
+export const spectralSpeakerModels = [
+  'tf-gridnet-wsj0-2mix',
+  'sr-corrnet-whamr-2spk',
+  'sr-corrnet-wsj-2-3spk',
+  'sr-corrnet-wsj-2-5spk',
+];
+export function spectralSeparator(family?: string) {
+  return family === 'tfgridnet' || family === 'srcorrnet';
+}
+export function separationWindow(profile: SeparationMemoryProfile, manual: number) {
+  return profile === 'gpu16' ? 2 : profile === 'quality' ? 4 : manual;
+}
+function speakerLimit(model: string, version: number) {
+  if (['mossformer2-16k', 'sepformer-2mix', 'sepformer-3mix'].includes(model)) return 3;
+  if (version < 35) return 0;
+  if (model === 'sr-corrnet-wsj-2-5spk') return 5;
+  if (model === 'sr-corrnet-wsj-2-3spk') return 3;
+  return spectralSpeakerModels.includes(model) ? 2 : 0;
 }
 export interface SpeakerDubbingPlacement extends SpeakerDubbingAssignment {
   laneId: string | null;
@@ -147,7 +174,7 @@ export function validateSpeakerDubbings(p: Project) {
       !text(g.id, 128) ||
       typeof g.active !== 'boolean' ||
       !text(g.separationId, 128) ||
-      !['mossformer2-16k', 'sepformer-2mix', 'sepformer-3mix'].includes(g.modelId) ||
+      !speakerLimit(g.modelId, p.formatVersion) ||
       !text(g.sourcePath, 4096) ||
       !text(g.sourceTrackId, 128) ||
       !text(g.createdAt, 100) ||
@@ -158,7 +185,7 @@ export function validateSpeakerDubbings(p: Project) {
       g.endMs - g.startMs > 60000 ||
       !Array.isArray(g.voices) ||
       g.voices.length < 1 ||
-      g.voices.length > 3 ||
+      g.voices.length > speakerLimit(g.modelId, p.formatVersion) ||
       (g.active && activeParents.has(g.parentId))
     )
       throw Error('SPEAKER_SEPARATION_OPTIONS');
@@ -172,7 +199,8 @@ export function validateSpeakerDubbings(p: Project) {
         parents.has(v.lineId) ||
         childIds.has(v.lineId) ||
         outputs.has(v.outputId) ||
-        !/^voice-[123]$/.test(v.outputId) ||
+        !/^voice-[1-5]$/.test(v.outputId) ||
+        Number(v.outputId.slice(-1)) > speakerLimit(g.modelId, p.formatVersion) ||
         !/^stems\/isolated-[0-9a-f-]{36}\.wav$/.test(v.audioPath) ||
         line.sourceCueIds.length ||
         line.targetCueIds.length ||

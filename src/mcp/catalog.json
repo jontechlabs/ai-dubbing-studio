@@ -623,6 +623,14 @@
           "options_SpeakerSeparationOptions_0": {
             "type": "object",
             "properties": {
+              "speakerCount": { "anyOf": [{ "type": "number" }] },
+              "memoryProfile": {
+                "anyOf": [
+                  { "type": "string", "const": "gpu16" },
+                  { "type": "string", "const": "quality" },
+                  { "type": "string", "const": "manual" }
+                ]
+              },
               "lineId": { "anyOf": [{ "type": "string" }] },
               "modelId": { "type": "string" },
               "sourceTrackId": { "type": "string" },
@@ -7412,6 +7420,14 @@
         "SpeakerSeparationOptions_0": {
           "type": "object",
           "properties": {
+            "speakerCount": { "anyOf": [{ "type": "number" }] },
+            "memoryProfile": {
+              "anyOf": [
+                { "type": "string", "const": "gpu16" },
+                { "type": "string", "const": "quality" },
+                { "type": "string", "const": "manual" }
+              ]
+            },
             "lineId": { "anyOf": [{ "type": "string" }] },
             "modelId": { "type": "string" },
             "sourceTrackId": { "type": "string" },

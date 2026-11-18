@@ -11,6 +11,12 @@ import type {
 import { audioTracks, trackLabel } from '../domain/audio';
 import { formatTime } from '../domain/time';
 import * as bridge from '../services/bridge';
+import { SeparationProfileControls, SeparationResultDetails } from './SeparationProfileControls';
+import {
+  spectralSeparator,
+  separationWindow,
+  type SeparationMemoryProfile,
+} from '../domain/speakerDubbing';
 import { CurrentJobProgress } from './CurrentJobProgress';
 import { IsolatedDubbingPlacement } from './IsolatedDubbingPlacement';
 export function AudioToolboxPanel({
@@ -34,6 +40,8 @@ export function AudioToolboxPanel({
   onError: (error: string) => void;
   onAudition: () => void;
 }) {
+  const [speakerCount, setSpeakerCount] = useState(2),
+    [profile, setProfile] = useState<SeparationMemoryProfile>('gpu16');
   const { t } = useTranslation(),
     [open, setOpen] = useState(!!initialModel),
     [status, setStatus] = useState<AudioToolboxStatus | null>(null),
@@ -71,6 +79,8 @@ export function AudioToolboxPanel({
     device,
     prompt,
     windowSeconds,
+    speakerCount,
+    profile,
   ]);
   const currentScope = useRef(scope);
   const key = request?.scope === scope ? request.id : null;
@@ -201,6 +211,10 @@ export function AudioToolboxPanel({
       range <= 60000 &&
       end <= project.media.durationMs &&
       (model.family !== 'audiosep' || !!prompt.trim());
+  const spectral = speakerModel && spectralSeparator(model?.family),
+    counts = model?.speakerCounts ?? [model?.outputs.length ?? 2],
+    count = counts.includes(speakerCount) ? speakerCount : counts[0],
+    effectiveWindow = spectral ? separationWindow(profile, windowSeconds) : windowSeconds;
   const bytes = (n: number) => `${(n / 1024 ** 3).toFixed(2)} Gio`,
     tracks = audioTracks(project).filter((t) => t.kind !== 'dubbing');
   const chosen = Object.values(mappings).filter(Boolean),
@@ -329,12 +343,22 @@ export function AudioToolboxPanel({
               ))}
             </select>
           </label>
+          {spectral && (
+            <SeparationProfileControls
+              counts={counts}
+              count={count}
+              profile={profile}
+              disabled={locked}
+              onCount={setSpeakerCount}
+              onProfile={setProfile}
+            />
+          )}
           <label className="field">
             <span>{t('toolbox.window')}</span>
             <select
               aria-label={t('toolbox.window')}
-              value={windowSeconds}
-              disabled={locked}
+              disabled={locked || (spectral && profile !== 'manual')}
+              value={effectiveWindow}
               onChange={(e) => setWindow(Number(e.target.value))}
             >
               {[2, 4, 6, 8].map((n) => (
@@ -399,7 +423,10 @@ export function AudioToolboxPanel({
                     endMs: end,
                     device,
                     prompt,
-                    windowSeconds,
+                    windowSeconds: effectiveWindow,
+                    ...(speakerModel && spectral
+                      ? { speakerCount: count, memoryProfile: profile }
+                      : {}),
                   }),
                 );
               })
@@ -424,6 +451,7 @@ export function AudioToolboxPanel({
                 />
               )}
               <strong>{t('toolbox.preview')}</strong>
+              <SeparationResultDetails result={result} />
               <p>
                 {result.deviceName} · {formatTime(result.options.startMs)} →{' '}
                 {formatTime(result.options.endMs)}

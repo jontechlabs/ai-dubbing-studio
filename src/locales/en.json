@@ -2214,5 +2214,15 @@
     "name": "New track name",
     "place": "Create takes and place voices",
     "stale": "The source has changed. Run separation again before placing the voices."
-  }
+  },
+  "spectral": {
+    "count": "Number of voices to separate",
+    "profile": "Separation profile",
+    "gpu16": "16 GB GPU · memory saving · 2 s windows",
+    "quality": "Longer context · 4 s windows",
+    "manual": "Manual · adjustable window",
+    "hint": "Local FP32 inference. On CUDA OOM, windows shrink on the same GPU, down to 0.5 s. No CPU fallback for a selected GPU. Shouting quality varies by excerpt; compare the separators by listening.",
+    "result": "Actual window: {{seconds}} s · {{precision}} · {{attempts}} attempt(s) · peak VRAM: {{vram}} MiB"
+  },
+  "deviceAuto": "Automatic (prefer CUDA GPU)"
 }

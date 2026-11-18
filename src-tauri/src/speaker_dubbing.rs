@@ -79,6 +79,15 @@ pub fn retain_after_alignment(previous: &Project, next: &mut Project) {
         }
     }
 }
+pub fn model_limit(model: &str, version: u32) -> Option<usize> {
+    match model {
+        "mossformer2-16k" | "sepformer-2mix" | "sepformer-3mix" => Some(3),
+        "tf-gridnet-wsj0-2mix" | "sr-corrnet-whamr-2spk" if version >= 35 => Some(2),
+        "sr-corrnet-wsj-2-3spk" if version >= 35 => Some(3),
+        "sr-corrnet-wsj-2-5spk" if version >= 35 => Some(5),
+        _ => None,
+    }
+}
 pub fn validate(p: &Project) -> Result<(), String> {
     if p.speaker_dubbings.is_empty() {
         return Ok(());
@@ -106,12 +115,11 @@ pub fn validate(p: &Project) -> Result<(), String> {
             || !string(&g.source_path, 4096)
             || !string(&g.source_track_id, 128)
             || !string(&g.created_at, 100)
-            || !["mossformer2-16k", "sepformer-2mix", "sepformer-3mix"]
-                .contains(&g.model_id.as_str())
+            || model_limit(&g.model_id, p.format_version).is_none()
             || g.end_ms <= g.start_ms
             || !(100..=60000).contains(&(g.end_ms - g.start_ms))
             || g.voices.is_empty()
-            || g.voices.len() > 3
+            || g.voices.len() > model_limit(&g.model_id, p.format_version).unwrap_or(0)
             || (g.active && !active.insert(&g.parent_id))
         {
             return Err(fail());
@@ -126,7 +134,8 @@ pub fn validate(p: &Project) -> Result<(), String> {
             if parents.contains(v.line_id.as_str())
                 || !children.insert(&v.line_id)
                 || !outputs.insert(&v.output_id)
-                || !["voice-1", "voice-2", "voice-3"].contains(&v.output_id.as_str())
+                || !(1..=model_limit(&g.model_id, p.format_version).unwrap_or(0))
+                    .any(|n| v.output_id == format!("voice-{n}"))
                 || asset.is_none_or(|s| uuid::Uuid::parse_str(s).is_err())
                 || !l.source_cue_ids.is_empty()
                 || !l.target_cue_ids.is_empty()

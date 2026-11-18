@@ -13,6 +13,7 @@ export interface AudioToolboxDestination {
   role: string | null;
 }
 export interface AudioToolboxModel {
+  speakerCounts?: number[];
   id: string;
   name: string;
   family: string;
@@ -29,6 +30,11 @@ export interface AudioToolboxStatus {
   devices: { id: string; name: string }[];
 }
 export interface AudioToolboxResult {
+  windowMs?: number | null;
+  attempts?: number | null;
+  precision?: string | null;
+  peakVramMb?: number | null;
+  memoryProfile?: string | null;
   id: string;
   options: AudioToolboxOptions;
   outputs: string[];

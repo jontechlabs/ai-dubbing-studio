@@ -100,7 +100,9 @@ export function validateTakeOrigins(project: Project) {
           ![origin.separationId, origin.sourceTrackId, origin.sourceLanguage].every(
             (s) => typeof s === 'string' && s.length > 0 && s.length <= 128,
           ) ||
-          !/^voice-[123]$/.test(origin.outputId ?? ''))) ||
+          !(project.formatVersion >= 35 ? /^voice-[1-5]$/ : /^voice-[123]$/).test(
+            origin.outputId ?? '',
+          ))) ||
       (origin.type === 'conversion' &&
         (typeof origin.sourceGenerationId !== 'string' ||
           !origin.sourceGenerationId ||

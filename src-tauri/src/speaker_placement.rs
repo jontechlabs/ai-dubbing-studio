@@ -53,7 +53,7 @@ fn plan(
         return Err("SPEAKER_SEPARATION_OPTIONS".into());
     }
     let mut next = p.clone();
-    next.format_version = next.format_version.max(34);
+    next.format_version = next.format_version.max(if spectral(m) { 35 } else { 34 });
     if crate::dubbing_lanes::current(&next).is_none() {
         next.dubbing_lanes = Some(State {
             source_path: r.source_path.clone(),
@@ -252,7 +252,7 @@ pub async fn place<R: tauri::Runtime>(
     if snapshot(&p, &r.root, &r.options)? != r.snapshot {
         return Err("STALE_REVISION".into());
     }
-    let m = model(&app, &r.options.model_id)?;
+    let m = configured_model(&app, &r.options)?;
     let (next, outputs) = plan(&p, &r, &m, &key, &audio_language, assignments)?;
     project::ensure_directory(&r.root, "stems")?;
     project::ensure_directory(&r.root, "generations")?;

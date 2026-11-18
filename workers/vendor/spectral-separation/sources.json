@@ -1,0 +1,16 @@
+{
+  "tfgridnet": {
+    "repository": "https://github.com/espnet/espnet",
+    "revision": "88c06552015f2877a0508281509e697a706c3006",
+    "license": "Apache-2.0",
+    "changes": "Inference class unchanged; imports use bundled native-complex STFT compatibility adapter.",
+    "archiveSha256": "f1a64a7d24b7ea1aab5148e98e75a96f7708797abd93f237282a919ea88f072a"
+  },
+  "srCorrnet": {
+    "repository": "https://github.com/dmlguq456/SR_CorrNet_SS",
+    "revision": "7340365b9cc9a021bf7d400f52fce4b88593b67a",
+    "license": "MIT",
+    "changes": "Inference-only source subset; unused logging imports and global warning suppression removed. Attractor positional grid is computed lazily for exactly the inference T/F dimensions, preserving values without the upstream 5000x1500 preallocation. Skip unused auxiliary residual reconstruction when aux_loss=False; selected outputs are unchanged.",
+    "archiveSha256": "97130fcbc18519cdbc5132de64e387c25f1ed21d1751e5d1d891fff24418d91e"
+  }
+}

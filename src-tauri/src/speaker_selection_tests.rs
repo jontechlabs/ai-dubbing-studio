@@ -9,6 +9,7 @@ pub(super) fn fixture() -> (Project, Options, Model) {
         name: "MossFormer2".into(),
         family: "mossformer2".into(),
         speakers: 2,
+        speaker_counts: vec![],
         files: vec![],
         outputs: vec!["voice-1".into(), "voice-2".into()],
         license: String::new(),

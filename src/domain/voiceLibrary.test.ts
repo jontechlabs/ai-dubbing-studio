@@ -181,7 +181,7 @@ describe('reviewed character voice library', () => {
       'INVALID_VOICE_LIBRARY',
     );
     expect(validateProject(demoProject()).formatVersion).toBe(1);
-    expect(() => validateProject({ ...next, formatVersion: 35 })).toThrow(
+    expect(() => validateProject({ ...next, formatVersion: 36 })).toThrow(
       'UNSUPPORTED_PROJECT_VERSION',
     );
   });

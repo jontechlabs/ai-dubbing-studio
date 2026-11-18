@@ -243,10 +243,11 @@ pub fn validate(p: &Project) -> Result<(), String> {
                                 .as_str()
                                 .is_none_or(|s| s.is_empty() || s.len() > 128)
                         })
-                    || !matches!(
+                    || (!matches!(
                         origin["outputId"].as_str(),
                         Some("voice-1" | "voice-2" | "voice-3")
-                    ))
+                    ) && !(p.format_version >= 35
+                        && matches!(origin["outputId"].as_str(), Some("voice-4" | "voice-5")))))
             {
                 return Err("INVALID_VOICE_CONVERSION".into());
             }

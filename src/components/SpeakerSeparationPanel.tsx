@@ -8,9 +8,13 @@ import {
   isolatedVoice,
   setSpeakerDubbingGroup,
   speakerDubbingState,
+  spectralSeparator,
+  separationWindow,
+  type SeparationMemoryProfile,
 } from '../domain/speakerDubbing';
 import { audioTracks, trackLabel } from '../domain/audio';
 import * as bridge from '../services/bridge';
+import { SeparationProfileControls, SeparationResultDetails } from './SeparationProfileControls';
 import { IsolatedDubbingPlacement } from './IsolatedDubbingPlacement';
 
 export function SpeakerSeparationPanel({
@@ -43,9 +47,11 @@ export function SpeakerSeparationPanel({
   const [open, setOpen] = useState(false),
     [status, setStatus] = useState<AudioToolboxStatus | null>(null);
   const [modelId, setModel] = useState('mossformer2-16k'),
-    [device, setDevice] = useState('cpu'),
+    [device, setDevice] = useState('auto'),
     [source, setSource] = useState('auto');
   const [windowSeconds, setWindowSeconds] = useState(2);
+  const [speakerCount, setSpeakerCount] = useState(2),
+    [profile, setProfile] = useState<SeparationMemoryProfile>('gpu16');
   const [jobId, setJob] = useState(''),
     [result, setResult] = useState<SpeakerSeparationResult | null>(null);
   const [urls, setUrls] = useState<Record<string, string>>({}),
@@ -114,6 +120,10 @@ export function SpeakerSeparationPanel({
   }, [job?.id, job?.kind, job?.status, onError, t]);
   const model = status?.models.find((m) => m.id === modelId),
     tracks = audioTracks(project).filter((t) => t.kind !== 'dubbing');
+  const spectral = spectralSeparator(model?.family),
+    counts = model?.speakerCounts ?? [model?.outputs.length ?? 2],
+    count = counts.includes(speakerCount) ? speakerCount : counts[0],
+    effectiveWindow = spectral ? separationWindow(profile, windowSeconds) : windowSeconds;
   const noSpace =
     !!model &&
     status?.availableBytes !== null &&
@@ -213,6 +223,7 @@ export function SpeakerSeparationPanel({
           <label className="field">
             <span>{t('ttsDevice')}</span>
             <select disabled={disabled} value={device} onChange={(e) => setDevice(e.target.value)}>
+              <option value="auto">{t('deviceAuto')}</option>
               {(status?.devices ?? [{ id: 'cpu', name: 'CPU' }]).map((d) => (
                 <option key={d.id} value={d.id}>
                   {d.name}
@@ -223,8 +234,8 @@ export function SpeakerSeparationPanel({
           <label className="field">
             <span>{t('toolbox.window')}</span>
             <select
-              disabled={disabled}
-              value={windowSeconds}
+              disabled={disabled || (spectral && profile !== 'manual')}
+              value={effectiveWindow}
               onChange={(e) => setWindowSeconds(Number(e.target.value))}
             >
               {[2, 4, 6, 8].map((n) => (
@@ -234,6 +245,16 @@ export function SpeakerSeparationPanel({
               ))}
             </select>
           </label>
+          {spectral && (
+            <SeparationProfileControls
+              counts={counts}
+              count={count}
+              profile={profile}
+              disabled={disabled}
+              onCount={setSpeakerCount}
+              onProfile={setProfile}
+            />
+          )}
           {model && (
             <small>
               {t('overlap.disk', {
@@ -269,7 +290,8 @@ export function SpeakerSeparationPanel({
                   endMs: line.endMs,
                   device,
                   prompt: '',
-                  windowSeconds,
+                  windowSeconds: effectiveWindow,
+                  ...(spectral ? { speakerCount: count, memoryProfile: profile } : {}),
                 });
               })
             }
@@ -281,6 +303,7 @@ export function SpeakerSeparationPanel({
       )}
       {result && (
         <div className="speaker-separation-results">
+          <SeparationResultDetails result={result} />
           <p className="panel-description">{t('overlap.review')}</p>
           <label className="field">
             <span>{t('overlap.usage')}</span>

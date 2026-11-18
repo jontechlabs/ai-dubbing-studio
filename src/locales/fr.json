@@ -2214,5 +2214,15 @@
     "name": "Nom de la nouvelle piste",
     "place": "Créer les essais et placer les voix",
     "stale": "La source a changé. Relancez la séparation avant de placer les voix."
-  }
+  },
+  "spectral": {
+    "count": "Nombre de voix à séparer",
+    "profile": "Profil de séparation",
+    "gpu16": "RTX 16 Go · économe · fenêtres de 2 s",
+    "quality": "Contexte plus long · fenêtres de 4 s",
+    "manual": "Manuel · fenêtre réglable",
+    "hint": "Calcul FP32 local. En cas de manque de VRAM, la fenêtre est réduite sur le même GPU, jusqu’à 0,5 s. Aucun repli CPU pour un GPU choisi. La qualité sur les cris varie selon l’extrait ; comparez les séparateurs à l’écoute.",
+    "result": "Fenêtre utilisée : {{seconds}} s · {{precision}} · {{attempts}} tentative(s) · pic VRAM : {{vram}} Mio"
+  },
+  "deviceAuto": "Automatique (GPU CUDA prioritaire)"
 }

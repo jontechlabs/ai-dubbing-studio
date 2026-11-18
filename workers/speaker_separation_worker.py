@@ -1,4 +1,4 @@
-"""Local two/three-speaker separation; no downloads or remote code at inference."""
+"""Local 2–5 speaker separation; no downloads or remote code at inference."""
 from pathlib import Path
 import argparse
 import hashlib
@@ -75,11 +75,14 @@ def load_state(module, file, key=None):
     module.load_state_dict(state, strict=True)
 
 
-def load_engine(folder, spec, device):
+def load_engine(folder, spec, device, speakers=None):
     import numpy as np
     import torch
     torch.set_num_threads(max(1, min(8, os.cpu_count() or 1)))
     check_files(folder, spec)
+    if spec['family'] in ('tfgridnet', 'srcorrnet'):
+        from spectral_separation import load_engine as load_spectral
+        return load_spectral(folder, spec, device, speakers or spec['speakers'])
     if spec['family'] == 'mossformer2':
         from types import SimpleNamespace
         vendor = HERE / 'vendor' / 'speaker-separation' / 'mossformer2-source.zip'
@@ -119,7 +122,7 @@ def load_engine(folder, spec, device):
 def align_channels(previous, current):
     """Preserve local stream ordering across overlapping inference windows."""
     import numpy as np
-    if previous.shape != current.shape or previous.ndim != 2 or previous.shape[0] not in (2, 3):
+    if previous.shape != current.shape or previous.ndim != 2 or not 2 <= previous.shape[0] <= 5:
         raise ValueError('SPEAKER_SEPARATION_OUTPUT_INVALID')
     norms = np.linalg.norm(previous, axis=1)[:, None] * np.linalg.norm(current, axis=1)[None, :]
     scores = np.divide(previous @ current.T, norms, out=np.zeros_like(norms), where=norms > 1e-10)
@@ -130,7 +133,7 @@ def align_channels(previous, current):
 
 def separate_windows(samples, speakers, window, infer, progress=lambda *_: None):
     import numpy as np
-    if samples.ndim != 1 or len(samples) == 0 or speakers not in (2, 3) or window < 16:
+    if samples.ndim != 1 or len(samples) == 0 or not 2 <= speakers <= 5 or window < 16:
         raise ValueError('SPEAKER_SEPARATION_OPTIONS')
     hop = max(1, window // 2)
     starts = list(range(0, max(1, len(samples) - window + hop), hop))
@@ -177,20 +180,61 @@ def resample_exact(values, before, after, frames):
     return output[..., :frames].astype(np.float32)
 
 
+def settings(spec, request):
+    counts = spec.get('speakerCounts', [spec['speakers']])
+    speakers = request.get('speakerCount', counts[0])
+    profile = request.get('memoryProfile', 'gpu16' if spec['family'] in ('tfgridnet', 'srcorrnet') else 'manual')
+    window = request.get('windowMs', spec['windowMs'])
+    if (type(speakers) is not int or speakers not in counts or profile not in ('gpu16', 'quality', 'manual')
+            or type(window) is not int or not 500 <= window <= 8000):
+        raise ValueError('SPEAKER_SEPARATION_OPTIONS')
+    limit = {'gpu16': 2000, 'quality': 4000, 'manual': 8000}[profile]
+    return speakers, profile, min(window, limit)
+
+
+def bounded_separation(samples, speakers, rate, window_ms, infer, device, progress, release=None):
+    """Retry OOM windows on the SAME device, without holding failed tracebacks."""
+    attempts = 0
+    while True:
+        attempts += 1
+        def attempt():
+            try:
+                return separate_windows(samples, speakers, rate * window_ms // 1000, infer, progress)
+            except RuntimeError as error:
+                if not device.startswith('cuda:') or 'out of memory' not in str(error).lower():
+                    raise
+                if window_ms <= 500:
+                    raise ValueError('SPEAKER_SEPARATION_OUT_OF_MEMORY') from error
+                return None
+        result = attempt()
+        if result is not None:
+            return result, window_ms, attempts
+        # No exception object/GPU activation traceback survives this boundary.
+        import gc
+        gc.collect()
+        if release is not None:
+            release()
+        else:
+            import torch
+            torch.cuda.empty_cache()
+        window_ms = max(500, window_ms // 2)
+        emit(stage='speakerSeparationRun', progress=None, retry=attempts,
+             windowMs=window_ms, device=device,
+             log=f'CUDA OOM: retry with {window_ms} ms windows on {device}; no CPU fallback.')
+
+
 def generate(request):
     import numpy as np
     import soundfile as sf
     started = time.monotonic()
     spec = model_spec(request.get('modelId'))
-    window_ms = request.get('windowMs', spec['windowMs'])
-    if not isinstance(window_ms, int) or isinstance(window_ms, bool) or not 500 <= window_ms <= 8000:
-        raise ValueError('SPEAKER_SEPARATION_OPTIONS')
+    speakers, profile, window_ms = settings(spec, request)
     source = path(request['inputPath']).resolve()
     folder = path(request['outputDir']).resolve()
     model_dir = path(request['modelDir']).resolve()
-    if folder == source.parent or source in [folder / f'voice-{i+1}.wav' for i in range(spec['speakers'])]:
+    if folder == source.parent or source in [folder / f'voice-{i+1}.wav' for i in range(speakers)]:
         raise ValueError('SPEAKER_SEPARATION_OPTIONS')
-    targets = [folder / f'voice-{i+1}.wav' for i in range(spec['speakers'])]
+    targets = [folder / f'voice-{i+1}.wav' for i in range(speakers)]
     if any(p.exists() for p in targets) or (folder / 'result.json').exists():
         raise ValueError('SPEAKER_SEPARATION_OUTPUT_EXISTS')
     samples, rate = sf.read(source, dtype='float32', always_2d=True)
@@ -202,11 +246,18 @@ def generate(request):
     if float(np.sqrt(np.mean(samples ** 2))) < 1e-6:
         raise ValueError('SPEAKER_SEPARATION_NO_AUDIO')
     device, name = device_name(request.get('device', 'cpu'))
+    import torch
+    if spec['family'] in ('tfgridnet', 'srcorrnet'):
+        # Complex STFT and attention keep FP32 for stable phases and no
+        # unsupported half-precision FFT kernels on Blackwell.
+        torch.backends.cuda.matmul.allow_tf32 = False
+        torch.backends.cudnn.allow_tf32 = False
+    emit(log=f'FP32; {speakers} outputs; profile {profile}; window {window_ms} ms; selected device {name}.')
     emit(stage='speakerSeparationLoad', progress=0.05, device=name, model=spec['id'])
-    infer = load_engine(model_dir, spec, device)
+    infer = load_engine(model_dir, spec, device, speakers)
     frames = len(samples)
     low = resample_exact(samples, rate, spec['sampleRate'], (frames*spec['sampleRate']+rate-1)//rate)
-    outputs = separate_windows(low, spec['speakers'], spec['sampleRate']*window_ms//1000, infer,
+    outputs, effective_window, attempts = bounded_separation(low, speakers, spec['sampleRate'], window_ms, infer, device,
                                lambda i, n: emit(stage='speakerSeparationRun', progress=0.15+0.75*i/n, window=i, windows=n))
     outputs = resample_exact(outputs, spec['sampleRate'], 48000, frames)
     peak = float(np.max(np.abs(outputs)))
@@ -225,7 +276,8 @@ def generate(request):
                          size=target.stat().st_size, sha256=digest,
                          rmsDb=max(-96.0, 20*math.log10(rms)) if rms > 0 else -96.0))
     import torch
-    result = dict(modelId=spec['id'], speakers=spec['speakers'], sourceRate=spec['sampleRate'],
+    result = dict(modelId=spec['id'], speakers=speakers, sourceRate=spec['sampleRate'],
+                  memoryProfile=profile, precision='fp32', windowMs=effective_window, attempts=attempts,
                   sampleRate=48000, frames=frames, commonGain=gain, device=device, deviceName=name,
                   peakVramMb=torch.cuda.max_memory_allocated()//1024**2 if device.startswith('cuda:') else 0,
                   elapsedMs=round((time.monotonic()-started)*1000), outputs=rows)
@@ -249,7 +301,7 @@ def main():
         emit(devices=devices)
     elif args.verify_model:
         spec = model_spec(args.verify_model[0])
-        load_engine(path(args.verify_model[1]), spec, 'cpu')
+        load_engine(path(args.verify_model[1]), spec, 'cpu', spec.get('speakerCounts', [spec['speakers']])[0])
         emit(verified=True, modelId=spec['id'])
     elif args.request:
         generate(json.loads(path(args.request).read_text(encoding='utf-8-sig')))

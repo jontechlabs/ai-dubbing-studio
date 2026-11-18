@@ -1,5 +1,5 @@
 {
-  "version": 1,
+  "version": 2,
   "models": [
     {
       "id": "mossformer2-16k",
@@ -91,6 +91,104 @@
           "url": "https://huggingface.co/speechbrain/sepformer-libri3mix/resolve/1f2d824e2333aec9e60d0030fb144885c1afc426/hyperparams.yaml",
           "sha256": "4f0ae05600c66d7f8cf1269f54fd32dad576d4d473ad7169ef6ab26190658233",
           "size": 1473
+        }
+      ]
+    },
+    {
+      "id": "tf-gridnet-wsj0-2mix",
+      "name": "TF-GridNet · 2 voix · 8 kHz",
+      "family": "tfgridnet",
+      "speakers": 2,
+      "speakerCounts": [2],
+      "sampleRate": 8000,
+      "windowMs": 2000,
+      "license": "Code Apache-2.0 · checkpoint ESPnet/CMU : voir source",
+      "source": "https://kan-bayashi.github.io/espnet/notebook/SpeechEnhancement_CMU_11492_692_Spring2023(Assignment7).html",
+      "revision": "88c06552015f2877a0508281509e697a706c3006",
+      "files": [
+        {
+          "name": "model.zip",
+          "url": "https://drive.usercontent.google.com/download?id=1TasZxZSnbSPsk_Wf7ZDhBAigS6zN8G9G&export=download&confirm=t",
+          "size": 33267039,
+          "sha256": "28c77f236b5bf39f54145c07d614f96494ca3c34e07bd63e6c041bae475d86c7"
+        }
+      ]
+    },
+    {
+      "id": "sr-corrnet-whamr-2spk",
+      "name": "SR-CorrNet · bruit/réverbération · 2 voix · 8 kHz",
+      "family": "srcorrnet",
+      "speakers": 2,
+      "speakerCounts": [2],
+      "sampleRate": 8000,
+      "windowMs": 2000,
+      "license": "Code MIT · poids de l’auteur : voir source",
+      "source": "https://huggingface.co/shinuh/sr-corrnet-ss-1ch-whamr",
+      "revision": "3690487ece7cab64b63afffd18ee5228440c2dbb",
+      "files": [
+        {
+          "name": "config.yaml",
+          "url": "https://huggingface.co/shinuh/sr-corrnet-ss-1ch-whamr/resolve/3690487ece7cab64b63afffd18ee5228440c2dbb/config.yaml",
+          "size": 5523,
+          "sha256": "2ad5afc75795cefda4a756eeedb0e6a1822f36463efdb18f125d389fb3729619"
+        },
+        {
+          "name": "model.pt",
+          "url": "https://huggingface.co/shinuh/sr-corrnet-ss-1ch-whamr/resolve/3690487ece7cab64b63afffd18ee5228440c2dbb/model.pt",
+          "size": 59709243,
+          "sha256": "46adedee5abf0ebc2eaaad84d6a093171b45308b4cf56d5ee580047ec33a8b98"
+        }
+      ]
+    },
+    {
+      "id": "sr-corrnet-wsj-2-3spk",
+      "name": "SR-CorrNet · 2 à 3 voix · 8 kHz",
+      "family": "srcorrnet",
+      "speakers": 3,
+      "speakerCounts": [2, 3],
+      "sampleRate": 8000,
+      "windowMs": 2000,
+      "license": "Code MIT · poids de l’auteur : voir source",
+      "source": "https://huggingface.co/shinuh/sr-corrnet-ss-1ch-wsj-var-2-3spk",
+      "revision": "e523bd393c18db36257c5095b64d57709fa9dafb",
+      "files": [
+        {
+          "name": "config.yaml",
+          "url": "https://huggingface.co/shinuh/sr-corrnet-ss-1ch-wsj-var-2-3spk/resolve/e523bd393c18db36257c5095b64d57709fa9dafb/config.yaml",
+          "size": 5911,
+          "sha256": "4721cc0bd7f3707db3c13aa02c865ae15c56e44b67c1b94b81933d2c21ca4bf1"
+        },
+        {
+          "name": "model.pt",
+          "url": "https://huggingface.co/shinuh/sr-corrnet-ss-1ch-wsj-var-2-3spk/resolve/e523bd393c18db36257c5095b64d57709fa9dafb/model.pt",
+          "size": 56377815,
+          "sha256": "21ab0209b25a0f5820b6f392c4dcb71a2a177298b3d3d963cbba795aaf1f53c1"
+        }
+      ]
+    },
+    {
+      "id": "sr-corrnet-wsj-2-5spk",
+      "name": "SR-CorrNet · 2 à 5 voix · 8 kHz",
+      "family": "srcorrnet",
+      "speakers": 5,
+      "speakerCounts": [2, 3, 4, 5],
+      "sampleRate": 8000,
+      "windowMs": 2000,
+      "license": "Code MIT · poids de l’auteur : voir source",
+      "source": "https://huggingface.co/shinuh/sr-corrnet-ss-1ch-wsj-var-2-5spk",
+      "revision": "e92af46a2bc3b7f53c14a951c4cc551abea6d637",
+      "files": [
+        {
+          "name": "config.yaml",
+          "url": "https://huggingface.co/shinuh/sr-corrnet-ss-1ch-wsj-var-2-5spk/resolve/e92af46a2bc3b7f53c14a951c4cc551abea6d637/config.yaml",
+          "size": 6783,
+          "sha256": "9364e212204455ddf81d0b137fcc56a7d703796d96c781c96eccb99326008ea3"
+        },
+        {
+          "name": "model.pt",
+          "url": "https://huggingface.co/shinuh/sr-corrnet-ss-1ch-wsj-var-2-5spk/resolve/e92af46a2bc3b7f53c14a951c4cc551abea6d637/model.pt",
+          "size": 56378839,
+          "sha256": "ad11a043505b178d550691088427d87e6bcb8cab824dbc60c3c72866cd4f5a40"
         }
       ]
     }

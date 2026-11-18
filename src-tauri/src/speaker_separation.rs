@@ -19,11 +19,14 @@ pub mod placement;
 #[path = "speaker_selection_tests.rs"]
 mod selection_tests;
 #[derive(Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct Model {
     pub id: String,
     pub name: String,
     pub family: String,
     pub speakers: usize,
+    #[serde(default)]
+    pub speaker_counts: Vec<usize>,
     pub files: Vec<voice_engines::File>,
     #[serde(default)]
     pub outputs: Vec<String>,
@@ -49,6 +52,30 @@ fn model<R: tauri::Runtime>(app: &tauri::AppHandle<R>, id: &str) -> Result<Model
         .find(|m| m.id == id)
         .ok_or("SPEAKER_SEPARATION_OPTIONS".into())
 }
+fn configured_model<R: tauri::Runtime>(
+    app: &tauri::AppHandle<R>,
+    options: &Options,
+) -> Result<Model, String> {
+    let mut m = model(app, &options.model_id)?;
+    let allowed = if m.speaker_counts.is_empty() {
+        vec![m.speakers]
+    } else {
+        m.speaker_counts.clone()
+    };
+    let count = options
+        .speaker_count
+        .map(|n| n as usize)
+        .unwrap_or(allowed[0]);
+    if !allowed.contains(&count) {
+        return Err("SPEAKER_SEPARATION_OPTIONS".into());
+    }
+    m.speakers = count;
+    m.outputs = (1..=count).map(|i| format!("voice-{i}")).collect();
+    Ok(m)
+}
+fn spectral(m: &Model) -> bool {
+    matches!(m.family.as_str(), "tfgridnet" | "srcorrnet")
+}
 fn root(core: &Core) -> PathBuf {
     voice_engines::root(core).join("speaker-separation")
 }
@@ -57,6 +84,9 @@ fn runtime(core: &Core) -> PathBuf {
 }
 fn ready(core: &Core, m: &Model) -> bool {
     runtime(core).join("ready.json").is_file()
+        && (!spectral(m)
+            || std::fs::read(root(core).join(&m.id).join("verified.json"))
+                .is_ok_and(|v| v == b"spectral-fp32-v1"))
         && m.files.iter().all(|f| {
             std::fs::metadata(root(core).join(&m.id).join(&f.name)).is_ok_and(|x| x.len() == f.size)
         })
@@ -97,7 +127,7 @@ pub async fn status<R: tauri::Runtime>(
         }
     }
     Ok(
-        json!({"availableBytes":available,"models":models(&app)?.iter().map(|m|json!({"id":m.id,"name":m.name,"family":m.family,"installed":ready(&core,m),"modelBytes":m.files.iter().map(|f|f.size).sum::<u64>(),"requiredBytes":required(&core,m),"outputs":m.outputs,"license":m.license,"source":m.source})).collect::<Vec<_>>(),"devices":devices}),
+        json!({"availableBytes":available,"models":models(&app)?.iter().map(|m|json!({"id":m.id,"name":m.name,"family":m.family,"speakerCounts":if m.speaker_counts.is_empty(){vec![m.speakers]}else{m.speaker_counts.clone()},"installed":ready(&core,m),"modelBytes":m.files.iter().map(|f|f.size).sum::<u64>(),"requiredBytes":required(&core,m),"outputs":m.outputs,"license":m.license,"source":m.source})).collect::<Vec<_>>(),"devices":devices}),
     )
 }
 pub fn install<R: tauri::Runtime>(
@@ -135,7 +165,8 @@ pub fn install<R: tauri::Runtime>(
         let result=async{
 let _permit=tokio::select!{_=jobs::cancelled(&flag)=>return Err("CANCELLED".into()),p=core.gate.clone().acquire_owned()=>p.map_err(io_error)?};jobs::update(&core,&app,&key,|j|{j.status="running".into();j.stage="dependenciesCheck".into();j.progress=None;});
 if !runtime(&core).join("ready.json").is_file(){voice_engines::install_python_profile(&core,&app,&key,&flag,"speaker-separation").await?;project::atomic_write(&runtime(&core).join("ready.json"),b"{\"profile\":\"speaker-separation-cu128\"}")?;}
-for f in &m.files{crate::domain::valid_relative(&f.name)?;let path=folder.join(&f.name);std::fs::create_dir_all(path.parent().ok_or("INVALID_PATH")?).map_err(io_error)?;jobs::update(&core,&app,&key,|j|{j.stage="toolboxModel".into();j.progress=None;j.logs.push(format!("Verified model file: {}",f.name));});separation::fetch(&core,&app,&key,std::slice::from_ref(&f.url),&path,(&f.sha256,f.size),&flag).await?;}Ok(())}.await;
+for f in &m.files{crate::domain::valid_relative(&f.name)?;let path=folder.join(&f.name);std::fs::create_dir_all(path.parent().ok_or("INVALID_PATH")?).map_err(io_error)?;jobs::update(&core,&app,&key,|j|{j.stage="toolboxModel".into();j.progress=None;j.logs.push(format!("Verified model file: {}",f.name));});separation::fetch(&core,&app,&key,std::slice::from_ref(&f.url),&path,(&f.sha256,f.size),&flag).await?;}
+if spectral(&m) {jobs::update(&core,&app,&key,|j|{j.stage="speakerSeparationLoad".into();j.progress=None;});separation::process(&core,&app,&key,&separation::python(&runtime(&core)),&[separation::resources(&app).join("speaker_separation_worker.py").to_string_lossy().into_owned(),"--verify-model".into(),m.id.clone(),folder.to_string_lossy().into_owned()],&flag).await?;project::atomic_write(&folder.join("verified.json"),b"spectral-fp32-v1")?;}Ok(())}.await;
         separation::finish(&core, &app, &key, &result);
     });
     Ok(returned)
@@ -143,6 +174,10 @@ for f in &m.files{crate::domain::valid_relative(&f.name)?;let path=folder.join(&
 #[derive(Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct Options {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub speaker_count: Option<u32>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub memory_profile: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub line_id: Option<String>,
     pub model_id: String,
@@ -190,6 +225,17 @@ fn validate(p: &Project, o: &Options, m: &Model) -> Result<(), String> {
         || !(2..=8).contains(&o.window_seconds)
         || o.prompt.chars().count() > 500
         || o.prompt.contains('\0')
+        || o.speaker_count.is_some_and(|n| {
+            !if m.speaker_counts.is_empty() {
+                vec![m.speakers]
+            } else {
+                m.speaker_counts.clone()
+            }
+            .contains(&(n as usize))
+        })
+        || o.memory_profile
+            .as_ref()
+            .is_some_and(|p| !["gpu16", "quality", "manual"].contains(&p.as_str()))
     {
         return Err("SPEAKER_SEPARATION_OPTIONS".into());
     }
@@ -215,9 +261,23 @@ pub fn start<R: tauri::Runtime>(
     if jobs::active_processing(&core) {
         return Err("BUSY".into());
     }
-    let m = model(&app, &options.model_id)?;
+    let m = configured_model(&app, &options)?;
     if !ready(&core, &m) {
         return Err("SPEAKER_SEPARATION_MODEL_REQUIRED".into());
+    }
+    if options.device == "auto" {
+        options.device = std::fs::read(runtime(&core).join("devices.json"))
+            .ok()
+            .and_then(|b| serde_json::from_slice::<Value>(&b).ok())
+            .and_then(|v| {
+                v["devices"].as_array()?.iter().find_map(|d| {
+                    d["id"]
+                        .as_str()
+                        .filter(|s| s.starts_with("cuda:"))
+                        .map(str::to_owned)
+                })
+            })
+            .unwrap_or_else(|| "cpu".into());
     }
     let r = {
         let guard = core.session.lock().map_err(io_error)?;
@@ -280,7 +340,7 @@ pub fn enqueue<R: tauri::Runtime>(
     if snapshot(&p, &r.root, &r.options)? != r.snapshot {
         return Err("STALE_REVISION".into());
     }
-    let m = model(&app, &r.options.model_id)?;
+    let m = configured_model(&app, &r.options)?;
     validate(&p, &r.options, &m)?;
     if !ready(&core, &m) {
         return Err("SPEAKER_SEPARATION_MODEL_REQUIRED".into());
@@ -302,7 +362,7 @@ let _permit=tokio::select!{_=jobs::cancelled(&flag)=>return Err("CANCELLED".into
 jobs::update(&core,&app,&key,|j|{j.status="running".into();j.stage="toolboxPrepare".into();j.progress=None;});
 let temporary=tempfile::tempdir().map_err(io_error)?;let input=temporary.path().join("input.wav");let output=temporary.path().join("output");let result=output.join("result.json");let request=temporary.path().join("request.json");
 audio_patch::snippet(&core,&app,&key,&p,&r.root,audio_patch::Snippet{track_id:&r.options.source_track_id,start_ms:r.options.start_ms,end_ms:r.options.end_ms,channels:2,rate:48000,levels:crate::audio_patch::SnippetLevels::Reference},&input,&flag).await?;
-project::atomic_write(&request,&serde_json::to_vec(&json!({"modelId":m.id,"modelDir":root(&core).join(&m.id),"runtimeDir":runtime(&core),"inputPath":input,"outputDir":output,"resultPath":result,"device":r.options.device,"prompt":r.options.prompt,"windowMs":r.options.window_seconds*1000})).map_err(io_error)?)?;
+project::atomic_write(&request,&serde_json::to_vec(&json!({"modelId":m.id,"modelDir":root(&core).join(&m.id),"runtimeDir":runtime(&core),"inputPath":input,"outputDir":output,"resultPath":result,"device":r.options.device,"prompt":r.options.prompt,"windowMs":r.options.window_seconds*1000,"speakerCount":m.speakers,"memoryProfile":r.options.memory_profile.as_deref().unwrap_or(if spectral(&m){"gpu16"}else{"manual"})})).map_err(io_error)?)?;
 separation::process(&core,&app,&key,&separation::python(&runtime(&core)),&[separation::resources(&app).join("speaker_separation_worker.py").to_string_lossy().into_owned(),"--request".into(),request.to_string_lossy().into_owned()],&flag).await?;
 let data:Value=serde_json::from_slice(&std::fs::read(&result).map_err(io_error)?).map_err(io_error)?;let rows=data["outputs"].as_array().ok_or("SPEAKER_SEPARATION_INVALID_AUDIO")?;if rows.len()!=m.outputs.len(){return Err("SPEAKER_SEPARATION_INVALID_AUDIO".into());}
 project::ensure_directory(&r.root,"cache")?;let parent=project::ensure_directory(&r.root,"cache/speaker-separation")?;let folder=parent.join(&key);std::fs::create_dir(&folder).map_err(io_error)?;
@@ -330,7 +390,7 @@ pub fn result<R: tauri::Runtime>(
 ) -> Result<Value, String> {
     let r = request(core, id)?;
     let p = current(core, &r)?;
-    let spec = model(app, &r.options.model_id)?;
+    let spec = configured_model(app, &r.options)?;
     let path = project::asset(
         &r.root,
         &format!("cache/speaker-separation/{id}/result.json"),
@@ -338,7 +398,7 @@ pub fn result<R: tauri::Runtime>(
     let data: Value =
         serde_json::from_slice(&std::fs::read(path).map_err(io_error)?).map_err(io_error)?;
     Ok(
-        json!({"id":id,"options":r.options,"outputs":spec.outputs,"commonGain":data["commonGain"],"deviceName":data["deviceName"],"stale":snapshot(&p,&r.root,&r.options)?!=r.snapshot,"applied":p.generations.iter().any(|g|g["kind"]=="audioPatch"&&g["operationId"]==id),"placedOutputIds":placement::placed(&p,id)}),
+        json!({"id":id,"options":r.options,"outputs":spec.outputs,"commonGain":data["commonGain"],"deviceName":data["deviceName"],"stale":snapshot(&p,&r.root,&r.options)?!=r.snapshot,"applied":p.generations.iter().any(|g|g["kind"]=="audioPatch"&&g["operationId"]==id),"placedOutputIds":placement::placed(&p,id),"windowMs":data["windowMs"],"memoryProfile":data["memoryProfile"],"precision":data["precision"],"attempts":data["attempts"],"peakVramMb":data["peakVramMb"]}),
     )
 }
 pub fn path<R: tauri::Runtime>(
@@ -349,7 +409,7 @@ pub fn path<R: tauri::Runtime>(
 ) -> Result<String, String> {
     let r = request(core, id)?;
     current(core, &r)?;
-    if !model(app, &r.options.model_id)?
+    if !configured_model(app, &r.options)?
         .outputs
         .iter()
         .any(|v| v == output)
@@ -422,12 +482,12 @@ pub fn create_children<R: tauri::Runtime>(
     if p.speaker_dubbings.iter().any(|g| g.separation_id == key) {
         return Err("SPEAKER_SEPARATION_ALREADY_APPLIED".into());
     }
-    let m = model(app, &r.options.model_id)?;
+    let m = configured_model(app, &r.options)?;
     if assignments.is_empty() || assignments.len() > m.speakers {
         return Err("SPEAKER_SEPARATION_OPTIONS".into());
     }
     let mut next = p.clone();
-    next.format_version = next.format_version.max(25);
+    next.format_version = next.format_version.max(if spectral(&m) { 35 } else { 25 });
     let mut seen = HashSet::new();
     let mut assets = NewAssets::default();
     let mut voices = vec![];
@@ -553,7 +613,7 @@ pub async fn apply<R: tauri::Runtime>(
     {
         return Err("SPEAKER_SEPARATION_ALREADY_APPLIED".into());
     }
-    let m = model(&app, &r.options.model_id)?;
+    let m = configured_model(&app, &r.options)?;
     if destinations.is_empty() || destinations.len() > m.outputs.len() {
         return Err("SPEAKER_SEPARATION_OPTIONS".into());
     }
