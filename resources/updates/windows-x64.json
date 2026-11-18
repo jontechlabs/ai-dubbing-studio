@@ -1,11 +1,11 @@
 {
-  "version": "0.56.0",
-  "notes": "Voix isolées sur des pistes de doublage indépendantes : sélection des sorties, pistes existantes ou nouvelles, personnages, réutilisation des sous-dialogues et création depuis une sélection libre. Nouveaux essais PCM à durée exacte, placement atomique et annulable, langue source identifiée sans traduction implicite. Essais existants, SRT et vidéo conservés. Fenêtres 2/4/6/8 s. Format 34 à l’utilisation. 177 outils MCP / 37 schémas.",
-  "pub_date": "2026-11-17T17:01:43Z",
+  "version": "0.57.0",
+  "notes": "TF-GridNet et SR-CorrNet en local : deux voix pour TF-GridNet et WHAMR, deux à cinq pour SR-CorrNet variable. Profils RTX 16 Go FP32, fenêtres de 2/4 s ou manuelles, réduction de fenêtre sur le même GPU en cas de manque de VRAM. Préécoute, sorties sur pistes indépendantes et timeline adaptée à cinq voix. Essais existants, SRT et vidéo conservés. Qualification réelle sur CPU ; VRAM, vitesse et qualité des cris sur RTX 5060 Ti à mesurer. 177 outils MCP / 37 schémas.",
+  "pub_date": "2026-11-18T06:57:41Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSdFFyMUJGTFp3NkJUTlp2cytreitYOXd4SXVtd0hsRG9PY29WNjFqMDFTdGJBeDN1blRYcmlMWms1aDExcXZlV0MwQkdKcUFvTGFzbkM0c1Roa0pyQ0g1TVpHME83UEFvPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk0OTM0NTYzCWZpbGU6QUkgRHViYmluZyBTdHVkaW9fMC41Ni4wX3g2NC1zZXR1cC5leGUJdmVyc2lvbjowLjU2LjAKWDN6M2VTZmdqWGN3eFBOR2xSZWhkWUFOUFNxMElZaDlTaTc5R1g5aGY5dHl3aTJBbDdOb3JaRjFJTjEwcDZ3d05HL1p5cjRyZDMxSnY5VXFDMlNxQ3c9PQo=",
-      "url": "https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.56.0/AI-Dubbing-Studio-0.56.0-Setup.exe"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSdFFyMUJGTFp3Nko4NnJpS2pYemR5dzdTT0FJaGUyVlBIQWNnTmJzbDM5c2pMWStCS2l1Mm1Ma1hvdkpVOFJYYjl5TEFVOGFzQ0JUb3N6TGtrYnZJWlZMczM0WVJoN0F3PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk0OTg0NTI3CWZpbGU6QUkgRHViYmluZyBTdHVkaW9fMC41Ny4wX3g2NC1zZXR1cC5leGUJdmVyc2lvbjowLjU3LjAKQ2ZnYnQwSVNkM2l2NHd3czJaVjlHY3RXYVdsTFptd28zblNmUm5lOTkzWUZKaFBHTGQ3MGprbGNFdlB1d3A1YmRYMkMrSGVBb0JndW14WTV0bmJVQnc9PQo=",
+      "url": "https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.57.0/AI-Dubbing-Studio-0.57.0-Setup.exe"
     }
   }
 }
