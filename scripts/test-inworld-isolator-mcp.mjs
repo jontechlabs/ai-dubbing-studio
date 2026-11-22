@@ -140,7 +140,9 @@ try {
       { outputId: 'instrumental', trackId: null, role: 'sfx' },
     ],
   });
-  const patches = placed.generations.filter((g) => g.kind === 'audioPatch');
+  const allPatches = placed.generations.filter((g) => g.kind === 'audioPatch');
+  assert.equal(allPatches.length, 3);
+  const patches = allPatches.filter((g) => g.mode === 'replace');
   assert.equal(patches.length, 2);
   assert.deepEqual(patches.map((g) => placed.tracks.find((t) => t.id === g.trackId).role).sort(), [
     'sfx',
@@ -151,6 +153,11 @@ try {
     assert.equal(p.endMs, 3000);
     assert.equal(p.mode, 'replace');
   }
+  const mutedSource = allPatches.find((g) => g.mode === 'silence');
+  assert.equal(mutedSource.trackId, 'original');
+  assert.equal(mutedSource.startMs, 0);
+  assert.equal(mutedSource.endMs, 3000);
+  assert.equal(mutedSource.path, null);
   assert.deepEqual(placed.sourceCues, before.sourceCues);
   assert.deepEqual(placed.targetCues, before.targetCues);
   assert.deepEqual(placed.media, before.media);
@@ -178,6 +185,7 @@ try {
     previewBeforeApply: true,
     exactStereoPcmFrames: true,
     voiceAndBackgroundPlaced: true,
+    sourceMutedByIndependentLayer: true,
     undoRedo: true,
     reopened: true,
     videoAndSubtitlesPreserved: true,
