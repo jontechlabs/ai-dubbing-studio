@@ -16,7 +16,7 @@ HERE = Path(__file__).resolve().parent
 sys.path.insert(0,str(HERE))
 sys.dont_write_bytecode = True
 os.environ.update(HF_HUB_OFFLINE='1', TRANSFORMERS_OFFLINE='1', HF_HUB_DISABLE_TELEMETRY='1')
-IDS = {'bs-roformer-viperx-1297', 'mel-band-roformer-kim', 'htdemucs', 'htdemucs-ft', 'audiosep'}
+IDS = {'bs-roformer-viperx-1297', 'mel-band-roformer-kim', 'htdemucs', 'htdemucs-ft', 'audiosep', 'inworld-voice-isolator-v1'}
 
 
 def report(**values):
@@ -207,8 +207,13 @@ def generate(r):
         raise ValueError('AUDIO_TOOLBOX_INVALID_AUDIO')
     Path(r['outputDir']).mkdir(exist_ok=True)
     report(stage='toolboxLoad', progress=None, log=f"{spec['name']} · {name} · bounded {r['windowSeconds']} s windows")
+    metadata = {}
     with contextlib.redirect_stdout(sys.stderr):
-        outputs = audiosep(r,source,device) if spec['family']=='audiosep' else separator(r,spec,source,device)
+        if spec['family'] == 'inworld':
+            from inworld_isolator import separate
+            outputs, metadata = separate(r, source, device, report)
+        else:
+            outputs = audiosep(r,source,device) if spec['family']=='audiosep' else separator(r,spec,source,device)
     if any(y.shape!=source.shape or not np.isfinite(y).all() for y in outputs.values()): raise ValueError('AUDIO_TOOLBOX_INVALID_AUDIO')
     peak = max(float(np.max(np.abs(y))) for y in outputs.values())
     scale = min(1.0,.98/max(peak,1e-9))
@@ -217,11 +222,15 @@ def generate(r):
         path = Path(r['outputDir']) / f'{role}.wav'
         sf.write(path,y*scale,48000,subtype='PCM_16')
         rows.append({'id':role,'file':path.name,'frames':len(y)})
-    Path(r['resultPath']).write_text(json.dumps({'outputs':rows,'commonGain':scale,'device':device,'deviceName':name}),encoding='utf-8')
+    Path(r['resultPath']).write_text(json.dumps({'outputs':rows,'commonGain':scale,'device':device,'deviceName':name,**metadata},allow_nan=False),encoding='utf-8')
 
 
 def main():
-    parser=argparse.ArgumentParser();parser.add_argument('--request');parser.add_argument('--runtime-info',action='store_true');parser.add_argument('--info',action='store_true');args=parser.parse_args()
+    parser=argparse.ArgumentParser();parser.add_argument('--request');parser.add_argument('--verify-inworld');parser.add_argument('--runtime-info',action='store_true');parser.add_argument('--info',action='store_true');args=parser.parse_args()
+    if args.verify_inworld:
+        from inworld_isolator import engine
+        engine(clean_path(args.verify_inworld), 'cpu')
+        report(verified=True);return
     if args.runtime_info or args.info:
         import torch
         if args.runtime_info:

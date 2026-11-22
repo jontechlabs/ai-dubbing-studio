@@ -1723,8 +1723,11 @@
       "mel-band-roformer-kim": "Isolate vocals · Mel-Band RoFormer Kim",
       "htdemucs": "Separate instruments · Demucs v4",
       "htdemucs-ft": "Separate instruments · Demucs v4 FT",
-      "audiosep": "Isolate a described sound · AudioSep"
-    }
+      "audiosep": "Isolate a described sound · AudioSep",
+      "inworld-voice-isolator-v1": "Clean foreground voice · Inworld 48 kHz"
+    },
+    "inworldHint": "Local 48 kHz foreground voice cleanup. Removed background may include music, effects and other voices; no target-speaker selection. Start with 2 s for 16 GB. BF16 on supported CUDA, FP32 scan; smaller windows on the same GPU if VRAM runs out.",
+    "inworldBackground": "Removed background"
   },
   "auto": "Automatic",
   "dialogueAdd": "Add dialogue",

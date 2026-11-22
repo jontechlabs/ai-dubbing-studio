@@ -195,3 +195,7 @@ Le format 34 conserve `takeOrigin.type:"separation"`, l’ID de séparation/sort
 `studio_separate_dialogue_speakers({options,context})` ajoute `speakerCount` (2 par défaut pour les nouveaux modèles) et `memoryProfile:"gpu16"|"quality"|"manual"`. Les profils bornent la fenêtre à 2/4 secondes ; `windowSeconds` reste de 2 à 8. Une erreur mémoire CUDA réduit la fenêtre sur le même périphérique jusqu’à 500 ms, sans repli CPU pour un GPU choisi. `device:"auto"` détecte les CUDA réellement disponibles dans le worker. Les anciens appels sans ces options conservent leur nombre de sorties et leur fenêtre manuelle sur les anciens modèles.
 
 Le résultat retourne `device`, `precision`, `windowMs`, `attempts` et `peakVramMb`, ainsi que les sorties et `placedOutputIds`. Le placement ou la création de sous-dialogues utilise le format 35 pour ces nouveaux modèles, avec `voice-1` à `voice-5` selon le checkpoint. Les sorties restent de l’audio isolé dans la langue de la source. **177 outils / 37 schémas.** [Guide et limites de qualification](SPECTRAL-SEPARATION.md).
+
+## Inworld Voice Isolator (v0.58.0)
+
+The audio toolbox and workflow queue accept `inworld-voice-isolator-v1`. It yields `vocals` and `instrumental` (removed background), with bounded offline windows and real device/precision/window/attempt/VRAM metadata. Existing current-context, preview-before-apply and undo contracts apply. This model cleans foreground speech; it does not select a target speaker. No schema/tool count or project-format change. [Guide](INWORLD-VOICE-ISOLATOR.md).

@@ -49,6 +49,28 @@ fn ranges_devices_and_prompts_are_checked_before_processing() {
     o.prompt = "Footsteps".into();
     validate(&p, &o, &m).unwrap();
 }
+
+#[test]
+fn inworld_is_pinned_and_uses_existing_reversible_voice_background_contract() {
+    let p = fixture();
+    let app = tauri::test::mock_app();
+    let m = model(app.handle(), "inworld-voice-isolator-v1").unwrap();
+    assert_eq!(m.family, "inworld");
+    assert_eq!(m.outputs, vec!["vocals", "instrumental"]);
+    assert_eq!(m.files.len(), 3);
+    assert!(m.files.iter().any(|f| f.name == "NOTICE"));
+    let mut o = options();
+    o.model_id = m.id.clone();
+    o.window_seconds = 2;
+    for d in ["auto", "cpu", "cuda:0", "cuda:1"] {
+        o.device = d.into();
+        validate(&p, &o, &m).unwrap();
+    }
+    o.device = "cuda:-1".into();
+    assert_eq!(validate(&p, &o, &m).unwrap_err(), "DEVICE_UNAVAILABLE");
+    assert!(p.generations.is_empty());
+    assert!(p.source_cues.is_empty());
+}
 #[test]
 fn fingerprint_rejects_source_file_regions_stream_and_patch_changes_but_keeps_text_edits() {
     let temp = tempfile::tempdir().unwrap();

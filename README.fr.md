@@ -1,5 +1,9 @@
 # AI Dubbing Studio
 
+## v0.58.0 · Inworld Voice Isolator
+
+Nettoyage local de la voix au premier plan à 48 kHz avec Inworld Voice Isolator v1. Préécoute de la voix et du fond, placement réversible, lots « isoler puis doubler », profils mémoire et sources dans le [guide illustré](docs/INWORLD-VOICE-ISOLATOR.md). Les vrais poids sont testés sur CPU ; la RTX 5060 Ti physique reste à qualifier.
+
 ## v0.57.0 — TF-GridNet et SR-CorrNet en local
 
 Quatre nouveaux checkpoints pour deux à cinq voix superposées, dans Doublage → Outils et la boîte à outils Audio. Profils FP32 à fenêtres de 2/4 secondes, réglage manuel, réduction automatique sur le même GPU en cas d’OOM, cache SR-CorrNet allégé et pistes indépendantes jusqu’à cinq voix. Poids vérifiés ; anciens essais, SRT et vidéo conservés. Tests neuronaux CPU sur huit configurations ; mesure RTX 5060 Ti et qualité des cris à confirmer sur vos extraits. **177 outils MCP / 37 schémas ; format 35 à l’utilisation.** [Guide, réglages 16 Go et capture](docs/SPECTRAL-SEPARATION.md).

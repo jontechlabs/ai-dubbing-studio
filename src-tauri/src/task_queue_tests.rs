@@ -1,6 +1,46 @@
 use super::*;
 use crate::jobs;
 #[tokio::test]
+async fn inworld_cleanup_can_be_frozen_before_dubbing_in_the_paused_queue() {
+    let (_dir, core) = fixture().await;
+    let app = tauri::test::mock_app();
+    let before = core
+        .session
+        .lock()
+        .unwrap()
+        .as_ref()
+        .unwrap()
+        .project
+        .clone();
+    let mut s = spec("Inworld then dubbing", true, true);
+    let separation = s.separation.as_mut().unwrap();
+    separation.model_id = "inworld-voice-isolator-v1".into();
+    separation.window_seconds = 2;
+    let key = add_paused(&core, app.handle(), s);
+    let state = core.queue.lock().unwrap();
+    let entry = state.data.entries.iter().find(|e| e.id == key).unwrap();
+    assert_eq!(
+        entry.spec.separation.as_ref().unwrap().model_id,
+        "inworld-voice-isolator-v1"
+    );
+    assert_eq!(entry.spec.separation.as_ref().unwrap().window_seconds, 2);
+    assert!(entry.spec.dubbing);
+    assert!(state.data.paused);
+    assert_eq!(
+        serde_json::to_value(
+            core.session
+                .lock()
+                .unwrap()
+                .as_ref()
+                .unwrap()
+                .project
+                .clone()
+        )
+        .unwrap(),
+        serde_json::to_value(before).unwrap()
+    );
+}
+#[tokio::test]
 async fn queue_forecast_recalibrates_counts_resident_takes_and_replaces_active_plan_once() {
     let (_dir, core) = fixture().await;
     let app = tauri::test::mock_app();

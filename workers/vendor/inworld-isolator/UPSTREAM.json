@@ -1,0 +1,17 @@
+{
+  "repository": "https://github.com/inworld-ai/voice-isolator",
+  "revision": "c73b3fab81a870410cbac50d2f05f25edc4d10aa",
+  "license": "Apache-2.0",
+  "changes": "Unmodified inference modules; optional CLI/doctor omitted. The studio passes a local pinned safetensors checkpoint and bounded offline windows. No Mamba/CUDA extension is installed. The studio adapter sets scan.BLOCK=8 (upstream default 64) to bound temporary factors without changing the recurrence or its frame arithmetic; CPU golden parity is checked.",
+  "files": {
+    "LICENSE": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+    "NOTICE": "86e7455d0804e20c3f31a84b10b9b5e39995a526dc9e4f1d210e64513c3f3e9b",
+    "inworld/voice_isolation/audio.py": "903d427e3ac4f3d02ddc504a9a25da374ce20deaebc57a92207af3893e514931",
+    "inworld/voice_isolation/isolator.py": "2fcd8a51312dc96fd5720483f1bf7c60df1648300b30ca12ab3cf0bdea733b40",
+    "inworld/voice_isolation/model.py": "7a1adc63d99b3a400a89cfdc0a0b66a00cad09c54e8b856dec6eb8a8ddf71153",
+    "inworld/voice_isolation/registry.py": "e5c775a477c7e569c6071196ac7f8934997f6fb2d6ceb57c5206a82c8d02fae5",
+    "inworld/voice_isolation/scan.py": "8ccfd5f3211475c35abaf464fca4e6414f725a3e0f1a9e0921424d5d2f9c4b7f",
+    "inworld/voice_isolation/streaming.py": "57efa6de761ec0b5946dedc259f71f7c622560a841f306bd376680fb86269e01",
+    "inworld/voice_isolation/__init__.py": "65376c90945b7f81968c8727bc9946e89420ac8f7738202c7daf7770476e140a"
+  }
+}

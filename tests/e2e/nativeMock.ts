@@ -2163,6 +2163,7 @@ export async function nativeMock(page: Page, large = false, seededProject?: Proj
                 'htdemucs',
                 'htdemucs-ft',
                 'audiosep',
+                'inworld-voice-isolator-v1',
               ].map((id) => ({
                 id,
                 name: {
@@ -2171,9 +2172,10 @@ export async function nativeMock(page: Page, large = false, seededProject?: Proj
                   htdemucs: 'Demucs v4 · htdemucs',
                   'htdemucs-ft': 'Demucs v4 · htdemucs_ft',
                   audiosep: 'AudioSep',
+                  'inworld-voice-isolator-v1': 'Inworld Voice Isolator v1 · 48 kHz',
                 }[id],
                 family:
-                  id === 'audiosep'
+                  id === 'inworld-voice-isolator-v1' ? 'inworld' : id === 'audiosep'
                     ? 'audiosep'
                     : id.startsWith('htdemucs')
                       ? 'demucs'

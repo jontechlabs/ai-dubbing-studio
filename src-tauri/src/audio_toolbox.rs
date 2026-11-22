@@ -52,6 +52,9 @@ fn runtime(core: &Core) -> PathBuf {
 }
 fn ready(core: &Core, m: &Model) -> bool {
     runtime(core).join("ready.json").is_file()
+        && (m.family != "inworld"
+            || std::fs::read(root(core).join(&m.id).join("verified.json"))
+                .is_ok_and(|v| v == b"inworld-v1-offline"))
         && m.files.iter().all(|f| {
             std::fs::metadata(root(core).join(&m.id).join(&f.name)).is_ok_and(|x| x.len() == f.size)
         })
@@ -143,7 +146,8 @@ pub fn install<R: tauri::Runtime>(
         let result=async{
 let _permit=tokio::select!{_=jobs::cancelled(&flag)=>return Err("CANCELLED".into()),p=core.gate.clone().acquire_owned()=>p.map_err(io_error)?};jobs::update(&core,&app,&key,|j|{j.status="running".into();j.stage="dependenciesCheck".into();j.progress=None;});
 if !runtime(&core).join("ready.json").is_file(){voice_engines::install_python_profile(&core,&app,&key,&flag,"audio-toolbox").await?;project::atomic_write(&runtime(&core).join("ready.json"),b"{\"profile\":\"audio-toolbox-cu128\"}")?;}
-for f in &m.files{crate::domain::valid_relative(&f.name)?;let path=folder.join(&f.name);std::fs::create_dir_all(path.parent().ok_or("INVALID_PATH")?).map_err(io_error)?;jobs::update(&core,&app,&key,|j|{j.stage="toolboxModel".into();j.progress=None;j.logs.push(format!("Verified model file: {}",f.name));});separation::fetch(&core,&app,&key,std::slice::from_ref(&f.url),&path,(&f.sha256,f.size),&flag).await?;}Ok(())}.await;
+for f in &m.files{crate::domain::valid_relative(&f.name)?;let path=folder.join(&f.name);std::fs::create_dir_all(path.parent().ok_or("INVALID_PATH")?).map_err(io_error)?;jobs::update(&core,&app,&key,|j|{j.stage="toolboxModel".into();j.progress=None;j.logs.push(format!("Verified model file: {}",f.name));});separation::fetch(&core,&app,&key,std::slice::from_ref(&f.url),&path,(&f.sha256,f.size),&flag).await?;}
+if m.family=="inworld" {jobs::update(&core,&app,&key,|j|{j.stage="toolboxLoad".into();j.progress=None;});separation::process(&core,&app,&key,&separation::python(&runtime(&core)),&[separation::resources(&app).join("audio_toolbox_worker.py").to_string_lossy().into_owned(),"--verify-inworld".into(),folder.to_string_lossy().into_owned()],&flag).await?;project::atomic_write(&folder.join("verified.json"),b"inworld-v1-offline")?;}Ok(())}.await;
         separation::finish(&core, &app, &key, &result);
     });
     Ok(returned)
@@ -322,7 +326,7 @@ pub fn result<R: tauri::Runtime>(
     let data: Value =
         serde_json::from_slice(&std::fs::read(path).map_err(io_error)?).map_err(io_error)?;
     Ok(
-        json!({"id":id,"options":r.options,"outputs":spec.outputs,"commonGain":data["commonGain"],"deviceName":data["deviceName"],"stale":snapshot(&p,&r.root,&r.options)?!=r.snapshot,"applied":p.generations.iter().any(|g|g["kind"]=="audioPatch"&&g["operationId"]==id)}),
+        json!({"id":id,"options":r.options,"outputs":spec.outputs,"commonGain":data["commonGain"],"deviceName":data["deviceName"],"device":data["device"],"windowMs":data["windowMs"],"precision":data["precision"],"attempts":data["attempts"],"peakVramMb":data["peakVramMb"],"stale":snapshot(&p,&r.root,&r.options)?!=r.snapshot,"applied":p.generations.iter().any(|g|g["kind"]=="audioPatch"&&g["operationId"]==id)}),
     )
 }
 pub fn path<R: tauri::Runtime>(

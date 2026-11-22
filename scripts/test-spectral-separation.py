@@ -52,8 +52,9 @@ def unpack(source, target):
         archive.extractall(target)
 
 
-def prepare_runtime(work):
-    runtime = work / 'model-store/voice-engines/speaker-separation-runtime'
+def prepare_runtime(work, runtime_name='speaker-separation-runtime'):
+    assert runtime_name in ['speaker-separation-runtime','audio-toolbox-runtime']
+    runtime = work / 'model-store/voice-engines' / runtime_name
     python = runtime / 'python/python.exe'
     unpack(fetch(dict(url='https://www.python.org/ftp/python/3.12.10/python-3.12.10-embed-amd64.zip', size=11133606,
                       sha256='4acbed6dd1c744b0376e3b1cf57ce906f9dc9e95e68824584c8099a63025a3c3'), work / 'python.zip'), python.parent)

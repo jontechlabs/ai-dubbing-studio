@@ -140,3 +140,14 @@ The author's shinuh weights download on request from pinned Hugging Face revisio
 under their upstream terms. Source provenance, changes and archive digests are
 recorded in workers/vendor/spectral-separation/sources.json. Checkpoints and their
 digests are in workers/speaker-separation-models.json. See docs/SPECTRAL-SEPARATION.md.
+
+Inworld Voice Isolator v1 Offline (v0.58)
+Official inference source: https://github.com/inworld-ai/voice-isolator,
+revision c73b3fab81a870410cbac50d2f05f25edc4d10aa, Apache-2.0.
+Unmodified inference modules, LICENSE, NOTICE and per-file hashes are included in
+workers/vendor/inworld-isolator/. The studio bounds scan factor blocks to eight
+frames; no optional Mamba/CUDA extensions are installed. Official safetensors
+weights, revision 9b0285b3fe8403aa8e2f1dbb2165a80a4294c970, download separately
+with size/SHA-256 verification, under Apache-2.0. See the original NOTICE for
+training-data attribution and docs/INWORLD-VOICE-ISOLATOR.md. Test-only golden
+audio derives from LibriSpeech CC BY 4.0 and is not bundled in the application.

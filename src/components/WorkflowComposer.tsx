@@ -112,14 +112,28 @@ export function WorkflowComposer({
           )}
           <label className="field">
             <span>{t('workflow.model')}</span>
-            <select value={model} disabled={loading} onChange={(e) => setModel(e.target.value)}>
+            <select
+              value={model}
+              disabled={loading}
+              onChange={(e) => {
+                setModel(e.target.value);
+                if (e.target.value === 'inworld-voice-isolator-v1') setWindow(2);
+              }}
+            >
               {(
                 status?.models ?? [
                   { id: 'mel-band-roformer-kim', name: 'Mel-Band RoFormer · Kim Vocals' },
                   { id: 'bs-roformer-viperx-1297', name: 'BS-RoFormer · Viperx 1297' },
+                  { id: 'inworld-voice-isolator-v1', name: 'Inworld Voice Isolator v1 · 48 kHz' },
                 ]
               )
-                .filter((m) => ['mel-band-roformer-kim', 'bs-roformer-viperx-1297'].includes(m.id))
+                .filter((m) =>
+                  [
+                    'mel-band-roformer-kim',
+                    'bs-roformer-viperx-1297',
+                    'inworld-voice-isolator-v1',
+                  ].includes(m.id),
+                )
                 .map((m) => (
                   <option key={m.id} value={m.id}>
                     {m.name}
@@ -127,6 +141,9 @@ export function WorkflowComposer({
                 ))}
             </select>
           </label>
+          {model === 'inworld-voice-isolator-v1' && (
+            <small className="panel-description">{t('toolbox.inworldHint')}</small>
+          )}
           {!loading && !installed && <p className="warning">{t('workflow.installFirst')}</p>}
           <label className="field">
             <span>{t('workflow.source')}</span>

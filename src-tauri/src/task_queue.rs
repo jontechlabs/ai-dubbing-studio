@@ -434,7 +434,12 @@ fn capture(p: &Project, root: PathBuf, mut spec: Spec) -> Result<Entry, String> 
         return Err("QUEUE_EMPTY".into());
     }
     if let Some(sep) = &spec.separation {
-        if !["mel-band-roformer-kim", "bs-roformer-viperx-1297"].contains(&sep.model_id.as_str())
+        if ![
+            "mel-band-roformer-kim",
+            "bs-roformer-viperx-1297",
+            "inworld-voice-isolator-v1",
+        ]
+        .contains(&sep.model_id.as_str())
             || (!sep.vocals && !sep.music)
             || (spec.dubbing && !sep.vocals)
             || !(2..=8).contains(&sep.window_seconds)

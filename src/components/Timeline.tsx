@@ -768,6 +768,7 @@ export const Timeline = memo(function Timeline({
                             'htdemucs',
                             'htdemucs-ft',
                             'audiosep',
+                            'inworld-voice-isolator-v1',
                           ].map((model) => ({
                             label: t(`toolbox.context.${model}`),
                             disabled:

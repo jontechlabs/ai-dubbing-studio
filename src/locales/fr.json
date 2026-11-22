@@ -1723,8 +1723,11 @@
       "mel-band-roformer-kim": "Isoler les voix · Mel-Band RoFormer Kim",
       "htdemucs": "Séparer les instruments · Demucs v4",
       "htdemucs-ft": "Séparer les instruments · Demucs v4 FT",
-      "audiosep": "Isoler un son par description · AudioSep"
-    }
+      "audiosep": "Isoler un son par description · AudioSep",
+      "inworld-voice-isolator-v1": "Nettoyer la voix · Inworld 48 kHz"
+    },
+    "inworldHint": "Nettoyage local 48 kHz de la voix au premier plan. Le fond retiré peut contenir musique, bruitages et autres voix ; aucun personnage à cibler. Départ conseillé : 2 s pour 16 Go. BF16 sur CUDA compatible, scan FP32 ; réduction de fenêtre sur le même GPU si la VRAM manque.",
+    "inworldBackground": "Fond retiré"
   },
   "auto": "Automatique",
   "dialogueAdd": "Ajouter une réplique",

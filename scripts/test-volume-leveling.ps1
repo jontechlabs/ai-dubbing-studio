@@ -1,5 +1,5 @@
 [CmdletBinding()]
-param([string]$PortablePath, [switch]$NativeVoices, [switch]$GenerationTiming, [string]$SpectralProof)
+param([string]$PortablePath, [switch]$NativeVoices, [switch]$GenerationTiming, [string]$SpectralProof, [string]$InworldProof)
 $ErrorActionPreference='Stop'
 $repoRoot=Split-Path -Parent $PSScriptRoot
 if(-not $PortablePath){$PortablePath=Join-Path $repoRoot 'artifacts/AI-Dubbing-Studio-Windows-Portable.zip'}
@@ -11,6 +11,13 @@ if($SpectralProof) {
     $spectral = Get-Content -LiteralPath $SpectralProof -Raw | ConvertFrom-Json
     if($spectral.version -ne '0.57.0' -or $spectral.device -ne 'cpu' -or $spectral.caseCount -ne 8){throw 'Invalid CPU spectral test fixture'}
     $config = @{version=1;path=$spectral.modelStore} | ConvertTo-Json
+    [IO.File]::WriteAllText((Join-Path $dataRoot 'model-storage.json'),$config)
+}
+if($InworldProof) {
+    if($SpectralProof){throw 'Use one isolated neural fixture at a time'}
+    $inworld=Get-Content -LiteralPath $InworldProof -Raw | ConvertFrom-Json
+    if($inworld.version -ne '0.58.0' -or $inworld.device -ne 'cpu' -or $inworld.goldens.Count -ne 2){throw 'Invalid Inworld CPU fixture'}
+    $config=@{version=1;path=$inworld.modelStore} | ConvertTo-Json
     [IO.File]::WriteAllText((Join-Path $dataRoot 'model-storage.json'),$config)
 }
 Expand-Archive -LiteralPath $PortablePath -DestinationPath $testRoot
@@ -75,6 +82,10 @@ if($GenerationTiming) {
         if($SpectralProof) {
             node (Join-Path $PSScriptRoot 'test-spectral-separation-mcp.mjs') --exe $executable --endpoint $endpoint --test-root $testRoot --neural-proof $SpectralProof --proof (Join-Path $repoRoot 'artifacts/spectral-sdk-validation.json')
             if($LASTEXITCODE){throw 'Packaged spectral separation SDK diagnostic failed'}
+        }
+        if($InworldProof) {
+            node (Join-Path $PSScriptRoot 'test-inworld-isolator-mcp.mjs') --exe $executable --endpoint $endpoint --test-root $testRoot --neural-proof $InworldProof --proof (Join-Path $repoRoot 'artifacts/inworld-sdk-validation.json')
+            if($LASTEXITCODE){throw 'Packaged Inworld isolation SDK diagnostic failed'}
         }
 
     } finally {

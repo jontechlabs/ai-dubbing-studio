@@ -1,0 +1,43 @@
+{
+  "source": "https://github.com/inworld-ai/voice-isolator",
+  "revision": "c73b3fab81a870410cbac50d2f05f25edc4d10aa",
+  "attribution": "LibriSpeech dev-clean 2277-149896-0032, Sister Carrie read by zinniz. LibriSpeech (c) 2014 Vassil Panayotov, CC BY 4.0; Inworld added hiss and silence. Reference arrays are the independent training implementation; fixtures download only for tests.",
+  "files": [
+    {
+      "name": "offline_3s/input.wav",
+      "url": "https://raw.githubusercontent.com/inworld-ai/voice-isolator/c73b3fab81a870410cbac50d2f05f25edc4d10aa/tests/fixtures/offline_3s/input.wav",
+      "size": 288044,
+      "sha256": "ba34cb451867fd3bb5b2c4e18f314d22e8379556d7a9dabb73bbf8ac2c45443b"
+    },
+    {
+      "name": "offline_3s/expected.npy",
+      "url": "https://raw.githubusercontent.com/inworld-ai/voice-isolator/c73b3fab81a870410cbac50d2f05f25edc4d10aa/tests/fixtures/offline_3s/expected.npy",
+      "size": 576128,
+      "sha256": "f2d1c8f94e522df34600d85767b08ac921a20bdc8449296e90485c909c020633"
+    },
+    {
+      "name": "offline_3s/meta.json",
+      "url": "https://raw.githubusercontent.com/inworld-ai/voice-isolator/c73b3fab81a870410cbac50d2f05f25edc4d10aa/tests/fixtures/offline_3s/meta.json",
+      "size": 804,
+      "sha256": "407a938cbe824c47c343cecf0905d7d1649a5f316ad9ec9becec628052054992"
+    },
+    {
+      "name": "offline_11s/input.wav",
+      "url": "https://raw.githubusercontent.com/inworld-ai/voice-isolator/c73b3fab81a870410cbac50d2f05f25edc4d10aa/tests/fixtures/offline_11s/input.wav",
+      "size": 1056044,
+      "sha256": "f54d1971b0e6d5daa35660b274a712e26c75fb37cc4870ceb8082a7f331c4bf1"
+    },
+    {
+      "name": "offline_11s/expected.npy",
+      "url": "https://raw.githubusercontent.com/inworld-ai/voice-isolator/c73b3fab81a870410cbac50d2f05f25edc4d10aa/tests/fixtures/offline_11s/expected.npy",
+      "size": 2112128,
+      "sha256": "361ff4dacfc7090b6b810ccb24e289a5d089302435b98ea7d4def1a6bccff188"
+    },
+    {
+      "name": "offline_11s/meta.json",
+      "url": "https://raw.githubusercontent.com/inworld-ai/voice-isolator/c73b3fab81a870410cbac50d2f05f25edc4d10aa/tests/fixtures/offline_11s/meta.json",
+      "size": 804,
+      "sha256": "2dd69dc583600825a19b3b2e37c3cf1986c0d36dd90cd63f4335903c8be41a18"
+    }
+  ]
+}

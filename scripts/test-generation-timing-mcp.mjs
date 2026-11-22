@@ -35,7 +35,7 @@ const checkpoint = path.join(args['test-root'], 'take-timing-checkpoint.json');
 try {
   await client.connect(transport);
   tools = (await client.listTools()).tools;
-  assert.equal(client.getServerVersion().version, '0.57.0');
+  assert.equal(client.getServerVersion().version, '0.58.0');
   assert.equal(tools.length, 177);
   // New placement is exposed with revision context. A missing separation
   // must leave all dialogues/takes intact; real PCM placement is exercised
@@ -345,7 +345,7 @@ try {
     for (const g of c.hashes)
       assert.equal(await digest(await call('studio_generation_path', { id: g.id })), g.sha256);
     const proof = {
-      version: '0.57.0',
+      version: '0.58.0',
       toolCount: 177,
       officialSdk: true,
       actualApplicationRestart: true,

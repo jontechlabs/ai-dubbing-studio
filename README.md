@@ -1,5 +1,9 @@
 # AI Dubbing Studio
 
+## v0.58.0 · Inworld Voice Isolator
+
+Local 48 kHz foreground voice cleanup with Inworld Voice Isolator v1. Preview voice and removed background, reversible timeline placement, separation-then-dubbing queues, memory settings and sources: [illustrated guide](docs/INWORLD-VOICE-ISOLATOR.md). Real weights are tested on CPU; physical RTX 5060 Ti qualification is pending.
+
 ## v0.57.0 — Local TF-GridNet and SR-CorrNet speaker separation
 
 Four pinned checkpoints for two to five overlapping voices in the dubbing tools and audio toolbox. FP32 2/4-second profiles, manual windows, same-GPU OOM retries, lazy SR-CorrNet position grids and up to five independent dubbing tracks. Verified downloads preserve prior takes, subtitles and source video. Real CPU neural checks cover eight configurations; RTX 5060 Ti memory/performance and shouting quality still require target-device testing. **177 MCP tools / 37 schemas; format 35 on use.** [Guide, 16 GB settings and screenshot](docs/SPECTRAL-SEPARATION.md).

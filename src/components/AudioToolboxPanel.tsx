@@ -55,7 +55,7 @@ export function AudioToolboxPanel({
     [end, setEnd] = useState(selection?.endMs ?? 0),
     [device, setDevice] = useState('auto'),
     [prompt, setPrompt] = useState(''),
-    [windowSeconds, setWindow] = useState(4);
+    [windowSeconds, setWindow] = useState(initialModel === 'inworld-voice-isolator-v1' ? 2 : 4);
   const [request, setRequest] = useState<{ id: string; scope: string } | null>(null),
     [storedResult, setResult] = useState<AudioToolboxResult | null>(null),
     [urls, setUrls] = useState<Record<string, string>>({}),
@@ -222,7 +222,9 @@ export function AudioToolboxPanel({
   const outputName = (role: string) =>
     speakerModel
       ? t('overlap.voice', { number: (result?.outputs.indexOf(role) ?? 0) + 1 })
-      : t(`toolbox.outputs.${role}`, { defaultValue: role });
+      : model?.family === 'inworld' && role === 'instrumental'
+        ? t('toolbox.inworldBackground')
+        : t(`toolbox.outputs.${role}`, { defaultValue: role });
   const perform = (operation: () => Promise<unknown>) => {
     setWorking(true);
     void operation()
@@ -263,7 +265,10 @@ export function AudioToolboxPanel({
               aria-label={t('toolbox.model')}
               value={modelId}
               disabled={locked}
-              onChange={(e) => setModelId(e.target.value)}
+              onChange={(e) => {
+                setModelId(e.target.value);
+                if (e.target.value === 'inworld-voice-isolator-v1') setWindow(2);
+              }}
             >
               {loading && <option value={modelId}>{t('compact.loadingModels')}</option>}
               {!loading &&
@@ -274,6 +279,9 @@ export function AudioToolboxPanel({
                 ))}
             </select>
           </label>
+          {model?.family === 'inworld' && (
+            <small className="panel-description">{t('toolbox.inworldHint')}</small>
+          )}
           <label className="field">
             <span>{t('toolbox.source')}</span>
             <select
@@ -335,7 +343,7 @@ export function AudioToolboxPanel({
               disabled={locked}
               onChange={(e) => setDevice(e.target.value)}
             >
-              <option value="auto">{t('auto')}</option>
+              <option value="auto">{t('deviceAuto')}</option>
               {inventory?.devices.map((d) => (
                 <option key={d.id} value={d.id}>
                   {d.name}
@@ -475,7 +483,7 @@ export function AudioToolboxPanel({
                       {t('overlap.voice', { number: result.outputs.indexOf(role) + 1 })}
                     </label>
                   ) : (
-                    <label>{t(`toolbox.outputs.${role}`, { defaultValue: role })}</label>
+                    <label>{outputName(role)}</label>
                   )}
                   <audio
                     controls

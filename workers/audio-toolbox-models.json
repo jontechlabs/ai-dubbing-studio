@@ -176,6 +176,38 @@
       ],
       "license": "MIT",
       "source": "https://github.com/Audio-AGI/AudioSep"
+    },
+    {
+      "id": "inworld-voice-isolator-v1",
+      "name": "Inworld Voice Isolator v1 · 48 kHz",
+      "family": "inworld",
+      "revision": "9b0285b3fe8403aa8e2f1dbb2165a80a4294c970",
+      "files": [
+        {
+          "name": "denoiser.safetensors",
+          "url": "https://huggingface.co/inworld/voice-isolator/resolve/9b0285b3fe8403aa8e2f1dbb2165a80a4294c970/denoiser.safetensors",
+          "size": 256260128,
+          "sha256": "647335a6aeb4dc706b895532c209d51e0e84a4849d17b339f00d4392a050ae53"
+        },
+        {
+          "name": "LICENSE",
+          "url": "https://huggingface.co/inworld/voice-isolator/resolve/9b0285b3fe8403aa8e2f1dbb2165a80a4294c970/LICENSE",
+          "size": 11358,
+          "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+        },
+        {
+          "name": "NOTICE",
+          "url": "https://huggingface.co/inworld/voice-isolator/resolve/9b0285b3fe8403aa8e2f1dbb2165a80a4294c970/NOTICE",
+          "size": 904,
+          "sha256": "86e7455d0804e20c3f31a84b10b9b5e39995a526dc9e4f1d210e64513c3f3e9b"
+        }
+      ],
+      "outputs": [
+        "vocals",
+        "instrumental"
+      ],
+      "license": "Apache-2.0 · code et poids",
+      "source": "https://huggingface.co/inworld/voice-isolator"
     }
   ]
 }
