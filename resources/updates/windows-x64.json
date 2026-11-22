@@ -1,11 +1,11 @@
 {
-  "version": "0.57.0",
-  "notes": "TF-GridNet et SR-CorrNet en local : deux voix pour TF-GridNet et WHAMR, deux à cinq pour SR-CorrNet variable. Profils RTX 16 Go FP32, fenêtres de 2/4 s ou manuelles, réduction de fenêtre sur le même GPU en cas de manque de VRAM. Préécoute, sorties sur pistes indépendantes et timeline adaptée à cinq voix. Essais existants, SRT et vidéo conservés. Qualification réelle sur CPU ; VRAM, vitesse et qualité des cris sur RTX 5060 Ti à mesurer. 177 outils MCP / 37 schémas.",
-  "pub_date": "2026-11-18T06:57:41Z",
+  "version": "0.58.0",
+  "notes": "Inworld Voice Isolator v1 Offline en local à 48 kHz. Préécoute voix et fond retiré, application réversible sur les pistes, accès par sélection ou dialogue et lots isoler puis doubler. Fenêtres de 2 s par défaut, BF16 sur CUDA compatible, scan FP32 borné en mémoire et réduction de fenêtre sur le même GPU en cas d’OOM. Code et poids Apache-2.0. Tests réels sur CPU ; performances et qualité RTX 5060 Ti à mesurer. Aucun choix de locuteur par référence. Essais, SRT et vidéo conservés.",
+  "pub_date": "2026-11-22T18:15:07Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSdFFyMUJGTFp3Nko4NnJpS2pYemR5dzdTT0FJaGUyVlBIQWNnTmJzbDM5c2pMWStCS2l1Mm1Ma1hvdkpVOFJYYjl5TEFVOGFzQ0JUb3N6TGtrYnZJWlZMczM0WVJoN0F3PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk0OTg0NTI3CWZpbGU6QUkgRHViYmluZyBTdHVkaW9fMC41Ny4wX3g2NC1zZXR1cC5leGUJdmVyc2lvbjowLjU3LjAKQ2ZnYnQwSVNkM2l2NHd3czJaVjlHY3RXYVdsTFptd28zblNmUm5lOTkzWUZKaFBHTGQ3MGprbGNFdlB1d3A1YmRYMkMrSGVBb0JndW14WTV0bmJVQnc9PQo=",
-      "url": "https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.57.0/AI-Dubbing-Studio-0.57.0-Setup.exe"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSdFFyMUJGTFp3NkMxSDh5eG9kZ0x3TlJWenEzUzFHYkxvamxuYVJTZmVQTWtFaVM1RzRObjBOdmxIaFkxd2lGZmtSVnNJRDNYME5KOVBCaVpadk9KVGVVUklmT2txQ1FBPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk1MzcwNDI2CWZpbGU6QUkgRHViYmluZyBTdHVkaW9fMC41OC4wX3g2NC1zZXR1cC5leGUJdmVyc2lvbjowLjU4LjAKL3ZwSGVQLzcvWFlRVWg2dDNSNVg2VFRhR0pZNE82SEZhVEpyR0llWGZObjd0THZjUkkzVjR5c3paUjNlb0gxMExIVm5FaC9PUFFwYUpCUFN5ZlE3QlE9PQo=",
+      "url": "https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.58.0/AI-Dubbing-Studio-0.58.0-Setup.exe"
     }
   }
 }
