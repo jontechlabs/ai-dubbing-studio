@@ -104,10 +104,12 @@ try {
       seed: 42,
     };
     const imported = [];
+    const referencePath = path.join(args['test-root'], 'session', 'synthetic-microphone.wav');
+    await fs.access(referencePath);
     for (let i = 0; i < 2; i++) {
       const p = await call('studio_import_dubbing_reference', {
         lineId: null,
-        path: path.join(args['test-root'], 'microphone-ref.wav'),
+        path: referencePath,
         options,
         range: { startMs: 0, endMs: 1000 },
         context: await context(),
