@@ -230,7 +230,7 @@ try {
     assert.deepEqual(reopened.dialogues, after.dialogues);
     assert.deepEqual(reopened.generations, before.generations);
     await call('studio_preferences', { panel: 'scriptDub' });
-    await until(async () => (await call('studio_get_state')).panel === 'scriptDub');
+    await until(async () => (await call('studio_get_state')).preferences.panel === 'scriptDub');
     assert.equal(hash(await fs.readFile(source)), sourceSha256);
     await fs.writeFile(
       checkpoint,
