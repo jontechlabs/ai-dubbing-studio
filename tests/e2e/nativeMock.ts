@@ -887,8 +887,8 @@ export async function nativeMock(page: Page, large = false, seededProject?: Proj
           host.__pendingTts = {
             lineId: row.id,
             options: {
-              ...host.__pendingBatch.options,
-              seed: (host.__pendingBatch.options.seed + (row.takeIndex ?? 1) - 1) >>> 0,
+              ...(host.__pendingBatch.useLineSettings ? project.dialogues.find((l:any)=>l.id===row.id).voiceSettings : host.__pendingBatch.options),
+              seed: ((host.__pendingBatch.useLineSettings ? project.dialogues.find((l:any)=>l.id===row.id).voiceSettings.seed : host.__pendingBatch.options.seed) + (row.takeIndex ?? 1) - 1) >>> 0,
             },
           };
           host.__completeTts(2000, false);
@@ -2866,6 +2866,28 @@ export async function nativeMock(page: Page, large = false, seededProject?: Proj
             return `C:/Studio/characters/${args.referenceId}.wav`;
           if (command === 'reference_audio_info')
             return { path: 'C:/Audio/reference-source.wav', durationMs: 60000 };
+          if (command === 'preview_scripted_dubbing') {
+            host.__scriptPreview = structuredClone(args.options);
+            if (host.__scriptError) throw Error(host.__scriptError);
+            return { turns: [] };
+          }
+          if (command === 'create_scripted_dubbing') {
+            host.__scriptCreate = structuredClone(args);
+            undoStack.push(structuredClone(project));
+            const o=args.options,turns=o.script.split(/\r?\n/).filter((s:string)=>s.trim()).map((s:string)=>{const m=/^\[Speaker (\d+)(?::[^\]]+)?\]\s*(.*)$/i.exec(s.trim())!;return{speaker:Number(m[1]),text:m[2]};});
+            project.formatVersion=Math.max(32,project.formatVersion);
+            project.dubbingLanes ??= {sourcePath:project.media.path,lanes:[{id:'main',name:'Doublage 1',gain:1,mute:false,solo:false}],assignments:{}};
+            const lanes=new Map();
+            for(const s of o.speakers){const id=crypto.randomUUID();lanes.set(s.speaker,id);project.dubbingLanes.lanes.push({id,name:s.name,gain:1,mute:false,solo:false});}
+            const lineIds=turns.map((turn:any,index:number)=>{
+              const s=o.speakers.find((s:any)=>s.speaker===turn.speaker),slot=o.slots[index],id=crypto.randomUUID(),cue=crypto.randomUUID();
+              project.targetCues.push({id:cue,...slot,text:turn.text});
+              project.dialogues.push({id,...slot,sourceCueIds:[],targetCueIds:[cue],ttsText:null,characterId:s.characterId,status:'ungenerated',warnings:[],selectedGenerationIds:{},voiceSettings:{...o.options,referenceMode:s.referenceMode,referenceId:s.referenceId}});
+              project.dubbingLanes.assignments[id]=lanes.get(turn.speaker);return id;
+            });
+            project.dialogues.sort((a:any,b:any)=>a.startMs-b.startMs);project.targetCues.sort((a:any,b:any)=>a.startMs-b.startMs);
+            project.revision++;localStorage.setItem('nativeMockProject',JSON.stringify(project));emit('project-changed',structuredClone(project));return {project:structuredClone(project),lineIds};
+          }
           if (command === 'preview_dubbing_batch') return batchPlan(args.selection);
           if (command === 'preview_inpaint_batch') return lipBatchPlan(args.selection);
           if (command === 'detect_inpaint_faces') {
@@ -2916,8 +2938,9 @@ export async function nativeMock(page: Page, large = false, seededProject?: Proj
             lipBatchUpdate();
             return job.id;
           }
-          if (command === 'generate_dubbing_batch') {
-            const plan = batchPlan(args.selection);
+          if (command === 'generate_dubbing_batch' || command === 'generate_scripted_dubbing') {
+            if(command==='generate_scripted_dubbing') {host.__scriptGenerate=structuredClone(args);args.selection={...args.selection,scope:'selected',force:true,useLineSettings:true,options:project.dialogues.find((l:any)=>l.id===args.selection.lineIds[0]).voiceSettings};}
+            const plan = command==='generate_scripted_dubbing' ? {ready:args.selection.lineIds,existing:0,untranslated:0,unapproved:0,approved:0,blocked:[]} : batchPlan(args.selection);
             host.__pendingBatch = structuredClone(args.selection);
             host.__batchRows = plan.ready.flatMap((id: string) =>
               Array.from({ length: args.selection.takeCount ?? 1 }, (_, i) => ({

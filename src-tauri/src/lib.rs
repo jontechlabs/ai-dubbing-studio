@@ -33,6 +33,7 @@ mod project;
 mod project_library;
 mod prosody;
 mod qwen_safety;
+mod scripted_dubbing;
 mod separation;
 mod smoke;
 mod source_transcription;
@@ -1184,6 +1185,39 @@ fn preview_dubbing_batch(
     selection: tts_batch::Selection,
 ) -> Result<tts_batch::Preview, String> {
     tts_batch::preview(&core, &selection)
+}
+#[tauri::command]
+fn preview_scripted_dubbing(
+    core: State<'_, Shared>,
+    options: scripted_dubbing::Options,
+) -> Result<scripted_dubbing::Preview, String> {
+    scripted_dubbing::preview(&core, &options)
+}
+#[tauri::command]
+fn create_scripted_dubbing(
+    app: tauri::AppHandle,
+    core: State<'_, Shared>,
+    project_id: String,
+    expected_revision: u64,
+    options: scripted_dubbing::Options,
+) -> Result<scripted_dubbing::Created, String> {
+    scripted_dubbing::create(&core, &app, &project_id, expected_revision, &options)
+}
+#[tauri::command]
+fn generate_scripted_dubbing(
+    app: tauri::AppHandle,
+    core: State<'_, Shared>,
+    project_id: String,
+    expected_revision: u64,
+    selection: scripted_dubbing::Generation,
+) -> Result<String, String> {
+    scripted_dubbing::enqueue(
+        core.inner().clone(),
+        app,
+        &project_id,
+        expected_revision,
+        &selection,
+    )
 }
 #[tauri::command]
 fn generate_dubbing_batch(
@@ -2450,6 +2484,9 @@ pub fn run() {
             enqueue_workflow,
             control_task_queue,
             preview_dubbing_batch,
+            preview_scripted_dubbing,
+            create_scripted_dubbing,
+            generate_scripted_dubbing,
             generate_dubbing_batch,
             dubbing_batch_report,
             dubbing_batch_history,

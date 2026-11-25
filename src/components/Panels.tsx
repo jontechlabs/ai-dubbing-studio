@@ -92,14 +92,14 @@ export function Panels({
           : 'importTarget'
         : (panel ?? '');
   useEffect(() => {
-    if (!panel || panel === 'dub' || panel === 'batchDub') return;
+    if (!panel || panel === 'dub' || panel === 'batchDub' || panel === 'scriptDub') return;
     const key = (event: KeyboardEvent) => {
       if (event.key === 'Escape') close();
     };
     window.addEventListener('keydown', key);
     return () => window.removeEventListener('keydown', key);
   }, [panel, close]);
-  if (!panel || panel === 'dub' || panel === 'batchDub') return null;
+  if (!panel || panel === 'dub' || panel === 'batchDub' || panel === 'scriptDub') return null;
   return (
     <div
       className="panel-backdrop"

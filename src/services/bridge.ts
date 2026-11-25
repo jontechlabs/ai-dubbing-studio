@@ -570,6 +570,33 @@ export function previewDubbingBatch(selection: DubbingBatchSelection) {
 export function generateDubbingBatch(selection: DubbingBatchSelection) {
   return invoke<string>('generate_dubbing_batch', { selection });
 }
+export function previewScriptedDubbing(
+  options: import('../domain/scriptedDubbing').ScriptedDubbingOptions,
+) {
+  return invoke<import('../domain/scriptedDubbing').ScriptPreview>('preview_scripted_dubbing', {
+    options,
+  });
+}
+export function createScriptedDubbing(
+  project: Project,
+  options: import('../domain/scriptedDubbing').ScriptedDubbingOptions,
+) {
+  return invoke<{ project: Project; lineIds: string[] }>('create_scripted_dubbing', {
+    projectId: project.id,
+    expectedRevision: project.revision,
+    options,
+  });
+}
+export function generateScriptedDubbing(
+  project: Project,
+  selection: import('../domain/scriptedDubbing').ScriptedDubbingGeneration,
+) {
+  return invoke<string>('generate_scripted_dubbing', {
+    projectId: project.id,
+    expectedRevision: project.revision,
+    selection,
+  });
+}
 export function taskQueueStatus() {
   return invoke<import('../domain/taskQueue').WorkflowQueue>('task_queue_status');
 }

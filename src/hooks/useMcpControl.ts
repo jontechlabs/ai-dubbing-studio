@@ -91,6 +91,13 @@ export function useMcpControl(control: Control) {
           }
           result = await invoke(command.command, parameters);
           if (
+            command.command === 'create_scripted_dubbing' &&
+            result &&
+            typeof result === 'object' &&
+            'project' in result
+          )
+            studio.load(validateProject(result.project));
+          if (
             [
               'rename_registered_project',
               'trash_registered_project',

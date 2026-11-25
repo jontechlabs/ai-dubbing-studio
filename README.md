@@ -1,5 +1,9 @@
 # AI Dubbing Studio
 
+## v0.59.0 · Multi-speaker scripts
+
+**Dubbing → Script** accepts `[Speaker 1]`, `[Speaker 2]` blocks with a separate reference per voice and adjustable, overlapping time slots. Create independent dialogues and lanes atomically, then generate 1–4 takes per turn with inline progress and durable batch recovery. Existing takes, subtitles and the source movie are preserved. Speaker labels never reach the TTS engine. **180 MCP tools / 39 shared schemas.** [Guide and screenshot](docs/SCRIPTED-DUBBING.md).
+
 ## v0.58.0 · Inworld Voice Isolator
 
 Local 48 kHz foreground voice cleanup with Inworld Voice Isolator v1. Preview voice and removed background, reversible timeline placement, separation-then-dubbing queues, memory settings and sources: [illustrated guide](docs/INWORLD-VOICE-ISOLATOR.md). Real weights are tested on CPU; physical RTX 5060 Ti qualification is pending.

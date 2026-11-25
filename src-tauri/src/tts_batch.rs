@@ -520,7 +520,7 @@ fn already_committed(p: &Project, root: &Path, item: &Item) -> bool {
                 .is_some_and(|path| project::asset(root, path).is_ok())
     })
 }
-fn start<R: tauri::Runtime>(
+pub(crate) fn start<R: tauri::Runtime>(
     core: Arc<Core>,
     app: tauri::AppHandle<R>,
     request: Request,

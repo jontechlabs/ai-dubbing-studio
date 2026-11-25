@@ -24,6 +24,7 @@ import { Editor } from './components/Editor';
 import { ProjectHome, ProjectNameModal } from './components/ProjectHome';
 import { projectName } from './domain/projectLibrary';
 import { DubPanel } from './components/DubPanel';
+import { ScriptedDubbingPanel } from './components/ScriptedDubbingPanel';
 import { IconButton } from './components/IconButton';
 import { WorkspacePanels } from './components/WorkspacePanels';
 import { Header, type Panel } from './components/Header';
@@ -55,10 +56,10 @@ export default function App() {
     [nameError, setNameError] = useState('');
   const [panel, setOverlay] = useState<Panel>(null);
   const [dubbingActive, setDubbingActive] = useState(false);
-  const [dubbingMode, setDubbingMode] = useState<'dub' | 'batchDub'>('dub');
-  const [dubbingSeen, setDubbingSeen] = useState({ dub: false, batchDub: false });
+  const [dubbingMode, setDubbingMode] = useState<'dub' | 'batchDub' | 'scriptDub'>('dub');
+  const [dubbingSeen, setDubbingSeen] = useState({ dub: false, batchDub: false, scriptDub: false });
   const setPanel = useCallback((next: Panel) => {
-    if (next === 'dub' || next === 'batchDub') {
+    if (next === 'dub' || next === 'batchDub' || next === 'scriptDub') {
       document
         .querySelectorAll<HTMLAudioElement>('.inspector-dubbing audio')
         .forEach((a) => a.pause());
@@ -447,7 +448,7 @@ export default function App() {
     setAudioSelection(null);
     setTimelineNavigation(null);
     setDubbingActive(false);
-    setDubbingSeen({ dub: false, batchDub: false });
+    setDubbingSeen({ dub: false, batchDub: false, scriptDub: false });
     setDubbingMode('dub');
   }, [studio.project?.id]);
   const running = studio.jobs.find((job) => ['running', 'queued', 'paused'].includes(job.status));
@@ -662,7 +663,7 @@ export default function App() {
                 onEditorTab={closeDubbing}
                 dubbing={
                   studio.project &&
-                  (['dub', 'batchDub'] as const).map(
+                  (['dub', 'batchDub', 'scriptDub'] as const).map(
                     (mode) =>
                       dubbingSeen[mode] && (
                         <section
@@ -678,16 +679,18 @@ export default function App() {
                               role="group"
                               aria-label={t('dubbingInspector.mode')}
                             >
-                              {(['dub', 'batchDub'] as const).map((value) => (
+                              {(['dub', 'batchDub', 'scriptDub'] as const).map((value) => (
                                 <button
                                   key={value}
                                   aria-pressed={mode === value}
                                   onClick={() => setPanel(value)}
                                 >
                                   {t(
-                                    value === 'dub'
-                                      ? 'dubbingInspector.single'
-                                      : 'dubbingInspector.batch',
+                                    value === 'scriptDub'
+                                      ? 'scriptDubbing.tab'
+                                      : value === 'dub'
+                                        ? 'dubbingInspector.single'
+                                        : 'dubbingInspector.batch',
                                   )}
                                 </button>
                               ))}
@@ -701,39 +704,63 @@ export default function App() {
                               <X size={14} />
                             </IconButton>
                           </div>
-                          <DubPanel
-                            queueActive={
-                              !!taskQueue.data?.entries.some((e) => e.status === 'running')
-                            }
-                            onQueue={() => setPanel('queue')}
-                            active={dubbingActive && dubbingMode === mode && !panel}
-                            onChooseLine={select}
-                            onReferencePlay={() => {
-                              transport.videoRef.current?.pause();
-                              document.dispatchEvent(new Event('studio-voice-preview'));
-                            }}
-                            batch={mode === 'batchDub' ? { selectedIds: batchIds } : undefined}
-                            run={studio.run}
-                            project={studio.project!}
-                            line={
-                              selected ??
-                              (mode === 'batchDub' ? studio.project!.dialogues[0] : undefined)
-                            }
-                            jobs={studio.jobs}
-                            onEdit={edit}
-                            snapshot={studio.snapshot}
-                            onError={studio.setError}
-                            onModels={() => setPanel('models')}
-                            onCharacters={() => setPanel('characters')}
-                            onLips={() => setPanel('lips')}
-                            onInpaint={() => setPanel('inpaint')}
-                            onOriginal={(line) => {
-                              generationAudio.stop();
-                              transport.playOriginalLine(line);
-                            }}
-                            onPlay={playGeneration}
-                            activeGenerationId={generationAudio.active}
-                          />
+                          {mode === 'scriptDub' ? (
+                            <ScriptedDubbingPanel
+                              project={studio.project!}
+                              line={selected}
+                              time={transport.time}
+                              jobs={studio.jobs}
+                              queueActive={
+                                !!taskQueue.data?.entries.some((e) => e.status === 'running')
+                              }
+                              snapshot={studio.snapshot}
+                              run={studio.run}
+                              onEdit={edit}
+                              onModels={() => setPanel('models')}
+                              onError={studio.setError}
+                              onPlay={playGeneration}
+                              onReferencePlay={() => {
+                                transport.videoRef.current?.pause();
+                                document.dispatchEvent(new Event('studio-voice-preview'));
+                              }}
+                              onChooseLine={select}
+                              activeGenerationId={generationAudio.active}
+                            />
+                          ) : (
+                            <DubPanel
+                              queueActive={
+                                !!taskQueue.data?.entries.some((e) => e.status === 'running')
+                              }
+                              onQueue={() => setPanel('queue')}
+                              active={dubbingActive && dubbingMode === mode && !panel}
+                              onChooseLine={select}
+                              onReferencePlay={() => {
+                                transport.videoRef.current?.pause();
+                                document.dispatchEvent(new Event('studio-voice-preview'));
+                              }}
+                              batch={mode === 'batchDub' ? { selectedIds: batchIds } : undefined}
+                              run={studio.run}
+                              project={studio.project!}
+                              line={
+                                selected ??
+                                (mode === 'batchDub' ? studio.project!.dialogues[0] : undefined)
+                              }
+                              jobs={studio.jobs}
+                              onEdit={edit}
+                              snapshot={studio.snapshot}
+                              onError={studio.setError}
+                              onModels={() => setPanel('models')}
+                              onCharacters={() => setPanel('characters')}
+                              onLips={() => setPanel('lips')}
+                              onInpaint={() => setPanel('inpaint')}
+                              onOriginal={(line) => {
+                                generationAudio.stop();
+                                transport.playOriginalLine(line);
+                              }}
+                              onPlay={playGeneration}
+                              activeGenerationId={generationAudio.active}
+                            />
+                          )}
                         </section>
                       ),
                   )

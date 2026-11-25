@@ -1,5 +1,9 @@
 # AI Dubbing Studio
 
+## v0.59.0 · Script multi-personnages
+
+**Doublage → Script** : saisissez des blocs `[Speaker 1]`, `[Speaker 2]`, choisissez une référence par voix et réglez leurs créneaux, y compris les chevauchements. Création atomique de répliques et de pistes indépendantes, génération de 1 à 4 essais par intervention, progression dans le panneau et reprise via l’historique des lots. Les anciens essais, sous-titres et la vidéo restent conservés. Les balises ne sont jamais envoyées au moteur. **180 outils MCP / 39 schémas.** [Guide et capture](docs/SCRIPTED-DUBBING.md).
+
 ## v0.58.0 · Inworld Voice Isolator
 
 Nettoyage local de la voix au premier plan à 48 kHz avec Inworld Voice Isolator v1. Préécoute de la voix et du fond, placement réversible, lots « isoler puis doubler », profils mémoire et sources dans le [guide illustré](docs/INWORLD-VOICE-ISOLATOR.md). Les vrais poids sont testés sur CPU ; la RTX 5060 Ti physique reste à qualifier.

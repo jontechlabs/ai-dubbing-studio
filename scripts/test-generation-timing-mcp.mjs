@@ -35,8 +35,8 @@ const checkpoint = path.join(args['test-root'], 'take-timing-checkpoint.json');
 try {
   await client.connect(transport);
   tools = (await client.listTools()).tools;
-  assert.equal(client.getServerVersion().version, '0.58.0');
-  assert.equal(tools.length, 177);
+  assert.equal(client.getServerVersion().version, '0.59.0');
+  assert.equal(tools.length, 180);
   // New placement is exposed with revision context. A missing separation
   // must leave all dialogues/takes intact; real PCM placement is exercised
   // by the native transactional tests, without claiming neural inference.
@@ -345,8 +345,8 @@ try {
     for (const g of c.hashes)
       assert.equal(await digest(await call('studio_generation_path', { id: g.id })), g.sha256);
     const proof = {
-      version: '0.58.0',
-      toolCount: 177,
+      version: '0.59.0',
+      toolCount: 180,
       officialSdk: true,
       actualApplicationRestart: true,
       persistentTakeTiming: true,

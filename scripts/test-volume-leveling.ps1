@@ -1,5 +1,5 @@
 [CmdletBinding()]
-param([string]$PortablePath, [switch]$NativeVoices, [switch]$GenerationTiming, [string]$SpectralProof, [string]$InworldProof)
+param([string]$PortablePath, [switch]$NativeVoices, [switch]$GenerationTiming, [string]$SpectralProof, [string]$InworldProof, [switch]$ScriptedDubbing)
 $ErrorActionPreference='Stop'
 $repoRoot=Split-Path -Parent $PSScriptRoot
 if(-not $PortablePath){$PortablePath=Join-Path $repoRoot 'artifacts/AI-Dubbing-Studio-Windows-Portable.zip'}
@@ -87,7 +87,27 @@ if($GenerationTiming) {
             node (Join-Path $PSScriptRoot 'test-inworld-isolator-mcp.mjs') --exe $executable --endpoint $endpoint --test-root $testRoot --neural-proof $InworldProof --proof (Join-Path $repoRoot 'artifacts/inworld-sdk-validation.json')
             if($LASTEXITCODE){throw 'Packaged Inworld isolation SDK diagnostic failed'}
         }
+        if($ScriptedDubbing) {
+            node (Join-Path $PSScriptRoot 'test-scripted-dubbing-mcp.mjs') --exe $executable --endpoint $endpoint --test-root $testRoot --phase before --proof (Join-Path $repoRoot 'artifacts/scripted-dubbing-validation.json')
+            if($LASTEXITCODE){throw 'Packaged script dubbing SDK diagnostic failed'}
+        }
 
+    } finally {
+        if(-not $desktop.HasExited){$desktop.Kill();$null=$desktop.WaitForExit(5000)}
+    }
+}
+if($ScriptedDubbing) {
+    $endpoint=Join-Path $dataRoot 'mcp-endpoint.json'
+    if(Test-Path -LiteralPath $endpoint){Remove-Item -LiteralPath $endpoint -Force}
+    $desktop=Start-Process -FilePath $executable -ArgumentList @('--ui-test',"`"$dataRoot`"",'--synthetic-microphone') -WindowStyle Hidden -PassThru
+    try {
+        $until=[DateTime]::UtcNow.AddSeconds(60)
+        while(-not(Test-Path -LiteralPath $endpoint)) {
+            if($desktop.HasExited -or [DateTime]::UtcNow -ge $until){throw 'Script dubbing restart did not start'}
+            Start-Sleep -Milliseconds 250
+        }
+        node (Join-Path $PSScriptRoot 'test-scripted-dubbing-mcp.mjs') --exe $executable --endpoint $endpoint --test-root $testRoot --phase after --proof (Join-Path $repoRoot 'artifacts/scripted-dubbing-validation.json')
+        if($LASTEXITCODE){throw 'Packaged script dubbing restart failed'}
     } finally {
         if(-not $desktop.HasExited){$desktop.Kill();$null=$desktop.WaitForExit(5000)}
     }

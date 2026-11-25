@@ -73,6 +73,8 @@ function makeSchema(name) {
   return { ...root, ...(Object.keys(definitions).length ? { $defs: definitions } : {}) };
 }
 const mapping = {
+  'scripted_dubbing::Options': 'ScriptedDubbingOptions',
+  'scripted_dubbing::Generation': 'ScriptedDubbingGeneration',
   'speaker_separation::Options': 'SpeakerSeparationOptions',
   'speaker_separation::Destination': 'SpeakerSeparationDestination',
   'speaker_separation::Assignment': 'SpeakerDubbingAssignment',
@@ -133,6 +135,12 @@ function rustSchema(type) {
 const readOnly =
   /^(?!apply_)(environment|graphics_info|.*_status|.*_result|latest_.*|audio_effects_catalog|.*_path|.*_paths|list_jobs|model_storage_info|model_storage_size|managed_models|current_project|list_projects|project_cover|voice_install_space|preview_.*|reference_audio_info|get_waveform|dubbing_batch_report|dubbing_batch_history|task_queue_entry)$/;
 const notes = {
+  preview_scripted_dubbing:
+    'Validate a [Speaker 1]/[Speaker 2] script, one stored reference per speaker, explicit or sequential slots and per-speaker lane limits. Different speakers may overlap; one speaker cannot overlap itself. Read-only; no inference. Labels never reach TTS.',
+  create_scripted_dubbing:
+    'Atomically add one dialogue per script turn, a target cue and a new independent lane per speaker, with its own reference. Preserves existing dialogues, cues, takes and movie. Returns project and lineIds; undoable. Preview first. Does not generate audio.',
+  generate_scripted_dubbing:
+    'Generate 1–4 new immutable takes per selected dialogue using EACH dialogue’s stored voice settings/reference. Uses the durable cancellable batch runner and keeps models loaded when compatible. Returns job ID. Does not add dialogues or overwrite old takes. Poll jobs and batch report.',
   task_queue_status:
     'Read the compact persistent FIFO queue. Reports counts/current child IDs and up to 20 separation problems. No model probe, source mutation or automatic resume.',
   task_queue_entry:
@@ -295,6 +303,8 @@ projectCommands.add('convert_voice_batch');
 projectCommands.add('retry_voice_batch');
 projectCommands.add('control_task_queue');
 for (const command of [
+  'create_scripted_dubbing',
+  'generate_scripted_dubbing',
   'transcribe_dialogue_source',
   'apply_source_transcription',
   'separate_dialogue_speakers',
@@ -758,6 +768,7 @@ tool(
           'alignment',
           'dub',
           'batchDub',
+          'scriptDub',
           'queue',
           'lips',
           'inpaint',

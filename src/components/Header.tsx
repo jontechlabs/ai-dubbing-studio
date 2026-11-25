@@ -34,6 +34,7 @@ export type Panel =
   | 'alignment'
   | 'dub'
   | 'batchDub'
+  | 'scriptDub'
   | 'lips'
   | 'inpaint'
   | 'inpaintBatch'
