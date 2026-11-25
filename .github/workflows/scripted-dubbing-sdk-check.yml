@@ -23,8 +23,8 @@ jobs:
         shell: pwsh
         run: |
           $changed = @(git diff --name-only 30a7415d5c63159db8057eeb52ee8c0e6d32acf4 HEAD)
-          $allowed = @('scripts/test-scripted-dubbing-mcp.mjs','.github/workflows/scripted-dubbing-sdk-check.yml')
-          if ($changed.Count -ne 2 -or @($changed | Where-Object {$_ -notin $allowed}).Count) {throw 'Application changed after binary qualification'}
+          $allowed = @('scripts/test-scripted-dubbing-mcp.mjs','scripts/test-volume-leveling-mcp.mjs','.github/workflows/scripted-dubbing-sdk-check.yml')
+          if ($changed.Count -ne 3 -or @($changed | Where-Object {$_ -notin $allowed}).Count) {throw 'Application changed after binary qualification'}
       - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
         with:
           node-version: '24'

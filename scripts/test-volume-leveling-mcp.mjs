@@ -15,9 +15,21 @@ const transport = new StdioClientTransport({
   stderr: 'pipe',
 });
 const call = async (name, arguments_ = {}) => {
-  const r = await client.callTool({ name, arguments: arguments_ });
-  if (r.isError) throw Error(r.content.map((c) => c.text ?? '').join('\n'));
-  return r.structuredContent.value;
+  const deadline = Date.now() + 30000;
+  for (;;) {
+    const r = await client.callTool({ name, arguments: arguments_ });
+    if (r.isError) {
+      const error = r.content.map((c) => c.text ?? '').join('\n');
+      // Preparation returns BUSY before creating a job when a UI preview/probe
+      // briefly owns the render gate. Wait for it; retain all other assertions.
+      if (name === 'studio_prepare_volume_leveling' && error === 'BUSY' && Date.now() < deadline) {
+        await new Promise((resolve) => setTimeout(resolve, 100));
+        continue;
+      }
+      throw Error(error);
+    }
+    return r.structuredContent.value;
+  }
 };
 const state = () => call('studio_get_state'),
   context = async () => (await state()).context;
