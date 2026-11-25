@@ -1,11 +1,11 @@
 {
-  "version": "0.58.0",
-  "notes": "Inworld Voice Isolator v1 Offline en local à 48 kHz. Préécoute voix et fond retiré, application réversible sur les pistes, accès par sélection ou dialogue et lots isoler puis doubler. Fenêtres de 2 s par défaut, BF16 sur CUDA compatible, scan FP32 borné en mémoire et réduction de fenêtre sur le même GPU en cas d’OOM. Code et poids Apache-2.0. Tests réels sur CPU ; performances et qualité RTX 5060 Ti à mesurer. Aucun choix de locuteur par référence. Essais, SRT et vidéo conservés.",
-  "pub_date": "2026-11-22T18:15:07Z",
+  "version": "0.59.0",
+  "notes": "Doublage → Script : balises [Speaker 1]/[Speaker 2], référence vocale par voix et créneaux superposables. Création atomique de répliques et pistes indépendantes, 1 à 4 nouveaux essais par intervention, progression dans le panneau et historique de lot. Essais existants, sous-titres et vidéo conservés. 180 outils MCP / 39 schémas.",
+  "pub_date": "2026-11-25T15:29:21Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSdFFyMUJGTFp3NkMxSDh5eG9kZ0x3TlJWenEzUzFHYkxvamxuYVJTZmVQTWtFaVM1RzRObjBOdmxIaFkxd2lGZmtSVnNJRDNYME5KOVBCaVpadk9KVGVVUklmT2txQ1FBPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk1MzcwNDI2CWZpbGU6QUkgRHViYmluZyBTdHVkaW9fMC41OC4wX3g2NC1zZXR1cC5leGUJdmVyc2lvbjowLjU4LjAKL3ZwSGVQLzcvWFlRVWg2dDNSNVg2VFRhR0pZNE82SEZhVEpyR0llWGZObjd0THZjUkkzVjR5c3paUjNlb0gxMExIVm5FaC9PUFFwYUpCUFN5ZlE3QlE9PQo=",
-      "url": "https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.58.0/AI-Dubbing-Studio-0.58.0-Setup.exe"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSdFFyMUJGTFp3NkZtbWNPcks4aUdCdjdsZkhVTGwvYXQyc1ZWd3lJN0VpTUdQV3lGWGg1RlNrSUtwYVVHeUtUb3ZSRDAxTm15SVZZNFdpRmVzUlBxaDVGTml0MFZKVHdzPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk1NjE5NDM1CWZpbGU6QUkgRHViYmluZyBTdHVkaW9fMC41OS4wX3g2NC1zZXR1cC5leGUJdmVyc2lvbjowLjU5LjAKbW1FVk1FeE5TQmtPRUtYTlhMYk51LzFWSFY3RXVBVGFCNW1GdnFvem9jTUNUdmpTaUJRRGFpOFlUZUF6b0lyNDd1UHFrS2RvMmJVVExOcFZ5RVZMQWc9PQo=",
+      "url": "https://github.com/jontechlabs/ai-dubbing-studio/releases/download/v0.59.0/AI-Dubbing-Studio-0.59.0-Setup.exe"
     }
   }
 }
