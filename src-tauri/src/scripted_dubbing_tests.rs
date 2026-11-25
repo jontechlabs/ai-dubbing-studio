@@ -362,3 +362,38 @@ async fn real_batch_protocol_preserves_each_reference_and_adds_takes_on_regenera
         .all(|r| !r["text"].as_str().unwrap().contains("Speaker")));
     assert_ne!(calls[0]["referenceAudio"], calls[2]["referenceAudio"]);
 }
+#[test]
+fn active_voice_job_blocks_creation_and_duplicate_generation_without_mutation() {
+    let root = directory();
+    let (p, o) = fixture(root.path());
+    let ids = p.dialogues.iter().map(|line| line.id.clone()).collect();
+    let core = crate::tts_batch::tests::core(root.path(), p.clone());
+    let app = tauri::test::mock_app();
+    crate::jobs::create(&core, app.handle(), "ttsBatch", p.id.clone(), None);
+    assert_eq!(
+        create(&core, app.handle(), &p.id, p.revision, &o)
+            .err()
+            .as_deref(),
+        Some("BUSY")
+    );
+    assert_eq!(
+        enqueue(
+            core.clone(),
+            app.handle().clone(),
+            &p.id,
+            p.revision,
+            &Generation {
+                line_ids: ids,
+                take_count: 1
+            }
+        )
+        .err()
+        .as_deref(),
+        Some("BUSY")
+    );
+    assert_eq!(core.jobs.lock().unwrap().len(), 1);
+    assert_eq!(
+        serde_json::to_value(&core.session.lock().unwrap().as_ref().unwrap().project).unwrap(),
+        serde_json::to_value(p).unwrap()
+    );
+}

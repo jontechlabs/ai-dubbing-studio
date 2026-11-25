@@ -318,7 +318,9 @@ pub fn create<R: tauri::Runtime>(
     revision: u64,
     options: &Options,
 ) -> Result<Created, String> {
-    crate::ensure_idle(core)?;
+    if tts::busy(core) {
+        return Err("BUSY".into());
+    }
     let mut guard = core.session.lock().map_err(io_error)?;
     let s = guard.as_mut().ok_or("NO_PROJECT")?;
     if s.project.id != project_id || s.project.revision != revision {
@@ -375,7 +377,9 @@ pub fn enqueue<R: tauri::Runtime>(
     revision: u64,
     selection: &Generation,
 ) -> Result<String, String> {
-    crate::ensure_idle(&core)?;
+    if tts::busy(&core) {
+        return Err("BUSY".into());
+    }
     let request = {
         let guard = core.session.lock().map_err(io_error)?;
         let s = guard.as_ref().ok_or("NO_PROJECT")?;
