@@ -27,6 +27,13 @@ async function call(name, parameters = {}) {
 const context = async () => (await call('studio_get_state')).context;
 const checkpoint = path.join(args['test-root'], 'scripted-dubbing-checkpoint.json');
 const hash = (bytes) => createHash('sha256').update(bytes).digest('hex');
+async function until(operation) {
+  const deadline = Date.now() + 30000;
+  while (!(await operation())) {
+    if (Date.now() > deadline) throw Error('Script dubbing UI did not become ready');
+    await new Promise((resolve) => setTimeout(resolve, 100));
+  }
+}
 async function failure(name, parameters, code) {
   await assert.rejects(
     () => call(name, parameters),
@@ -35,6 +42,15 @@ async function failure(name, parameters, code) {
 }
 try {
   await client.connect(transport);
+  await until(async () => {
+    try {
+      await call('studio_get_state');
+      return true;
+    } catch (error) {
+      if (String(error).includes('MCP_UI_NOT_READY')) return false;
+      throw error;
+    }
+  });
   assert.equal(client.getServerVersion().version, '0.59.0');
   const tools = (await client.listTools()).tools;
   assert.equal(tools.length, 180);
@@ -46,7 +62,7 @@ try {
     assert(tools.some((t) => t.name === 'studio_' + name));
   if (args.phase === 'after') {
     const previous = JSON.parse(await fs.readFile(checkpoint, 'utf8')),
-      p = await call('studio_get_project');
+      p = await call('studio_open_project', { path: previous.projectPath });
     assert.deepEqual(p.dialogues, previous.project.dialogues);
     assert.deepEqual(p.dubbingLanes, previous.project.dubbingLanes);
     assert.deepEqual(p.generations, previous.project.generations);
@@ -212,11 +228,11 @@ try {
     assert.deepEqual(reopened.dialogues, after.dialogues);
     assert.deepEqual(reopened.generations, before.generations);
     await call('studio_preferences', { panel: 'scriptDub' });
-    assert.equal((await call('studio_get_state')).panel, 'scriptDub');
+    await until(async () => (await call('studio_get_state')).panel === 'scriptDub');
     assert.equal(hash(await fs.readFile(source)), sourceSha256);
     await fs.writeFile(
       checkpoint,
-      JSON.stringify({ project: reopened, source, sourceSha256 }, null, 2),
+      JSON.stringify({ project: reopened, projectPath: entry.path, source, sourceSha256 }, null, 2),
     );
   }
   console.log('Packaged script dubbing contracts passed: ' + args.phase);
