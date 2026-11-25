@@ -1,5 +1,22 @@
 use super::*;
 use serde_json::json;
+struct Directory {
+    _temp: tempfile::TempDir,
+    root: std::path::PathBuf,
+}
+impl Directory {
+    fn path(&self) -> &Path {
+        &self.root
+    }
+}
+fn directory() -> Directory {
+    let sandbox = tempfile::tempdir().unwrap();
+    let root = sandbox.path().canonicalize().unwrap();
+    Directory {
+        _temp: sandbox,
+        root,
+    }
+}
 fn fixture(root: &Path) -> (Project, Options) {
     let mut p = crate::tts_batch::tests::fixture(root, &["Ancien dialogue"]);
     p.media = Some(serde_json::from_value(json!({"id":"media", "path":"video/source.mkv", "previewPath":null, "audioStreamIndex":0, "originalName":"source.mkv", "durationMs":60000, "streams":[]})).unwrap());
@@ -59,7 +76,7 @@ fn parser_matches_shared_ui_fixtures() {
 }
 #[test]
 fn creates_overlapping_lanes_and_distinct_references_without_mutating_previous_work() {
-    let root = tempfile::tempdir().unwrap();
+    let root = directory();
     let (p, o) = fixture(root.path());
     let before = serde_json::to_value(&p).unwrap();
     let (next, ids, preview) = plan(&p, root.path(), &o).unwrap();
@@ -100,7 +117,7 @@ fn creates_overlapping_lanes_and_distinct_references_without_mutating_previous_w
 }
 #[test]
 fn rejects_invalid_bounds_same_voice_overlap_missing_references_and_extra_speakers() {
-    let root = tempfile::tempdir().unwrap();
+    let root = directory();
     let (p, o) = fixture(root.path());
     for (start, end) in [
         (0, 99),
@@ -143,7 +160,7 @@ fn rejects_invalid_bounds_same_voice_overlap_missing_references_and_extra_speake
 }
 #[test]
 fn repeated_speaker_reuses_its_lane_and_sequential_defaults_are_bounded() {
-    let root = tempfile::tempdir().unwrap();
+    let root = directory();
     let (p, mut o) = fixture(root.path());
     o.script.push_str("\n[Speaker 1] Encore !");
     o.slots = None;
@@ -160,7 +177,7 @@ fn repeated_speaker_reuses_its_lane_and_sequential_defaults_are_bounded() {
 }
 #[test]
 fn generation_uses_each_stored_reference_for_all_four_alternatives() {
-    let root = tempfile::tempdir().unwrap();
+    let root = directory();
     let (p, o) = fixture(root.path());
     let (next, ids, _) = plan(&p, root.path(), &o).unwrap();
     for count in 1..=4 {
@@ -216,7 +233,7 @@ fn generation_uses_each_stored_reference_for_all_four_alternatives() {
 }
 #[test]
 fn script_assignments_survive_automatic_character_routing_and_lane_capacity_is_atomic() {
-    let root = tempfile::tempdir().unwrap();
+    let root = directory();
     let (mut p, o) = fixture(root.path());
     p.format_version = 33;
     p.dubbing_lanes = Some(State {
