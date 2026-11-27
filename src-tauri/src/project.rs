@@ -170,6 +170,8 @@ impl Session {
             return Err("STALE_REVISION".into());
         }
         crate::dubbing_lanes::normalize(&mut next)?;
+        next.validate()?;
+        crate::dubbing_placement::resolve(&self.project, &mut next)?;
         next.clean_translation_approvals();
         next.validate()?;
         next.revision = revision + 1;

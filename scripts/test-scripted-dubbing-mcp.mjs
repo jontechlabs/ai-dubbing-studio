@@ -4,6 +4,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
+import { qualifyNaturalDubbing, verifyNaturalDubbingRestart } from './qualify-natural-dubbing.mjs';
 const args = Object.fromEntries(
   process.argv
     .slice(2)
@@ -51,7 +52,7 @@ try {
       throw error;
     }
   });
-  assert.equal(client.getServerVersion().version, '0.59.0');
+  assert.equal(client.getServerVersion().version, '0.60.0');
   const tools = (await client.listTools()).tools;
   assert.equal(tools.length, 180);
   for (const name of [
@@ -68,11 +69,12 @@ try {
     assert.deepEqual(p.generations, previous.project.generations);
     assert.deepEqual(p.voiceReferences, previous.project.voiceReferences);
     assert.equal(hash(await fs.readFile(previous.source)), previous.sourceSha256);
+    const naturalDubbing = await verifyNaturalDubbingRestart(call, previous.naturalDubbing);
     await fs.writeFile(
       args.proof,
       JSON.stringify(
         {
-          version: '0.59.0',
+          version: '0.60.0',
           toolCount: 180,
           scriptTurns: 3,
           speakers: 2,
@@ -88,6 +90,7 @@ try {
           actualProcessRestart: true,
           sourceUnchanged: true,
           localTtsQualityNotMeasured: true,
+          naturalDubbing,
         },
         null,
         2,
@@ -232,9 +235,20 @@ try {
     await call('studio_preferences', { panel: 'scriptDub' });
     await until(async () => (await call('studio_get_state')).preferences.panel === 'scriptDub');
     assert.equal(hash(await fs.readFile(source)), sourceSha256);
+    const qualified = await qualifyNaturalDubbing(call, entry.path, created.lineIds);
     await fs.writeFile(
       checkpoint,
-      JSON.stringify({ project: reopened, projectPath: entry.path, source, sourceSha256 }, null, 2),
+      JSON.stringify(
+        {
+          project: qualified.project,
+          projectPath: entry.path,
+          source,
+          sourceSha256,
+          naturalDubbing: qualified.proof,
+        },
+        null,
+        2,
+      ),
     );
   }
   console.log('Packaged script dubbing contracts passed: ' + args.phase);

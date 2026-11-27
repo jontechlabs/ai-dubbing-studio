@@ -5,12 +5,14 @@ export function OutputGainControl({
   onChange,
   disabled = false,
   take = false,
+  batch = false,
   commit,
 }: {
   value: number;
   onChange?: (value: number) => void;
   disabled?: boolean;
   take?: boolean;
+  batch?: boolean;
   commit?: (value: number) => Promise<void>;
 }) {
   const { t } = useTranslation();
@@ -19,7 +21,12 @@ export function OutputGainControl({
   useEffect(() => setDraft(value), [value]);
   const current = commit ? draft : value,
     percent = Math.round(current * 100),
-    presets = [0, 50, 100, 125, 150, 175, 200, 300, 400];
+    presets = [0, 25, 50, 75, 100, 125, 150, 175, 200, 300, 400];
+  const title = take
+    ? 'outputGain.takeTitle'
+    : batch
+      ? 'outputGain.batchTitle'
+      : 'outputGain.newTitle';
   const change = (gain: number) => {
     if (commit) setDraft(gain);
     else onChange?.(gain);
@@ -28,14 +35,14 @@ export function OutputGainControl({
     <div className="output-gain-control">
       <label className="field">
         <span>
-          {t(take ? 'outputGain.takeTitle' : 'outputGain.newTitle')} · {percent}%
+          {t(title)} · {percent}%
         </span>
         <input
           type="range"
           min={0}
           max={400}
           step={1}
-          aria-label={t(take ? 'outputGain.takeTitle' : 'outputGain.newTitle')}
+          aria-label={t(title)}
           value={percent}
           disabled={disabled || working}
           onChange={(e) => change(e.target.valueAsNumber / 100)}
@@ -80,7 +87,7 @@ export function OutputGainControl({
         </button>
       )}
       <small className="panel-description">
-        {t(take ? 'outputGain.takeHint' : 'outputGain.newHint')}
+        {t(take ? 'outputGain.takeHint' : batch ? 'outputGain.batchHint' : 'outputGain.newHint')}
       </small>
     </div>
   );

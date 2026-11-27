@@ -17,7 +17,7 @@ pub(crate) async fn take(
     ffmpeg: &Path,
     flag: &AtomicBool,
 ) -> Result<PathBuf, String> {
-    take_with_duration(root, path, slot_ms, false, ffmpeg, flag).await
+    take_with_duration(root, path, slot_ms, true, ffmpeg, flag).await
 }
 pub(crate) async fn take_with_duration(
     root: &Path,
@@ -42,7 +42,9 @@ pub(crate) async fn take_with_duration(
         return Err("INVALID_GENERATION".into());
     }
     let target = slot_ms.checked_mul(24).ok_or("INVALID_GENERATION")?;
-    if frames == target || (!exact && frames <= target) {
+    // Natural playback never changes tempo, including at the movie boundary
+    // and when WAV frames have sub-millisecond precision beyond saved metadata.
+    if !exact || frames == target {
         return Ok(source);
     }
     let mut hash = Sha256::new();

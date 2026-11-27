@@ -92,9 +92,9 @@ describe('visual alignment proposals', () => {
     expect(aligned.dubbingTiming!.offsetsMs[id].fr).toBe(3550);
     expect(aligned.dubbingTiming!.durationsMs![id].fr).toBe(100);
     const unchanged = JSON.stringify(project);
-    expect(() => applyLipAnalysis(project, { ...nearby, startMs: 4400, durationMs: 200 })).toThrow(
-      'VOICE_EDIT_NO_ROOM',
-    );
+    const overlapping = applyLipAnalysis(project, { ...nearby, startMs: 4400, durationMs: 200 });
+    expect(overlapping.dubbingTiming!.offsetsMs[id].fr).toBe(3650);
+    expect(overlapping.dubbingLanes!.assignments[id]).toBeTruthy();
     expect(JSON.stringify(project)).toBe(unchanged);
   });
   it('rejects stale projects, replaced media/languages/takes and invalid output windows', () => {

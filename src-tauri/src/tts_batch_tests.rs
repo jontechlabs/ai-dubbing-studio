@@ -370,7 +370,10 @@ async fn successful_lot_reuses_one_process_and_releases_it_before_terminal_statu
     let tmp = tempfile::tempdir().unwrap();
     let root = tmp.path().canonicalize().unwrap();
     let p = fixture(&root, &["Bonjour", "Bonsoir", "Salut"]);
-    let req = request(&p, &root);
+    let mut req = request(&p, &root);
+    for item in &mut req.items {
+        item.request.options.output_gain = Some(0.5);
+    }
     let core = core(&root, p);
     let app = tauri::test::mock_app();
     let key = start_with_launch(
@@ -394,6 +397,17 @@ async fn successful_lot_reuses_one_process_and_releases_it_before_terminal_statu
     assert_eq!(pids.len(), 3);
     assert!(pids.iter().all(|p| *p == pids[0]));
     assert_worker_exited(pids[0]);
+    let session = core.session.lock().unwrap();
+    let p = &session.as_ref().unwrap().project;
+    for g in p.generations.iter().filter(|g| g["kind"] == "tts") {
+        assert_eq!(g["options"]["outputGain"], 0.5);
+        let id = g["id"].as_str().unwrap();
+        assert_eq!(p.voice_edits[id].output_gain, Some(0.5));
+        assert_eq!(
+            p.voice_edits[id].duration(),
+            g["durationMs"].as_u64().unwrap()
+        );
+    }
 }
 #[tokio::test]
 async fn unapproved_batch_only_executes_eligible_lines_and_persists_the_filter() {

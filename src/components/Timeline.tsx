@@ -880,6 +880,9 @@ export const Timeline = memo(function Timeline({
                     .map((clip) => (
                       <button
                         key={clip.generation.id}
+                        data-duration-ms={clip.endMs - clip.startMs}
+                        data-start-ms={clip.startMs}
+                        data-lane-id={clip.laneId}
                         className={`subtitle-block dubbing-block ${selected?.id === clip.line.id ? 'selected' : ''} ${dubbingDrag?.lineId === clip.line.id ? 'moving' : ''}`}
                         style={{
                           top:

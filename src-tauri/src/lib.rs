@@ -11,6 +11,7 @@ mod downloads;
 mod dubbing_audit;
 mod dubbing_lanes;
 mod dubbing_pipeline;
+mod dubbing_placement;
 mod embedded;
 mod face_detection;
 mod generation_timing;

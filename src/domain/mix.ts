@@ -1,6 +1,7 @@
 import { editDuration } from './voiceEdit';
 import { dubbingLaneId, dubbingLaneGain } from './dubbingLanes';
-import { MAX_VOICE_DURATION_MS, freeVoiceStart } from './voiceLimits';
+import { MAX_VOICE_DURATION_MS } from './voiceLimits';
+import { resolveDubbingPlacement } from './dubbingPlacement';
 import type { Project } from './types';
 import { speakerDubbingState } from './speakerDubbing';
 import { voiceGenerations, staleGeneration, spokenText } from './tts';
@@ -33,18 +34,8 @@ export function dubbingBounds(project: Project, lineId: string) {
       0,
       Math.min(project.media.durationMs - 1, line.startMs + dubbingOffset(project, lineId)),
     );
-  const family = speakerDubbingState(project);
-  const others = clips.filter(
-    (c) =>
-      dubbingLaneId(project, c.line.id) === dubbingLaneId(project, lineId) &&
-      family.key(c.line.id) !== family.key(lineId),
-  );
-  const next = others.reduce(
-    (end, c) => (c.startMs >= startMs ? Math.min(end, c.startMs) : end),
-    project.media.durationMs,
-  );
   const min = Math.max(1, project.voiceEdits?.[clip?.generation.id ?? '']?.pieces.length ?? 1);
-  const max = Math.max(0, Math.min(MAX_VOICE_DURATION_MS, next - startMs));
+  const max = Math.max(0, Math.min(MAX_VOICE_DURATION_MS, project.media.durationMs - startMs));
   const duration = clip ? clip.endMs - clip.startMs : 0;
   const requested = dubbingDuration(project, lineId);
   const natural = clip
@@ -61,7 +52,7 @@ export function dubbingBounds(project: Project, lineId: string) {
       !!clip &&
       (duration < min ||
         (requested !== undefined && requested > max) ||
-        (requested === undefined && dubbingOffset(project, lineId) !== 0 && natural > max)),
+        (requested === undefined && natural > max)),
   };
 }
 export function resizeDubbing(
@@ -86,7 +77,7 @@ export function resizeDubbing(
     if (dubbingBounds(next, lineId).duration < bounds.min)
       throw Error('VOICE_DURATION_OUT_OF_RANGE');
   } else values[next.languages.target] = durationMs;
-  return next;
+  return resolveDubbingPlacement(project, next);
 }
 function placeDubbing(
   project: Project,
@@ -125,40 +116,8 @@ function placeDubbing(
           )),
   );
   if (wanted < dubbingBounds(project, lineId).min) throw Error('VOICE_EDIT_NO_ROOM');
-  const family = speakerDubbingState(project);
-  const start = freeVoiceStart(
-    line.startMs + offsetMs,
-    wanted,
-    project.media.durationMs,
-    clips
-      .filter(
-        (c) =>
-          dubbingLaneId(project, c.line.id) === dubbingLaneId(project, lineId) &&
-          family.key(c.line.id) !== family.key(lineId),
-      )
-      .map((c) => ({
-        startMs: c.startMs,
-        endMs:
-          c.endMs > c.startMs
-            ? c.endMs
-            : Math.min(
-                project.media!.durationMs,
-                c.startMs +
-                  Math.max(
-                    1,
-                    Math.min(
-                      MAX_VOICE_DURATION_MS,
-                      dubbingDuration(project, c.line.id) ??
-                        (project.voiceEdits?.[c.generation.id]
-                          ? editDuration(project.voiceEdits[c.generation.id])
-                          : Math.min(c.generation.durationMs, c.line.endMs - c.line.startMs)),
-                    ),
-                  ),
-              ),
-      })),
-    Math.max(0, line.startMs - 86_400_000),
-    Math.min(project.media.durationMs - wanted, line.startMs + 86_400_000),
-  );
+  // Keep the requested onset; collisions change lanes, never speech speed or sync.
+  const start = Math.max(0, Math.min(project.media.durationMs - wanted, line.startMs + offsetMs));
   const next = timingProject(project);
   next.dubbingTiming!.offsetsMs[lineId] = {
     ...next.dubbingTiming!.offsetsMs[lineId],
@@ -170,7 +129,7 @@ function placeDubbing(
     (clip && clip.endMs - clip.startMs < wanted)
   )
     ((next.dubbingTiming!.durationsMs ??= {})[lineId] ??= {})[next.languages.target] = wanted;
-  return next;
+  return resolveDubbingPlacement(project, next);
 }
 export function moveDubbing(project: Project, lineId: string, offsetMs: number): Project {
   return placeDubbing(project, lineId, offsetMs, false);
@@ -237,43 +196,18 @@ export function dubbingClips(project: Project) {
           generation,
           startMs,
           exactDuration: durationMs !== undefined,
-          slotEndMs: Math.min(
-            project.media!.durationMs,
-            startMs + (durationMs ?? line.endMs - line.startMs),
-          ),
+          slotEndMs: Math.min(project.media!.durationMs, startMs + (durationMs ?? naturalDuration)),
           endMs: Math.min(project.media!.durationMs, startMs + naturalDuration),
         },
       ];
     })
     .sort((a, b) => a.startMs - b.startMs);
-  const conflicts = new Set<string>();
-  const previousByLane = new Map<string, (typeof ordered)[number]>();
-  ordered.forEach((clip) => {
-    const previous = previousByLane.get(clip.laneId);
-    if (previous?.startMs === clip.startMs && previous.overlapKey !== clip.overlapKey)
-      conflicts.add(clip.laneId + ':' + clip.startMs);
-    previousByLane.set(clip.laneId, clip);
-  });
-  return ordered.map((clip, index, clips) => {
-    let following = index + 1;
-    while (
-      following < clips.length &&
-      (clips[following].laneId !== clip.laneId || clips[following].overlapKey === clip.overlapKey)
-    )
-      following++;
-    const next = clips[following];
-    const duplicate = conflicts.has(clip.laneId + ':' + clip.startMs);
-    const slotMs = duplicate
-      ? 0
-      : Math.max(
-          0,
-          Math.min(
-            MAX_VOICE_DURATION_MS + clip.startMs,
-            clip.slotEndMs,
-            next?.startMs ?? Infinity,
-            project.media!.durationMs,
-          ) - clip.startMs,
-        );
+  return ordered.map((clip) => {
+    const slotMs = Math.max(
+      0,
+      Math.min(MAX_VOICE_DURATION_MS + clip.startMs, clip.slotEndMs, project.media!.durationMs) -
+        clip.startMs,
+    );
     return {
       ...clip,
       slotMs,
@@ -304,6 +238,7 @@ export function mixReport(project: Project) {
     stale: clips.filter((c) => staleGeneration(project, c.line, c.generation)).length,
     adjusted: clips.filter(
       (c) =>
+        c.exactDuration &&
         c.slotMs > 0 &&
         (project.voiceEdits?.[c.generation.id]
           ? editDuration(project.voiceEdits[c.generation.id])
@@ -311,6 +246,7 @@ export function mixReport(project: Project) {
     ).length,
     fast: clips.filter(
       (c) =>
+        c.exactDuration &&
         c.slotMs > 0 &&
         (project.voiceEdits?.[c.generation.id]
           ? editDuration(project.voiceEdits[c.generation.id])

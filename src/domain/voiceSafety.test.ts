@@ -50,8 +50,8 @@ it('rejects invalid and oversize numeric duration requests atomically, including
     id = p.dialogues[0].id,
     before = JSON.stringify(p),
     bounds = dubbingBounds(p, id);
-  expect(bounds.max).toBe(3750);
-  for (const n of [-1, 0, 1.5, NaN, Infinity, 120001, 3751, Number.MAX_VALUE])
+  expect(bounds.max).toBe(p.media!.durationMs - p.dialogues[0].startMs);
+  for (const n of [-1, 0, 1.5, NaN, Infinity, 120001, bounds.max + 1, Number.MAX_VALUE])
     expect(() => resizeDubbing(p, id, n)).toThrow('VOICE_DURATION_OUT_OF_RANGE');
   for (const n of [bounds.min, bounds.max]) {
     const next = resizeDubbing(p, id, n);
@@ -67,7 +67,7 @@ it('caps long automatic slots and exact durations at the same 120 second rendere
   p.media!.durationMs = 300000;
   p.dialogues[0].endMs = 250000;
   const id = p.dialogues[0].id;
-  expect(dubbingClips(p)[0].slotMs).toBe(120000);
+  expect(dubbingClips(p)[0].slotMs).toBe(2000);
   expect(dubbingBounds(p, id).max).toBe(120000);
   const exact = resizeDubbing(p, id, 120000);
   expect(dubbingClips(exact)[0].endMs - dubbingClips(exact)[0].startMs).toBe(120000);
@@ -91,7 +91,17 @@ it('clamps moves at both video edges and occupied intervals without destroying a
       expect(other.endMs - other.startMs).toBe(original.endMs - original.startMs);
     }
     expect(mixReport(next).conflicts).toBe(0);
-    expect(clips.every((c, i) => i === 0 || clips[i - 1].endMs <= c.startMs)).toBe(true);
+    expect(
+      clips.every((c) =>
+        clips.every(
+          (other) =>
+            c === other ||
+            c.laneId !== other.laneId ||
+            c.endMs <= other.startMs ||
+            other.endMs <= c.startMs,
+        ),
+      ),
+    ).toBe(true);
     expect(validateProject(next)).toEqual(next);
   }
   for (const offset of [NaN, Infinity, 1.5, Number.MAX_VALUE])
@@ -103,7 +113,7 @@ it('can reorder a take into a later genuinely free gap while preserving original
     id = p.dialogues[0].id,
     next = moveDubbing(p, id, 10000),
     clip = dubbingClips(next).find((c) => c.line.id === id)!;
-  expect(clip.startMs).toBe(10500);
+  expect(clip.startMs).toBe(10750);
   expect(clip.endMs - clip.startMs).toBe(2000);
   expect(next.generations).toEqual(p.generations);
   expect(next.sourceCues).toEqual(p.sourceCues);
@@ -114,8 +124,8 @@ it('recovers legacy equal-onset conflicts by reserving the other collapsed voice
   const p = fixture();
   p.dialogues[1].startMs = p.dialogues[0].startMs;
   const id = p.dialogues[0].id;
-  expect(mixReport(p).conflicts).toBe(2);
-  expect(dubbingBounds(p, id).limited).toBe(true);
+  expect(mixReport(p).conflicts).toBe(0);
+  expect(dubbingBounds(p, id).limited).toBe(false);
   const next = recoverDubbing(p, id);
   expect(mixReport(next).conflicts).toBe(0);
   expect(
@@ -133,7 +143,7 @@ it('recovers legacy equal-onset conflicts by reserving the other collapsed voice
   };
   const repaired = recoverDubbing(combined, id);
   expect(mixReport(repaired).conflicts).toBe(0);
-  expect(dubbingBounds(repaired, id).duration).toBe(2000);
+  expect(dubbingBounds(repaired, id).duration).toBe(dubbingBounds(combined, id).max);
 });
 it('normalizes an overlong saved request to its current real duration without deleting local edits', () => {
   let p = fixture();
@@ -143,7 +153,7 @@ it('normalizes an overlong saved request to its current real duration without de
   expect(validateProject(p)).toEqual(p);
   expect(dubbingBounds(p, id).limited).toBe(true);
   const next = recoverDubbing(p, id);
-  expect(dubbingDuration(next, id)).toBe(3750);
+  expect(dubbingDuration(next, id)).toBe(dubbingBounds(p, id).max);
   expect(dubbingBounds(next, id).limited).toBe(false);
   expect(next.voiceEdits).toEqual(p.voiceEdits);
 });
@@ -176,10 +186,10 @@ it('allocates at least one millisecond to highly unequal split pieces when compr
   const retimed = structuredClone(p);
   retimed.dialogues[0].endMs = retimed.dialogues[0].startMs + 2;
   const before = JSON.stringify(retimed);
-  expect(() => resizeDubbing(retimed, id, null)).toThrow('VOICE_DURATION_OUT_OF_RANGE');
+  expect(dubbingBounds(resizeDubbing(retimed, id, null), id).duration).toBe(3);
   expect(JSON.stringify(retimed)).toBe(before);
   delete retimed.dubbingTiming!.durationsMs![id].fr;
-  expect(dubbingBounds(retimed, id).limited).toBe(true);
+  expect(dubbingBounds(retimed, id).limited).toBe(false);
   const moved = moveDubbing(retimed, id, 100);
   expect(dubbingBounds(moved, id).duration).toBe(3);
   expect(dubbingBounds(moved, id).limited).toBe(false);
@@ -188,19 +198,21 @@ it('allocates at least one millisecond to highly unequal split pieces when compr
 it('enforces the whole take limit for partial stretching and inserted silence at its exact boundary', () => {
   const p = fixture(),
     id = p.dialogues[0].id;
-  const exact = editVoice(p, 'take0', 500, 1000, { kind: 'stretch', durationMs: 2250 });
-  expect(dubbingBounds(exact, id).duration).toBe(3750);
-  expect(() => editVoice(p, 'take0', 500, 1000, { kind: 'stretch', durationMs: 2251 })).toThrow(
-    'VOICE_EDIT_NO_ROOM',
-  );
+  const max = dubbingBounds(p, id).max;
+  const exact = editVoice(p, 'take0', 500, 1000, { kind: 'stretch', durationMs: max - 1500 });
+  expect(dubbingBounds(exact, id).duration).toBe(max);
+  expect(() =>
+    editVoice(p, 'take0', 500, 1000, { kind: 'stretch', durationMs: max - 1499 }),
+  ).toThrow('VOICE_EDIT_NO_ROOM');
   expect(
     editDuration(
-      editVoice(p, 'take0', 500, 500, { kind: 'silence', durationMs: 1750 }).voiceEdits!.take0,
+      editVoice(p, 'take0', 500, 500, { kind: 'silence', durationMs: max - 2000 }).voiceEdits!
+        .take0,
     ),
-  ).toBe(3750);
-  expect(() => editVoice(p, 'take0', 500, 500, { kind: 'silence', durationMs: 1751 })).toThrow(
-    'VOICE_EDIT_NO_ROOM',
-  );
+  ).toBe(max);
+  expect(() =>
+    editVoice(p, 'take0', 500, 500, { kind: 'silence', durationMs: max - 1999 }),
+  ).toThrow('VOICE_EDIT_NO_ROOM');
   expect(p.voiceEdits).toBeUndefined();
 });
 it('keeps collapsed legacy multi-piece edits loadable and recoverable instead of inventing zero-duration pieces', () => {
@@ -217,7 +229,7 @@ it('keeps collapsed legacy multi-piece edits loadable and recoverable instead of
   expect(editDuration(voicePlan(next, next.generations[0] as Generation))).toBe(3);
   expect(next.voiceEdits).toEqual(p.voiceEdits);
 });
-it('refuses recovery when no free interval can hold the voice and leaves every saved edit untouched', () => {
+it('recovers into another lane when the original lane has no free interval', () => {
   const p = fixture();
   p.media!.durationMs = 4000;
   p.dialogues = p.dialogues.slice(0, 2);
@@ -233,6 +245,9 @@ it('refuses recovery when no free interval can hold the voice and leaves every s
     durationsMs: { [p.dialogues[1].id]: { fr: 4000 } },
   };
   const before = JSON.stringify(p);
-  expect(() => recoverDubbing(p, p.dialogues[0].id)).toThrow('VOICE_EDIT_NO_ROOM');
+  const recovered = recoverDubbing(p, p.dialogues[0].id);
+  expect(dubbingClips(recovered).map((c) => c.laneId)[0]).not.toBe(
+    dubbingClips(recovered)[1].laneId,
+  );
   expect(JSON.stringify(p)).toBe(before);
 });

@@ -82,42 +82,52 @@ describe('synchronized mix', () => {
     moved.media!.path = 'media/replaced.mkv';
     expect(dubbingOffset(moved, p.dialogues[0].id)).toBe(0);
   });
-  it('stops a moved voice before the next onset without shortening it', () => {
+  it('moves to the requested onset on a free lane without shortening either voice', () => {
     const p = fixture(),
       id = p.dialogues[0].id;
     const moved = moveDubbing(p, id, 3600),
       clips = dubbingClips(moved),
       clip = clips.find((c) => c.line.id === id)!;
-    expect(clip.startMs).toBe(2500);
+    expect(clip.startMs).toBe(4350);
     expect(clip.endMs - clip.startMs).toBe(2000);
     expect(clip.slotMs).toBeLessThanOrEqual(p.dialogues[0].endMs - p.dialogues[0].startMs);
-    expect(clips.every((c, i) => i === 0 || clips[i - 1].endMs <= c.startMs)).toBe(true);
+    expect(
+      clips.every((c) =>
+        clips.every(
+          (other) =>
+            c === other ||
+            c.laneId !== other.laneId ||
+            c.endMs <= other.startMs ||
+            other.endMs <= c.startMs,
+        ),
+      ),
+    ).toBe(true);
     const invalid = structuredClone(moved);
     invalid.dubbingTiming!.offsetsMs[id].fr = NaN;
     expect(() => validateProject(invalid)).toThrow('INVALID_PROJECT');
   });
-  it('fits long takes to their current slot and next selected start without stretching short takes', () => {
+  it('preserves natural lengths regardless of subtitle length, neighbouring or duplicate starts', () => {
     const p = fixture();
     p.dialogues[0].endMs = 4500;
     p.dialogues[1].startMs = 1750;
     const before = JSON.stringify(p.generations);
     const clips = dubbingClips(p);
-    expect(clips[0].slotMs).toBe(1000);
-    expect(clips[0].endMs).toBe(1750);
-    expect(clips[0].cacheKey).toContain(':1000');
-    expect(mixReport(p).adjusted).toBeGreaterThan(0);
-    expect(mixReport(p).fast).toBeGreaterThan(0);
+    expect(clips[0].slotMs).toBe(2000);
+    expect(clips[0].endMs).toBe(2750);
+    expect(clips[0].cacheKey).toContain(':2000');
+    expect(mixReport(p).adjusted).toBe(0);
+    expect(mixReport(p).fast).toBe(0);
     (p.generations[0] as Generation).durationMs = 400;
     expect(dubbingClips(p)[0].endMs).toBe(1150);
     expect(JSON.stringify(p.generations).replace('"durationMs":400', '"durationMs":2000')).toBe(
       before,
     );
     p.dialogues[1].startMs = p.dialogues[0].startMs;
-    expect(mixReport(p).conflicts).toBe(2);
+    expect(mixReport(p).conflicts).toBe(0);
     expect(
       dubbingClips(p)
         .slice(0, 2)
-        .every((c) => c.endMs === c.startMs),
+        .every((c) => c.endMs > c.startMs),
     ).toBe(true);
   });
   it('uses only the selected language/source takes and places them at current dialogue starts', () => {

@@ -206,11 +206,6 @@ impl<'a> State<'a> {
                     && !self.excluded.contains(g.parent_id.as_str())
             })
     }
-    pub fn key(&self, id: &str) -> String {
-        self.children
-            .get(id)
-            .map_or_else(|| format!("line:{id}"), |g| format!("group:{}", g.id))
-    }
 }
 /// The same primitive backs cloning, prosody, ASR and source preview.
 #[allow(clippy::too_many_arguments)]

@@ -106,10 +106,10 @@ it('mixes two active sibling voices together and keeps parent/all historical tak
   validateProject(p);
   const clips = dubbingClips(p);
   expect(clips.map((c) => c.line.id)).toEqual(['child-1', 'child-2']);
-  expect(clips.map((c) => c.slotMs)).toEqual([2500, 2500]);
+  expect(clips.map((c) => c.slotMs)).toEqual([1500, 1500]);
   expect(clips.map((c) => c.lane)).toEqual([0, 1]);
   expect(dubbingBounds(p, 'child-1').max).toBeGreaterThan(0);
-  expect(dubbingClips(resizeDubbing(p, 'child-1', 2000))[1].slotMs).toBe(2500);
+  expect(dubbingClips(resizeDubbing(p, 'child-1', 2000))[1].slotMs).toBe(1500);
   expect(
     dubbingClips(moveDubbing(p, 'child-1', 50)).find((c) => c.line.id === 'child-1')!.startMs,
   ).toBe(p.dialogues[0].startMs + 50);
@@ -221,10 +221,10 @@ it('keeps unrelated duplicate starts conflicting and deactivates saved children 
   g.dialogueId = unrelated.id;
   unrelated.selectedGenerationIds.fr = 'other';
   p.generations.push(g);
-  expect(dubbingClips(p).every((c) => c.slotMs === 0)).toBe(true);
+  expect(dubbingClips(p).every((c) => c.slotMs > 0)).toBe(true);
   p.dialogues = p.dialogues.filter((l) => l.id !== unrelated.id);
   p.dialogues.unshift(unrelated);
-  expect(dubbingClips(p).every((c) => c.slotMs === 0)).toBe(true);
+  expect(dubbingClips(p).every((c) => c.slotMs > 0)).toBe(true);
   p.speakerDubbings![0].id = unrelated.id;
-  expect(dubbingClips(p).every((c) => c.slotMs === 0)).toBe(true);
+  expect(dubbingClips(p).every((c) => c.slotMs > 0)).toBe(true);
 });

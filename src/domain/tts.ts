@@ -7,6 +7,7 @@ import { validAccent } from './voiceAccents';
 import { validMood } from './voiceMoods';
 import { validQuality } from './voiceQuality';
 import { libraryReference, validIntonationGuide } from './voiceLibrary';
+import { resolveDubbingPlacement } from './dubbingPlacement';
 export function validVoiceSettings(value: unknown): value is VoiceSettings {
   if (!value || typeof value !== 'object') return false;
   const s = value as VoiceSettings;
@@ -131,7 +132,7 @@ export function selectGeneration(project: Project, id: string): Project {
     staleGeneration(next, line, generation) || generation.durationMs > line.endMs - line.startMs
       ? 'review'
       : 'generated';
-  return next;
+  return resolveDubbingPlacement(project, next);
 }
 export function deleteGeneration(project: Project, id: string): Project {
   const next = structuredClone(project);

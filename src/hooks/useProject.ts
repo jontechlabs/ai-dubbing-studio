@@ -5,6 +5,7 @@ import { getCurrentWindow } from '@tauri-apps/api/window';
 import { rebaseProject } from '../domain/rebase';
 import { cleanTranslationApprovals } from '../domain/translation';
 import { syncCharacterLanes } from '../domain/dubbingLanes';
+import { resolveDubbingPlacement } from '../domain/dubbingPlacement';
 
 export function useProject() {
   const [project, setProject] = useState<Project | null>(null);
@@ -89,7 +90,9 @@ export function useProject() {
     (update: (value: Project) => Project) => {
       if (!latest.current) return;
       try {
-        latest.current = cleanTranslationApprovals(syncCharacterLanes(update(latest.current)));
+        latest.current = cleanTranslationApprovals(
+          resolveDubbingPlacement(latest.current, syncCharacterLanes(update(latest.current))),
+        );
       } catch (error) {
         setError(String(error));
         return;

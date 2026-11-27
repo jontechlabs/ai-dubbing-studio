@@ -1,5 +1,6 @@
 import type { Project } from '../domain/types';
 import { syncCharacterLanes } from '../domain/dubbingLanes';
+import { resolveDubbingPlacement } from '../domain/dubbingPlacement';
 import { validateProject } from '../domain/project';
 import { editDialogue } from '../domain/subtitles';
 import {
@@ -105,7 +106,9 @@ export function patchProject(project: Project, patches: Patch[]): Project {
       record[last] = structuredClone(patch.value);
     } else throw Error('MCP_INVALID_PATCH');
   }
-  return validateProject(cleanTranslationApprovals(syncCharacterLanes(next)));
+  return validateProject(
+    cleanTranslationApprovals(resolveDubbingPlacement(project, syncCharacterLanes(next))),
+  );
 }
 
 // All saved edits share the desktop's pure domain functions and native save/
@@ -257,5 +260,7 @@ export function editProject(
     default:
       throw Error('MCP_UNKNOWN_TOOL');
   }
-  return validateProject(cleanTranslationApprovals(syncCharacterLanes(next)));
+  return validateProject(
+    cleanTranslationApprovals(resolveDubbingPlacement(project, syncCharacterLanes(next))),
+  );
 }

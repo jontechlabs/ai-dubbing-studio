@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import type { Project, VoiceSettings } from '../domain/types';
 import * as bridge from '../services/bridge';
 import { WorkflowComposer } from './WorkflowComposer';
+import { OutputGainControl } from './OutputGainControl';
 
 export function BatchDubbingAction({
   engineBusy,
@@ -10,6 +11,7 @@ export function BatchDubbingAction({
   project,
   selectedIds,
   settings,
+  onSettings,
   takeCount,
   onTakeCount,
   busy,
@@ -23,6 +25,7 @@ export function BatchDubbingAction({
   project: Project;
   selectedIds: string[];
   settings: VoiceSettings;
+  onSettings: (settings: Partial<VoiceSettings>) => void;
   takeCount: 1 | 2 | 3 | 4;
   onTakeCount: (count: 1 | 2 | 3 | 4) => void;
   busy: boolean;
@@ -71,6 +74,12 @@ export function BatchDubbingAction({
   const plan = result?.key === key ? result.plan : null;
   return (
     <section className="settings-section batch-dubbing">
+      <OutputGainControl
+        batch
+        value={settings.outputGain ?? 1}
+        disabled={busy || working}
+        onChange={(gain) => onSettings({ outputGain: gain === 1 ? undefined : gain })}
+      />
       <label className="field">
         <span>{t('batchTakes.count')}</span>
         <select

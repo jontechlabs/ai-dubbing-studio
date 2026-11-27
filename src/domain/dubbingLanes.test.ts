@@ -49,7 +49,7 @@ function fixture() {
 it('independent tracks allow unrelated selected takes at exactly the same onset without touching audio or subtitles', () => {
   const p = fixture(),
     original = structuredClone(p);
-  expect(dubbingClips(p).every((c) => c.slotMs === 0)).toBe(true);
+  expect(dubbingClips(p).every((c) => c.slotMs === 2000)).toBe(true);
   const next = addDubbingLane(p, 'Second voice', [p.dialogues[1].id]);
   expect(dubbingClips(next).map((c) => [c.startMs, c.endMs])).toEqual([
     [1000, 3000],
@@ -86,15 +86,15 @@ it('lane gains, mute and solo retain scheduling and do not alter take cache iden
   p = editDubbingLane(p, second, { mute: true });
   expect(dubbingLaneGain(p, p.dialogues[0].id)).toBe(1);
   expect(dubbingLaneGain(p, p.dialogues[1].id)).toBe(0);
-  expect(dubbingClips(p)[1].slotMs).toBe(2500);
+  expect(dubbingClips(p)[1].slotMs).toBe(2000);
 });
-it('deleting a lane safely reassigns dialogues and preserves takes while revealing same-track conflicts', () => {
+it('deleting a lane preserves audible take durations even before the next placement normalization', () => {
   const p = fixture(),
     next = addDubbingLane(p, 'Second', [p.dialogues[1].id]),
     removed = removeDubbingLane(next, next.dubbingLanes!.lanes[1].id);
   expect(dubbingLaneId(removed, p.dialogues[1].id)).toBe('main');
   expect(removed.generations).toEqual(p.generations);
-  expect(dubbingClips(removed).every((c) => c.slotMs === 0)).toBe(true);
+  expect(dubbingClips(removed).every((c) => c.slotMs === 2000)).toBe(true);
   expect(() => removeDubbingLane(next, 'main')).toThrow('INVALID_DUBBING_LANES');
 });
 it('invalid assignments, gain, range, names and formats are rejected before mutation', () => {

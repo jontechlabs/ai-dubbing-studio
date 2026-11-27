@@ -43,6 +43,7 @@ pub struct Request {
 #[derive(Clone)]
 pub(crate) struct Clip {
     pub id: String,
+    pub(crate) line_id: String,
     pub(crate) lane_id: String,
     pub(crate) lane_gain: f64,
     pub path: String,
@@ -105,7 +106,13 @@ pub(crate) fn clips(p: &Project) -> Vec<Clip> {
                 .and_then(|t| t.durations_ms.get(&line.id))
                 .and_then(|v| v.get(&p.languages.target))
                 .copied();
+            let natural = p
+                .voice_edits
+                .get(id)
+                .map(|e| e.duration())
+                .or_else(|| g["durationMs"].as_u64())?;
             Some(Clip {
+                line_id: line.id.clone(),
                 id: id.clone(),
                 lane_id: crate::dubbing_lanes::lane(p, &line.id).into(),
                 lane_gain: crate::dubbing_lanes::gain(p, &line.id),
@@ -113,52 +120,17 @@ pub(crate) fn clips(p: &Project) -> Vec<Clip> {
                 slot_ms: 0,
                 exact_duration: duration.is_some(),
                 end_ms: start_ms
-                    .saturating_add(duration.unwrap_or(line.end_ms - line.start_ms))
+                    .saturating_add(duration.unwrap_or(natural))
                     .min(media.info.duration_ms),
                 start: start_ms * 24,
-                frames: p
-                    .voice_edits
-                    .get(id)
-                    .map(|e| e.duration())
-                    .or_else(|| g["durationMs"].as_u64())?
-                    .min(media.info.duration_ms - start_ms)
-                    * 24,
+                frames: natural.min(media.info.duration_ms - start_ms) * 24,
             })
         })
         .collect();
     clips.sort_by_key(|c| c.start);
-    let starts: Vec<_> = clips.iter().map(|c| c.start).collect();
-    let keys: Vec<_> = clips
-        .iter()
-        .map(|c| family.key(generations[c.id.as_str()]["dialogueId"].as_str().unwrap()))
-        .collect();
-    let lanes: Vec<_> = clips.iter().map(|c| c.lane_id.clone()).collect();
-    let mut conflicts = std::collections::HashSet::new();
-    let mut previous = std::collections::HashMap::new();
-    for (index, start) in starts.iter().enumerate() {
-        if let Some((at, key)) =
-            previous.insert(lanes[index].clone(), (*start, keys[index].clone()))
-        {
-            if at == *start && key != keys[index] {
-                conflicts.insert((lanes[index].clone(), *start));
-            }
-        }
-    }
-    for (index, clip) in clips.iter_mut().enumerate() {
-        let mut following = index + 1;
-        while following < starts.len()
-            && (lanes[following] != lanes[index] || keys[following] == keys[index])
-        {
-            following += 1;
-        }
-        let next = starts.get(following).copied().unwrap_or(u64::MAX);
-        let duplicate = conflicts.contains(&(clip.lane_id.clone(), clip.start));
-        clip.slot_ms = if duplicate {
-            0
-        } else {
-            ((clip.end_ms * 24).min(next).saturating_sub(clip.start) / 24)
-                .min(crate::voice_edit::MAX_DURATION_MS)
-        };
+    for clip in &mut clips {
+        clip.slot_ms =
+            (clip.end_ms.saturating_sub(clip.start_ms())).min(crate::voice_edit::MAX_DURATION_MS);
         clip.frames = if clip.exact_duration {
             clip.slot_ms * 24
         } else {

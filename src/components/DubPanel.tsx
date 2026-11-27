@@ -1166,11 +1166,13 @@ export function DubPanel({
         busy={busy}
         onChange={edit}
       />
-      <OutputGainControl
-        value={settings.outputGain ?? 1}
-        disabled={busy}
-        onChange={(gain) => edit({ outputGain: gain === 1 ? undefined : gain })}
-      />
+      {!batch && (
+        <OutputGainControl
+          value={settings.outputGain ?? 1}
+          disabled={busy}
+          onChange={(gain) => edit({ outputGain: gain === 1 ? undefined : gain })}
+        />
+      )}
       <VoiceQualityControls
         variant={variant.id}
         value={settings.quality}
@@ -1214,6 +1216,7 @@ export function DubPanel({
           project={project}
           selectedIds={batch.selectedIds}
           settings={{ ...settings, mode, accent }}
+          onSettings={edit}
           busy={busy || referencePending}
           ready={!!ready}
           snapshot={snapshot}

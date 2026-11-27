@@ -1,5 +1,9 @@
 # AI Dubbing Studio
 
+## v0.60.0 · Durées audio et placement sans accélération
+
+Les nouveaux doublages conservent leur durée audio réelle. Les chevauchements utilisent une autre piste libre, créée si nécessaire, au même timestamp. Les étirements manuels restent possibles ; changer d’essai évite de reprendre une ancienne durée trop courte. Le volume de sortie du lot propose aussi des baisses de 25%, 50% ou 75%, conservées dans les reprises et la file. [Guide](docs/NATURAL-DUBBING-DURATION.md).
+
 ## v0.59.0 · Script multi-personnages
 
 **Doublage → Script** : saisissez des blocs `[Speaker 1]`, `[Speaker 2]`, choisissez une référence par voix et réglez leurs créneaux, y compris les chevauchements. Création atomique de répliques et de pistes indépendantes, génération de 1 à 4 essais par intervention, progression dans le panneau et reprise via l’historique des lots. Les anciens essais, sous-titres et la vidéo restent conservés. Les balises ne sont jamais envoyées au moteur. **180 outils MCP / 39 schémas.** [Guide et capture](docs/SCRIPTED-DUBBING.md).

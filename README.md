@@ -1,5 +1,9 @@
 # AI Dubbing Studio
 
+## v0.60.0 · Natural audio duration and overlap routing
+
+New dubbings keep their actual audio duration. Overlaps use another free lane, creating one if needed, at the same timestamp. Manual stretching remains available; selecting a new take avoids inheriting an old short duration. Batch output volume also offers 25%, 50% and 75% reductions, retained for retries and queued workflows. [Guide](docs/NATURAL-DUBBING-DURATION.md).
+
 ## v0.59.0 · Multi-speaker scripts
 
 **Dubbing → Script** accepts `[Speaker 1]`, `[Speaker 2]` blocks with a separate reference per voice and adjustable, overlapping time slots. Create independent dialogues and lanes atomically, then generate 1–4 takes per turn with inline progress and durable batch recovery. Existing takes, subtitles and the source movie are preserved. Speaker labels never reach the TTS engine. **180 MCP tools / 39 shared schemas.** [Guide and screenshot](docs/SCRIPTED-DUBBING.md).

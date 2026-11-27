@@ -1,0 +1,10 @@
+[
+  {"name":"short subtitle", "starts":[1000], "durations":[3000], "existing":[], "lanes":[0], "lengths":[3000]},
+  {"name":"new later overlap", "starts":[1000,2000], "durations":[3000,2000], "existing":[0], "lanes":[0,1], "lengths":[3000,2000]},
+  {"name":"new earlier overlap", "starts":[1000,2000], "durations":[2000,3000], "existing":[1], "lanes":[1,0], "lengths":[2000,3000]},
+  {"name":"equal starts", "starts":[1000,1000,1000], "durations":[2000,3000,1500], "existing":[0], "lanes":[0,1,2], "lengths":[2000,3000,1500]},
+  {"name":"touching ends reuse lane", "starts":[1000,1000,1500,4000], "durations":[3000,500,1000,1000], "existing":[0], "lanes":[0,1,1,0], "lengths":[3000,500,1000,1000]},
+  {"name":"one millisecond overlap", "starts":[1000,3999], "durations":[3000,2000], "existing":[0], "lanes":[0,1], "lengths":[3000,2000]},
+  {"name":"manual duration respected", "starts":[1000,3000], "durations":[3000,1500], "overrides":{"0":2500}, "existing":[0], "lanes":[0,1], "lengths":[2500,1500]},
+  {"name":"media edge crops without tempo change", "starts":[15500], "durations":[2000], "existing":[], "lanes":[0], "lengths":[500]}
+]

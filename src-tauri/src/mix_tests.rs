@@ -22,7 +22,7 @@ async fn independent_dubbing_lanes_render_simultaneous_unrelated_takes_with_indi
     let selected = clips(&p);
     assert!(selected
         .iter()
-        .all(|c| c.slot_ms == 2000 && c.duration_ms() == 1500));
+        .all(|c| c.slot_ms == 1500 && c.duration_ms() == 1500));
     let output = root.join("exports/lanes.f32");
     assemble(
         &root,
@@ -65,7 +65,7 @@ async fn independent_dubbing_lanes_render_simultaneous_unrelated_takes_with_indi
         original
     );
     p.dubbing_lanes.as_mut().unwrap().assignments.clear();
-    assert!(clips(&p).iter().all(|c| c.slot_ms == 0));
+    assert!(clips(&p).iter().all(|c| c.slot_ms == 1500));
 }
 #[tokio::test]
 async fn independent_lane_configuration_reopens_and_rejects_corrupt_assignments_and_old_formats() {
@@ -201,7 +201,7 @@ async fn overlapping_dubs_render_both_siblings_without_parent_and_preserve_every
     assert_eq!(selected.len(), 2);
     assert!(selected
         .iter()
-        .all(|c| c.slot_ms == 2000 && c.duration_ms() == 1500));
+        .all(|c| c.slot_ms == 1500 && c.duration_ms() == 1500));
     let mut collided = p.clone();
     let mut unrelated = p.dialogues[0].clone();
     unrelated.id = "other-line".into();
@@ -217,7 +217,7 @@ async fn overlapping_dubs_render_both_siblings_without_parent_and_preserve_every
     // nor matching text IDs may accidentally permit unrelated simultaneous takes.
     collided.speaker_dubbings[0].id = "other-line".into();
     collided.validate().unwrap();
-    assert!(clips(&collided).iter().all(|c| c.slot_ms == 0));
+    assert!(clips(&collided).iter().all(|c| c.slot_ms == 1500));
     let app = tauri::test::mock_app();
     let core = core(&root, p.clone());
     let out = root.join("exports/overlap.wav");
@@ -445,7 +445,7 @@ async fn voice_duration_caps_automatic_and_legacy_exact_slots_consistently() {
     let (_temporary, _root, mut p) = fixture().await;
     p.media.as_mut().unwrap().info.duration_ms = 300000;
     p.dialogues[0].end_ms = 250000;
-    assert_eq!(clips(&p)[0].slot_ms, 120000);
+    assert_eq!(clips(&p)[0].slot_ms, 1500);
     assert_eq!(clips(&p)[0].duration_ms(), 1500);
     p.format_version = 7;
     p.dubbing_timing = Some(crate::domain::DubbingTiming {
@@ -1348,7 +1348,7 @@ async fn moved_dubbing_changes_mkv_onset_without_changing_subtitles_or_original_
         }
     }
     assert_eq!(clips(&p)[0].start, 1500 * 24);
-    assert_eq!(clips(&p)[0].slot_ms, 2000);
+    assert_eq!(clips(&p)[0].slot_ms, 1500);
     let app = tauri::test::mock_app();
     let app = app.handle().clone();
     let core = core(&root, p.clone());
@@ -1532,9 +1532,16 @@ async fn fitted_voice_preserves_pitch_tail_original_and_exact_slot_length() {
         18000
     );
     assert_eq!(
-        crate::voice_fit::take(&root, "generations/tones.wav", 2500, &tool("ffmpeg"), &flag)
-            .await
-            .unwrap(),
+        crate::voice_fit::take_with_duration(
+            &root,
+            "generations/tones.wav",
+            2500,
+            false,
+            &tool("ffmpeg"),
+            &flag
+        )
+        .await
+        .unwrap(),
         source.canonicalize().unwrap()
     );
     assert_eq!(
@@ -1588,22 +1595,12 @@ async fn fitted_voice_preserves_pitch_tail_original_and_exact_slot_length() {
 }
 
 #[tokio::test]
-async fn export_fits_to_next_take_and_flags_zero_slots() {
+async fn export_preserves_natural_duration_through_neighbouring_and_duplicate_onsets() {
     let (_temporary, root, mut p) = fixture().await;
     p.tracks[1].mute = true;
     p.tracks[2].gain = 1.0;
     p.tracks[2].regions.clear();
-    // Old versions could persist 120 s although only 1 s is available before
-    // the next take. Reopening and export must remain safe and recoverable.
-    p.format_version = 7;
-    p.dubbing_timing = Some(crate::domain::DubbingTiming {
-        source_path: p.media.as_ref().unwrap().path.clone(),
-        offsets_ms: Default::default(),
-        durations_ms: std::collections::HashMap::from([(
-            "line".into(),
-            std::collections::HashMap::from([("fr".into(), 120000)]),
-        )]),
-    });
+    // A following subtitle must neither speed up nor truncate the first WAV.
     let mut second = p.dialogues[0].clone();
     second.id = "second".into();
     second.start_ms = 2000;
@@ -1633,8 +1630,8 @@ async fn export_fits_to_next_take_and_flags_zero_slots() {
     )
     .await;
     let selected = clips(&p);
-    assert_eq!(selected[0].slot_ms, 1000);
-    assert_eq!(selected[0].frames, 24000);
+    assert_eq!(selected[0].slot_ms, 1500);
+    assert_eq!(selected[0].frames, 36000);
     let app = tauri::test::mock_app();
     let app = app.handle().clone();
     let core = core(&root, p.clone());
@@ -1676,8 +1673,8 @@ async fn export_fits_to_next_take_and_flags_zero_slots() {
         (500, 0.0),
         (1300, 0.2),
         (1900, 0.2),
-        (2100, 0.1),
-        (2450, 0.1),
+        (2100, 0.3),
+        (2450, 0.3),
         (2600, 0.0),
     ] {
         assert!(
@@ -1687,7 +1684,7 @@ async fn export_fits_to_next_take_and_flags_zero_slots() {
         );
     }
     p.dialogues[1].start_ms = p.dialogues[0].start_ms;
-    assert!(clips(&p).iter().all(|c| c.slot_ms == 0));
+    assert!(clips(&p).iter().all(|c| c.slot_ms > 0));
     assert_eq!(
         validate(&p, &request.options).unwrap_err(),
         "MIX_REVIEW_REQUIRED"

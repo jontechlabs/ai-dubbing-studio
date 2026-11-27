@@ -155,3 +155,28 @@ test('batch generation uses the same gain presets', async ({ page }) => {
   await panel.getByRole('button', { name: 'Doubler 4 répliques', exact: true }).click();
   expect((await page.evaluate(() => (window as any).__pendingBatch)).options.outputGain).toBe(1.75);
 });
+
+test('batch attenuation is explicit, retained in the queued configuration and does not alter existing takes', async ({
+  page,
+}) => {
+  await nativeMock(page);
+  await page.goto('/');
+  await expect(page.locator('.dialogue-card').first()).toBeVisible();
+  await page.evaluate(() => (window as any).__seedDubbing());
+  const before = await page.evaluate(() => (window as any).__getMockProject());
+  await page.getByRole('button', { name: /Doublage par lot/ }).click();
+  const panel = page.getByRole('region', { name: 'Doublage par lot', exact: true });
+  await panel
+    .getByRole('combobox', { name: 'Référence vocale', exact: true })
+    .selectOption('current');
+  await panel
+    .getByRole('combobox', { name: 'Préréglage du volume de sortie', exact: true })
+    .selectOption('50');
+  await expect(panel.getByRole('slider', { name: 'Volume de sortie du lot' })).toHaveValue('50');
+  await panel.getByRole('checkbox', { name: /nouveau doublage|nouvel essai|Forcer/ }).check();
+  await panel.getByRole('button', { name: 'Doubler 4 répliques', exact: true }).click();
+  expect((await page.evaluate(() => (window as any).__pendingBatch)).options.outputGain).toBe(0.5);
+  expect((await page.evaluate(() => (window as any).__getMockProject())).generations).toEqual(
+    before.generations,
+  );
+});

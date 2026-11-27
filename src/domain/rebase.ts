@@ -1,5 +1,6 @@
 import type { Project } from './types';
 import { syncCharacterLanes } from './dubbingLanes';
+import { resolveDubbingPlacement } from './dubbingPlacement';
 import { rebaseVoiceLibrary } from './voiceLibrary';
 import { audioTracks } from './audio';
 import { cleanTranslationApprovals } from './translation';
@@ -152,5 +153,5 @@ export function rebaseProject(base: Project, local: Project, incoming: Project):
         Object.assign(server, { [key]: localTrack[key] });
   }
   next.formatVersion = Math.max(next.formatVersion, local.formatVersion);
-  return cleanTranslationApprovals(syncCharacterLanes(next));
+  return cleanTranslationApprovals(resolveDubbingPlacement(incoming, syncCharacterLanes(next)));
 }
