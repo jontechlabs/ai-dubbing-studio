@@ -1,0 +1,73 @@
+name: Natural duration qualified binary SDK verification
+on:
+  workflow_dispatch:
+  push:
+    branches: [codex/natural-dubbing-sdk-check]
+permissions:
+  contents: read
+  actions: read
+jobs:
+  packaged:
+    runs-on: windows-latest
+    timeout-minutes: 25
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+      PYTHONUTF8: '1'
+      PYTHONIOENCODING: utf-8
+      PYTHONUNBUFFERED: '1'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 0
+      - name: Verify unchanged application inputs
+        shell: pwsh
+        run: |
+          $changed = @(git diff --name-only affe8f537c75a187f137d7fd2b2a40ffd0ed5dfe HEAD)
+          $allowed = @('scripts/test-scripted-dubbing-mcp.mjs','scripts/qualify-natural-dubbing.mjs','.github/workflows/natural-dubbing-sdk-check.yml')
+          if ($changed.Count -ne 3 -or @($changed | Where-Object {$_ -notin $allowed}).Count) {throw 'Application changed after binary qualification'}
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
+        with:
+          node-version: '24'
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12.10'
+      - name: Download original Windows packages
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          github-token: ${{ github.token }}
+          run-id: 46041936226
+          name: natural-dubbing-windows-packages-and-validation
+          path: .cache/original-natural-artifact
+      - name: Authenticate and stage original package bytes
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force artifacts | Out-Null
+          $source=Get-ChildItem -LiteralPath .cache/original-natural-artifact -Filter SHA256SUMS.txt -Recurse
+          if (@($source).Count -ne 1) {throw 'Ambiguous package manifest'}
+          foreach ($line in (Get-Content -LiteralPath $source.FullName)) {
+            $hash,$name=$line -split '  ',2
+            $file=Join-Path $source.DirectoryName $name
+            if ((Get-FileHash -LiteralPath $file -Algorithm SHA256).Hash.ToLowerInvariant() -ne $hash) {throw 'Package checksum mismatch'}
+            Copy-Item -LiteralPath $file -Destination (Join-Path artifacts $name)
+          }
+          Copy-Item -LiteralPath $source.FullName -Destination artifacts/SHA256SUMS.txt
+      - name: Prepare matching SDK test runtime
+        shell: pwsh
+        run: |
+          npm install --global pnpm@11.25.0
+          pnpm install --frozen-lockfile
+          if ($LASTEXITCODE) {exit $LASTEXITCODE}
+          pnpm exec prettier --check scripts/test-scripted-dubbing-mcp.mjs scripts/qualify-natural-dubbing.mjs
+          if ($LASTEXITCODE) {exit $LASTEXITCODE}
+          ./scripts/prepare-ffmpeg.ps1
+          if ($LASTEXITCODE) {exit $LASTEXITCODE}
+          if ($LASTEXITCODE) {exit $LASTEXITCODE}
+      - name: Actual original packaged script restart and corrected SDK verification
+        shell: pwsh
+        run: ./scripts/test-volume-leveling.ps1 -GenerationTiming -ScriptedDubbing
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: natural-dubbing-sdk-validation
+          path: artifacts/*
+          if-no-files-found: error

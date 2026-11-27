@@ -21,7 +21,14 @@ const transport = new StdioClientTransport({
   stderr: 'pipe',
 });
 async function call(name, parameters = {}) {
-  const response = await client.callTool({ name, arguments: parameters });
+  let response;
+  try {
+    response = await client.callTool({ name, arguments: parameters });
+  } catch (error) {
+    throw Error(`${name} [${Object.keys(parameters).join(', ')}]: ${error.message}`, {
+      cause: error,
+    });
+  }
   if (response.isError) throw Error(response.content.map((c) => c.text ?? '').join('\n'));
   return response.structuredContent.value;
 }

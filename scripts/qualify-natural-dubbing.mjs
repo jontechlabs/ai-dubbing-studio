@@ -107,7 +107,7 @@ export async function qualifyNaturalDubbing(call, root, lineIds) {
     assert.equal(p.dialogues.find((l) => l.id === g.dialogueId).startMs, g.startMs);
   }
   const first = lineIds[0];
-  await call('studio_resize_voice', { id: first, durationMs: 1000, context: await context() });
+  await call('studio_resize_voice', { lineId: first, durationMs: 1000, context: await context() });
   p = await call('studio_get_project');
   assert.equal(p.dubbingTiming.durationsMs[first].fr, 1000);
   const short = await call('studio_dubbing_path', {
