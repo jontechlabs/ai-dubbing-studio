@@ -213,17 +213,23 @@ async fn cancellation_and_external_edits_never_launch_later_alternatives() {
         let text = if cancel {
             text
         } else {
-            text.replace("time.sleep(20)", "time.sleep(0.5)")
+            // The test releases the second request after applying its edit;
+            // scheduler load must not turn a fixed sleep into a race.
+            text.replace("time.sleep(20)", "deadline=time.monotonic()+30\n        while not (folder/'release-second').exists() and time.monotonic()<deadline:time.sleep(0.01)")
         };
         std::fs::write(&launch.script, text).unwrap();
         let key =
             resume_with_launch(core.clone(), app.handle().clone(), req, Some(launch)).unwrap();
-        for _ in 0..200 {
-            if root.join("calls.jsonl").exists() && calls(&root).len() >= 2 {
-                break;
+        tokio::time::timeout(std::time::Duration::from_secs(30), async {
+            loop {
+                if root.join("calls.jsonl").exists() && calls(&root).len() >= 2 {
+                    break;
+                }
+                tokio::time::sleep(std::time::Duration::from_millis(25)).await;
             }
-            tokio::time::sleep(std::time::Duration::from_millis(25)).await;
-        }
+        })
+        .await
+        .expect("The second worker request must be active before cancellation or editing");
         if cancel {
             core.jobs
                 .lock()
@@ -237,6 +243,7 @@ async fn cancellation_and_external_edits_never_launch_later_alternatives() {
             let s = guard.as_mut().unwrap();
             s.project.revision += 1;
             s.project.dialogues[0].tts_text = Some("Changed while generating".into());
+            std::fs::write(root.join("release-second"), b"").unwrap();
         }
         let job = finished(&core, &key).await;
         assert_eq!(job.status, if cancel { "cancelled" } else { "failed" });

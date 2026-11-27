@@ -15,6 +15,7 @@ pub fn resolve(before: &Project, next: &mut Project) -> Result<(), String> {
     let generations: HashMap<_, _> = next
         .generations
         .iter()
+        .filter(|g| g["kind"] == "tts")
         .filter_map(|g| g["id"].as_str().map(|id| (id, g)))
         .collect();
     if let Some(timing) = next
