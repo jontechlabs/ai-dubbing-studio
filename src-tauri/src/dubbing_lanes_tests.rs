@@ -61,7 +61,7 @@ async fn matches_shared_fixture_and_keeps_both_simultaneous_selected_takes_and_o
     assert_eq!(clips.len(), 2);
     assert!(clips
         .iter()
-        .all(|c| c.slot_ms == 2000 && c.duration_ms() == 1500));
+        .all(|c| c.slot_ms == 1500 && c.duration_ms() == 1500));
     assert_eq!(
         std::fs::read(root.join("generations/voice.wav")).unwrap(),
         bytes

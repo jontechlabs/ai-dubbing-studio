@@ -560,9 +560,9 @@ export async function nativeMock(page: Page, large = false, seededProject?: Proj
             startMs: line.startMs,
             durationMs: 2000,
             slotMs: Math.min(
-              line.endMs - line.startMs,
-              project.dialogues.find((l: any) => l.startMs > line.startMs)?.startMs -
-                line.startMs || 999999,
+              take.durationMs,
+              project.media.durationMs - line.startMs,
+              120000,
             ),
             exactDuration: false,
             fingerprint: 'a'.repeat(64),
@@ -611,7 +611,8 @@ export async function nativeMock(page: Page, large = false, seededProject?: Proj
           take = project.generations.find((g: any) => g.id === o.generationId),
           offset = project.dubbingTiming?.offsetsMs?.[line.id]?.fr ?? 0,
           startMs = line.startMs + offset,
-          slotMs = project.dubbingTiming?.durationsMs?.[line.id]?.fr ?? line.endMs - line.startMs,
+          natural = project.voiceEdits?.[take.id]?.pieces.reduce((n: number, p: any) => n + p.durationMs, 0) ?? take.durationMs,
+          slotMs = Math.min(120000, project.media.durationMs - startMs, project.dubbingTiming?.durationsMs?.[line.id]?.fr ?? natural),
           exactDuration = project.dubbingTiming?.durationsMs?.[line.id]?.fr != null;
         undoStack.push(structuredClone(project));
         project.formatVersion = Math.max(

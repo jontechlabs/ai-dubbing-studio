@@ -343,7 +343,9 @@ async fn batch_keeps_independent_clips_source_and_takes_and_resumes_only_failed_
         .clone();
     let edits = inpaint::edits(&p).unwrap();
     assert_eq!(edits.len(), 2);
-    assert!(edits.iter().all(|e| !e.enabled && e.duration_ms == 600));
+    // The 1500 ms natural voice, rather than its 600 ms subtitle, drives the
+    // independent retouched sequence (37 whole video frames at 25 fps).
+    assert!(edits.iter().all(|e| !e.enabled && e.duration_ms == 1480));
     assert_eq!(edits[0].start_ms, 1000);
     assert_eq!(edits[1].start_ms, 2500);
     assert_ne!(edits[0].path, edits[1].path);
@@ -351,7 +353,7 @@ async fn batch_keeps_independent_clips_source_and_takes_and_resumes_only_failed_
         let info = crate::media::probe_executable(&tool("ffprobe"), &root.join(&e.path))
             .await
             .unwrap();
-        assert_eq!(info.duration_ms, 600);
+        assert_eq!(info.duration_ms, 1480);
         assert!(info.streams.iter().all(|s| s.kind != "audio"));
     }
     assert_eq!(

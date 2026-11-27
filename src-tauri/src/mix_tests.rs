@@ -2340,10 +2340,10 @@ async fn retouched_variants_reencode_only_when_selected_and_refuse_stale_timing(
     .await;
     let fingerprint = format!(
         "{:x}",
-        sha2::Sha256::digest(b"media/source.mkv|fr|voice|1000|2000|false")
+        sha2::Sha256::digest(b"media/source.mkv|fr|voice|1000|1500|false")
     );
     p.format_version = 8;
-    p.generations.push(serde_json::json!({"kind":"lipVideo","id":"edit","dialogueId":"line","generationId":"voice","sourcePath":"media/source.mkv","language":"fr","path":"generations/lips-edit.mp4","startMs":1000,"durationMs":1480,"slotMs":2000,"exactDuration":false,"fingerprint":fingerprint,"enabled":true,"options":inpaint_options(),"createdAt":"2026-10-16T00:00:00Z","modelRevision":"fixture"}));
+    p.generations.push(serde_json::json!({"kind":"lipVideo","id":"edit","dialogueId":"line","generationId":"voice","sourcePath":"media/source.mkv","language":"fr","path":"generations/lips-edit.mp4","startMs":1000,"durationMs":1480,"slotMs":1500,"exactDuration":false,"fingerprint":fingerprint,"enabled":true,"options":inpaint_options(),"createdAt":"2026-10-16T00:00:00Z","modelRevision":"fixture"}));
     p.validate().unwrap();
     assert_eq!(crate::inpaint::active(&p).unwrap().len(), 1);
     // Existing MuseTalk v8 projects remain valid; LatentSync variants use v13.

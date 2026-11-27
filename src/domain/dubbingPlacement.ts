@@ -1,5 +1,6 @@
 import type { Project } from './types';
 import { dubbingClips, dubbingDuration } from './mix';
+import { voiceGenerations } from './tts';
 import { dubbingLaneId, dubbingLanes, MAX_DUBBING_LANES } from './dubbingLanes';
 
 /** Preserve existing clips first. New/changed clips keep their timestamp and
@@ -9,10 +10,19 @@ export function resolveDubbingPlacement(before: Project, project: Project): Proj
   let next = project;
   const previous = new Map(before.dialogues.map((line) => [line.id, line]));
   const language = project.languages.target;
+  const generations = new Map(voiceGenerations(project).map((g) => [g.id, g]));
   // Timing belongs to the selected performance. Do not squeeze a new take into
   // the duration previously set for a different one. Explicit new timings win.
   for (const line of project.dialogues) {
     const old = previous.get(line.id);
+    const selected = generations.get(line.selectedGenerationIds[language]);
+    const source =
+      selected?.takeOrigin?.type === 'conversion'
+        ? selected.takeOrigin.sourceGenerationId
+        : selected?.prosodyTransfer?.sourceGenerationId;
+    // Conversion/intonation derive the same performance and deliberately keep
+    // its reviewed timeline stretch. A fresh TTS/microphone take is independent.
+    if (source && source === old?.selectedGenerationIds[language]) continue;
     if (
       line.selectedGenerationIds[language] &&
       old?.selectedGenerationIds[language] !== line.selectedGenerationIds[language] &&

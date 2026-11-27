@@ -157,3 +157,34 @@ it('a full 256-lane collision fails atomically without dropping a take or changi
   expect(() => resolveDubbingPlacement(before, p)).toThrow('DUBBING_LANES_LIMIT');
   expect(JSON.stringify(p)).toBe(snapshot);
 });
+
+it('timbre and intonation transfers keep the reviewed duration of the performance they derive from', () => {
+  for (const mode of ['conversion', 'intonation']) {
+    const p = resizeDubbing(fixture(), 'line-0', 1000);
+    p.formatVersion = Math.max(p.formatVersion, 17);
+    const derived: Generation = { ...(p.generations[0] as Generation), id: `derived-${mode}` };
+    if (mode === 'conversion')
+      derived.takeOrigin = { type: 'conversion', sourceGenerationId: 'take-0', referenceId: 'ref' };
+    else
+      derived.prosodyTransfer = {
+        algorithm: 'praat-psola-v1',
+        sourceGenerationId: 'take-0',
+        sourceDurationMs: 3000,
+        guideDurationMs: 3000,
+        options: {
+          generationId: 'take-0',
+          referenceMode: 'dialogue',
+          referenceId: null,
+          strength: 0.5,
+          pitch: true,
+          rhythm: false,
+          energy: true,
+        },
+      };
+    p.generations.push(derived);
+    const next = selectGeneration(p, derived.id);
+    expect(dubbingDuration(next, 'line-0')).toBe(1000);
+    expect(dubbingClips(next).find((c) => c.line.id === 'line-0')!.endMs).toBe(2000);
+    expect(next.generations).toEqual(p.generations);
+  }
+});

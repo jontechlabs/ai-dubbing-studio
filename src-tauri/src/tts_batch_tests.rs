@@ -370,10 +370,11 @@ async fn successful_lot_reuses_one_process_and_releases_it_before_terminal_statu
     let tmp = tempfile::tempdir().unwrap();
     let root = tmp.path().canonicalize().unwrap();
     let p = fixture(&root, &["Bonjour", "Bonsoir", "Salut"]);
+    let mut selection = selection();
+    selection.options.output_gain = Some(0.5);
+    let (_, items) = plan(&p, &root, &selection).unwrap();
     let mut req = request(&p, &root);
-    for item in &mut req.items {
-        item.request.options.output_gain = Some(0.5);
-    }
+    req.items = items;
     let core = core(&root, p);
     let app = tauri::test::mock_app();
     let key = start_with_launch(
@@ -384,7 +385,8 @@ async fn successful_lot_reuses_one_process_and_releases_it_before_terminal_statu
         Some(worker(&root)),
     )
     .unwrap();
-    assert_eq!(finished(&core, &key).await.status, "succeeded");
+    let done = finished(&core, &key).await;
+    assert_eq!(done.status, "succeeded", "{:?}", done.logs);
     let calls = std::fs::read_to_string(root.join("calls.jsonl")).unwrap();
     let pids: Vec<_> = calls
         .lines()

@@ -12,6 +12,11 @@ pub fn resolve(before: &Project, next: &mut Project) -> Result<(), String> {
     };
     let source = media.path.clone();
     let language = next.languages.target.clone();
+    let generations: HashMap<_, _> = next
+        .generations
+        .iter()
+        .filter_map(|g| g["id"].as_str().map(|id| (id, g)))
+        .collect();
     if let Some(timing) = next
         .dubbing_timing
         .as_mut()
@@ -26,6 +31,26 @@ pub fn resolve(before: &Project, next: &mut Project) -> Result<(), String> {
             let Some(old) = old_lines.get(&line.id) else {
                 continue;
             };
+            let selected = line
+                .selected_generation_ids
+                .get(&language)
+                .and_then(|id| generations.get(id.as_str()));
+            let derived_from = selected.and_then(|g| {
+                if g["takeOrigin"]["type"] == "conversion" {
+                    g["takeOrigin"]["sourceGenerationId"].as_str()
+                } else {
+                    g["prosodyTransfer"]["sourceGenerationId"].as_str()
+                }
+            });
+            if derived_from.is_some()
+                && derived_from
+                    == old
+                        .selected_generation_ids
+                        .get(&language)
+                        .map(String::as_str)
+            {
+                continue;
+            }
             if line.selected_generation_ids.contains_key(&language)
                 && old.selected_generation_ids.get(&language)
                     != line.selected_generation_ids.get(&language)
